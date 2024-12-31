@@ -14,9 +14,9 @@ return new class extends Migration
     Schema::create('mutasis', function (Blueprint $table) {
       $table->id();
       $table->foreignId('pendaftaran_id')->constrained('pendaftarans')->onDelete('cascade');
-      $table->string('fromPosyandu');
-      $table->string('toPosyandu');
-      $table->string('username', 100);
+      $table->string('fromPosyandu',50);
+      $table->string('toPosyandu',50);
+      $table->string('username', 50);
       $table->timestamps();
     });
   }

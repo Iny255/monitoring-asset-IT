@@ -54,5 +54,19 @@ class User extends Authenticatable
     {
         return $query->whereIn('role', ['petugas', 'ortu', 'bidan', 'kades']);
     }
+
+    public function getDashboardUrl()
+{
+    switch ($this->role) {
+        case 'ortu':
+            return '/dashboard/ortu';
+        case 'petugas':
+            return '/dashboard/petugas';
+        case 'kades':
+            return '/dashboard/kades';
+        default:
+            return '/dashboard';
+    }
+}
     
 }

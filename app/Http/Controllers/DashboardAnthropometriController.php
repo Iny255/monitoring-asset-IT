@@ -27,7 +27,7 @@ class DashboardAnthropometriController extends Controller
 
     $anthropometriData = Anthropometri::whereHas('pendaftaran', function ($query) use ($gender) {
       $query->where('jenis_kelamin', $gender);
-    })->with('pendaftaran')->paginate(10);
+    })->with('pendaftaran')->paginate(7);
 
     return view('content.dashboard.anthropometri.index', compact('anthropometriData', 'gender', 'routeName'));
   }
@@ -52,7 +52,7 @@ class DashboardAnthropometriController extends Controller
     }
 
     // Pagination
-    $anthropometriData = $anthropometriData->paginate(20);
+    $anthropometriData = $anthropometriData->paginate(7);
 
     return view('content.dashboard.anthropometri.indexLakiLaki', compact('anthropometriData'));
   }
@@ -76,7 +76,7 @@ class DashboardAnthropometriController extends Controller
     }
 
     // Pagination
-    $anthropometriData = $anthropometriData->paginate(20);
+    $anthropometriData = $anthropometriData->paginate(7);
 
     return view('content.dashboard.anthropometri.indexPerempuan', compact('anthropometriData'));
   }

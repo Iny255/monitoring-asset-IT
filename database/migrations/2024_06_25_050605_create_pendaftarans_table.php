@@ -23,7 +23,7 @@ return new class extends Migration
       $table->float('bb_lahir', 5, 2);
       //added 24/9/24
       $table->float('tb_lahir');
-      $table->string('email_ortu');
+      $table->string('email_ortu',50);
       //
 
       $table->string('nama_ortu', 50);
@@ -33,7 +33,7 @@ return new class extends Migration
       $table->string('rw', 2);
       $table->string('pekerjaan', 50);
 
-      $table->string('username', 100);
+      $table->string('username', 50);
       $table->timestamps();
     });
   }

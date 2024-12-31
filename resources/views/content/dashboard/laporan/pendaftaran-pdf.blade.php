@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <title>Laporan Pendaftaran - PDF</title>
+    <title>Laporan Posyandu {{ strtoupper($month) }} - PDF</title>
     <style>
         /* Add your styling here */
         table {
@@ -44,7 +44,7 @@
 
 <body>
     <div class="text-center">
-        <img src="{{ public_path('assets/img/logo-posyandu.png') }}" width="80" alt="">
+        {{-- <img src="{{ public_path('assets/img/logo-posyandu.png') }}" width="80" alt=""> --}}
 
         <h5 id="judul">POSYANDU DESA CENDONO KABUPATEN KUDUS <br> <br>
             <span>LAPORAN KEGIATAN POSYANDU PERIODE {{ strtoupper($month) }}

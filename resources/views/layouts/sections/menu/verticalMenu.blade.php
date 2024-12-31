@@ -1,14 +1,59 @@
+
+    <style>
+        /* Wrapper logo di sidebar */
+.app-brand-logo-wrapper {
+    display: flex;
+    justify-content: center; /* Pusatkan secara horizontal */
+    align-items: center;    /* Pusatkan secara vertikal */
+    width: 100%;            /* Sesuaikan lebar dengan kontainer */
+    height: 100%;           /* Biarkan tinggi sesuai dengan kontainer */
+    overflow: hidden;       /* Hindari elemen keluar kontainer */
+    padding: 0;             /* Hilangkan padding jika perlu */
+    box-sizing: border-box; /* Perbaiki hitungan dimensi */
+}
+
+/* Gambar logo */
+.logo-posyandu {
+    max-width: 100%;         /* Sesuaikan lebar logo dengan kontainer */
+    max-height: 100%;        /* Sesuaikan tinggi logo dengan kontainer */
+    object-fit: contain;     /* Jaga proporsi asli logo */
+    margin: 0;               /* Hindari margin tambahan */
+}
+
+/* Sidebar layout */
+aside.layout-menu {
+    width: 267px;            /* Lebar sidebar */
+    background-color: #ffffff; /* Tambahkan warna putih jika perlu */
+    min-height: 100vh;       /* Tinggi penuh viewport */
+    overflow-y: auto;        /* Gulir jika konten terlalu panjang */
+}
+
+/* Responsif untuk perangkat kecil */
+@media (max-width: 768px) {
+    .app-brand-logo-wrapper {
+        height: 80px;       /* Sesuaikan tinggi untuk layar kecil */
+    }
+    .logo-posyandu {
+        max-height: 80px;   /* Batasi tinggi maksimum logo */
+        max-width: 80%;     /* Batasi lebar logo */
+    }
+}
+
+    </style>
+    
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css">
 
-    <!-- ! Hide app brand if navbar-full -->
+    <!-- Logo Posyandu -->
     <div class="app-brand demo">
         <a href="{{ url('/') }}" class="app-brand-link">
-            <span class="app-brand-logo demo">
-                <img src="{{ asset('assets/img/Landing/logoposyandu.png') }}" alt="Posyandu Logo" width="200">
-            </span>
+            <div class="app-brand-logo-wrapper">
+                <img src="{{ asset('assets/img/Landing/logoposyandu.png') }}" alt="Posyandu Logo" class="logo-posyandu">
+            </div>
+              
+
         </a>
         <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
             <i class="bx bx-chevron-left bx-sm align-middle"></i>
@@ -21,7 +66,6 @@
         @foreach ($menuData[0]->menu as $menu)
             @if (in_array(Auth::user()->role, $menu->roles))
                 @php
-                    // dd(Auth::user()->role == $menu->roles);
                     $activeClass = null;
                     $isMenuActive = false;
                     $currentRouteName = Route::currentRouteName();

@@ -24,18 +24,18 @@
                         <li class="nav-item px-2"><a class="nav-link" href="#struktur">Struktur Organisasi</a></li>
                         <li class="nav-item px-2"><a class="nav-link" href="#layanan">Layanan </a></li>
                         <li class="nav-item px-2"><a class="nav-link" href="#artikel">Artikel </a></li>
-                        <li class="nav-item px-2"><a class="nav-link" href="#kontak">Kontak Kami</a></li>
+                        {{-- <li class="nav-item px-2"><a class="nav-link" href="#kontak">Kontak Kami</a></li> --}}
                         <ul class="navbar-nav ms-auto">
                             @auth
                                 <li class="nav-item dropdown">
                                     <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown"
                                         aria-expanded="false">
-                                        Selamat Datang Kembali {{ auth()->user()->name }}
+                                        Selamat Datang Kembali {{ auth()->user()->username }}
                                     </a>
                                     <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" href="/dashboard"><i
-                                                    class="bi bi-layout-text-window-reverse"></i>My Dashboard</a></li>
-                                        <li>
+                                       <a class="dropdown-item" href="{{ auth()->user()->getDashboardUrl() }}">
+                                            <i class="bi bi-layout-text-window-reverse"></i>My Dashboard
+                                        </a>
                                             <hr class="dropdown-divider">
                                         </li>
                                         <li>
@@ -197,8 +197,8 @@
                                         <div class="text-center">
                                             <p class="mb-0 fs-xxl-1">Segera periksakan tinggi dan berat badan balita secara
                                                 berkala.</p>
-                                            <button class="btn btn-outline-secondary rounded-pill"
-                                                type="submit">Selengkapnya</button>
+                                            {{-- <button class="btn btn-outline-secondary rounded-pill"
+                                                type="submit">Selengkapnya</button> --}}
                                         </div>
                                     </div>
                                 </div>
@@ -213,8 +213,8 @@
                                                 kembang balita.
                                             </p>
 
-                                            <button class="btn btn-outline-secondary rounded-pill"
-                                                type="submit">Selengkapnya</button>
+                                            {{-- <button class="btn btn-outline-secondary rounded-pill"
+                                                type="submit">Selengkapnya</button> --}}
                                         </div>
                                     </div>
                                 </div>
@@ -228,8 +228,8 @@
 
                                             <p class="mb-0 fs-xxl-1">Pantau pertumbuhan balita secara berkala.</p>
 
-                                            <button class="btn btn-outline-secondary rounded-pill"
-                                                type="submit">Selengkapnya</button>
+                                            {{-- <button class="btn btn-outline-secondary rounded-pill"
+                                                type="submit">Selengkapnya</button> --}}
                                         </div>
                                     </div>
                                 </div>
@@ -238,12 +238,12 @@
                                 <div class="card card-span h-100 shadow">
                                     <div class="card-body d-flex flex-column flex-center py-5">
                                         <img src="assets/img/Landing/notebook.png" width="128" alt="..." />
-                                        <h5 class="mt-3">Jadwal Posyandu</h5>
+                                        <h5 class="mt-3">Pengukuran Rutin</h5>
                                         <div class="text-center">
                                             <p class="mb-0 fs-xxl-1">Segera datang ke posyandu untuk pemeriksaan balita.
                                             </p>
-                                            <button class="btn btn-outline-secondary rounded-pill"
-                                                type="submit">Selengkapnya</button>
+                                            {{-- <button class="btn btn-outline-secondary rounded-pill"
+                                                type="submit">Selengkapnya</button> --}}
                                         </div>
                                     </div>
                                 </div>
@@ -495,7 +495,7 @@
             <!--/.bg-holder-->
 
 
-            <section class="py-0 bg-secondary" id="kontak">
+            {{-- <section class="py-0 bg-secondary" id="kontak">
                 <div class="bg-holder opacity-25"
                     style="background-image:url(assets/img/gallery/dot-bg.png);background-position:top left;margin-top:-3.125rem;background-size:auto;">
                 </div>
@@ -533,5 +533,5 @@
                             </ul>
                         </div>
                     </div>
-                </div>
+                </div> --}}
             @endsection

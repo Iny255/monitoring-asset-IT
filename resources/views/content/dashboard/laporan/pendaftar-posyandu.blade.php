@@ -1,6 +1,6 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Laporan Pendaftaran Posyandu')
+@section('title', 'Laporan  Posyandu')
 
 @section('content')
     @if (session('success'))
@@ -19,7 +19,7 @@
 
     <div class="card">
         <div class="d-flex justify-content-between align-items-center">
-            <h5 class="card-header" style="color: navy;">Data Pendaftaran Posyandu</h5>
+            <h5 class="card-header" style="color: navy;">Data Laporan Posyandu</h5>
         </div>
         <div class="card-body">
             <form method="GET" action="{{ url('/dashboard/laporan/pendaftar-posyandu') }}" class="row g-3 mb-4">

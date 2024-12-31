@@ -81,36 +81,19 @@
                         </div>
                     </div> --}}
                     <div class="col-md-12 mb-3" id="chartStat"></div>
-                    {{-- <div id="description">
-                        <div class="table-responsive text-nowrap">
-                            <table class="table">
-                                <thead class="table-secondary">
-                                    <tr>
-                                        <th colspan="2" class="text-center"><strong>Kategori Rentang Ambang Batas
-                                                (Z-Score)
-                                                :</strong>
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody class="text-center">
-                                    <tr>
-                                        <td id="tinggi" class="color-tall">Tinggi (+3 SD)</td>
-                                    </tr>
-                                    <tr>
-                                        <td id="normal" class="color-normal">Normal (-2 SD sd +3 SD)</td>
-                                    </tr>
-                                    <tr>
-                                        <td id="stunted" class="color-stunted">Pendek/stunted (-3 SD sd < -2 SD)</td>
-                                    </tr>
-
-                                    <tr>
-                                        <td id="severely-stunted" class="color-severely-stunted">Sangat pendek/severely
-                                            stunted ( < -3 SD)</td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                    @if ($status_stunting == 'normal')
+                        <div class="alert alert-info">
+                            <h2 class="text-center p-0 m-0 text-info">Tidak Stunting / Normal</h2>
                         </div>
-                    </div> --}}
+                    @elseif($status_stunting == 'tinggi')
+                        <div class="alert alert-warning">
+                            <h2 class="text-center p-0 m-0 text-warning">Tinggi / Melebihi Batas Normal</h2>
+                        </div>
+                    @else
+                        <div class="alert alert-danger">
+                            <h2 class="text-center p-0 m-0 text-danger">Stunting</h2>
+                        </div>
+                    @endif
                 @else
                     <div class="text-center my-3">
                         <h5>Grafik Pertumbuhan tidak ditemukan.</h5>
@@ -160,22 +143,19 @@
                             return record ? parseFloat(parseFloat(record.z_score).toFixed(2)) : null;
                         });
 
+                        var isStunting = zScores.some(score => score < -2);
+
+                        var lineColor = zScores.some(score => score < -2) ? '#f54242' : '#0a48cc';
+
                         var options = {
                             chart: {
                                 height: 400,
                                 type: "line",
                             },
-                            dataLabels: {
-                                enabled: true,
-                                style: {
-                                    fontSize: '10px',
-                                    colors: ['#333']
-                                }
-                            },
                             markers: {
                                 size: 5,
                                 colors: ['#ffffff'],
-                                strokeColors: '#0056b3', // Garis biru solid
+                                strokeColors: lineColor,
                                 strokeWidth: 3,
                                 hover: {
                                     size: 7
@@ -184,18 +164,15 @@
                             series: [{
                                 name: "Z-Score",
                                 data: zScores,
-                                color: '#0056b3', // Warna biru solid
+                                color: lineColor,
                             }],
                             stroke: {
-                                curve: 'smooth',
-                                width: 4 // Menambah ketebalan garis
+                                curve: 'straight',
+                                width: 4,
+                                colors: [lineColor]
                             },
                             grid: {
                                 borderColor: '#e7e7e7',
-                                row: {
-                                    colors: ['#f3f3f3', 'transparent'], // alternating row colors
-                                    opacity: 0.5
-                                },
                                 xaxis: {
                                     lines: {
                                         show: false
@@ -208,7 +185,7 @@
                                 }
                             },
                             title: {
-                                text: 'Grafik Pertumbuhan Balita 6 Bulan Terakhir',
+                                text: 'Grafik Pertumbuhan Balita 12 Bulan Terakhir',
                                 align: 'left',
                                 style: {
                                     fontSize: '16px',
@@ -251,31 +228,6 @@
                                         fontWeight: 'bold'
                                     }
                                 }
-                            },
-                            annotations: {
-                                yaxis: [{
-                                    y: -2,
-                                    borderColor: '#f54242',
-                                    label: {
-                                        text: 'Batas Stunting',
-                                        style: {
-                                            color: '#fff',
-                                            background: '#f54242'
-                                        },
-                                        position: 'right'
-                                    }
-                                }, {
-                                    y: 3,
-                                    borderColor: '#f54242',
-                                    label: {
-                                        text: 'Batas Normal',
-                                        style: {
-                                            color: '#fff',
-                                            background: '#f54242'
-                                        },
-                                        position: 'right'
-                                    }
-                                }]
                             }
                         };
 

@@ -30,7 +30,7 @@ class DashboardLokasiController extends Controller
     }
 
     // Pagination
-    $lokasis = $lokasis->paginate(10);
+    $lokasis = $lokasis->paginate(7);
 
 
     return view('content.dashboard.lokasi-posyandu.index', compact('lokasis'));

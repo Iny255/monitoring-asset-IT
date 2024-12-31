@@ -45,7 +45,7 @@ class DashboardPendaftaranController extends Controller
         });
       }
       // Pagination
-      $pendaftarans = $pendaftarans->paginate(10);
+      $pendaftarans = $pendaftarans->paginate(7);
     } elseif ($user->role == 'ortu') {
       $pendaftarans = Pendaftaran::where('email_ortu', $user->email)->get();
     }

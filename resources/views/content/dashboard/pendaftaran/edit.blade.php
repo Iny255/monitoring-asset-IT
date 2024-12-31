@@ -186,6 +186,11 @@
                                             </option>
                                             <option value="07" {{ $pendaftarans->rt == '07' ? 'selected' : '' }}>07
                                             </option>
+                                             <option value="08" {{ $pendaftarans->rt == '08' ? 'selected' : '' }}>08
+            
+                                            </option>
+                                             <option value="09" {{ $pendaftarans->rt == '09' ? 'selected' : '' }}>09
+                                            </option>
                                         </select>
                                     </div>
                                     <div class="mb-3">
@@ -205,6 +210,11 @@
                                             <option value="06" {{ $pendaftarans->rw == '06' ? 'selected' : '' }}>06
                                             </option>
                                             <option value="07" {{ $pendaftarans->rw == '07' ? 'selected' : '' }}>07
+                                            </option>
+                                            <option value="08" {{ $pendaftarans->rw == '08' ? 'selected' : '' }}>08
+            
+                                            </option>
+                                             <option value="09" {{ $pendaftarans->rw == '09' ? 'selected' : '' }}>09
                                             </option>
                                         </select>
                                     </div>

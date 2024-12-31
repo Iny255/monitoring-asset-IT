@@ -37,7 +37,7 @@ class LaporanController extends Controller
     }
 
     // Pagination
-    $pendaftarans = $pendaftarans->paginate(20);
+    $pendaftarans = $pendaftarans->paginate(7);
 
     $posyandu = Lokasi::all();
 

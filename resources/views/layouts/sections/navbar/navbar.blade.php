@@ -75,7 +75,7 @@ $navbarDetached = ($navbarDetached ?? '');
               <li>
                 <div class="dropdown-divider"></div>
               </li>
-              <li>
+              {{-- <li>
                 <a class="dropdown-item" href="javascript:void(0);">
                   <i class="bx bx-user me-2"></i>
                   <span class="align-middle">My Profile</span>
@@ -86,7 +86,7 @@ $navbarDetached = ($navbarDetached ?? '');
                   <i class='bx bx-cog me-2'></i>
                   <span class="align-middle">Settings</span>
                 </a>
-              </li>
+              </li> --}}
               {{-- <li>
                 <a class="dropdown-item" href="javascript:void(0);">
                   <span class="d-flex align-items-center align-middle">

@@ -108,7 +108,10 @@
                         @endforelse
                     </tbody>
                 </table>
+                  <div class="mt-4">
                 <!-- Tombol navigasi paginate -->
+               
+                 <div class="mt-4">
                 {{ $anthropometriData->links('pagination::bootstrap-4') }}
             </div>
         </div>

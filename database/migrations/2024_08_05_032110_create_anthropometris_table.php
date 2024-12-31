@@ -14,7 +14,7 @@ return new class extends Migration
     Schema::create('anthropometris', function (Blueprint $table) {
       $table->id();
       $table->foreignId('pendaftaran_id')->constrained('pendaftarans')->onDelete('cascade');
-      $table->string('jenis_kelamin');
+      $table->string('jenis_kelamin',50);
       $table->float('tinggi_badan');
       $table->float('berat_badan');
       $table->integer('usia');

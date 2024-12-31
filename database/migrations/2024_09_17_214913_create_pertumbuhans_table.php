@@ -20,13 +20,13 @@ return new class extends Migration
       $table->integer('tahun');
       $table->float('tinggi_badan');
       $table->float('berat_badan');
-      $table->string('cara_ukur');
+      $table->string('cara_ukur',50);
 
       //added 9/18/2024
-      $table->string('status_stunting');
-      $table->string('status_gizi');
+      $table->string('status_stunting',50);
+      $table->string('status_gizi',50);
       $table->integer('usia');
-      $table->string('z_score');
+      $table->string('z_score',50);
 
       $table->timestamps();
     });

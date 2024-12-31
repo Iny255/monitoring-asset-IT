@@ -22,7 +22,7 @@ return new class extends Migration
       ])->default('Cendono');
       $table->string('rt', 2);
       $table->string('rw', 2);
-      $table->string('username', 10);
+      $table->string('username', 50);
       $table->timestamps();
     });
   }
