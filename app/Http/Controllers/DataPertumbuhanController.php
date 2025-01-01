@@ -155,7 +155,8 @@ class DataPertumbuhanController extends Controller
         'status' => 'Usia tidak valid',
         'status_gizi' => 'N/A',
         'zscore' => 'N/A',
-        'keterangan' => 'Usia balita sudah tidak memenuhi ambang batas perhitungan stunting.'
+        'keterangan' => 'Usia anak melebihi batas maksimal untuk kategori balita (60 bulan), silahkan lanjutkan pemantauan
+        melalui layanan kesehatan anak usia sekolah.'
       ];
     }
 

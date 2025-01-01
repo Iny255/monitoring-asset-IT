@@ -165,6 +165,10 @@ class DashboardPertumbuhanController extends Controller
       ];
     })->toArray();
 
+    //get latest usia balita
+    $lastUsia = $pertumbuhanRecords->last()?->usia ?? null;
+    // dd($lastUsia);
+
     // get latest berat dan tb trkhir balita
     $lastBbTb = $pertumbuhanRecords->last();
 
@@ -187,7 +191,8 @@ class DashboardPertumbuhanController extends Controller
       'last12Months',
       'pertumbuhanRecords',
       'lastBbTb',
-      'status_stunting'
+      'status_stunting',
+      'lastUsia'
     ));
   }
 }

@@ -115,7 +115,8 @@
             @else
                 <div class="text-center my-3">
                     <h5>Grafik Pertumbuhan tidak ditemukan.</h5>
-                    <p>Usia balita sudah tidak memenuhi ambang batas perhitungan stunting.</p>
+                    <p>Usia anak melebihi batas maksimal untuk kategori balita (60 bulan), silahkan lanjutkan pemantauan
+        melalui layanan kesehatan anak usia sekolah.</p>
                 </div>
             @endif
 

@@ -97,6 +97,6 @@ class LaporanController extends Controller
     ])
       ->setPaper('a4', 'landscape');
 
-    return $pdf->download('laporan_pendaftaran_' . $this->month . '.pdf');
+    return $pdf->download('laporan_posyandu_' . $this->month . '.pdf');
   }
 }

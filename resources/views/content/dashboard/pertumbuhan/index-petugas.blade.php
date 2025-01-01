@@ -40,7 +40,7 @@
                         </p>
                     </div>
                     <div class="col-md-6 mb-1">
-                        <p><strong>Usia saat ini:</strong> {{ $data->usia ?? 'Tidak diketahui' }} bulan</p>
+                        <p><strong>Usia saat ini:</strong> {{$lastUsia ?? $data->usia ?? 'Tidak diketahui' }} bulan</p>
                     </div>
                     <div class="col-md-6 mb-1">
                         <p><strong>Jenis Kelamin:</strong>
