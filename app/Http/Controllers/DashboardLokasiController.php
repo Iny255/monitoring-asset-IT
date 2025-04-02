@@ -62,7 +62,7 @@ class DashboardLokasiController extends Controller
   {
 
     $validatedData = $request->validate([
-      'nama_posyandu' => 'required|string|max:50',
+      'nama_posyandu' => 'required|string|max:50|unique:lokasis,nama_posyandu',
       'dukuh' => 'required|string|max:20',
       'rt' => 'required|string|max:3',
       'rw' => 'required|string|max:3',
@@ -82,6 +82,28 @@ class DashboardLokasiController extends Controller
       Log::error($e->getMessage());
       return redirect('/dashboard/posyandu/lokasi-create')->with('error', 'Data lokasi posyandu tidak berhasil disimpan. Kesalahan: ' . $e->getMessage());
     }
+  //   $validatedData = $request->validate([
+  //       'nama_posyandu' => 'required|string|max:50',
+  //       'dukuh' => 'required|string|max:20',
+  //       'rt' => 'required|string|max:3',
+  //       'rw' => 'required|string|max:3',
+  //   ]);
+
+  //   // Cek apakah kombinasi nama_posyandu, dukuh, rt, rw sudah ada
+  //   $existingLokasi = Lokasi::where('nama_posyandu', $request->nama_posyandu)
+  //                           ->where('dukuh', $request->dukuh)
+  //                           ->where('rt', $request->rt)
+  //                           ->where('rw', $request->rw)
+  //                           ->exists();
+
+  //   if ($existingLokasi) {
+  //       return redirect()->back()->with('error', 'Data lokasi posyandu dengan kombinasi ini sudah ada.');
+  //   }
+
+  //   // Simpan data lokasi posyandu
+  //   Lokasi::create($validatedData);
+
+  //   return redirect('/dashboard/lokasi-posyandu')->with('success', 'Data lokasi posyandu berhasil disimpan.');
   }
 
   /**
@@ -113,6 +135,13 @@ class DashboardLokasiController extends Controller
   public function update(Request $request, $id)
   {
     $lokasi = Lokasi::findOrFail($id);
+     // Validasi form input
+    $validatedData = $request->validate([
+        'nama_posyandu' => 'required|string|max:50|unique:lokasis,nama_posyandu,' . $lokasi->id,
+        'dukuh' => 'required|string|max:20',
+        'rt' => 'required|string|max:3',
+        'rw' => 'required|string|max:3',
+    ]);
     $lokasi->nama_posyandu = $request->nama_posyandu;
     $lokasi->dukuh = $request->dukuh;
     $lokasi->rt = $request->rt;

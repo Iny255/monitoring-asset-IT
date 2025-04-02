@@ -39,19 +39,19 @@
                     </p>
                 </div>
                 <div class="col-md-6 mb-1">
-                    <p><strong>Usia (bulan):</strong> {{ $data->usia ?? 'Tidak diketahui' }} bulan</p>
-                </div>
-                <div class="col-md-6 mb-1">
-                    <p><strong>Jenis Kelamin:</strong>
-                        {{ $data->jenis_kelamin === 'perempuan' ? 'Perempuan' : ($data->jenis_kelamin === 'laki-laki' ? 'Laki-Laki' : 'Tidak diketahui') }}
-                    </p>
+                        <p><strong>Usia saat ini:</strong> {{$lastUsia ?? $data->usia ?? 'Tidak diketahui' }} bulan</p>
+                    </div>
+                    <div class="col-md-6 mb-1">
+                        <p><strong>Jenis Kelamin:</strong>
+                            {{ $data->jenis_kelamin === 'perempuan' ? 'Perempuan' : ($data->jenis_kelamin === 'laki-laki' ? 'Laki-Laki' : 'Tidak diketahui') }}
+                        </p>
 
-                </div>
-                <div class="col-md-6 mb-1">
-                    <p><strong>Berat/Tinggi Badan:</strong>
-                        {{ $data->berat_badan ?? 'Tidak diketahui' }}kg/{{ $data->tinggi_badan ?? 'Tidak diketahui' }}cm
-                    </p>
-                </div>
+                    </div>
+                    <div class="col-md-6 mb-1">
+                        <p><strong>BB/TB terakhir:</strong>
+                            {{ $lastBbTb->berat_badan ?? 'Tidak diketahui' }}kg/{{ $lastBbTb->tinggi_badan ?? 'Tidak diketahui' }}cm
+                        </p>
+                    </div>
             </div>
             <hr>
 
@@ -112,6 +112,20 @@
                             </table>
                         </div>
                     </div> --}}
+                       <div class="col-md-12 mb-3" id="chartStat"></div>
+                    @if ($status_stunting == 'normal')
+                        <div class="alert alert-info">
+                            <h2 class="text-center p-0 m-0 text-info">Tidak Stunting / Normal</h2>
+                        </div>
+                    @elseif($status_stunting == 'tinggi')
+                        <div class="alert alert-warning">
+                            <h2 class="text-center p-0 m-0 text-warning">Tinggi / Melebihi Batas Normal</h2>
+                        </div>
+                    @else
+                        <div class="alert alert-danger">
+                            <h2 class="text-center p-0 m-0 text-danger">Stunting</h2>
+                        </div>
+                    @endif
             @else
                 <div class="text-center my-3">
                     <h5>Grafik Pertumbuhan tidak ditemukan.</h5>
@@ -151,99 +165,134 @@
                         }
                     });
                 </script> --}}
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
-                    var zScoreLimits = @json($zScoreLimits);
-                    var growthData = @json($growthData);
-                    var last12Months = @json($last12Months);
+           <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        var zScoreLimits = @json($zScoreLimits);
+                        var growthData = @json($growthData);
+                        var last12Months = @json($last12Months);
 
-                    var zScores = last12Months.map(month => {
-                        var record = growthData.find(data => data.month === month);
-                        return record ? parseFloat(parseFloat(record.z_score).toFixed(2)) :
-                            null;
-                    });
+                        var zScores = last12Months.map(month => {
+                            var record = growthData.find(data => data.month === month);
+                            return record ? parseFloat(parseFloat(record.z_score).toFixed(2)) : null;
+                        });
 
-                    var options = {
-                        chart: {
-                            height: 400,
-                            type: "line",
-                        },
-                        dataLabels: {
-                            enabled: true
-                        },
-                        series: [{
-                            name: "Z-Score",
-                            data: zScores,
-                            color: 'rgba(84, 157, 255, 0.8)'
-                        }],
-                        stroke: {
-                            curve: 'smooth',
-                            width: [3]
-                        },
-                        title: {
-                            text: 'Grafik Pertumbuhan Balita 6 Bulan Terakhir',
-                            align: 'left'
-                        },
-                        xaxis: {
-                            categories: last12Months,
-                            title: {
-                                text: "Bulan",
-                                style: {
-                                    fontSize: '12px',
-                                    fontWeight: 'bold'
+                        var isStunting = zScores.some(score => score < -2);
+
+                        var lineColor = zScores.some(score => score < -2) ? '#f54242' : '#0a48cc';
+
+                        var options = {
+                            chart: {
+                                height: 400,
+                                type: "line",
+                            },
+                            markers: {
+                                size: 5,
+                                colors: ['#ffffff'],
+                                strokeColors: lineColor,
+                                strokeWidth: 3,
+                                hover: {
+                                    size: 7
                                 }
-                            }
-                        },
-                        yaxis: {
-                            min: -10,
-                            max: 10,
-                            labels: {
-                                formatter: function(value) {
-                                    if (value > 3) return "Tinggi";
-                                    if (value > -2 && value <= 3) return "Normal";
-                                    return "Stunting";
+                            },
+                            series: [{
+                                name: "Z-Score",
+                                data: zScores,
+                                color: lineColor,
+                            }],
+                            stroke: {
+                                curve: 'straight',
+                                width: 4,
+                                colors: [lineColor]
+                            },
+                            grid: {
+                                borderColor: '#e7e7e7',
+                                xaxis: {
+                                    lines: {
+                                        show: false
+                                    }
+                                },
+                                yaxis: {
+                                    lines: {
+                                        show: true
+                                    }
                                 }
                             },
                             title: {
-                                text: "Status Gizi",
+                                text: 'Grafik Pertumbuhan Balita 12 Bulan Terakhir',
                                 align: 'left',
                                 style: {
-                                    fontSize: '13px',
+                                    fontSize: '16px',
                                     fontWeight: 'bold'
                                 }
+                            },
+                            xaxis: {
+                                categories: last12Months,
+                                title: {
+                                    text: "Bulan",
+                                    style: {
+                                        fontSize: '12px',
+                                        fontWeight: 'bold'
+                                    }
+                                },
+                                labels: {
+                                    style: {
+                                        fontSize: '12px',
+                                    }
+                                }
+                            },
+                            yaxis: {
+                                min: -10,
+                                max: 10,
+                                labels: {
+                                    formatter: function(value) {
+                                        if (value > 3) return "Tinggi";
+                                        if (value > -2 && value <= 3) return "Normal";
+                                        return "Stunting";
+                                    },
+                                    style: {
+                                        fontSize: '12px',
+                                    }
+                                },
+                                title: {
+                                    text: "Status Gizi",
+                                    align: 'left',
+                                    style: {
+                                        fontSize: '13px',
+                                        fontWeight: 'bold'
+                                    }
+                                }
+                            },
+                            annotations: {
+                                yaxis: [{
+                                    y: -2,
+                                    borderColor: '#f54242',
+                                    label: {
+                                        text: 'Batas Stunting',
+                                        style: {
+                                            color: '#fff',
+                                            background: '#f54242'
+                                        },
+                                        position: 'right'
+                                    }
+                                }, {
+                                    y: 3,
+                                    borderColor: '#f54242',
+                                    label: {
+                                        text: 'Batas Normal',
+                                        style: {
+                                            color: '#fff',
+                                            background: '#f54242'
+                                        },
+                                        position: 'right'
+                                    }
+                                }]
                             }
-                        },
-                        annotations: {
-                            yaxis: [{
-                                y: -2,
-                                borderColor: '#f54242',
-                                label: {
-                                    text: 'Batas Stunting',
-                                    style: {
-                                        color: '#fff',
-                                        background: '#f54242'
-                                    },
-                                    position: 'right'
-                                }
-                            }, {
-                                y: 3,
-                                borderColor: '#f54242',
-                                label: {
-                                    text: 'Batas Normal',
-                                    style: {
-                                        color: '#fff',
-                                        background: '#f54242'
-                                    },
-                                    position: 'right'
-                                }
-                            }]
-                        }
-                    };
+                        };
 
-                    var chart = new ApexCharts(document.querySelector("#chartStat"), options);
-                    chart.render();
-                });
-            </script>
+                        var chart = new ApexCharts(document.querySelector("#chartStat"), options);
+                        chart.render();
+                    });
+                </script>
         </div>
     </div>
 @endsection

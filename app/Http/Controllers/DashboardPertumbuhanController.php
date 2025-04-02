@@ -34,10 +34,21 @@ class DashboardPertumbuhanController extends Controller
       ];
     })->toArray();
 
+    //get latest usia balita
+    $lastUsia = $pertumbuhanRecords->last()?->usia ?? null;
+    // dd($lastUsia);
+
+    // get latest berat dan tb trkhir balita
+    $lastBbTb = $pertumbuhanRecords->last();
+
+    // get last status gizi stuntingnya
+    $lastRecord = $pertumbuhanRecords->last();
+    $status_stunting = $lastRecord && $lastRecord->z_score < -2 ? 'stunting' : 'normal';
+
     // gap 12 bulan trakhir
     $currentMonth = Carbon::now();
     $last12Months = [];
-    for ($i = 5; $i >= 0; $i--) { //ambil 6 dlu
+    for ($i = 12; $i >= 0; $i--) { //ambil 6 dlu
       $last12Months[] = $currentMonth->copy()->subMonths($i)->format('m/Y');
     }
 
@@ -47,6 +58,9 @@ class DashboardPertumbuhanController extends Controller
       'growthData',
       'last12Months',
       'pertumbuhanRecords',
+      'lastBbTb',
+      'status_stunting',
+      'lastUsia'
     ));
   }
 

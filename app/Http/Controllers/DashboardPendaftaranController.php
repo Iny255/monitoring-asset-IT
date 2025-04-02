@@ -83,7 +83,7 @@ class DashboardPendaftaranController extends Controller
 
     $validatedData = $request->validate([
       'nama_posyandu' => 'required|string|max:20',
-      'nik' => 'required|string|max:16|unique:pendaftarans,nik',
+      'nik' => 'required|digits:16|unique:pendaftarans,nik',
       'nama_balita' => 'required|string|max:100',
       'tempat_lahir' => 'required|string|max:20',
       'tanggal_lahir' => 'required|date_format:Y-m-d',
@@ -97,7 +97,13 @@ class DashboardPendaftaranController extends Controller
       'rt' => 'required|string|max:3',
       'rw' => 'required|string|max:3',
       'pekerjaan' => 'required|string|max:50',
+    ],
+      [
+        'nik.required' => 'NIK harus diisi.',
+        'nik.digits' => 'NIK harus terdiri dari 16 digit.',
+        'nik.unique' => 'NIK sudah terdaftar.',
     ]);
+    
 
     // Cari lokasi_id berdasarkan nama_posyandu
     $lokasi = Lokasi::where('nama_posyandu', $request->input('nama_posyandu'))->first();

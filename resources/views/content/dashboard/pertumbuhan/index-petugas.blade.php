@@ -228,6 +228,31 @@
                                         fontWeight: 'bold'
                                     }
                                 }
+                            },
+                            annotations: {
+                                yaxis: [{
+                                    y: -2,
+                                    borderColor: '#f54242',
+                                    label: {
+                                        text: 'Batas Stunting',
+                                        style: {
+                                            color: '#fff',
+                                            background: '#f54242'
+                                        },
+                                        position: 'right'
+                                    }
+                                }, {
+                                    y: 3,
+                                    borderColor: '#f54242',
+                                    label: {
+                                        text: 'Batas Normal',
+                                        style: {
+                                            color: '#fff',
+                                            background: '#f54242'
+                                        },
+                                        position: 'right'
+                                    }
+                                }]
                             }
                         };
 

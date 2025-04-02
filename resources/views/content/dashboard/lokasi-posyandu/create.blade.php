@@ -1,6 +1,6 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'create-jadwal')
+@section('title', 'create-location')
 
 @section('content')
 
@@ -36,18 +36,21 @@
                             <div class="card-body">
                                 <div class="mb-3">
                                     <label class="form-label" for="nama_posyandu">Nama Posyandu</label>
-                                    <select class="form-control" id="nama_posyandu" name="nama_posyandu">
+                                    <select class="form-control @error('nama_posyandu') is-invalid @enderror" id="nama_posyandu" name="nama_posyandu">
                                         <option value="">Pilih Nama Posyandu</option>
-                                        <option value="Kipas">Kipas</option>
-                                        <option value="Asyifa 1">Asyifa 1</option>
-                                        <option value="Asyifa 2">Asyifa 2</option>
-                                        <option value="Srikandi 1">Srikandi 1</option>
-                                        <option value="Srikandi 2">Srikandi 2</option>
-                                        <option value="Anggrek">Anggrek</option>
-                                        <option value="Melati Putih 1">Melati Putih 1</option>
-                                        <option value="Melati Putih 2">Melati Putih 2</option>
-                                        <option value="Pergiwati">Pergiwati</option>
+                                        <option value="Kipas" {{ old('nama_posyandu') == 'Kipas' ? 'selected' : '' }}>Kipas</option>
+                                        <option value="Asyifa 1" {{ old('nama_posyandu') == 'Asyifa 1' ? 'selected' : '' }}>Asyifa 1</option>
+                                        <option value="Asyifa 2" {{ old('nama_posyandu') == 'Asyifa 2' ? 'selected' : '' }}>Asyifa 2</option>
+                                        <option value="Srikandi 1" {{ old('nama_posyandu') == 'Srikandi 1' ? 'selected' : '' }}>Srikandi 1</option>
+                                        <option value="Srikandi 2" {{ old('nama_posyandu') == 'Srikandi 2' ? 'selected' : '' }}>Srikandi 2</option>
+                                        <option value="Anggrek" {{ old('nama_posyandu') == 'Anggrek' ? 'selected' : '' }}>Anggrek</option>
+                                        <option value="Melati Putih 1" {{ old('nama_posyandu') == 'Melati Putih 1' ? 'selected' : '' }}>Melati Putih 1</option>
+                                        <option value="Melati Putih 2" {{ old('nama_posyandu') == 'Melati Putih 2' ? 'selected' : '' }}>Melati Putih 2</option>
+                                        <option value="Pergiwati" {{ old('nama_posyandu') == 'Pergiwati' ? 'selected' : '' }}>Pergiwati</option>
                                     </select>
+                                    @error('nama_posyandu')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label" for="dukuh">Dukuh</label>

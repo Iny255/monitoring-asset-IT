@@ -96,7 +96,7 @@
                     horizontalAlign: 'center'
                 },
                 title: {
-                    text: 'Kasus Stunting Cendono 2024'
+                    text: 'Kasus Stunting Balita Cendono'
                 }
             };
 
