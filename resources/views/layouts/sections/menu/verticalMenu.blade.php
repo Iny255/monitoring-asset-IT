@@ -1,46 +1,63 @@
-
-    <style>
-        /* Wrapper logo di sidebar */
-.app-brand-logo-wrapper {
-    display: flex;
-    justify-content: center; /* Pusatkan secara horizontal */
-    align-items: center;    /* Pusatkan secara vertikal */
-    width: 100%;            /* Sesuaikan lebar dengan kontainer */
-    height: 100%;           /* Biarkan tinggi sesuai dengan kontainer */
-    overflow: hidden;       /* Hindari elemen keluar kontainer */
-    padding: 0;             /* Hilangkan padding jika perlu */
-    box-sizing: border-box; /* Perbaiki hitungan dimensi */
-}
-
-/* Gambar logo */
-.logo-posyandu {
-    max-width: 100%;         /* Sesuaikan lebar logo dengan kontainer */
-    max-height: 100%;        /* Sesuaikan tinggi logo dengan kontainer */
-    object-fit: contain;     /* Jaga proporsi asli logo */
-    margin: 0;               /* Hindari margin tambahan */
-}
-
-/* Sidebar layout */
-aside.layout-menu {
-    width: 267px;            /* Lebar sidebar */
-    background-color: #ffffff; /* Tambahkan warna putih jika perlu */
-    min-height: 100vh;       /* Tinggi penuh viewport */
-    overflow-y: auto;        /* Gulir jika konten terlalu panjang */
-}
-
-/* Responsif untuk perangkat kecil */
-@media (max-width: 768px) {
+<style>
+    /* Wrapper logo di sidebar */
     .app-brand-logo-wrapper {
-        height: 80px;       /* Sesuaikan tinggi untuk layar kecil */
+        display: flex;
+        justify-content: center;
+        /* Pusatkan secara horizontal */
+        align-items: center;
+        /* Pusatkan secara vertikal */
+        width: 100%;
+        /* Sesuaikan lebar dengan kontainer */
+        height: 100%;
+        /* Biarkan tinggi sesuai dengan kontainer */
+        overflow: hidden;
+        /* Hindari elemen keluar kontainer */
+        padding: 0;
+        /* Hilangkan padding jika perlu */
+        box-sizing: border-box;
+        /* Perbaiki hitungan dimensi */
     }
-    .logo-posyandu {
-        max-height: 80px;   /* Batasi tinggi maksimum logo */
-        max-width: 80%;     /* Batasi lebar logo */
-    }
-}
 
-    </style>
-    
+    /* Gambar logo */
+    .logo-posyandu {
+        max-width: 100%;
+        /* Sesuaikan lebar logo dengan kontainer */
+        max-height: 100%;
+        /* Sesuaikan tinggi logo dengan kontainer */
+        object-fit: contain;
+        /* Jaga proporsi asli logo */
+        margin: 0;
+        /* Hindari margin tambahan */
+    }
+
+    /* Sidebar layout */
+    aside.layout-menu {
+        width: 267px;
+        /* Lebar sidebar */
+        background-color: #ffffff;
+        /* Tambahkan warna putih jika perlu */
+        min-height: 100vh;
+        /* Tinggi penuh viewport */
+        overflow-y: auto;
+        /* Gulir jika konten terlalu panjang */
+    }
+
+    /* Responsif untuk perangkat kecil */
+    @media (max-width: 768px) {
+        .app-brand-logo-wrapper {
+            height: 80px;
+            /* Sesuaikan tinggi untuk layar kecil */
+        }
+
+        .logo-posyandu {
+            max-height: 80px;
+            /* Batasi tinggi maksimum logo */
+            max-width: 80%;
+            /* Batasi lebar logo */
+        }
+    }
+</style>
+
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet"
@@ -48,11 +65,11 @@ aside.layout-menu {
 
     <!-- Logo Posyandu -->
     <div class="app-brand demo">
-        <a href="{{ url('/') }}" class="app-brand-link">
-            <div class="app-brand-logo-wrapper">
-                <img src="{{ asset('assets/img/Landing/logoposyandu.png') }}" alt="Posyandu Logo" class="logo-posyandu">
-            </div>
-              
+        <!-- <a href="{{ url('/') }}" class="app-brand-link"> -->
+        <div class="app-brand-logo-wrapper">
+            <img src="{{ asset('assets/img/logo-9.png') }}" alt="Sembilan Logo" class="logo-sembilan" width=150>
+        </div>
+
 
         </a>
         <a href="javascript:void(0);" class="layout-menu-toggle menu-link text-large ms-auto d-block d-xl-none">
@@ -66,27 +83,43 @@ aside.layout-menu {
         @foreach ($menuData[0]->menu as $menu)
             @if (in_array(Auth::user()->role, $menu->roles))
                 @php
-                    $activeClass = null;
+                    $activeClass = '';
                     $isMenuActive = false;
-                    $currentRouteName = Route::currentRouteName();
 
-                    if ($currentRouteName === $menu->slug) {
-                        $activeClass = 'active';
+                    $currentRoute = request()->route() ? request()->route()->getName() : null;
+                    $currentUrl = request()->path();
+
+                    // ==== CEK MENU UTAMA ====
+                    if (!empty($menu->slug) && $currentRoute && str_starts_with($currentRoute, $menu->slug)) {
                         $isMenuActive = true;
-                    } elseif (isset($menu->submenu)) {
+                    } elseif (isset($menu->url) && str_starts_with($currentUrl, trim($menu->url, '/'))) {
+                        $isMenuActive = true;
+                    }
+
+                    // ==== CEK SUBMENU ====
+                    if (isset($menu->submenu)) {
                         foreach ($menu->submenu as $submenu) {
-                            if (isset($submenu->slug)) {
-                                if ($currentRouteName === $submenu->slug) {
-                                    $isMenuActive = true;
-                                    break;
-                                }
+                            if (
+                                !empty($submenu->slug) &&
+                                $currentRoute &&
+                                str_starts_with($currentRoute, $submenu->slug)
+                            ) {
+                                $isMenuActive = true;
+                                break;
+                            }
+
+                            if (isset($submenu->url) && str_starts_with($currentUrl, trim($submenu->url, '/'))) {
+                                $isMenuActive = true;
+                                break;
                             }
                         }
-                        if ($isMenuActive) {
-                            $activeClass = 'active open';
-                        }
+                    }
+
+                    if ($isMenuActive) {
+                        $activeClass = isset($menu->submenu) ? 'active open' : 'active';
                     }
                 @endphp
+
 
                 <li class="menu-item {{ $activeClass }}">
                     <a href="{{ isset($menu->url) ? url($menu->url) : 'javascript:void(0);' }}"

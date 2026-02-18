@@ -44,6 +44,14 @@
                                     @enderror
                                 </div>
                                 <div class="mb-3">
+                                    <label class="form-label" for="name">Nama</label>
+                                    <input type="text" id="name" name="name" class="form-control"
+                                        value="{{ old('name', $user->name) }}">
+                                    @error('name')
+                                        <div class="alert alert-danger">{{ $message }}</div>
+                                    @enderror
+                                </div>
+                                <div class="mb-3">
                                     <label class="form-label" for="email">Email</label>
                                     <input type="text" id="email" name="email" class="form-control"
                                         value="{{ old('email', $user->email) }}">

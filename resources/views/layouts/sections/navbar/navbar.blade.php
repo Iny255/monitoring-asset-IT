@@ -37,7 +37,7 @@ $navbarDetached = ($navbarDetached ?? '');
         <div class="navbar-nav align-items-center">
   <div class="nav-item d-flex align-items-center">
     <i class="bx bx-search fs-4 lh-0" style="display: none;"></i> <!-- Hide the search icon if not needed -->
-    <span class="fs-4 lh-0 ps-1 ps-sm-2">Monitoring Posyandu Cendono</span> <!-- Add the static text here -->
+    <span class="fs-4 lh-0 ps-1 ps-sm-2">Monitoring Asset Sembilan</span> <!-- Add the static text here -->
   </div>
 </div>
 
@@ -66,7 +66,7 @@ $navbarDetached = ($navbarDetached ?? '');
                       </div>
                     </div>
                     <div class="flex-grow-1">
-                      <span class="fw-medium d-block">{{  auth()->user()->username}}</span>
+                      <span class="fw-medium d-block">{{  auth()->user()->name}}</span>
                       {{-- <small class="text-muted">Admin</small> --}}
                     </div>
                   </div>

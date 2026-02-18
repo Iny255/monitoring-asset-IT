@@ -27,6 +27,10 @@
                     <label class="form-label" for="username">Username</label>
                     <p>{{ $user->username }}</p>
                 </div>
+                 <div class="mb-3">
+                    <label class="form-label" for="name">Username</label>
+                    <p>{{ $user->name }}</p>
+                </div>
                 <div class="mb-3">
                     <label class="form-label" for="email">Email</label>
                     <p>{{ $user->email }}</p>

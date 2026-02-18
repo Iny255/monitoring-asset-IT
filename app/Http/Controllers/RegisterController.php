@@ -20,19 +20,17 @@ class RegisterController extends Controller
         $validateData = $request->validate([
             'username' => ['required', 'min:3', 'max:100', 'unique:users'],
             'email' => 'required|email:dns|unique:users',
-            'password' => 'required|min:5|max:100'
+            'password' => 'required|min:5|max:100',
+            'role' => 'required|in:petugas,manager',
         ]);
 
-        // Hash the password before storing it
+        // Hash password
         $validateData['password'] = Hash::make($validateData['password']);
 
-        // Create the user
+        // Create user
         User::create($validateData);
 
-        // Flash a success message to the session
-        $request->session()->flash('success', 'Registration successful! Please login.');
-
-        // Redirect to the login page
-        return redirect('/login');
+        // Redirect + flash message
+        return redirect('/login')->with('success', 'Registration successful! Please login.');
     }
 }

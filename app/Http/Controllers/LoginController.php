@@ -15,34 +15,30 @@ class LoginController extends Controller
     ]);
   }
   public function authenticate(Request $request)
-  {
+{
     $credentials = $request->validate([
-      'email' => 'required|email:dns',
-      'password' => 'required'
+        'username' => 'required',
+        'password' => 'required'
     ]);
 
-    // if(Auth::attempt($credentials)){
-    //     $request->session()->regenerate();
-    //     return redirect()->intended('/dashboard');
-    // }
-
     if (Auth::attempt($credentials)) {
-      $request->session()->regenerate();
+        $request->session()->regenerate();
 
-      $user = Auth::user();
+        $user = Auth::user();
 
-      if ($user->role === 'ortu') {
-        return redirect()->intended('/dashboard/ortu');
-      } elseif ($user->role === 'petugas') {
-        return redirect()->intended('/dashboard/petugas');
-      } elseif ($user->role === 'kades') {
-        return redirect()->intended('/dashboard/kades');
-      }
-
-      return redirect()->intended('/dashboard');
+        switch ($user->role) {
+            case 'manager':
+                return redirect('/dashboard/manager');
+            case 'petugas':
+                return redirect('/dashboard/petugas');
+            default:
+                Auth::logout();
+                return redirect('/login')->with('loginError', 'Role tidak dikenali.');
+        }
     }
-    return back()->with('loginError', 'Login failed!');
-  }
+
+    return back()->with('loginError', 'Email atau password salah.');
+}
   public function logout(Request $request)
   {
     Auth::logout();

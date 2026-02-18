@@ -8,7 +8,7 @@
     <meta name="viewport"
         content="width=device-width, initial-scale=1.0, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" />
 
-    <title>@yield('title') | Posyandu Cendono </title>
+    <title>@yield('title') | Monitoring Sembilan </title>
     <meta name="description"
         content="{{ config('variables.templateDescription') ? config('variables.templateDescription') : '' }}" />
     <meta name="keywords"
@@ -18,7 +18,7 @@
     <!-- Canonical SEO -->
     <link rel="canonical" href="{{ config('variables.productPage') ? config('variables.productPage') : '' }}">
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/Landing/logoposyandu.png') }}" />
+    <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/logo-9.png') }}" />
 
 
 
@@ -42,6 +42,7 @@
     @include('layouts/sections/scripts')
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+ @yield('scripts')
 
     <style>
         .swal2-container {

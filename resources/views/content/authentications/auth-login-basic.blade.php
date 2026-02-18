@@ -36,20 +36,21 @@
           <div class="app-brand justify-content-center">
             <a href="{{ url('/login') }}" class="app-brand-link gap-2">
               <span class="app-brand-logo demo">
-                <img src="{{ asset('assets/img/Landing/bgposyandu.png') }}" width="100" alt="Logo">
+                <img src="{{ asset('assets/img/logo-9.png') }}" width="150" alt="Logo">
               </span>
             </a>
           </div>
           <!-- /Logo -->
           <h3 class="mb-2 text-center">Login Akun </h3>
-          <h4 class="mb-2 text-center">Monitoring Posyandu Cendono</h4>
+          <h4 class="mb-2 text-center">Monitoring Asset Sembilan</h4>
 
           <form id="formAuthentication" class="mb-3" action="{{ url('/login') }}" method="post">
             @csrf
             <div class="mb-3">
-              <label for="email" class="form-label">Email</label>
-              <input type="email" class="form-control @error('email') is-invalid @enderror" id="email" name="email" placeholder="Enter your email" required value="{{ old('email') }}">
-              @error('email')
+              <label for="username" class="form-label">Username</label>
+              <input type="username" class="form-control @error('username') is-invalid @enderror" id="username" 
+              name="username" placeholder="Enter your username" required value="{{ old('username') }}">
+              @error('username')
               <div class="invalid-feedback">
                 {{ $message }}
               </div>
@@ -72,13 +73,6 @@
             </div>
             <p class="mb-4 small-paragraph">Silahkan login </p>
           </form>
-
-          <p class="text-center">
-            <span>Belum punya akun?</span>
-            <a href="{{ url('/register') }}">
-              <span>Silahkan Daftar</span>
-            </a>
-          </p>
         </div>
       </div>
       <!-- /Register -->

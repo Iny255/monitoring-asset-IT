@@ -19,12 +19,12 @@ class User extends Authenticatable
      */
 
     const ROLE_PETUGAS = 'petugas';
-    const ROLE_BIDAN = 'bidan';
-    const ROLE_ORTU = 'ortu';
-    const ROLE_KADES = 'kades';
+    const ROLE_MANAGER = 'manager';
+
 
     protected $fillable = [
         'username',
+        'name',
         'email',
         'password',
         'role',
@@ -52,21 +52,16 @@ class User extends Authenticatable
 
    public function scopePetugasOrParticipant($query)
     {
-        return $query->whereIn('role', ['petugas', 'ortu', 'bidan', 'kades']);
+        return $query->whereIn('role', ['petugas', 'manager']);
     }
 
     public function getDashboardUrl()
 {
-    switch ($this->role) {
-        case 'ortu':
-            return '/dashboard/ortu';
-        case 'petugas':
-            return '/dashboard/petugas';
-        case 'kades':
-            return '/dashboard/kades';
-        default:
-            return '/dashboard';
-    }
+    return match ($this->role) {
+        'manager' => '/dashboard/manager',
+        'petugas' => '/dashboard/petugas',
+        default => '/login'
+    };
 }
     
 }

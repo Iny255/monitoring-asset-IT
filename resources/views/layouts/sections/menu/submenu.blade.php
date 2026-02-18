@@ -3,28 +3,19 @@
         @foreach ($menu as $submenu)
             {{-- Determine if current submenu is active --}}
             @php
-                $isActive = false;
-                $currentRouteName = Route::currentRouteName();
+                $currentRoute = request()->route() ? request()->route()->getName() : null;
+                $currentUrl = request()->path();
 
-                if ($currentRouteName === $submenu->slug) {
+                $isActive = false;
+
+                if (!empty($submenu->slug) && $currentRoute && str_starts_with($currentRoute, $submenu->slug)) {
                     $isActive = true;
-                } elseif (isset($submenu->submenu)) {
-                    if (is_array($submenu->slug)) {
-                        foreach ($submenu->slug as $slug) {
-                            if (str_contains($currentRouteName, $slug) && strpos($currentRouteName, $slug) === 0) {
-                                $isActive = true;
-                            }
-                        }
-                    } else {
-                        if (
-                            str_contains($currentRouteName, $submenu->slug) &&
-                            strpos($currentRouteName, $submenu->slug) === 0
-                        ) {
-                            $isActive = true;
-                        }
-                    }
+                } elseif (isset($submenu->url) && str_starts_with($currentUrl, trim($submenu->url, '/'))) {
+                    $isActive = true;
                 }
             @endphp
+
+
 
             {{-- Submenu item --}}
             <li class="menu-item {{ $isActive ? 'active' : '' }}">
@@ -48,28 +39,3 @@
         @endforeach
     @endif
 </ul>
-
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const menuItems = document.querySelectorAll('.menu-item');
-
-        menuItems.forEach(item => {
-            item.addEventListener('click', function() {
-                // Hapus kelas active dari semua item menu
-                menuItems.forEach(menu => menu.classList.remove('active'));
-
-                // Tambahkan kelas active ke item yang diklik
-                item.classList.add('active');
-            });
-        });
-
-        // Periksa URL saat ini dan atur kelas active pada item menu yang sesuai
-        const currentUrl = window.location.href;
-        menuItems.forEach(item => {
-            if (item.querySelector('a').href === currentUrl) {
-                item.classList.add('active');
-            }
-        });
-    });
-</script>

@@ -5,7 +5,7 @@
     @include('_partials.header')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Posyandu Desa Cendono | {{ $title ?? 'Default Title' }}</title>
+    <title>Monitoring Sembilan | {{ $title ?? 'Default Title' }}</title>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
 
 

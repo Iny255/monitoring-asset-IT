@@ -1,0 +1,61 @@
+.autocomplete-box {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-top: none;
+    z-index: 9999;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.06);
+    overflow: hidden;
+}
+
+/* TABLE STYLE */
+.autocomplete-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.autocomplete-table thead {
+    background: #f4f6fb;
+}
+
+.autocomplete-table th {
+    text-align: left;
+    padding: 8px 10px;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.autocomplete-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.autocomplete-row {
+    cursor: pointer;
+    transition: 0.15s;
+}
+
+.autocomplete-row:hover {
+    background: #eef2ff;
+}
+
+/* SCROLL */
+.autocomplete-body {
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+.autocomplete-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.autocomplete-body::-webkit-scrollbar-thumb {
+    background: #d1d5db;
+    border-radius: 10px;
+}

@@ -1,23 +1,23 @@
-// public/js/menu.js
-
 document.addEventListener('DOMContentLoaded', function () {
-  const menuItems = document.querySelectorAll('.menu-item');
+    const menuItems = document.querySelectorAll('.menu-item');
+    const currentUrl = window.location.pathname; // ambil path saja
 
-  menuItems.forEach(item => {
-    item.addEventListener('click', function () {
-      // Hapus kelas aktif dari semua item menu
-      menuItems.forEach(menu => menu.classList.remove('active'));
+    menuItems.forEach(item => {
+        const link = item.querySelector('a');
+        if (!link) return;
 
-      // Tambahkan kelas aktif ke item yang diklik
-      item.classList.add('active');
+        const menuUrl = new URL(link.href).pathname;
+
+        // Cek apakah URL sekarang diawali oleh URL menu
+        if (currentUrl.startsWith(menuUrl)) {
+            item.classList.add('active');
+
+            // Aktifkan parent jika submenu
+            let parent = item.closest('.menu-sub');
+            if (parent) {
+                const parentMenu = parent.closest('.menu-item');
+                if (parentMenu) parentMenu.classList.add('active');
+            }
+        }
     });
-  });
-
-  // Check the current URL and set the active class on the appropriate menu item
-  const currentUrl = window.location.href;
-  menuItems.forEach(item => {
-    if (item.querySelector('a').href === currentUrl) {
-      item.classList.add('active');
-    }
-  });
 });

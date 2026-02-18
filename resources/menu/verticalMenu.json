@@ -1,134 +1,138 @@
 {
   "menu": [
     {
-      "url": "dashboard/kades",
+      "url": "dashboard/manager",
       "name": "Dashboard",
       "icon": "menu-icon tf-icons bi bi-house-door",
-      "slug": "dashboard",
-      "roles": [
-        "kades"
+      "slug": "dashboard-manager",
+      "roles": ["manager"]
+    },
+    {
+      "name": "Laporan",
+      "icon": "menu-icon tf-icons bi bi-file-earmark-text",
+      "slug": "laporan-manager",
+      "roles": ["manager"],
+      "submenu": [
+        {
+          "url": "manager/laporan/stok",
+          "name": "Laporan Stok",
+          "icon": "menu-icon tf-icons bi bi-box-seam",
+          "slug": "laporan-stok"
+        },
+        {
+          "url": "manager/laporan/masuk",
+          "name": "Aset Masuk",
+          "icon": "menu-icon tf-icons bi bi-box-arrow-in-down",
+          "slug": "laporan-masuk"
+        },
+        {
+          "url": "manager/laporan/keluar",
+          "name": "Aset Keluar",
+          "icon": "menu-icon tf-icons bi bi-box-arrow-up",
+          "slug": "laporan-keluar"
+        },
+        {
+          "url": "manager/laporan/peminjaman",
+          "name": "Peminjaman",
+          "icon": "menu-icon tf-icons bi bi-clipboard-check",
+          "slug": "laporan-peminjaman"
+        }
+        
       ]
     },
+  
     {
       "url": "dashboard/petugas",
       "name": "Dashboard",
       "icon": "menu-icon tf-icons bi bi-house-door",
-      "slug": "dashboard",
-      "roles": [
-        "petugas"
-      ]
-    },
-    {
-      "url": "dashboard/ortu",
-      "name": "Dashboard",
-      "icon": "menu-icon tf-icons bi bi-house-door",
-      "slug": "dashboard",
-      "roles": [
-        "ortu"
-      ]
+      "slug": "dashboard-petugas",
+      "roles": ["petugas"]
     },
     {
       "url": "dashboard/user",
-      "name": "User",
-      "icon": "menu-icon tf-icons bi bi-people-fill",
-      "slug": "dashboard-user",
-      "roles": [
-        "petugas"
-      ]
+      "name": "Users",
+      "icon": "menu-icon tf-icons bi bi-people",
+      "slug": "user",
+      "roles": ["petugas"]
     },
     {
-      "url": "dashboard/lokasi-posyandu",
-      "name": "Lokasi Posyandu",
-      "icon": "menu-icon tf-icons bi bi-calendar-event",
-      "slug": "dashboard-lokasi-posyandu",
-      "roles": [
-        "petugas"
-      ]
-    },
-    {
-      "url": "dashboard/pendaftaran",
-      "name": "Pendaftaran",
-      "icon": "menu-icon tf-icons bi bi-person-lines-fill",
-      "slug": "dashboard-pendaftaran",
-      "roles": [
-        "petugas",
-        "ortu"
-      ]
-    },
-    {
-      "name": "Anthropometri",
-      "icon": "menu-icon tf-icons bi bi-clipboard-plus",
-      "slug": "dashboard/anthropometri",
+      "name": "Master Data",
+      "icon": "menu-icon tf-icons bi bi-database",
+      "slug": "master-data",
+      "roles": ["petugas"],
       "submenu": [
         {
-          "url": "dashboard/anthropometri/laki-laki",
-          "name": "Data Laki-Laki",
-          "slug": "anthropometri.indexLakiLaki"
+          "url": "dashboard/kategori",
+          "name": "Kategori Barang",
+          "icon": "menu-icon tf-icons bi bi-tags",
+          "slug": "dashboard-kategori"
         },
         {
-          "url": "dashboard/anthropometri/perempuan",
-          "name": "Data Perempuan",
-          "slug": "anthropometri.indexPerempuan"
+          "url": "dashboard/karyawan",
+          "name": "Karyawan",
+          "icon": "menu-icon tf-icons bi bi-people",
+          "slug": "dashboard-karyawan"
+        },
+        {
+          "url": "dashboard/perusahaan",
+          "name": "Perusahaan",
+          "icon": "menu-icon tf-icons bi bi-building",
+          "slug": "dashboard-perusahaan"
+        },
+        {
+          "url": "dashboard/lokasi",
+          "name": "Lokasi Barang",
+          "icon": "menu-icon tf-icons bi bi-geo-alt",
+          "slug": "dashboard-lokasi"
         }
-      ],
-      "roles": [
-        "petugas"
       ]
     },
     {
-      "name": "Analisis Gizi",
-      "icon": "menu-icon tf-icons bi bi-clipboard-data",
-      "slug": "dashboard-analisis",
+      "name": "Transaksi",
+      "icon": "menu-icon tf-icons bi bi-arrow-left-right",
+      "slug": "transaksi",
+      "roles": ["petugas"],
       "submenu": [
         {
-          "url": "dashboard/analisis/batas-laki",
-          "name": "Ambang Batas Laki-Laki",
-          "slug": "dashbboard/analisis/batas-laki"
+          "url": "dashboard/transaksi-masuk",
+          "name": "Barang Masuk",
+          "icon": "menu-icon tf-icons bi bi-box-arrow-in-down",
+          "slug": "dashboard-transaksi-masuk"
         },
         {
-          "url": "dashboard/analisis/batas-perempuan",
-          "name": "Ambang Batas Perempuan",
-          "slug": "dashboard-analisis/batas-perempuan"
-        },
-        {
-          "url": "dashboard/analisis/hitung-laki",
-          "name": "Hitung Gizi Laki-Laki",
-          "slug": "dashboard-analisis/hitung-laki"
-        },
-        {
-          "url": "analisis/hitung-perempuan",
-          "name": "Hitung Perempuan",
-          "slug": "analisis-hitung-perempuan"
+          "url": "dashboard/transaksi-keluar",
+          "name": "Barang Keluar",
+          "icon": "menu-icon tf-icons bi bi-box-arrow-up",
+          "slug": "dashboard-transaksi-keluar"
         }
-      ],
-      "roles": [
-        "bidan"
       ]
     },
     {
-      "url": "dashboard/pertumbuhan",
-      "name": "Pertumbuhan",
-      "icon": "menu-icon tf-icons bi bi-graph-up",
-      "slug": "dashboard-pertumbuhan",
-      "roles": [
-        "ortu"
-      ]
+      "url": "dashboard/maping",
+      "name": "Maping",
+      "icon": "menu-icon tf-icons bi bi-diagram-3",
+      "slug": "dashboard-maping",
+      "roles": ["petugas"]
     },
     {
-      "url": "dashboard/laporan",
-      "name": "Laporan",
-      "icon": "menu-icon tf-icons bi bi-journal-check",
-      "slug": "dashboard/laporan",
+      "url": "dashboard/peminjaman",
+      "name": "Peminjaman Barang",
+      "icon": "menu-icon tf-icons bi bi-clipboard-check",
+      "slug": "dashboard-peminjaman",
+      "roles": ["petugas"]
+    },
+    {
+      "name": "History",
+      "icon": "menu-icon tf-icons bi bi-journal-text",
+      "slug": "dashboard-history",
+      "roles": ["manager", "petugas"],
       "submenu": [
         {
-          "url": "dashboard/laporan/pendaftar-posyandu",
-          "name": "Laporan Posyandu",
-          "slug": "laporan.pendaftar"
+          "url": "dashboard/history/mutasi",
+          "name": "Mutasi",
+          "icon": "menu-icon tf-icons bi bi-clock-history",
+          "slug": "history-mutasi"
         }
-      ],
-      "roles": [
-        "kades",
-        "petugas"
       ]
     }
   ]

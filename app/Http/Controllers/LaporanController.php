@@ -2,101 +2,185 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
-use App\Models\Lokasi;
-use Illuminate\View\View;
-use App\Models\Pendaftaran;
 use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade\Pdf;
-use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\PendaftarExcelExport;
+use App\Models\Masuk;
+use App\Models\Keluar;
+use App\Models\Peminjaman;
+use Illuminate\Support\Facades\DB;
 
 class LaporanController extends Controller
 {
-  function laporanPendaftarPosyandu(Request $request): View
-  {
-    $search = $request->input('search');
-    $filterPosyandu = $request->input('filter_posyandu');
 
-    $pendaftarans = Pendaftaran::latest();
+    public function stok(Request $request)
+    {
+        $query = \App\Models\Masuk::with('kategori');
 
-    //$pendaftarans = Pendaftaran::with('anthropometri')->latest()->get();
-    //  dd($pendaftarans);
+        if ($request->search) {
+            $query->whereHas('kategori', function ($q) use ($request) {
+                $q->where('nama_barang', 'like', '%' . $request->search . '%');
+            });
+        }
 
-    if ($search) {
-      $pendaftarans = $pendaftarans->where(function ($query) use ($search) {
-        $query->where('nama_balita', 'like', '%' . $search . '%')
-          ->orWhere('nik', 'like', '%' . $search . '%');
-      });
+        $stoks = $query->get()->groupBy(function ($item) {
+            return $item->kategori->nama_barang . '|' . $item->type . '|' . $item->merek;
+        })->map(function ($items) {
+            return (object)[
+                'kategori' => $items->first()->kategori,
+                'type' => $items->first()->type,
+                'merek' => $items->first()->merek,
+                'stok' => $items->sum('jumlah')
+            ];
+        })->values();
+
+        return view('content.dashboard.transaksi-masuk.stok', compact('stoks'));
+    }
+    public function cetakStok(Request $request)
+    {
+        $stoks = Masuk::with('kategori')
+            ->when($request->search, function ($query) use ($request) {
+                $query->whereHas('kategori', function ($q) use ($request) {
+                    $q->where('nama_barang', 'like', '%' . $request->search . '%');
+                });
+            })
+            ->select(
+                'id_kategori',
+                'type',
+                'merek',
+                DB::raw('SUM(jumlah) as stok')
+            )
+            ->groupBy('id_kategori', 'type', 'merek')
+            ->orderBy('stok', 'desc')
+            ->get();
+
+        return view('content.manager.laporan.cetak-stok', compact('stoks'));
     }
 
-    if ($filterPosyandu) {
-      $pendaftarans = $pendaftarans->whereHas('lokasi', function ($query) use ($filterPosyandu) {
-        $query->where('nama_posyandu', $filterPosyandu);
-      });
+    public function laporanMasuk(Request $request)
+    {
+        $query = Masuk::with('kategori')->latest();
+
+        // SEARCH
+        if ($request->search) {
+            $query->whereHas('kategori', function ($q) use ($request) {
+                $q->where('nama_barang', 'like', '%' . $request->search . '%');
+            });
+        }
+
+        $masuks = $query->paginate(7)->appends($request->query());
+
+        return view('content.dashboard.transaksi-masuk.index', compact('masuks'));
     }
 
-    // Pagination
-    $pendaftarans = $pendaftarans->paginate(7);
+    public function show($id)
+    {
+        $masuk = Masuk::with('kategori')->findOrFail($id);
 
-    $posyandu = Lokasi::all();
+        return view('content.dashboard.transaksi-masuk.show', compact('masuk'));
+    }
 
-    return view('content.dashboard.laporan.pendaftar-posyandu', compact('pendaftarans', 'posyandu'));
-  }
+    public function laporanKeluar(Request $request)
+    {
+        $query = Keluar::with([
+            'masuk.kategori',
+            'karyawan'
+        ]);
 
-  function exportExcel(Request $request)
-  {
-    $startDate = $request->input('start_date');
-    $endDate = $request->input('end_date');
+        if ($request->search) {
+            $search = $request->search;
 
-    return Excel::download(new PendaftarExcelExport($startDate, $endDate), 'laporan_pendaftar_posyandu.xlsx');
-  }
+            $query->where(function ($q) use ($search) {
 
-  // Method for PDF EXPORT
-  protected $month;
+                // ===== KOLOM DI TABEL KELUAR =====
+                $q->where('kode_keluar', 'like', "%$search%")
+                    ->orWhere('kode_barang', 'like', "%$search%")
+                    ->orWhere('warna', 'like', "%$search%");
 
-  public function __construct(Request $request)
-  {
-    $this->month = $request->query('month');
-  }
+                // ===== RELASI MASUK =====
+                $q->orWhereHas('masuk', function ($m) use ($search) {
+                    $m->where('kode_masuk', 'like', "%$search%")
+                        ->orWhere('type', 'like', "%$search%")
+                        ->orWhere('merek', 'like', "%$search%");
+                });
 
-  public function exportPdf()
-  {
-    [$year, $month] = explode('-', $this->month);
-    // dd($month);
+                // ===== RELASI KATEGORI =====
+                $q->orWhereHas('masuk.kategori', function ($k) use ($search) {
+                    $k->where('nama_barang', 'like', "%$search%");
+                });
 
-    // get query data based bulan & tahun pada tabel pertumbuhans
-    $pendaftarans = Pendaftaran::join('pertumbuhans', function ($join) use ($month, $year) {
-      $join->on('pendaftarans.id', '=', 'pertumbuhans.pendaftaran_id')
-        ->where('pertumbuhans.bulan', $month) // filter kolom bulan
-        ->where('pertumbuhans.tahun', $year) // filter kolom tahun
-      ;
-    })
-      ->select(
-        'pendaftarans.*',
-        'pertumbuhans.berat_badan',
-        'pertumbuhans.tinggi_badan',
-        'pertumbuhans.z_score',
-        'pertumbuhans.usia',
-        'pertumbuhans.status_gizi',
-        'pertumbuhans.created_at as latest_pertumbuhan'
-      )
-      ->orderBy('latest_pertumbuhan', 'desc')
-      ->get();
+                // ===== RELASI KARYAWAN =====
+                $q->orWhereHas('karyawan', function ($k) use ($search) {
+                    $k->where('nama_karyawan', 'like', "%$search%")
+                        ->orWhere('divisi', 'like', "%$search%")
+                        ->orWhere('perusahaan', 'like', "%$search%");
+                });
+            });
+        }
 
-    $formattedMonth = Carbon::createFromDate($year, $month, 1)->format('F Y');
-    $infoCetak = Carbon::now('Asia/Jakarta')->format('d/m/Y, h:i:s');
+        $keluars = $query->orderByDesc('id')
+            ->paginate(7)
+            ->appends($request->query());
 
-    $tglSignature = Carbon::now('Asia/Jakarta')->format('d F Y');
+        return view('content.dashboard.transaksi-keluar.index', compact('keluars'));
+    }
 
-    $pdf = Pdf::loadView('content.dashboard.laporan.pendaftaran-pdf', [
-      'pendaftarans' => $pendaftarans,
-      'month' => $formattedMonth,
-      'infoCetak' => $infoCetak,
-      'tglSignature' => $tglSignature
-    ])
-      ->setPaper('a4', 'landscape');
+    public function showKeluar($id)
+    {
+        $keluar = Keluar::with([
+            'masuk.kategori',
+            'karyawan'
+        ])->findOrFail($id);
 
-    return $pdf->download('laporan_posyandu_' . $this->month . '.pdf');
-  }
+        return view('content.dashboard.transaksi-keluar.show', compact('keluar'));
+    }
+
+    public function laporanPeminjaman(Request $request)
+    {
+        $query = Peminjaman::with([
+            'karyawan',
+            'kategori',
+            'keluar.masuk.kategori',
+            'perusahaan',
+            'lokasi'
+        ]);
+
+        // ================= SEARCH =================
+        if ($request->search) {
+            $search = $request->search;
+
+            $query->where(function ($q) use ($search) {
+
+                // Cari KODE BARANG (dari tabel keluar)
+                $q->whereHas('keluar', function ($k) use ($search) {
+                    $k->where('kode_barang', 'like', "%{$search}%");
+                })
+
+                    // Cari NAMA BARANG (dari kategori lewat masuk)
+                    ->orWhereHas('keluar.masuk.kategori', function ($k) use ($search) {
+                        $k->where('nama_barang', 'like', "%{$search}%");
+                    })
+
+                    // Cari NAMA KARYAWAN
+                    ->orWhereHas('karyawan', function ($k) use ($search) {
+                        $k->where('nama_karyawan', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $peminjamans = $query->latest()->paginate(7)->appends($request->query());
+
+        return view('content.dashboard.peminjaman.index', compact('peminjamans'));
+    }
+
+     public function showPeminjaman($id)
+    {
+         $peminjaman = Peminjaman::with([
+            'karyawan',
+            'kategori',
+            'keluar.masuk.kategori',
+            'perusahaan',
+            'lokasi'
+        ])->findOrFail($id);
+
+        return view('content.dashboard.peminjaman.show', compact('peminjaman'));
+    }
 }

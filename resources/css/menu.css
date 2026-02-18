@@ -1,9 +1,15 @@
-.menu-item {
-  padding: 10px; /* Contoh padding */
-  cursor: pointer;
+.menu-item.active > a {
+  background-color: #007bff;
+  color: #fff !important;
+  border-radius: 6px;
 }
 
-.menu-item.active {
-  background-color: #007bff; /* Warna biru */
-  color: white; /* Warna teks menjadi putih */
+.menu-item.active > a i {
+  color: #fff !important;
+}
+
+/* Parent submenu tetap aktif */
+.menu-item.active.menu-open > a {
+  background-color: #007bff;
+  color: #fff !important;
 }
