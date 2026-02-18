@@ -37,7 +37,7 @@ class DashboardPetugasController extends Controller
 
 
         $totalHp = (int) Masuk::whereHas('kategori', function ($q) {
-            $q->whereIn('nama_barang', ['HP', 'Tablet', 'HP/Tablet', 'HP / Tablet']);
+            $q->whereIn('nama_barang', ['HP', 'Tablet', 'HP/Tablet', 'Tablet/HP']);
         })->sum('jumlah');
 
         /* ================= PEMINJAMAN ================= */
