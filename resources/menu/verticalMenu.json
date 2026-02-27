@@ -39,6 +39,14 @@
         }
         
       ]
+      
+    },
+     {
+      "url": "manager/maping",
+      "name": "Maping",
+      "icon": "menu-icon tf-icons bi bi-diagram-3",
+      "slug": "manager-maping",
+      "roles": ["manager"]
     },
   
     {
@@ -95,13 +103,13 @@
       "submenu": [
         {
           "url": "dashboard/transaksi-masuk",
-          "name": "Barang Masuk",
+          "name": "Aset Masuk",
           "icon": "menu-icon tf-icons bi bi-box-arrow-in-down",
           "slug": "dashboard-transaksi-masuk"
         },
         {
           "url": "dashboard/transaksi-keluar",
-          "name": "Barang Keluar",
+          "name": "Aset Keluar",
           "icon": "menu-icon tf-icons bi bi-box-arrow-up",
           "slug": "dashboard-transaksi-keluar"
         }

@@ -17,36 +17,28 @@ class KaryawanController extends Controller
      */
     public function index(Request $request)
     {
-        $search = $request->input('search');
+        $search = $request->search;
 
-        $karyawans = Karyawan::latest();
+        $karyawans = Karyawan::query();
 
         if ($search) {
-            $karyawans = $karyawans->where(function ($query) use ($search) {
-                $query->where('nama_karyawan', 'like', '%' . $search . '%')->orWhere('id', 'like', '%' . $search . '%');
+            $karyawans->where(function ($query) use ($search) {
+                $query->where('nama_karyawan', 'like', "%{$search}%")
+                      ->orWhere('kode_karyawan', 'like', "%{$search}%");
             });
         }
 
-        // Pagination
-        $karyawans = $karyawans->paginate(6);
+        $karyawans = $karyawans->latest()->paginate(6);
 
         return view('content.dashboard.karyawan.index', compact('karyawans'));
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        return view('content.dashboard.karyawan.create');
-    }
-
-    /**
-     * Store a newly created resource in storage.
+     * Store a newly created resource.
      */
     public function store(Request $request)
     {
-        $validatedData = $request->validate(
+        $validated = $request->validate(
             [
                 'kode_karyawan' => 'required|string|max:20|unique:karyawans,kode_karyawan',
                 'nama_karyawan' => 'required|string|max:100',
@@ -56,14 +48,13 @@ class KaryawanController extends Controller
             ],
             [
                 'kode_karyawan.unique' => 'Kode karyawan sudah terdaftar.',
-
             ]
         );
 
         try {
-            Karyawan::create($validatedData);
+            Karyawan::create($validated);
 
-            return redirect('/dashboard/karyawan')
+            return redirect()->route('karyawan.index')
                 ->with('success', 'Data karyawan berhasil disimpan.');
         } catch (\Exception $e) {
             Log::error($e->getMessage());
@@ -73,33 +64,16 @@ class KaryawanController extends Controller
     }
 
     /**
-     * Display the specified resource.
-     */
-    public function show(Karyawan $karyawan)
-    {
-        //
-    }
-
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Karyawan $karyawan)
-    {
-        return view('content.dashboard.karyawan.edit', compact('karyawan'));
-    }
-
-    /**
-     * Update the specified resource in storage.
+     * Update the specified resource.
      */
     public function update(Request $request, Karyawan $karyawan)
     {
-        $validatedData = $request->validate(
+        $validated = $request->validate(
             [
                 'kode_karyawan' => [
                     'required',
                     'string',
-                    'max:7',
+                    'max:20',
                     Rule::unique('karyawans', 'kode_karyawan')->ignore($karyawan->id),
                 ],
                 'nama_karyawan' => 'required|string|max:100',
@@ -113,24 +87,31 @@ class KaryawanController extends Controller
         );
 
         try {
-            $karyawan->update($validatedData);
+            $karyawan->update($validated);
 
-            return redirect('/dashboard/karyawan')
+            return redirect()->route('karyawan.index')
                 ->with('success', 'Data karyawan berhasil diperbarui.');
         } catch (\Exception $e) {
+            Log::error($e->getMessage());
+
             return back()->with('error', 'Gagal memperbarui data.');
         }
     }
 
     /**
-     * Remove the specified resource from storage.
+     * Remove the specified resource.
      */
-    public function destroy($id)
+    public function destroy(Karyawan $karyawan)
     {
-        $karyawan = Karyawan::findOrFail($id);
-        $karyawan->delete();
+        try {
+            $karyawan->delete();
 
-        return redirect()->back()
-            ->with('success', 'Karyawan berhasil dihapus');
+            return redirect()->route('karyawan.index')
+                ->with('success', 'Karyawan berhasil dihapus.');
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+
+            return back()->with('error', 'Gagal menghapus data.');
+        }
     }
 }

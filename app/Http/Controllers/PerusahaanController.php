@@ -23,14 +23,28 @@ class PerusahaanController extends Controller
 
     if ($search) {
       $perusahaans = $perusahaans->where(function ($query) use ($search) {
-        $query->where('nama_perusahaan', 'like', '%' . $search . '%')->orWhere('id', 'like', '%' . $search . '%');
+        $query->where('nama_perusahaan', 'like', '%' . $search . '%')
+          ->orWhere('id', 'like', '%' . $search . '%');
       });
     }
 
-    // Pagination
     $perusahaans = $perusahaans->paginate(6);
 
-    return view('content.dashboard.perusahaan.index', compact('perusahaans'));
+    // 🔥 GENERATE KODE DI INDEX
+    $last = Perusahaan::orderBy('kode_perusahaan', 'desc')->first();
+
+    if ($last) {
+      $number = (int) substr($last->kode_perusahaan, 2) + 1;
+    } else {
+      $number = 1;
+    }
+
+    $kodePerusahaan = 'PT' . str_pad($number, 4, '0', STR_PAD_LEFT);
+
+    return view(
+      'content.dashboard.perusahaan.index',
+      compact('perusahaans', 'kodePerusahaan')
+    );
   }
 
   /**
@@ -38,17 +52,7 @@ class PerusahaanController extends Controller
    */
   public function create()
   {
-    $last = Perusahaan::orderBy('kode_perusahaan', 'desc')->first();
-
-    if ($last) {
-      $number = (int) substr($last->kode_perusahaan, 3) + 1;
-    } else {
-      $number = 1;
-    }
-
-    $kodePerusahaan = 'PT' . str_pad($number, 4, '0', STR_PAD_LEFT);
-
-    return view('content.dashboard.perusahaan.create', compact('kodePerusahaan'));
+    
   }
 
   /**
@@ -72,10 +76,8 @@ class PerusahaanController extends Controller
     } catch (\Exception $e) {
       Log::error($e->getMessage());
 
-      return redirect('/dashboard/perusahaan/create')->with(
-        'error',
-        'Data perusahaan tidak berhasil disimpan. Kesalahan: ' . $e->getMessage()
-      );
+      return redirect('/dashboard/perusahaan')
+       ->with('error', 'Data perusahaan tidak berhasil disimpan.');
     }
   }
 
@@ -118,7 +120,7 @@ class PerusahaanController extends Controller
   /**
    * Remove the specified resource from storage.
    */
-  public function destroy( $id)
+  public function destroy($id)
   {
     $perusahaan = Perusahaan::findOrFail($id);
     $perusahaan->delete();

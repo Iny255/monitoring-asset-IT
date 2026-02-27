@@ -74,12 +74,8 @@
                                         <option value="">Pilih Role</option>
                                         <option value="petugas"
                                             {{ old('role', $user->role) == 'petugas' ? 'selected' : '' }}>petugas</option>
-                                        <option value="ortu" {{ old('role', $user->role) == 'ortu' ? 'selected' : '' }}>
-                                            ortu</option>
-                                        <option value="bidan" {{ old('role', $user->role) == 'bidan' ? 'selected' : '' }}>
-                                            bidan</option>
-                                        <option value="kades" {{ old('role', $user->role) == 'kades' ? 'selected' : '' }}>
-                                            kades</option>
+                                        <option value="manager" {{ old('role', $user->role) == 'manager' ? 'selected' : '' }}>
+                                            manager</option>
                                     </select>
                                     @error('role')
                                         <div class="alert alert-danger">{{ $message }}</div>

@@ -22,33 +22,31 @@ class LokasiController extends Controller
 
     if ($search) {
       $lokasis = $lokasis->where(function ($query) use ($search) {
-        $query->where('nama_lokasi', 'like', '%' . $search . '%')->orWhere('id', 'like', '%' . $search . '%');
+        $query->where('nama_lokasi', 'like', '%' . $search . '%')
+          ->orWhere('id', 'like', '%' . $search . '%');
       });
     }
 
-    // Pagination
     $lokasis = $lokasis->paginate(6);
 
-    return view('content.dashboard.lokasi.index', compact('lokasis'));
-  }
-
-  /**
-   * Show the form for creating a new resource.
-   */
-  public function create()
-  {
+    // 🔥 GENERATE KODE LOKASI DI INDEX
     $last = Lokasi::orderBy('kode_lokasi', 'desc')->first();
 
     if ($last) {
-      $number = (int) substr($last->kode_lokasi, 3) + 1;
+      $number = (int) substr($last->kode_lokasi, 2) + 1;
     } else {
       $number = 1;
     }
 
     $kodeLokasi = 'LK' . str_pad($number, 4, '0', STR_PAD_LEFT);
 
-    return view('content.dashboard.lokasi.create', compact('kodeLokasi'));
+    return view('content.dashboard.lokasi.index', compact('lokasis', 'kodeLokasi'));
   }
+
+  /**
+   * Show the form for creating a new resource.
+   */
+  public function create() {}
 
   /**
    * Store a newly created resource in storage.
@@ -71,10 +69,8 @@ class LokasiController extends Controller
     } catch (\Exception $e) {
       Log::error($e->getMessage());
 
-      return redirect('/dashboard/lokasi/create')->with(
-        'error',
-        'Data lokasi tidak berhasil disimpan. Kesalahan: ' . $e->getMessage()
-      );
+      return redirect('/dashboard/lokasi')
+        ->with('error', 'Data lokasi tidak berhasil disimpan.');
     }
   }
 

@@ -1,15 +1,9 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\layouts\Blank;
-use App\Http\Controllers\layouts\Fluid;
-use App\Http\Controllers\icons\Boxicons;
-use App\Http\Controllers\MenuController;
-use App\Http\Controllers\cards\CardBasic;
+
 use App\Http\Controllers\LoginController;
-use App\Http\Controllers\pages\MiscError;
-use App\Http\Controllers\layouts\Container;
-use App\Http\Controllers\RegisterController;
+
 use App\Http\Controllers\DashboardUserController;
 use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\KaryawanController;
@@ -22,8 +16,7 @@ use App\Http\Controllers\MapingController;
 use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\main_dashboard\DashboardManagerController;
 use App\Http\Controllers\main_dashboard\DashboardPetugasController;
-
-
+use App\Http\Controllers\ManagerMapingController;
 
 // Route::get('/', [LoginController::class, 'index'])
 //     ->name('login')
@@ -153,9 +146,18 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/manager/laporan/peminjaman', [LaporanController::class, 'laporanPeminjaman'])
             ->name('manager.laporan.peminjaman');
-         Route::get('/manager/laporan/peminjaman/{id}', [LaporanController::class, 'showpeminjaman'])
+        Route::get('/manager/laporan/peminjaman/{id}', [LaporanController::class, 'showpeminjaman'])
             ->name('laporan.peminjaman.show');
 
+        // maping manager
+        Route::get('/manager/maping', [ManagerMapingController::class, 'maping'])
+            ->name('manager.maping');
+
+        Route::get('/manager/maping/cetak', [ManagerMapingController::class, 'cetakmaping'])
+            ->name('manager.maping.cetak');
+
+        Route::get('/manager/maping/{id}', [ManagerMapingController::class, 'showmaping'])
+            ->name('manager.maping.show');
     });
 
     // ===== MANAGER & PETUGAS =====
