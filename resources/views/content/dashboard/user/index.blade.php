@@ -21,7 +21,9 @@
         <div class="card-header">
             <div class="d-flex justify-content-between align-items-center">
                 <h5 style="color: navy">Data User</h5>
-                <a href="/dashboard/user/create" class="btn btn-primary">Tambah Data User</a>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                    Tambah Data User
+                </button>
             </div>
         </div>
         <div class="card-body">
@@ -59,15 +61,28 @@
                                 <td>{{ $user->role }}</td>
 
                                 <td>
-                                    <a href="javascript:void(0);" class="btn btn-warning"
-                                        onclick="return confirmEdit({{ $user->id }})"><i
-                                            class="bx bx-edit-alt me-1"></i></a>
-                                    <a href="javascript:void(0);" class="btn btn-danger"
+                                    <!-- Edit Button -->
+                                    <button type="button" class="btn btn-warning"
+                                        onclick='openEditModal(
+                                        {{ $user->id }},
+                                        @json($user->username),
+                                        @json($user->name),
+                                        @json($user->email),
+                                        @json($user->role)
+                                    )'>
+                                        <i class="bx bx-edit-alt me-1"></i>
+                                    </button>
+
+                                    <!-- Delete Button -->
+                                    <button type="button" class="btn btn-danger"
                                         onclick="confirmDelete({{ $user->id }})">
                                         <i class="bx bx-trash me-1"></i>
+                                    </button>
+
+                                    <!-- Detail Button -->
+                                    <a href="/dashboard/detailuser/{{ $user->id }}" class="btn btn-primary">
+                                        <i class="bi bi-eye-fill"></i>
                                     </a>
-                                    <a href="/dashboard/detailuser/{{ $user->id }}" class="btn btn-primary"><i
-                                            class="bi bi-eye-fill"></i></a>
                                 </td>
                         @endforeach
                     </tbody>
@@ -80,7 +95,106 @@
         </div>
 
     </div>
+    <!-- Modal Create User -->
+    <div class="modal fade" id="createUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form method="POST" action="{{ url('/dashboard/user') }}">
+                @csrf
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Tambah User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
 
+                        <div class="mb-3">
+                            <label>Username</label>
+                            <input type="text" name="username" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Nama</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Email</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Password</label>
+                            <input type="password" name="password" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Role</label>
+                            <select name="role" class="form-control" required>
+                                <option value="">Pilih Role</option>
+                                <option value="petugas">petugas</option>
+                                <option value="manager">manager</option>
+                            </select>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Modal Edit User -->
+    <div class="modal fade" id="editUserModal" tabindex="-1">
+        <div class="modal-dialog">
+            <form method="POST" id="editForm">
+                @csrf
+                @method('PUT')
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+
+                        <div class="mb-3">
+                            <label>Username</label>
+                            <input type="text" name="username" id="editUsername" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Nama</label>
+                            <input type="text" name="name" id="editName" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Email</label>
+                            <input type="email" name="email" id="editEmail" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Password (Kosongkan jika tidak diubah)</label>
+                            <input type="password" name="password" class="form-control">
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Role</label>
+                            <select name="role" id="editRole" class="form-control" required>
+                                <option value="petugas">petugas</option>
+                                <option value="manager">manager</option>
+                            </select>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-primary">Update</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
     <!--/ Striped Rows -->
     <script>
         function confirmDelete(id) {
@@ -108,21 +222,20 @@
         }
     </script>
     <script>
-        function confirmEdit(id) {
-            Swal.fire({
-                title: 'Edit data ini?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Ya',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = '/dashboard/edituser/' + id;
-                }
-            });
+        function openEditModal(id, username, name, email, role) {
+
+            // set action form
+            document.getElementById('editForm').action = '/dashboard/user/' + id;
+
+            // set value input
+            document.getElementById('editUsername').value = username;
+            document.getElementById('editName').value = name;
+            document.getElementById('editEmail').value = email;
+            document.getElementById('editRole').value = role;
+
+            // tampilkan modal
+            var editModal = new bootstrap.Modal(document.getElementById('editUserModal'));
+            editModal.show();
         }
     </script>
-
 @endsection

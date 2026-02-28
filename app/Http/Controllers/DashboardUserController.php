@@ -56,11 +56,7 @@ class DashboardUserController extends Controller
   /**
    * Show the form for creating a new resource.
    */
-  public function create()
-  {
-    return view('content.dashboard.user.create');
-  }
-
+  
   /**
    * Store a newly created resource in storage.
    */
@@ -112,11 +108,7 @@ class DashboardUserController extends Controller
   /**
    * Show the form for editing the specified resource.
    */
-  public function edit(string $id)
-  {
-    $user = User::findOrFail($id);
-    return view('content.dashboard.user.edit', compact('user'));
-  }
+ 
 
   /**
    * Update the specified resource in storage.
@@ -128,13 +120,13 @@ class DashboardUserController extends Controller
       'name'=>'required|string|max:100',
       'email' => 'required|email|max:100',
       'password' => 'nullable|string|min:8|confirmed', // Tambahkan 'confirmed' untuk validasi password konfirmasi
-      'role' => 'required|string|in:petugas,ortu,bidan,kades',
+      'role' => 'required|string|in:petugas,manager',
     ]);
 
     $user = User::findOrFail($id);
     $user->username = $request->input('username');
+    $user->name     = $request->input ('name'); 
     $user->email = $request->input('email');
-
     // Update password hanya jika diisi
     if ($request->filled('password')) {
       $user->password = bcrypt($request->input('password'));

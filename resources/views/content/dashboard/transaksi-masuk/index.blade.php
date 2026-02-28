@@ -109,31 +109,43 @@
                                 @auth
                                     @if (auth()->user()->role === 'petugas')
                                         <td class="text-center">
+                                            <div class="d-flex justify-content-center gap-1">
 
-                                            {{-- SHOW --}}
-                                            <a href="{{ route('transaksi-masuk.show', $masuk->id) }}"
-                                                class="btn btn-info btn-sm">
-                                                <i class="bx bx-show"></i>
-                                            </a>
+                                                {{-- SHOW --}}
+                                                <a href="{{ route('transaksi-masuk.show', $masuk->id) }}"
+                                                    class="btn btn-info btn-sm" title="Detail">
+                                                    <i class="bx bx-show"></i>
+                                                </a>
 
-                                            {{-- EDIT --}}
-                                            <button class="btn btn-warning btn-sm btn-edit" data-id="{{ $masuk->id }}">
-                                                <i class="bx bx-edit-alt"></i>
-                                            </button>
+                                                {{-- EDIT --}}
+                                                <button class="btn btn-warning btn-sm btn-edit" data-id="{{ $masuk->id }}"
+                                                    title="Edit">
+                                                    <i class="bx bx-edit-alt"></i>
+                                                </button>
 
-                                            {{-- DELETE FORM --}}
+                                                {{-- DELETE --}}
+                                                <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $masuk->id }}"
+                                                    title="Hapus">
+                                                    <i class="bx bx-trash"></i>
+                                                </button>
+
+                                                {{-- DOWNLOAD --}}
+                                                @if ($masuk->gambar)
+                                                    <a href="{{ route('transaksi-masuk.download', $masuk->id) }}"
+                                                        class="btn btn-success btn-sm" title="Download Gambar">
+                                                        <i class="bx bx-download"></i>
+                                                    </a>
+                                                @endif
+
+                                            </div>
+
+                                            {{-- FORM DELETE --}}
                                             <form id="delete-form-{{ $masuk->id }}"
                                                 action="{{ route('transaksi-masuk.destroy', $masuk->id) }}" method="POST"
                                                 style="display:none;">
                                                 @csrf
                                                 @method('DELETE')
                                             </form>
-
-                                            {{-- DELETE --}}
-                                            <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $masuk->id }}">
-                                                <i class="bx bx-trash"></i>
-                                            </button>
-
                                         </td>
 
                                         {{-- MANAGER → SHOW ONLY --}}

@@ -51,8 +51,6 @@ Route::middleware(['auth'])->group(function () {
 
         Route::get('/dashboard/hapususer/{id}', [DashboardUserController::class, 'hapususer'])
             ->name('user.hapus');
-        Route::get('/dashboard/edituser/{id}', [DashboardUserController::class, 'edit'])
-            ->name('user.edit');
         Route::put('/dashboard/user/update/{id}', [DashboardUserController::class, 'update'])
             ->name('user.update');
         Route::get('/dashboard/detailuser/{id}', [DashboardUserController::class, 'show'])
@@ -85,6 +83,10 @@ Route::middleware(['auth'])->group(function () {
         )->name('keluar.getKaryawanByNama');
         Route::get('/dashboard/hapus/{id}', [KeluarController::class, 'hapus'])
             ->name('keluar.hapus');
+        Route::get(
+            '/transaksi-masuk/{id}/download',
+            [MasukController::class, 'downloadGambar']
+        )->name('transaksi-masuk.download');
 
         Route::resource('/dashboard/maping', MapingController::class);
         Route::post(

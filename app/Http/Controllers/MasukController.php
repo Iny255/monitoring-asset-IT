@@ -10,6 +10,7 @@ use App\Models\Kategori;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 
 class MasukController extends Controller
 {
@@ -95,7 +96,7 @@ class MasukController extends Controller
      */
     public function show($id)
     {
-        
+
         $masuk = Masuk::with('kategori')->findOrFail($id);
         //  $this->authorize('view', $masuk);
         return view('content.dashboard.transaksi-masuk.show', compact('masuk'));
@@ -186,5 +187,23 @@ class MasukController extends Controller
 
         return redirect()->back()
             ->with('success', 'Transaksi Masuk  berhasil dihapus');
+    }
+    public function downloadGambar($id)
+    {
+        $masuk = Masuk::findOrFail($id);
+
+        if (!$masuk->gambar) {
+            return redirect()->back()->with('error', 'Gambar tidak tersedia');
+        }
+
+        $path = $masuk->gambar;
+
+        if (!Storage::disk('public')->exists($path)) {
+            return redirect()->back()->with('error', 'File tidak ditemukan');
+        }
+
+        return response()->download(
+            storage_path('app/public/' . $path)
+        );
     }
 }
