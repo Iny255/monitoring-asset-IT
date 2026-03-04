@@ -1,73 +1,41 @@
 <style>
-    /* Wrapper logo di sidebar */
-    .app-brand-logo-wrapper {
+    /* ===== PAKSA AREA LOGO LEBIH TINGGI ===== */
+    .layout-menu .app-brand {
+        height: 100px !important;
+        /* override tinggi default 64px */
         display: flex;
-        justify-content: center;
-        /* Pusatkan secara horizontal */
         align-items: center;
-        /* Pusatkan secara vertikal */
+        justify-content: center;
+        padding: 20px 0;
+    }
+
+    .layout-menu .app-brand-logo-wrapper {
         width: 100%;
-        /* Sesuaikan lebar dengan kontainer */
-        height: 100%;
-        /* Biarkan tinggi sesuai dengan kontainer */
-        overflow: hidden;
-        /* Hindari elemen keluar kontainer */
-        padding: 0;
-        /* Hilangkan padding jika perlu */
-        box-sizing: border-box;
-        /* Perbaiki hitungan dimensi */
+        text-align: center;
     }
 
-    /* Gambar logo */
-    .logo-posyandu {
-        max-width: 100%;
-        /* Sesuaikan lebar logo dengan kontainer */
-        max-height: 100%;
-        /* Sesuaikan tinggi logo dengan kontainer */
+    /* Logo diperbesar tapi aman */
+    .layout-menu .logo-sembilan {
+        width: 150px;
+        height: auto;
         object-fit: contain;
-        /* Jaga proporsi asli logo */
-        margin: 0;
-        /* Hindari margin tambahan */
     }
 
-    /* Sidebar layout */
-    aside.layout-menu {
-        width: 267px;
-        /* Lebar sidebar */
-        background-color: #ffffff;
-        /* Tambahkan warna putih jika perlu */
-        min-height: 100vh;
-        /* Tinggi penuh viewport */
-        overflow-y: auto;
-        /* Gulir jika konten terlalu panjang */
-    }
-
-    /* Responsif untuk perangkat kecil */
-    @media (max-width: 768px) {
-        .app-brand-logo-wrapper {
-            height: 80px;
-            /* Sesuaikan tinggi untuk layar kecil */
-        }
-
-        .logo-posyandu {
-            max-height: 80px;
-            /* Batasi tinggi maksimum logo */
-            max-width: 80%;
-            /* Batasi lebar logo */
-        }
+    /* ===== TURUNKAN MENU ===== */
+    .layout-menu .menu-inner {
+        margin-top: 13px !important;
     }
 </style>
-
 <aside id="layout-menu" class="layout-menu menu-vertical menu bg-menu-theme">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet"
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.5.0/font/bootstrap-icons.min.css">
 
-    <!-- Logo Posyandu -->
+    <!-- Logo 9 -->
     <div class="app-brand demo">
         <!-- <a href="{{ url('/') }}" class="app-brand-link"> -->
         <div class="app-brand-logo-wrapper">
-            <img src="{{ asset('assets/img/logo-9.png') }}" alt="Sembilan Logo" class="logo-sembilan" width=150>
+            <img src="{{ asset('assets/img/logo9.png') }}" alt="Sembilan Logo" class="logo-sembilan" width=100>
         </div>
 
 

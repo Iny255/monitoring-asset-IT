@@ -1,0 +1,130 @@
+/* ==============================
+   GLOBAL DARK MODE (Premium)
+============================== */
+
+html.dark-style {
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+html.dark-style body {
+    background-color: #0f172a;
+    color: #e2e8f0;
+}
+
+/* ================= NAVBAR ================= */
+
+html.dark-style .layout-navbar {
+    background-color: #1e293b !important;
+    border-bottom: 1px solid #334155;
+}
+
+/* ================= SIDEBAR ================= */
+
+html.dark-style .layout-menu {
+    background-color: #1e293b !important;
+    border-right: 1px solid #334155;
+}
+
+html.dark-style .menu-link {
+    color: #cbd5e1 !important;
+}
+
+html.dark-style .menu-link:hover {
+    background-color: #334155 !important;
+    color: #ffffff !important;
+}
+
+html.dark-style .menu-item.active > .menu-link {
+    background-color: #2563eb !important;
+    color: #ffffff !important;
+}
+
+/* ================= CARD ================= */
+
+html.dark-style .card {
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #334155;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+/* ================= TABLE ================= */
+
+html.dark-style .table {
+    color: #e2e8f0 !important;
+}
+
+html.dark-style .table thead {
+    background-color: #334155 !important;
+}
+
+html.dark-style .table tbody tr:hover {
+    background-color: #1e293b !important;
+}
+
+/* ================= FORM ================= */
+
+html.dark-style .form-control,
+html.dark-style .form-select {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    border: 1px solid #334155 !important;
+}
+
+html.dark-style .form-control:focus,
+html.dark-style .form-select:focus {
+    border-color: #2563eb !important;
+    box-shadow: 0 0 0 0.15rem rgba(37, 99, 235, 0.3) !important;
+}
+
+html.dark-style .form-control::placeholder {
+    color: #94a3b8 !important;
+}
+
+/* ================= DROPDOWN ================= */
+
+html.dark-style .dropdown-menu {
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #334155;
+}
+
+html.dark-style .dropdown-item:hover {
+    background-color: #334155 !important;
+}
+
+/* ================= MODAL ================= */
+
+html.dark-style .modal-content {
+    background-color: #1e293b !important;
+    color: #e2e8f0 !important;
+    border: 1px solid #334155;
+}
+
+/* ================= FOOTER ================= */
+
+html.dark-style .content-footer {
+    background-color: #1e293b !important;
+    border-top: 1px solid #334155;
+}
+
+/* ================= BADGE ================= */
+
+html.dark-style .badge {
+    background-color: #334155 !important;
+}
+
+/* ================= SCROLLBAR (Modern) ================= */
+
+html.dark-style ::-webkit-scrollbar {
+    width: 8px;
+}
+
+html.dark-style ::-webkit-scrollbar-track {
+    background: #0f172a;
+}
+
+html.dark-style ::-webkit-scrollbar-thumb {
+    background: #334155;
+    border-radius: 10px;
+}

@@ -18,7 +18,8 @@
     <!-- Canonical SEO -->
     <link rel="canonical" href="{{ config('variables.productPage') ? config('variables.productPage') : '' }}">
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/logo-9.png') }}" />
+    <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/logo-bulat.png') }}" />
+ 
 
 
 
@@ -42,14 +43,47 @@
     @include('layouts/sections/scripts')
 
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
- @yield('scripts')
+    @yield('scripts')
 
     <style>
         .swal2-container {
             z-index: 9999 !important;
         }
     </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
 
+            const html = document.documentElement;
+            const toggleBtn = document.getElementById("darkModeToggle");
+            const icon = document.getElementById("darkIcon");
+
+            if (!toggleBtn) return;
+
+            function setDarkMode(isDark) {
+                if (isDark) {
+                    html.classList.add("dark-style");
+                    icon.classList.remove("bx-moon");
+                    icon.classList.add("bx-sun");
+                    localStorage.setItem("theme", "dark");
+                } else {
+                    html.classList.remove("dark-style");
+                    icon.classList.remove("bx-sun");
+                    icon.classList.add("bx-moon");
+                    localStorage.setItem("theme", "light");
+                }
+            }
+
+            // Load saved theme
+            const savedTheme = localStorage.getItem("theme");
+            setDarkMode(savedTheme === "dark");
+
+            toggleBtn.addEventListener("click", function() {
+                const isDark = html.classList.contains("dark-style");
+                setDarkMode(!isDark);
+            });
+
+        });
+    </script>
 </body>
 
 </html>

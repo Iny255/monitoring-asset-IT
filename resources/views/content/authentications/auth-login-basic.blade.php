@@ -36,7 +36,7 @@
           <div class="app-brand justify-content-center">
             <a href="{{ url('/login') }}" class="app-brand-link gap-2">
               <span class="app-brand-logo demo">
-                <img src="{{ asset('assets/img/logo-9.png') }}" width="150" alt="Logo">
+                <img src="{{ asset('assets/img/logo9.png') }}" width="150" alt="Logo">
               </span>
             </a>
           </div>
