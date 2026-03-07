@@ -44,3 +44,30 @@ footer {
   bottom: 0;
   width: 100%;
 }
+
+/* ================= NAVBAR BIRU ================= */
+
+.layout-navbar {
+  background: linear-gradient(90deg, #2563eb, #1e3a8a) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Tulisan Monitoring Aset */
+.layout-navbar .nav-item span {
+  color: #ffffff !important;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+}
+
+/* Semua text & icon di navbar jadi putih */
+.layout-navbar .nav-link,
+.layout-navbar i,
+.layout-navbar .dropdown-toggle,
+.layout-navbar .bx {
+  color: #ffffff !important;
+}
+
+/* Hilangkan background default Sneat */
+.bg-navbar-theme {
+  background: transparent !important;
+}

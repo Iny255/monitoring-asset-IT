@@ -1,15 +1,32 @@
-.menu-item.active > a {
-  background-color: #007bff;
-  color: #fff !important;
+/* ===============================
+   ACTIVE MENU COLOR
+================================ */
+
+/* menu aktif */
+.menu-item.active > .menu-link {
+  background-color: #007bff !important;
+  color: #ffffff !important;
   border-radius: 6px;
 }
 
-.menu-item.active > a i {
-  color: #fff !important;
+/* icon menu aktif */
+.menu-item.active > .menu-link i {
+  color: #ffffff !important;
 }
 
-/* Parent submenu tetap aktif */
-.menu-item.active.menu-open > a {
-  background-color: #007bff;
-  color: #fff !important;
+/* parent submenu aktif */
+.menu-item.open > .menu-link {
+  background-color: #007bff !important;
+  color: #ffffff !important;
+}
+
+/* submenu aktif */
+.menu-sub .menu-item.active > .menu-link {
+  background-color: rgba(0, 123, 255, 0.2);
+  color: #ffffff !important;
+}
+
+/* hover menu */
+.menu-inner .menu-item .menu-link:hover {
+  background-color: rgba(0, 123, 255, 0.2);
 }
