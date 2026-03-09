@@ -71,3 +71,31 @@ footer {
 .bg-navbar-theme {
   background: transparent !important;
 }
+
+/* ================= PERBAIKAN DROPDOWN NAVBAR ================= */
+
+/* 1. Paksa dropdown menu menjadi putih kembali (beberapa tema memaksa background jadi transparan) */
+.dropdown-menu {
+    background-color: #ffffff !important;
+    border: 1px solid rgba(0,0,0,0.15);
+}
+
+/* 2. Targetkan item di dalam dropdown agar warnanya gelap, 
+      kita gunakan selektor yang lebih spesifik untuk mengalahkan aturan putih global */
+.dropdown-menu .dropdown-item, 
+.dropdown-menu .dropdown-item span,
+.dropdown-menu .dropdown-item i {
+    color: #435971 !important;
+}
+
+/* 3. Pastikan saat di-hover, warna tetap terbaca */
+.dropdown-menu .dropdown-item:hover {
+    color: #696cff !important;
+    background-color: #f5f5f9 !important;
+}
+
+/* 4. Mencegah selektor putih global mempengaruhi elemen di dalam dropdown */
+.layout-navbar .dropdown-menu .nav-link,
+.layout-navbar .dropdown-menu i {
+    color: #435971 !important; 
+}

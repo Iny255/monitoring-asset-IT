@@ -20,7 +20,7 @@
     <div class="card">
         <div class="card-header">
             <div class="d-flex justify-content-between align-items-center">
-                <h5 style="color: navy">Data User</h5>
+                <h5 class="text-primary mb-0">Data User</h5>
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
                     Tambah Data User
                 </button>

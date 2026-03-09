@@ -65,7 +65,7 @@
     },
     {
       "name": "Master Data",
-      "icon": "menu-icon tf-icons bi bi-database",
+      "icon": "menu-icon tf-icons bx bx-data",
       "slug": "master-data",
       "roles": ["petugas"],
       "submenu": [

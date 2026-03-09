@@ -24,7 +24,7 @@
 
         {{-- HEADER --}}
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="mb-0" style="color: navy">Data Barang Masuk</h5>
+            <h5 class="text-primary mb-0">Data Barang Masuk</h5>
 
             {{-- TAMBAH DATA (PETUGAS ONLY) --}}
             @auth

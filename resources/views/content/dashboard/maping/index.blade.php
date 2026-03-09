@@ -21,7 +21,7 @@
     <div class="card">
         <div class="card-header">
             <div class="d-flex justify-content-between align-items-center">
-                <h5 style="color: navy">Data Mapping</h5>
+                <h5 class="text-primary mb-0">Data Mapping</h5>
 
                 {{-- HANYA PETUGAS BISA TAMBAH --}}
                 @if (auth()->user()->role == 'petugas')
@@ -107,7 +107,7 @@
 
             {{-- TABLE --}}
             <div class="table-responsive">
-                <table class="table table-bordered table-striped align-middle">
+                <table class="table table-bordered table-hover">
                     <thead class="table-primary text-center">
                         <tr>
                             <th width="5%">No</th>

@@ -22,7 +22,7 @@
         <div class="card-header">
             <div class="d-flex justify-content-between align-items-center">
                 <div class="">
-                    <h5 style="color: navy">Data Perusahaan</h5>
+                    <h5 class="text-primary mb-0">Data Perusahaan</h5>
                 </div>
                 <div class="">
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahPerusahaan">

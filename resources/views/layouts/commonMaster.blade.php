@@ -39,18 +39,22 @@ minimum-scale=1.0, maximum-scale=1.0" />
         .layout-navbar,
         .navbar-detached,
         .bg-navbar-theme {
-            background: linear-gradient(45deg, #696cff, #5f61e6) !important;
+            /* Menggunakan warna biru solid dari logo untuk background */
+            background: #003060 !important;
+            /* Menghapus gradient agar solid seperti logo */
             border: none !important;
         }
 
         .layout-navbar .nav-link,
         .layout-navbar span,
         .layout-navbar i {
+            /* Mempertahankan warna teks putih untuk kontras yang baik */
             color: #fff !important;
         }
 
         .layout-navbar {
-            box-shadow: 0 4px 15px rgba(105, 108, 255, .35);
+            /* Menyesuaikan bayangan agar cocok dengan warna biru yang lebih gelap */
+            box-shadow: 0 4px 15px rgba(1, 33, 64, 0.35);
         }
 
         /* SWEETALERT ZINDEX */
@@ -128,27 +132,8 @@ minimum-scale=1.0, maximum-scale=1.0" />
         });
     </script>
 
-    <!-- ========================= -->
-    <!-- SIDEBAR COLLAPSE SCRIPT -->
-    <!-- ========================= -->
-
-    <script>
-        document.addEventListener("DOMContentLoaded", function() {
-
-            const toggle = document.getElementById("sidebarToggle");
-
-            if (toggle) {
-
-                toggle.addEventListener("click", function() {
-
-                    document.body.classList.toggle("layout-menu-collapsed");
-
-                });
-
-            }
-
-        });
-    </script>
+    
+    
 </body>
 
 </html>

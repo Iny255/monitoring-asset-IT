@@ -16,7 +16,7 @@
 
     /* Logo diperbesar tapi aman */
     .layout-menu .logo-sembilan {
-        width: 150px;
+        width: 255px;
         height: auto;
         object-fit: contain;
     }
@@ -35,7 +35,7 @@
     <div class="app-brand demo">
         <!-- <a href="{{ url('/') }}" class="app-brand-link"> -->
         <div class="app-brand-logo-wrapper">
-            <img src="{{ asset('assets/img/logo9.png') }}" alt="Sembilan Logo" class="logo-sembilan" width=100>
+            <img src="{{ asset('assets/img/logo_sembilan.png') }}" alt="Sembilan Logo" class="logo-sembilan" width=120>
         </div>
 
 

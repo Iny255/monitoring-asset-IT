@@ -21,10 +21,10 @@
     <div class="card shadow-sm border-0">
 
         {{-- HEADER --}}
-        <div class="card-header bg-white border-0 py-3 px-4">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        
+             <div class="card-header d-flex justify-content-between align-items-center">
 
-                <h5 class="mb-0 fw-semibold text-primary">
+                <h5 class="text-primary mb-0">
                     Data Barang Keluar
                 </h5>
 
@@ -48,10 +48,10 @@
 
                 </div>
             </div>
-        </div>
+        
 
         {{-- BODY --}}
-        <div class="card-body px-4 pt-3 pb-4">
+        <div class="card-body ">
 
             {{-- SEARCH --}}
             <form method="GET" action="{{ route('transaksi-keluar.index') }}" class="row g-2 mb-4">
