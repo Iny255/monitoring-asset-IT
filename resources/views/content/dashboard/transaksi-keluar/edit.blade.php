@@ -5,7 +5,7 @@
 @section('content')
 
 <div class="card shadow-sm">
-    <div class="card-header bg-white">
+    <div class="card-header ">
         <h5 class="text-primary mb-0">Edit Transaksi Keluar</h5>
     </div>
 

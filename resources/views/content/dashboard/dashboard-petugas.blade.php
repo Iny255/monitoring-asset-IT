@@ -4,11 +4,51 @@
 
 @section('vendor-style')
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/apex-charts/apex-charts.css') }}">
+
+    <style>
+        .card-stat {
+            border-radius: 12px;
+            transition: 0.3s;
+        }
+
+        .card-stat:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .icon-box {
+            width: 45px;
+            height: 45px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-size: 20px;
+        }
+
+        .bg-soft-primary {
+            background: #e7f1ff;
+        }
+
+        .bg-soft-warning {
+            background: #fff4e5;
+        }
+
+        .bg-soft-success {
+            background: #e8f8f0;
+        }
+
+        .bg-soft-info {
+            background: #e6f7ff;
+        }
+    </style>
 @endsection
+
 
 @section('vendor-script')
     <script src="{{ asset('assets/vendor/libs/apex-charts/apexcharts.js') }}"></script>
 @endsection
+
 
 @section('content')
 
@@ -16,26 +56,31 @@
 
         {{-- WELCOME CARD --}}
         <div class="col-lg-12 mb-4">
-            <div class="card">
+            <div class="card shadow-sm">
                 <div class="d-flex align-items-end row">
 
                     <div class="col-sm-7">
                         <div class="card-body">
+
                             <h5 class="card-title text-primary">
                                 Selamat datang {{ Str::upper(auth()->user()->name) }} 👋
                             </h5>
+
                             <h6 class="mb-2">{{ $now ?? '-' }}</h6>
-                            <p class="mb-0 text-muted">
-                                Sistem Manajemen Aset & Peminjaman Barang
+
+                            <p class="text-muted">
+                                Dashboard Monitoring Aset IT
                             </p>
+
                         </div>
                     </div>
 
                     <div class="col-sm-5 text-center">
                         <div class="card-body pb-0 px-0 px-md-4">
+
                             <img src="{{ asset('assets/img/illustrations/man-with-laptop-light.png') }}" height="140"
-                                alt="dashboard" data-app-dark-img="illustrations/man-with-laptop-dark.png"
-                                data-app-light-img="illustrations/man-with-laptop-light.png">
+                                alt="dashboard">
+
                         </div>
                     </div>
 
@@ -45,143 +90,285 @@
 
 
         {{-- SUMMARY CARD --}}
-        <div class="col-md-3">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <span class="fw-semibold d-block mb-1">Total Aset</span>
-                    <h3 class="card-title mb-2">{{ $totalAset ?? 0 }}</h3>
-                    <small class="text-muted">Semua aset terdaftar</small>
+        <div class="col-md-3 mb-3">
+            <div class="card card-stat shadow-sm">
+                <div class="card-body d-flex align-items-center">
+
+                    <div class="icon-box bg-soft-primary me-3">
+                        <i class="bx bx-box"></i>
+                    </div>
+
+                    <div>
+                        <span class="text-muted">Total Aset</span>
+                        <h4 class="mb-0">{{ $totalAset ?? 0 }}</h4>
+                    </div>
+
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <span class="fw-semibold d-block mb-1">Dipinjam</span>
-                    <h3 class="card-title text-warning mb-2">{{ $dipinjam ?? 0 }}</h3>
-                    <small class="text-muted">Aset sedang dipinjam</small>
+
+        <div class="col-md-3 mb-3">
+            <div class="card card-stat shadow-sm">
+                <div class="card-body d-flex align-items-center">
+
+                    <div class="icon-box bg-soft-warning me-3">
+                        <i class="bx bx-transfer"></i>
+                    </div>
+
+                    <div>
+                        <span class="text-muted">Dipinjam</span>
+                        <h4 class="mb-0 text-warning">{{ $dipinjam ?? 0 }}</h4>
+                    </div>
+
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <span class="fw-semibold d-block mb-1">Dikembalikan</span>
-                    <h3 class="card-title text-success mb-2">{{ $dikembalikan ?? 0 }}</h3>
-                    <small class="text-muted">Aset sudah kembali</small>
+
+        <div class="col-md-3 mb-3">
+            <div class="card card-stat shadow-sm">
+                <div class="card-body d-flex align-items-center">
+
+                    <div class="icon-box bg-soft-success me-3">
+                        <i class="bx bx-check-circle"></i>
+                    </div>
+
+                    <div>
+                        <span class="text-muted">Dikembalikan</span>
+                        <h4 class="mb-0 text-success">{{ $dikembalikan ?? 0 }}</h4>
+                    </div>
+
                 </div>
             </div>
         </div>
 
-        <div class="col-md-3">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <span class="fw-semibold d-block mb-1">Total Mutasi</span>
-                    <h3 class="card-title mb-2">{{ $totalMutasi ?? 0 }}</h3>
-                    <small class="text-muted">Semua aset yang dimutasi</small>
+
+        <div class="col-md-3 mb-3">
+            <div class="card card-stat shadow-sm">
+                <div class="card-body d-flex align-items-center">
+
+                    <div class="icon-box bg-soft-info me-3">
+                        <i class="bx bx-git-compare"></i>
+                    </div>
+
+                    <div>
+                        <span class="text-muted">Total Mutasi</span>
+                        <h4 class="mb-0">{{ $totalMutasi ?? 0 }}</h4>
+                    </div>
+
                 </div>
             </div>
         </div>
+
 
 
         {{-- ROW CHART --}}
         <div class="row mt-4">
 
-            {{-- CHART MUTASI (KIRI) --}}
-            <div class="col-lg-8 col-md-12">
-                <div class="card h-100">
+            {{-- CHART MUTASI --}}
+            <div class="col-lg-8 col-md-12 mb-4">
+                <div class="card shadow-sm">
                     <div class="card-header">
-                        <h5 class="mb-0">Transaksi Aset Perbulan</h5>
+                        <h5 class="mb-0">Grafik Transaksi Aset</h5>
                     </div>
+
                     <div class="card-body">
-                        <div id="chartMutasi" style="min-height:350px;"></div>
+                        <div id="chartMutasi"></div>
                     </div>
                 </div>
             </div>
 
-            {{-- CHART ASET TYPE (KANAN) --}}
-            <div class="col-lg-4 col-md-12">
-                <div class="card h-100">
+
+            {{-- CHART TYPE --}}
+            <div class="col-lg-4 col-md-12 mb-4">
+                <div class="card shadow-sm">
                     <div class="card-header">
                         <h5 class="mb-0">Komposisi Aset</h5>
                     </div>
-                    <div class="card-body d-flex align-items-center justify-content-center">
-                        <div id="chartType" style="min-height:320px;"></div>
+
+                    <div class="card-body">
+                        <div id="chartType"></div>
                     </div>
                 </div>
             </div>
 
         </div>
 
-        {{-- APEX CHART --}}
+
         <script>
             document.addEventListener("DOMContentLoaded", function() {
 
-                /* ================= CHART TRANSAKSI BULANAN ================= */
+                /* ================= DATA DARI CONTROLLER ================= */
+
+                const dataMasuk = @json($dataMasuk ?? []);
+                const dataKeluar = @json($dataKeluar ?? []);
+                const bulanLabel = @json($bulanLabel ?? []);
+
+                const totalLaptop = @json($totalLaptop ?? 0);
+                const totalPrinter = @json($totalPrinter ?? 0);
+                const totalHp = @json($totalHp ?? 0);
+
+
+                /* ================= DETEKSI DARK MODE ================= */
+
+                const isDark = document.documentElement.classList.contains("dark");
+
+                const textColor = isDark ? "#cfd3ec" : "#566a7f";
+
+
+                /* ================= CHART MUTASI ================= */
+
                 const elMutasi = document.querySelector("#chartMutasi");
 
                 if (elMutasi) {
+
                     const chartMutasi = new ApexCharts(elMutasi, {
+
                         chart: {
-                            type: 'line',
+                            type: 'area',
                             height: 350,
                             toolbar: {
                                 show: false
+                            },
+                            animations: {
+                                enabled: true,
+                                speed: 1000
                             }
                         },
+
+                        colors: ['#696cff', '#ff9f43'],
+
                         series: [{
                                 name: 'Aset Masuk',
-                                data: @json($dataMasuk ?? [])
+                                data: dataMasuk
                             },
                             {
                                 name: 'Aset Keluar',
-                                data: @json($dataKeluar ?? [])
+                                data: dataKeluar
                             }
                         ],
+
                         xaxis: {
-                            categories: @json($bulanLabel ?? [])
+                            categories: bulanLabel,
+                            labels: {
+                                style: {
+                                    colors: textColor
+                                }
+                            }
                         },
+
+                        yaxis: {
+                            labels: {
+                                style: {
+                                    colors: textColor
+                                }
+                            }
+                        },
+
                         stroke: {
-                            curve: 'smooth'
+                            curve: 'smooth',
+                            width: 3
                         },
+
+                        fill: {
+                            type: 'gradient',
+                            gradient: {
+                                shadeIntensity: 1,
+                                opacityFrom: 0.4,
+                                opacityTo: 0.1
+                            }
+                        },
+
                         markers: {
                             size: 4
+                        },
+
+                        grid: {
+                            borderColor: isDark ? "#444564" : "#f1f1f1"
+                        },
+
+                        legend: {
+                            labels: {
+                                colors: textColor
+                            }
+                        },
+
+                        tooltip: {
+                            theme: isDark ? "dark" : "light"
                         }
+
                     });
 
                     chartMutasi.render();
+
                 }
 
 
-                /* ================= CHART ASET PER TYPE ================= */
+                /* ================= DONUT CHART ================= */
+
                 const elType = document.querySelector("#chartType");
 
-                const laptop = Number(@json($totalLaptop ?? 0));
-                const printer = Number(@json($totalPrinter ?? 0));
-                const hp = Number(@json($totalHp ?? 0));
-
                 if (elType) {
+
                     const chartType = new ApexCharts(elType, {
+
                         chart: {
                             type: 'donut',
-                            height: 320
+                            height: 320,
+                            foreColor: textColor
                         },
-                        series: [laptop, printer, hp],
-                        labels: ['Laptop', 'Printer', 'HP / Tablet'],
+
+                        series: [
+                            totalLaptop,
+                            totalPrinter,
+                            totalHp
+                        ],
+
+                        labels: [
+                            'Laptop',
+                            'Printer',
+                            'HP / Tablet'
+                        ],
+
+                        colors: [
+                            '#696cff',
+                            '#ff9f43',
+                            '#28c76f'
+                        ],
+
                         legend: {
-                            position: 'bottom'
+                            position: 'bottom',
+                            labels: {
+                                colors: textColor
+                            }
                         },
+
                         dataLabels: {
                             enabled: true
                         },
-                        noData: {
-                            text: 'Tidak ada data'
+
+                        plotOptions: {
+                            pie: {
+                                donut: {
+                                    size: '60%'
+                                }
+                            }
+                        },
+
+                        tooltip: {
+                            theme: isDark ? "dark" : "light"
+                        },
+
+                        animations: {
+                            enabled: true,
+                            speed: 800
                         }
+
                     });
 
                     chartType.render();
+
                 }
 
             });

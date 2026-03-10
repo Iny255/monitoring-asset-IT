@@ -6,7 +6,7 @@
 
 <div class="card">
     <div class="card-header">
-        <h5 style="color: navy">Tambah Transaksi Keluar</h5>
+        <h5 style="text-primary mb-0">Tambah Transaksi Keluar</h5>
     </div>
 
     <div class="card-body">

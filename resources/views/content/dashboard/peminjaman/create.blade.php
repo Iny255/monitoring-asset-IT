@@ -11,8 +11,8 @@
             <!-- CARD -->
             <div class="card border-0 shadow-sm rounded-4">
 
-                <div class="card-header bg-white border-0 px-4 pt-4">
-                    <h5 class="fw-semibold mb-1">Pengajuan Peminjaman</h5>
+                <div class="card-header border-0 px-4 pt-4">
+                    <h5 class="text-primary mb-0">Pengajuan Peminjaman</h5>
                     <small class="text-muted">
                         Silakan isi data peminjaman barang
                     </small>
