@@ -27,7 +27,7 @@ class LokasiController extends Controller
       });
     }
 
-    $lokasis = $lokasis->paginate(6);
+    $lokasis = $lokasis->paginate(5);
 
     // 🔥 GENERATE KODE LOKASI DI INDEX
     $last = Lokasi::orderBy('kode_lokasi', 'desc')->first();

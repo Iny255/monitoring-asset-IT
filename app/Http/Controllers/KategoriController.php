@@ -27,7 +27,7 @@ class KategoriController extends Controller
       });
     }
 
-    $kategoris = $kategoris->paginate(6);
+    $kategoris = $kategoris->paginate(5);
 
     // 🔥 GENERATE KODE BARANG DI INDEX
     $last = Kategori::orderBy('kode_barang', 'desc')->first();

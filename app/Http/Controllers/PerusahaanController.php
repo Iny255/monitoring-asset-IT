@@ -28,7 +28,7 @@ class PerusahaanController extends Controller
       });
     }
 
-    $perusahaans = $perusahaans->paginate(6);
+    $perusahaans = $perusahaans->paginate(5);
 
     // 🔥 GENERATE KODE DI INDEX
     $last = Perusahaan::orderBy('kode_perusahaan', 'desc')->first();

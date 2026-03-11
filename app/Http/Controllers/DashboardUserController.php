@@ -16,16 +16,7 @@ class DashboardUserController extends Controller
    */
   public function index(Request $request)
   {
-    // $isPetugas = auth()->user()->role === 'petugas';
-
-    // if ($isPetugas) {
-    //   // Jika user adalah petugas, ambil semua data pengguna dengan role admin atau participant, urutkan berdasarkan created_at descending
-    //   $users = User::petugasOrParticipant()->orderBy('created_at', 'desc')->paginate(5);
-    // } else {
-    //   // Jika user bukan petugas, ambil data pengguna sesuai dengan user_id
-    //   $user_id = auth()->user()->username;
-    //   $users = User::where('username', $user_id)->orderBy('created_at', 'desc')->paginate(5);
-    // }
+    
 
     $search = $request->input('search');
 
@@ -39,7 +30,7 @@ class DashboardUserController extends Controller
     }
 
     // Pagination
-    $users = $users->paginate(7);
+    $users = $users->paginate(5);
 
     return view('content.dashboard.user.index', compact('users'));
   }

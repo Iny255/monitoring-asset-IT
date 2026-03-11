@@ -66,7 +66,7 @@ class LaporanController extends Controller
             });
         }
 
-        $masuks = $query->paginate(7)->appends($request->query());
+        $masuks = $query->paginate(5)->appends($request->query());
 
         return view('content.dashboard.transaksi-masuk.index', compact('masuks'));
     }
@@ -117,7 +117,7 @@ class LaporanController extends Controller
         }
 
         $keluars = $query->orderByDesc('id')
-            ->paginate(7)
+            ->paginate(5)
             ->appends($request->query());
 
         return view('content.dashboard.transaksi-keluar.index', compact('keluars'));
@@ -166,7 +166,7 @@ class LaporanController extends Controller
             });
         }
 
-        $peminjamans = $query->latest()->paginate(7)->appends($request->query());
+        $peminjamans = $query->latest()->paginate(5)->appends($request->query());
 
         return view('content.dashboard.peminjaman.index', compact('peminjamans'));
     }

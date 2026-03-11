@@ -49,7 +49,7 @@ class ManagerMapingController extends Controller
             });
         }
 
-        $mapings = $query->latest()->paginate(10)->appends(request()->query());
+        $mapings = $query->latest()->paginate(5)->appends(request()->query());
 
         $lokasis = Lokasi::orderBy('nama_lokasi')->get();
         $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();

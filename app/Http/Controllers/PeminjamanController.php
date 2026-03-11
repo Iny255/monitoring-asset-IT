@@ -50,7 +50,7 @@ class PeminjamanController extends Controller
         }
 
         // ================= ORDER & PAGINATION =================
-        $peminjamans = $query->orderBy('created_at', 'desc')->paginate(10);
+        $peminjamans = $query->orderBy('created_at', 'desc')->paginate(5);
 
         return view('content.dashboard.peminjaman.index', compact('peminjamans'));
     }

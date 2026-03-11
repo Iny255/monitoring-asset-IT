@@ -89,7 +89,7 @@ class MapingController extends Controller
 
         $mapings = $query
             ->latest()
-            ->paginate(7)
+            ->paginate(5)
             ->appends(request()->query());
 
         // Data untuk dropdown filter
@@ -467,7 +467,7 @@ class MapingController extends Controller
             'keKaryawan'
         ])
             ->latest()
-            ->paginate(10);
+            ->paginate(5);
 
         return view('content.dashboard.maping.history_global', compact('mutasis'));
     }

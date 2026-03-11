@@ -28,7 +28,7 @@ class KaryawanController extends Controller
             });
         }
 
-        $karyawans = $karyawans->latest()->paginate(6);
+        $karyawans = $karyawans->latest()->paginate(5);
 
         return view('content.dashboard.karyawan.index', compact('karyawans'));
     }
