@@ -21,34 +21,34 @@
     <div class="card shadow-sm border-0">
 
         {{-- HEADER --}}
-        
-             <div class="card-header d-flex justify-content-between align-items-center">
 
-                <h5 class="text-primary mb-0">
-                    Data Barang Keluar
-                </h5>
+        <div class="card-header d-flex justify-content-between align-items-center">
 
-                <div class="d-flex gap-2">
+            <h5 class="text-primary mb-0">
+                Data Barang Keluar
+            </h5>
 
-                    @if (auth()->user()->role === 'petugas')
-                        <a href="{{ route('transaksi-keluar.create') }}" class="btn btn-primary btn-sm px-3">
-                            <i class="bx bx-plus"></i> Tambah Data
-                        </a>
-                    @endif
+            <div class="d-flex gap-2">
 
-                    @if (auth()->user()->role == 'manager')
-                        <a href="{{ route('manager.laporan.stok') }}" class="btn btn-info btn-sm px-3">
-                            Cek Stok
-                        </a>
-                    @else
-                        <a href="{{ route('masuk.stok') }}" class="btn btn-info btn-sm px-3">
-                            Cek Stok
-                        </a>
-                    @endif
+                @if (auth()->user()->role === 'petugas')
+                    <a href="{{ route('transaksi-keluar.create') }}" class="btn btn-primary btn-sm px-3">
+                        <i class="bx bx-plus"></i> Tambah Data
+                    </a>
+                @endif
 
-                </div>
+                @if (auth()->user()->role == 'manager')
+                    <a href="{{ route('manager.laporan.stok') }}" class="btn btn-info btn-sm px-3">
+                        Cek Stok
+                    </a>
+                @else
+                    <a href="{{ route('masuk.stok') }}" class="btn btn-info btn-sm px-3">
+                        Cek Stok
+                    </a>
+                @endif
+
             </div>
-        
+        </div>
+
 
         {{-- BODY --}}
         <div class="card-body ">
@@ -121,40 +121,40 @@
                                 <td class="text-center">{{ $keluar->jumlah }}</td>
 
                                 {{-- AKSI --}}
-                                <td class="text-center">
+                                <td class="text-center aksi-col">
 
-                                    {{-- PETUGAS : FULL AKSI --}}
-                                    @if (auth()->user()->role === 'petugas')
-                                        <a href="{{ route('transaksi-keluar.show', $keluar->id) }}"
-                                            class="btn btn-info btn-sm">
-                                            <i class="bx bx-show"></i>
-                                        </a>
+                                    <div class="aksi-btn d-flex justify-content-center flex-nowrap gap-1">
 
-                                        <button class="btn btn-warning btn-sm btn-edit" data-id="{{ $keluar->id }}">
-                                            <i class="bx bx-edit-alt"></i>
-                                        </button>
+                                        @if (auth()->user()->role === 'petugas')
+                                            <a href="{{ route('transaksi-keluar.show', $keluar->id) }}"
+                                                class="btn btn-info btn-sm">
+                                                <i class="bx bx-show"></i>
+                                            </a>
 
-                                        <form id="delete-form-{{ $keluar->id }}"
-                                            action="{{ route('transaksi-keluar.destroy', $keluar->id) }}" method="POST"
-                                            style="display:none;">
-                                            @csrf
-                                            @method('DELETE')
-                                        </form>
+                                            <button class="btn btn-warning btn-sm btn-edit" data-id="{{ $keluar->id }}">
+                                                <i class="bx bx-edit-alt"></i>
+                                            </button>
 
-                                        <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $keluar->id }}">
-                                            <i class="bx bx-trash"></i>
-                                        </button>
+                                            <form id="delete-form-{{ $keluar->id }}"
+                                                action="{{ route('transaksi-keluar.destroy', $keluar->id) }}"
+                                                method="POST" style="display:none;">
+                                                @csrf
+                                                @method('DELETE')
+                                            </form>
 
-                                        {{-- MANAGER : SHOW ONLY --}}
-                                    @elseif(auth()->user()->role === 'manager')
-                                        <a href="{{ route('laporan.keluar.show', $keluar->id) }}"
-                                            class="btn btn-info btn-sm">
-                                            <i class="bx bx-show"></i> Detail
-                                        </a>
-                                    @endif
+                                            <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $keluar->id }}">
+                                                <i class="bx bx-trash"></i>
+                                            </button>
+                                        @elseif(auth()->user()->role === 'manager')
+                                            <a href="{{ route('laporan.keluar.show', $keluar->id) }}"
+                                                class="btn btn-info btn-sm">
+                                                <i class="bx bx-show"></i>
+                                            </a>
+                                        @endif
+
+                                    </div>
 
                                 </td>
-
                             </tr>
                         @empty
                             <tr>

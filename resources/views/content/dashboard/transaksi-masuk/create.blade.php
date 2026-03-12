@@ -5,70 +5,57 @@
 @section('content')
 
     <style>
-        /* CARD */
+        /* =========================
+       DARK MODE ONLY
+    ========================= */
 
-        .card-dark {
+        .dark-style .card-dark {
             background: #1f2a3c;
             border-radius: 14px;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        .card-dark .card-header {
+        .dark-style .card-dark .card-header {
             background: transparent;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         }
 
-        .card-dark .card-body {
+        .dark-style .card-dark .card-body {
             color: #cfd3ec;
         }
 
-
         /* FORM */
 
-        .card-dark .form-control,
-        .card-dark .form-select {
+        .dark-style .card-dark .form-control,
+        .dark-style .card-dark .form-select {
             background: #0f172a;
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: #cfd3ec;
         }
 
-        .card-dark .form-control::placeholder {
+        .dark-style .card-dark .form-control::placeholder {
             color: #94a3b8;
         }
 
-        .card-dark .form-control:focus,
-        .card-dark .form-select:focus {
+        .dark-style .card-dark .form-control:focus,
+        .dark-style .card-dark .form-select:focus {
             background: #0f172a;
             color: #fff;
             border-color: #696cff;
             box-shadow: none;
         }
 
-
         /* LABEL */
 
-        .card-dark .form-label {
+        .dark-style .card-dark .form-label {
             color: #cfd3ec;
         }
 
+        /* FILE */
 
-        /* FILE INPUT */
-
-        .card-dark input[type=file] {
+        .dark-style .card-dark input[type=file] {
             background: #0f172a;
             color: #cfd3ec;
-        }
-
-
-        /* BUTTON */
-
-        .btn-primary {
-            background: #696cff;
-            border: none;
-        }
-
-        .btn-primary:hover {
-            background: #5a5de6;
         }
     </style>
 
@@ -83,7 +70,7 @@
 
                     <div class="card-header px-4 pt-4">
 
-                        <h5 class="fw-semibold mb-1">Tambah Transaksi Masuk</h5>
+                        <h5 class="text-primary mb-0">Tambah Transaksi Masuk</h5>
                         <small class="text-muted">Silakan isi data barang masuk</small>
 
                     </div>

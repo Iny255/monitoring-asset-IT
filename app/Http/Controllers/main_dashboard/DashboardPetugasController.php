@@ -47,13 +47,16 @@ class DashboardPetugasController extends Controller
         $totalMutasi = MutasiMaping::count();
 
         /* ================= MUTASI PER BULAN ================= */
+        // Gunakan pluck()->toArray() agar formatnya pasti array bersih
         $mutasiMasuk = Masuk::selectRaw('MONTH(created_at) bulan, COUNT(*) total')
             ->groupBy('bulan')
-            ->pluck('total', 'bulan');
+            ->pluck('total', 'bulan')
+            ->toArray();
 
         $mutasiKeluar = Keluar::selectRaw('MONTH(created_at) bulan, COUNT(*) total')
             ->groupBy('bulan')
-            ->pluck('total', 'bulan');
+            ->pluck('total', 'bulan')
+            ->toArray();
 
         $bulanLabel = [];
         $dataMasuk  = [];
@@ -64,7 +67,6 @@ class DashboardPetugasController extends Controller
             $dataMasuk[]  = $mutasiMasuk[$i] ?? 0;
             $dataKeluar[] = $mutasiKeluar[$i] ?? 0;
         }
-
         return view(
             'content.dashboard.dashboard-petugas',
             compact(
