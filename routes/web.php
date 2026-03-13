@@ -123,6 +123,12 @@ Route::middleware(['auth'])->group(function () {
             'dipinjam' => $masihDipinjam
         ]);
     });
+    //pencabutan
+    Route::post(
+        '/dashboard/maping/{id}/cabut',
+        [MapingController::class, 'cabut']
+    )
+        ->name('maping.cabut');
 
     Route::middleware(['role:manager'])->group(function () {
 
@@ -168,5 +174,7 @@ Route::middleware(['auth'])->group(function () {
             ->name('maping.historyGlobal');
         Route::delete('/dashboard/mutasi/{id}', [MapingController::class, 'destroyMutasi'])
             ->name('maping.mutasi.destroy');
+        Route::get('/maping/history/pencabutan', [MapingController::class, 'historyCabut'])
+            ->name('maping.historyCabut');
     });
 });

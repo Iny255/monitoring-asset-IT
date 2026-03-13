@@ -123,9 +123,7 @@
                                     <select name="status" class="form-control" required>
                                         <option value="Dipinjam" {{ $peminjaman->status=='Dipinjam'?'selected':'' }}>Dipinjam</option>
                                         <option value="Dikembalikan" {{ $peminjaman->status=='Dikembalikan'?'selected':'' }}>Dikembalikan</option>
-                                        <option value="Hilang" {{ $peminjaman->status=='Hilang'?'selected':'' }}>Hilang</option>
-                                        <option value="Rusak" {{ $peminjaman->status=='Rusak'?'selected':'' }}>Rusak</option>
-                                    </select>
+                                       
                                 </div>
 
                                 <div class="mb-3">

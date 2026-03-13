@@ -165,6 +165,18 @@
                                         <button class="btn btn-success btn-sm btn-mutasi" data-id="{{ $maping->id }}">
                                             <i class="bx bx-transfer"></i>
                                         </button>
+                                        {{-- CABUT INVENTARIS --}}
+                                        <form id="cabut-form-{{ $maping->id }}"
+                                            action="{{ route('maping.cabut', $maping->id) }}" method="POST"
+                                            style="display:none;">
+                                            @csrf
+                                        </form>
+
+                                        <button class="btn btn-dark btn-sm btn-cabut" data-id="{{ $maping->id }}"
+                                            data-kode="{{ $maping->keluar->kode_barang }}"
+                                            data-nama="{{ $maping->keluar->masuk->kategori->nama_barang ?? '-' }}">
+                                            <i class="bx bx-power-off"></i>
+                                        </button>
 
                                         {{-- ================= MANAGER ================= --}}
                                     @elseif(auth()->user()->role === 'manager')
@@ -193,7 +205,78 @@
 
         </div>
     </div>
+    <!-- MODAL PENCABUTAN -->
+    <div class="modal fade" id="modalCabut" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <form id="formCabut" method="POST">
+                @csrf
 
+                <div class="modal-content">
+
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="mb-0" style="color:white;">Form Pencabutan Inventaris</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+                                <label>Kode Barang</label>
+                                <input type="text" id="cabut_kode" class="form-control" readonly>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label>Nama Barang</label>
+                                <input type="text" id="cabut_nama" class="form-control" readonly>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label>Tanggal Pencabutan</label>
+                                <input type="date" name="tanggal_cabut" class="form-control"
+                                    value="{{ date('Y-m-d') }}" required>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label>Kondisi Barang</label>
+
+                                <select name="kondisi" class="form-control" required>
+                                    <option value="">-- Pilih Kondisi --</option>
+                                    <option value="Baik">Baik</option>
+                                    <option value="Rusak">Rusak</option>
+                        
+                                </select>
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label>Alasan Pencabutan</label>
+
+                                <textarea name="alasan" class="form-control" rows="3"
+                                    placeholder="Contoh: perangkat rusak / karyawan resign"></textarea>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            Batal
+                        </button>
+
+                        <button class="btn btn-primary">
+                            Simpan Pencabutan
+                        </button>
+
+                    </div>
+
+                </div>
+
+            </form>
+        </div>
+    </div>
 @endsection
 
 
@@ -263,6 +346,27 @@
                     });
 
                 });
+            });
+
+        });
+        // CABUT INVENTARIS
+        document.querySelectorAll('.btn-cabut').forEach(btn => {
+
+            btn.addEventListener('click', function() {
+
+                const id = this.dataset.id;
+                const kode = this.dataset.kode;
+                const nama = this.dataset.nama;
+
+                document.getElementById('cabut_kode').value = kode;
+                document.getElementById('cabut_nama').value = nama;
+
+                const url = "{{ route('maping.cabut', ':id') }}".replace(':id', id);
+                document.getElementById('formCabut').action = url;
+
+                let modal = new bootstrap.Modal(document.getElementById('modalCabut'));
+                modal.show();
+
             });
 
         });

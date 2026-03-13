@@ -17,12 +17,12 @@
                 </a>
             @endif
 
-            {{-- Tombol CETAK hanya untuk MANAGER --}}
+            {{-- Tombol CETAK hanya untuk MANAGER
             @if(auth()->user()->role == 'manager')
                 <a href="{{ route('manager.cetak.stok') }}" target="_blank" class="btn btn-primary btn-sm">
                     <i class="bi bi-printer"></i> Cetak
                 </a>
-            @endif
+            @endif --}}
 
         </div>
     </div>

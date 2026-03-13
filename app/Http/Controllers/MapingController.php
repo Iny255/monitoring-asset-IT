@@ -12,6 +12,7 @@ use App\Models\Perusahaan;
 use App\Models\Kategori;
 use App\Models\Karyawan;
 use App\Models\MutasiMaping;
+use App\Models\Pencabutan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -488,5 +489,33 @@ class MapingController extends Controller
         $mutasi->delete();
 
         return redirect()->back()->with('success', 'Data mutasi berhasil dihapus');
+    }
+    public function cabut(Request $request, $id)
+    {
+        $maping = Maping::findOrFail($id);
+
+        DB::beginTransaction();
+
+        try {
+
+            Pencabutan::create([
+                'id_maping' => $maping->id,
+                'id_keluar' => $maping->id_keluar,
+                'tanggal_cabut' => $request->tanggal_cabut,
+                'kondisi' => $request->kondisi,
+                'alasan' => $request->alasan
+            ]);
+
+            $maping->delete();
+
+            DB::commit();
+
+            return back()->with('success', 'Inventaris berhasil dicabut');
+        } catch (\Exception $e) {
+
+            DB::rollBack();
+
+            return back()->with('error', 'Terjadi kesalahan');
+        }
     }
 }

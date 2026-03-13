@@ -6,12 +6,13 @@
 @section('vendor-style')
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/apex-charts/apex-charts.css') }}">
     <style>
+        /* 1. CARD STATS & WAVE EFFECT */
         .card-stat {
             border-radius: 15px;
             border: none;
             overflow: hidden;
             position: relative;
-            transition: .3s;
+            transition: transform .3s, box-shadow .3s, background .3s;
             background: #fff;
         }
 
@@ -27,7 +28,7 @@
             width: 100%;
             height: 100%;
             z-index: 0;
-            opacity: 0.15;
+            opacity: 0.12;
             pointer-events: none;
         }
 
@@ -38,7 +39,7 @@
             width: 150%;
             height: 150%;
             background: currentColor;
-            border-radius: 35%;
+            border-radius: 38%;
             animation: wave-move 10s infinite linear;
         }
 
@@ -52,6 +53,25 @@
             }
         }
 
+        /* 2. PENYEMPURNAAN LABEL (PINJAM, KEMBALI, DLL) */
+        .card-stat .stat-label {
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-size: 0.72rem;
+            color: #32475c !important;
+            /* Warna gelap tegas untuk mode terang */
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .card-stat h4 {
+            font-weight: 800;
+            font-size: 1.6rem;
+            margin-bottom: 0;
+        }
+
+        /* 3. LAYOUT HELPERS */
         .card-body {
             position: relative;
             z-index: 1;
@@ -92,6 +112,33 @@
             color: white;
         }
 
+        /* 4. DARK MODE COMPATIBILITY */
+        .dark-style .card-stat {
+            background: #2b2c40 !important;
+        }
+
+        .dark-style .card-stat .stat-label {
+            color: #d2d2e8 !important;
+            /* Warna terang di mode gelap */
+        }
+
+        .dark-style .apexcharts-canvas text,
+        .dark-style .apexcharts-legend-text {
+            fill: #cbcbe2 !important;
+            color: #cbcbe2 !important;
+        }
+
+        .dark-style .apexcharts-gridline {
+            stroke: #444564 !important;
+        }
+
+        /* 5. CHART SIZING */
+        #chartTransaksiAset,
+        #chartDonutAset {
+            width: 100% !important;
+            min-height: 320px;
+        }
+
         .fade-up {
             opacity: 0;
             transform: translateY(20px);
@@ -101,42 +148,6 @@
         .fade-up.show {
             opacity: 1;
             transform: translateY(0);
-        }
-
-        .dark-style .apexcharts-canvas text {
-            fill: #ffffff !important;
-            font-weight: 500 !important;
-        }
-
-        .dark-style .apexcharts-legend-text {
-            fill: #ffffff !important;
-            color: #ffffff !important;
-        }
-
-        .dark-style .apexcharts-gridline {
-            stroke: #3c4465 !important;
-        }
-
-        /* Memastikan grafik mengisi ruang card */
-        #chartTransaksiAset,
-        #chartDonutAset {
-            width: 100% !important;
-            min-height: 300px;
-        }
-
-        /* Force text visibility in Dark Mode */
-        .dark-style .apexcharts-canvas text {
-            fill: #ffffff !important;
-            font-weight: 500 !important;
-        }
-
-        .dark-style .apexcharts-legend-text {
-            fill: #ffffff !important;
-            color: #ffffff !important;
-        }
-
-        .dark-style .apexcharts-gridline {
-            stroke: #3c4465 !important;
         }
     </style>
 @endsection
@@ -154,7 +165,7 @@
                             <p class="mb-0 opacity-75">Sistem Monitoring Aset IT - PT Sembilan Matahari Sakti</p>
                         </div>
                         <img src="{{ asset('assets/img/illustrations/man-with-laptop-light.png') }}" height="120"
-                            alt="view-sales">
+                            alt="welcome">
                     </div>
                 </div>
             </div>
@@ -202,8 +213,8 @@
                         <div class="card-body d-flex align-items-center">
                             <div class="icon-box {{ $item['bg'] }} me-3"><i class="bx {{ $item['icon'] }}"></i></div>
                             <div>
-                                <small class="text-muted d-block">{{ $item['title'] }}</small>
-                                <h4 class="mb-0">{{ $item['count'] }}</h4>
+                                <span class="stat-label">{{ $item['title'] }}</span>
+                                <h4>{{ number_format($item['count'], 0, ',', '.') }}</h4>
                             </div>
                         </div>
                     </div>
@@ -237,6 +248,7 @@
     </div>
 @endsection
 
+{{-- ================= SCRIPTS ================= --}}
 @section('vendor-script')
     <script src="{{ asset('assets/vendor/libs/apex-charts/apexcharts.js') }}"></script>
 @endsection
@@ -244,11 +256,8 @@
 @section('page-script')
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            const dataMasuk = @json($dataMasuk ?? []);
-            const dataKeluar = @json($dataKeluar ?? []);
-            const bulanLabel = @json($bulanLabel ?? []);
             const isDark = document.documentElement.classList.contains("dark-style");
-            const labelColor = isDark ? "#ffffff" : "#566a7f";
+            const labelColor = isDark ? "#cbcbe2" : "#566a7f";
 
             // Area Chart
             new ApexCharts(document.querySelector("#chartTransaksiAset"), {
@@ -258,17 +267,19 @@
                     toolbar: {
                         show: false
                     },
-                    fontFamily: 'inherit'
+                    fontFamily: 'Public Sans'
                 },
                 series: [{
-                    name: 'Masuk',
-                    data: dataMasuk
-                }, {
-                    name: 'Keluar',
-                    data: dataKeluar
-                }],
+                        name: 'Masuk',
+                        data: @json($dataMasuk ?? [])
+                    },
+                    {
+                        name: 'Keluar',
+                        data: @json($dataKeluar ?? [])
+                    }
+                ],
                 xaxis: {
-                    categories: bulanLabel,
+                    categories: @json($bulanLabel ?? []),
                     labels: {
                         style: {
                             colors: labelColor
@@ -285,21 +296,30 @@
                 legend: {
                     labels: {
                         colors: labelColor
-                    }
+                    },
+                    position: 'top',
+                    horizontalAlign: 'right'
                 },
                 colors: ['#696cff', '#8592a3'],
                 stroke: {
                     curve: 'smooth',
                     width: 3
+                },
+                fill: {
+                    type: 'gradient',
+                    gradient: {
+                        opacityFrom: 0.6,
+                        opacityTo: 0.1
+                    }
                 }
             }).render();
 
-            // Donut Chart - Fixed Layout & Size
+            // Donut Chart
             new ApexCharts(document.querySelector("#chartDonutAset"), {
                 chart: {
                     type: 'donut',
                     height: 350
-                }, // Hapus offsetY agar centering otomatis
+                },
                 series: [{{ (int) ($totalLaptop ?? 0) }}, {{ (int) ($totalPrinter ?? 0) }},
                     {{ (int) ($totalHp ?? 0) }}
                 ],
@@ -308,14 +328,19 @@
                 plotOptions: {
                     pie: {
                         donut: {
-                            size: '75%', // Donut sedikit lebih tebal terlihat lebih proporsional
+                            size: '75%',
                             labels: {
                                 show: true,
                                 name: {
-                                    color: labelColor
+                                    show: true,
+                                    color: labelColor,
+                                    offsetY: -10
                                 },
                                 value: {
-                                    color: labelColor
+                                    show: true,
+                                    color: labelColor,
+                                    offsetY: 10,
+                                    fontWeight: 700
                                 },
                                 total: {
                                     show: true,
@@ -348,8 +373,10 @@
                 }]
             }).render();
 
-            document.querySelectorAll(".fade-up").forEach((el, i) => setTimeout(() => el.classList.add("show"),
-                150 * i));
+            // Animation Trigger
+            document.querySelectorAll(".fade-up").forEach((el, i) => {
+                setTimeout(() => el.classList.add("show"), 150 * i);
+            });
         });
     </script>
 @endsection
