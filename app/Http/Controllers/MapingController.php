@@ -25,8 +25,14 @@ class MapingController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Maping::with(['lokasi', 'perusahaan', 'keluar.masuk.kategori', 'keluar.karyawan']);
+        $status = $request->status ?? 'aktif';
 
+        $query = Maping::with([
+            'lokasi',
+            'perusahaan',
+            'keluar.masuk.kategori',
+            'keluar.karyawan'
+        ])->where('status', $status);
         /*
     |====================================================
     | FILTER CEPAT (EXACT MATCH → SUPER CEPAT)
@@ -56,6 +62,7 @@ class MapingController extends Controller
                 $q->where('id', $request->barang);
             });
         }
+
 
         /*
     |====================================================
@@ -98,7 +105,10 @@ class MapingController extends Controller
         $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
         $barangs = Kategori::orderBy('nama_barang')->get();
 
-        return view('content.dashboard.maping.index', compact('mapings', 'lokasis', 'perusahaans', 'barangs'));
+        return view(
+            'content.dashboard.maping.index',
+            compact('mapings', 'lokasis', 'perusahaans', 'barangs', 'status')
+        );
     }
 
     /**
@@ -197,6 +207,7 @@ class MapingController extends Controller
                 'aplikasi' => $request->aplikasi,
                 'data_p' => $request->data_p,
                 'data_n' => $request->data_n,
+                'status' => 'aktif',
             ]);
 
             DB::commit();
@@ -276,6 +287,7 @@ class MapingController extends Controller
             'aplikasi' => 'nullable|string|max:100',
             'data_p' => 'nullable|string|max:255',
             'data_n' => 'nullable|string|max:255',
+            'status' => 'required|in:aktif,dicabut',
         ]);
 
         DB::beginTransaction();
@@ -295,6 +307,7 @@ class MapingController extends Controller
                 'aplikasi' => $request->aplikasi,
                 'data_p' => $request->data_p,
                 'data_n' => $request->data_n,
+                'status' => $request->status,
             ]);
 
             DB::commit();
@@ -330,7 +343,12 @@ class MapingController extends Controller
 
     public function print(Request $request)
     {
-        $query = Maping::with(['lokasi', 'perusahaan', 'keluar.masuk.kategori', 'keluar.karyawan']);
+        $query = Maping::with([
+            'lokasi',
+            'perusahaan',
+            'keluar.masuk.kategori',
+            'keluar.karyawan'
+        ])->where('status', 'aktif');
 
         // FILTER SAMA DENGAN INDEX
         if ($request->filled('lokasi')) {
@@ -492,7 +510,7 @@ class MapingController extends Controller
     }
     public function cabut(Request $request, $id)
     {
-        $maping = Maping::findOrFail($id);
+        $maping = Maping::with(['keluar.karyawan'])->findOrFail($id);
 
         DB::beginTransaction();
 
@@ -501,21 +519,52 @@ class MapingController extends Controller
             Pencabutan::create([
                 'id_maping' => $maping->id,
                 'id_keluar' => $maping->id_keluar,
+                'id_lokasi' => $maping->id_lokasi,
+                'id_perusahaan' => $maping->id_perusahaan,
+                'id_karyawan' => optional($maping->keluar)->id_karyawan,
                 'tanggal_cabut' => $request->tanggal_cabut,
                 'kondisi' => $request->kondisi,
                 'alasan' => $request->alasan
             ]);
 
-            $maping->delete();
+            $maping->update([
+                'status' => 'dicabut'
+            ]);
 
             DB::commit();
 
-            return back()->with('success', 'Inventaris berhasil dicabut');
+            return redirect()
+                ->route('maping.historyCabut')
+                ->with('success', 'Inventaris berhasil dicabut');
         } catch (\Exception $e) {
 
             DB::rollBack();
 
-            return back()->with('error', 'Terjadi kesalahan');
+            return back()->with('error', $e->getMessage());
         }
+    }
+    public function historyCabut()
+    {
+        $pencabutans = Pencabutan::with([
+            'lokasi',
+            'perusahaan',
+            'karyawan',
+            'keluar.masuk.kategori'
+        ])
+            ->latest()
+            ->paginate(10);
+
+        return view(
+            'content.dashboard.maping.history_cabut',
+            compact('pencabutans')
+        );
+    }
+    public function hapusCabut($id)
+    {
+        $pencabutan = Pencabutan::findOrFail($id);
+
+        $pencabutan->delete();
+
+        return back()->with('success', 'History pencabutan berhasil dihapus');
     }
 }

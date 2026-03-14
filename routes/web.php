@@ -174,7 +174,9 @@ Route::middleware(['auth'])->group(function () {
             ->name('maping.historyGlobal');
         Route::delete('/dashboard/mutasi/{id}', [MapingController::class, 'destroyMutasi'])
             ->name('maping.mutasi.destroy');
-        Route::get('/maping/history/pencabutan', [MapingController::class, 'historyCabut'])
+        Route::get('/dashboard/history/pencabutan', [MapingController::class, 'historyCabut'])
             ->name('maping.historyCabut');
+        Route::delete('/dashboard/history/pencabutan/{id}', [MapingController::class, 'hapusCabut'])
+            ->name('history.cabut.hapus');
     });
 });

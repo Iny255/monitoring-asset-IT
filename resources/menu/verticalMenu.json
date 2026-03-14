@@ -140,6 +140,12 @@
           "name": "Mutasi",
           "icon": "menu-icon tf-icons bi bi-clock-history",
           "slug": "history-mutasi"
+        },
+        {
+          "url": "dashboard/history/pencabutan",
+          "name": "Pencabutan",
+          "icon": "menu-icon tf-icons bi bi-power",
+          "slug": "history-pencabutan"
         }
       ]
     }

@@ -80,7 +80,21 @@
                         @endfor
                     </select>
                 </div>
+                <div class="col-md-2">
 
+                    <select name="status" class="form-control">
+
+                        <option value="aktif" {{ request('status', 'aktif') == 'aktif' ? 'selected' : '' }}>
+                            Aktif
+                        </option>
+
+                        <option value="dicabut" {{ request('status') == 'dicabut' ? 'selected' : '' }}>
+                            Dicabut
+                        </option>
+
+                    </select>
+
+                </div>
                 <div class="col-md-2">
                     <input type="text" name="search" class="form-control" placeholder="Search bebas..."
                         value="{{ request('search') }}">
@@ -118,6 +132,7 @@
                             <th>Perusahaan</th>
                             <th>Processor</th>
                             <th>RAM</th>
+                            <th>Status</th>
                             <th width="15%">Aksi</th>
                         </tr>
                     </thead>
@@ -134,7 +149,15 @@
                                 <td>{{ $maping->perusahaan->nama_perusahaan ?? '-' }}</td>
                                 <td>{{ $maping->processor }}</td>
                                 <td>{{ $maping->ram }} GB</td>
+                                <td class="text-center">
 
+                                    @if ($maping->status == 'aktif')
+                                        <span class="badge bg-success">Aktif</span>
+                                    @else
+                                        <span class="badge bg-danger">Dicabut</span>
+                                    @endif
+
+                                </td>
                                 <td class="text-center">
 
                                     {{-- ================= PETUGAS ================= --}}
@@ -245,7 +268,7 @@
                                     <option value="">-- Pilih Kondisi --</option>
                                     <option value="Baik">Baik</option>
                                     <option value="Rusak">Rusak</option>
-                        
+
                                 </select>
                             </div>
 

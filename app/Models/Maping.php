@@ -22,6 +22,7 @@ class Maping extends Model
         'aplikasi',
         'data_p',
         'data_n',
+        'status',
         
     ];
     public function lokasi()

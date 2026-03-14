@@ -65,10 +65,6 @@
                 <th>Aplikasi</th>
                 <th>Data PPN</th>
                 <th>Data NON</th>
-
-
-
-
             </tr>
         </thead>
 
