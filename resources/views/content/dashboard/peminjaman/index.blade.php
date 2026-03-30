@@ -19,7 +19,6 @@
         </div>
     @endif
 
-
     <div class="card">
 
         {{-- HEADER --}}
@@ -36,7 +35,6 @@
             </div>
         </div>
 
-
         <div class="card-body">
 
             {{-- SEARCH --}}
@@ -51,10 +49,9 @@
                 </div>
             </form>
 
-
-
             {{-- TABLE --}}
             <div class="table-responsive">
+
                 <table class="table table-bordered">
 
                     <thead class="table-primary text-center">
@@ -65,7 +62,7 @@
                             <th>TANGGAL PINJAM</th>
                             <th>RENCANA KEMBALI</th>
                             <th>STATUS</th>
-                            <th width="120">AKSI</th>
+                            <th style="width:160px">AKSI</th>
                         </tr>
                     </thead>
 
@@ -73,7 +70,10 @@
 
                         @forelse ($peminjamans as $p)
                             <tr>
-                                <td>{{ optional($p->keluar)->kode_barang ?? '-' }}</td>
+
+                                <td>
+                                    {{ optional($p->keluar)->kode_barang ?? '-' }}
+                                </td>
 
                                 <td>
                                     {{ optional(optional(optional($p->keluar)->masuk)->kategori)->nama_barang ?? '-' }}
@@ -92,6 +92,7 @@
                                 </td>
 
                                 <td class="text-center">
+
                                     @if ($p->status == 'pending')
                                         <span class="badge bg-warning">Pending</span>
                                     @elseif($p->status == 'disetujui')
@@ -103,43 +104,50 @@
                                     @else
                                         <span class="badge bg-danger">Ditolak</span>
                                     @endif
-                                </td>
-
-                                <td class="text-center">
-
-                                    {{-- ================= PETUGAS ================= --}}
-                                    @if (auth()->user()->role === 'petugas')
-                                        <a href="{{ route('peminjaman.show', $p->id) }}" class="btn btn-info btn-sm">
-                                            <i class="bx bx-show"></i>
-                                        </a>
-
-                                        <button class="btn btn-warning btn-sm btn-edit" data-id="{{ $p->id }}">
-                                            <i class="bx bx-edit-alt"></i>
-                                        </button>
-
-                                        <form id="delete-form-{{ $p->id }}"
-                                            action="{{ route('peminjaman.destroy', $p->id) }}" method="POST"
-                                            style="display:none;">
-                                            @csrf
-                                            @method('DELETE')
-                                        </form>
-
-                                        <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $p->id }}">
-                                            <i class="bx bx-trash"></i>
-                                        </button>
-
-                                        {{-- ================= MANAGER (SHOW ONLY) ================= --}}
-                                    @elseif(auth()->user()->role === 'manager')
-                                        <a href="{{ route('laporan.peminjaman.show', $p->id) }}"
-                                            class="btn btn-info btn-sm">
-                                            <i class="bx bx-show"></i> Detail
-                                        </a>
-                                    @endif
 
                                 </td>
+
+                                <td>
+
+                                    <div class="d-flex justify-content-center gap-1 flex-nowrap">
+
+                                        {{-- ================= PETUGAS ================= --}}
+                                        @if (auth()->user()->role === 'petugas')
+                                            <a href="{{ route('peminjaman.show', $p->id) }}" class="btn btn-info btn-sm">
+                                                <i class="bx bx-show"></i>
+                                            </a>
+
+                                            <button class="btn btn-warning btn-sm btn-edit" data-id="{{ $p->id }}">
+                                                <i class="bx bx-edit-alt"></i>
+                                            </button>
+
+                                            <form id="delete-form-{{ $p->id }}"
+                                                action="{{ route('peminjaman.destroy', $p->id) }}" method="POST"
+                                                style="display:none;">
+                                                @csrf
+                                                @method('DELETE')
+                                            </form>
+
+                                            <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $p->id }}">
+                                                <i class="bx bx-trash"></i>
+                                            </button>
+
+                                            {{-- ================= MANAGER ================= --}}
+                                        @elseif(auth()->user()->role === 'manager')
+                                            <a href="{{ route('laporan.peminjaman.show', $p->id) }}"
+                                                class="btn btn-info btn-sm">
+                                                <i class="bx bx-show"></i> Detail
+                                            </a>
+                                        @endif
+
+                                    </div>
+
+                                </td>
+
                             </tr>
 
                         @empty
+
                             <tr>
                                 <td colspan="7" class="text-center text-muted py-4">
                                     Belum ada data peminjaman
@@ -156,20 +164,23 @@
                 </div>
 
             </div>
+
         </div>
     </div>
 
 @endsection
 
 
-
 @section('scripts')
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
 
             // DELETE
             document.querySelectorAll('.btn-delete').forEach(btn => {
+
                 btn.addEventListener('click', function() {
+
                     const id = this.dataset.id;
 
                     Swal.fire({
@@ -180,16 +191,23 @@
                         confirmButtonText: 'Ya, hapus',
                         cancelButtonText: 'Batal'
                     }).then((result) => {
+
                         if (result.isConfirmed) {
                             document.getElementById(`delete-form-${id}`).submit();
                         }
+
                     });
+
                 });
+
             });
+
 
             // EDIT
             document.querySelectorAll('.btn-edit').forEach(btn => {
+
                 btn.addEventListener('click', function() {
+
                     const id = this.dataset.id;
 
                     Swal.fire({
@@ -200,13 +218,18 @@
                         confirmButtonText: 'Ya, Edit',
                         cancelButtonText: 'Batal'
                     }).then((result) => {
+
                         if (result.isConfirmed) {
                             window.location.href = `/dashboard/peminjaman/${id}/edit`;
                         }
+
                     });
+
                 });
+
             });
 
         });
     </script>
+
 @endsection
