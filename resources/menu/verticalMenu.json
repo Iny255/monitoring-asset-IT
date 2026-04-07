@@ -127,7 +127,7 @@
       "name": "Peminjaman Barang",
       "icon": "menu-icon tf-icons bi bi-clipboard-check",
       "slug": "dashboard-peminjaman",
-      "roles": ["petugas"]
+      "roles": ["petugas","manager"]
     },
     {
       "name": "History",
