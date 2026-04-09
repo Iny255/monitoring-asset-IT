@@ -8,7 +8,7 @@
 
         {{-- HEADER --}}
         <div class="card-header border-0 text-white"
-            style="background: linear-gradient(90deg,#5b6cff,#7b8dff); border-radius:10px 10px 0 0;">
+            style="background: linear-gradient(90deg,#0d3b66,#7b8dff); border-radius:10px 10px 0 0;">
 
             <div class="d-flex justify-content-between align-items-center">
 
