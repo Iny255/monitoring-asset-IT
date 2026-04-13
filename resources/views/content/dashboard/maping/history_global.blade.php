@@ -4,209 +4,195 @@
 
 @section('content')
 
-<div class="card shadow-sm border-0">
+    <div class="card shadow-sm border-0">
 
-    {{-- HEADER --}}
-    <div class="card-header border-0 text-white"
-        style="background: linear-gradient(90deg,#0d3b66,#7b8dff); border-radius:10px 10px 0 0;">
+        {{-- HEADER --}}
+        <div class="card-header border-0 text-white"
+            style="background: linear-gradient(90deg,#0d3b66,#7b8dff); border-radius:10px 10px 0 0;">
 
-        <div class="d-flex justify-content-between align-items-center">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h4 class="mb-0 text-white">History Mutasi Barang</h4>
+                    <small style="opacity:.9">
+                        Riwayat perpindahan lokasi, perusahaan, dan karyawan
+                    </small>
+                </div>
+            </div>
+        </div>
 
-            <div>
-                <h4 class="mb-0 text-white">History Mutasi Barang</h4>
-                <small style="opacity:.9">
-                    Riwayat perpindahan lokasi, perusahaan, dan karyawan
-                </small>
+        <div class="card-body">
+
+            <div class="table-responsive">
+
+                <table class="table table-hover align-middle">
+
+                    <thead class="table-light text-center">
+                        <tr>
+                            <th width="60">No</th>
+                            <th>Kode Barang</th>
+                            <th>Jenis Barang</th>
+                            <th width="120">Aksi</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        @forelse ($mapings as $m)
+                            <tr>
+
+                                {{-- NOMOR --}}
+                                <td class="text-center fw-semibold">
+                                    {{ ($mapings->currentPage() - 1) * $mapings->perPage() + $loop->iteration }}
+                                </td>
+
+                                {{-- KODE BARANG --}}
+                                <td class="text-center">
+                                    <span class="badge bg-dark px-3 py-2">
+                                        {{ optional($m->keluar)->kode_barang ?? '-' }}
+                                    </span>
+                                </td>
+
+                                {{-- JENIS BARANG --}}
+                                <td>
+                                    {{ optional(optional($m->keluar)->masuk)->kategori->nama_barang ?? '-' }}
+                                </td>
+
+                                {{-- AKSI --}}
+                                <td class="text-center">
+                                    <button class="btn btn-info btn-sm btn-show-history" data-id="{{ $m->id }}">
+                                        <i class="bx bx-show"></i>
+                                    </button>
+                                </td>
+
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    Belum ada data
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+
             </div>
 
-            <!-- <a href="{{ route('maping.index') }}" class="btn btn-light btn-sm shadow-sm">
-                ← Kembali
-            </a> -->
+            {{-- PAGINATION --}}
+            <div class="mt-3">
+                {{ $mapings->links() }}
+            </div>
 
         </div>
     </div>
 
+    {{-- MODAL --}}
+    <div class="modal fade" id="modalHistory" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
 
-    <div class="card-body">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="mb-0">History Mutasi</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
 
-        <div class="table-responsive">
+                <div class="modal-body" id="historyContent">
+                    <div class="text-center">Loading...</div>
+                </div>
 
-            <table class="table table-hover align-middle">
-
-                <thead class="table-light text-center">
-                    <tr>
-                        <th width="60">No</th>
-                        <th>Kode Barang</th>
-                        <th>Nama Barang</th>
-                        <th>Tanggal</th>
-                        <th>Dari Lokasi</th>
-                        <th>Ke Lokasi</th>
-                        <th>Dari Perusahaan</th>
-                        <th>Ke Perusahaan</th>
-                        <th>Dari Karyawan</th>
-                        <th>Ke Karyawan</th>
-                        <th>Inv Lama</th>
-                        <th>Inv Baru</th>
-                        <th width="120">Aksi</th>
-                    </tr>
-                </thead>
-
-                <tbody>
-
-                    @forelse ($mutasis as $m)
-                    <tr>
-
-                        {{-- NOMOR URUT PAGINATION AMAN --}}
-                        <td class="text-center fw-semibold">
-                            {{ ($mutasis->currentPage() - 1) * $mutasis->perPage() + $loop->iteration }}
-                        </td>
-                        {{-- KODE BARANG --}}
-                        <td class="text-center">
-                            <span class="badge bg-dark px-3 py-2">
-                                {{ optional(optional($m->maping)->keluar)->kode_barang ?? '-' }}
-                            </span>
-                        </td>
-
-                        {{-- NAMA BARANG --}}
-                        <td>
-                            {{ optional(optional(optional($m->maping)->keluar)->masuk)->kategori->nama_barang ?? '-' }}
-                        </td>
-
-                        {{-- TANGGAL --}}
-                        <td>
-                            <span class="badge bg-light text-primary px-3 py-2">
-                                {{ $m->tanggal_mutasi ? \Carbon\Carbon::parse($m->tanggal_mutasi)->format('d M Y') : '-' }}
-                            </span>
-                        </td>
-
-                        {{-- DARI LOKASI --}}
-                        <td class="text-center">
-                            <span class="badge bg-secondary-subtle text-dark px-3 py-2">
-                                {{ optional($m->dariLokasi)->nama_lokasi ?? '-' }}
-                            </span>
-                        </td>
-
-                        {{-- KE LOKASI --}}
-                        <td class="text-center">
-                            <span class="badge bg-info-subtle text-info px-3 py-2">
-                                {{ optional($m->keLokasi)->nama_lokasi ?? '-' }}
-                            </span>
-                        </td>
-
-                        {{-- DARI PERUSAHAAN --}}
-                        <td style="min-width:180px">
-                            {{ optional($m->dariPerusahaan)->nama_perusahaan ?? '-' }}
-                        </td>
-
-                        {{-- KE PERUSAHAAN --}}
-                        <td style="min-width:180px">
-                            {{ optional($m->kePerusahaan)->nama_perusahaan ?? '-' }}
-                        </td>
-
-                        {{-- DARI KARYAWAN --}}
-                        <td>
-                            {{ optional($m->dariKaryawan)->nama_karyawan ?? '-' }}
-                        </td>
-
-                        {{-- KE KARYAWAN --}}
-                        <td>
-                            {{ optional($m->keKaryawan)->nama_karyawan ?? '-' }}
-                        </td>
-
-                        {{-- INV LAMA --}}
-                        <td class="text-center">
-                            <span class="badge bg-secondary text-white px-3 py-2">
-                                {{ $m->dari_no_inventaris ?? '-' }}
-                            </span>
-                        </td>
-
-                        {{-- INV BARU --}}
-                        <td class="text-center">
-                            <span class="badge bg-success px-3 py-2">
-                                {{ $m->ke_no_inventaris ?? '-' }}
-                            </span>
-                        </td>
-
-                        <td class="text-center">
-
-                            <form action="{{ route('maping.mutasi.destroy', $m->id) }}"
-                                method="POST"
-                                class="form-hapus d-inline">
-
-                                @csrf
-                                @method('DELETE')
-
-                                <button type="button"
-                                    class="btn btn-sm btn-danger rounded-circle btn-hapus"
-                                    style="width:34px;height:34px;display:flex;align-items:center;justify-content:center;"
-                                    title="Hapus">
-
-                                    <i class="bx bx-trash" style="font-size:16px"></i>
-
-                                </button>
-
-                            </form>
-
-                        </td>
-
-
-                    </tr>
-
-                    @empty
-                    <tr>
-                        <td colspan="10" class="text-center py-5 text-muted">
-                            <i class="bx bx-folder-open" style="font-size:40px"></i>
-                            <div class="mt-2">Belum ada riwayat mutasi</div>
-                        </td>
-                    </tr>
-                    @endforelse
-
-                    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-                </tbody>
-            </table>
-
+            </div>
         </div>
-
-        {{-- PAGINATION --}}
-        @if(method_exists($mutasis,'links'))
-        <div class="mt-3">
-            {{ $mutasis->links() }}
-        </div>
-        @endif
-
     </div>
-</div>
 
 @endsection
+
+{{-- SCRIPT --}}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('click', function(e) {
 
-        document.querySelectorAll('.btn-hapus').forEach(function(button) {
+        let btn = e.target.closest('.btn-show-history');
+        if (!btn) return;
 
-            button.addEventListener('click', function() {
+        let id = btn.dataset.id;
 
-                let form = this.closest('.form-hapus');
+        document.getElementById('historyContent').innerHTML = 'Loading...';
 
-                Swal.fire({
-                    title: 'Yakin ingin menghapus?',
-                    text: "Data mutasi akan dihapus permanen!",
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#d33',
-                    cancelButtonColor: '#6c757d',
-                    confirmButtonText: 'Ya, Hapus!',
-                    cancelButtonText: 'Batal',
-                    reverseButtons: true
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        form.submit();
-                    }
-                });
+        fetch(`/maping/${id}/history-user`)
+            .then(res => res.text())
+            .then(html => {
 
+                document.getElementById('historyContent').innerHTML = html;
+
+                let modal = new bootstrap.Modal(document.getElementById('modalHistory'));
+                modal.show();
+
+            })
+            .catch(err => {
+                console.error(err);
+                document.getElementById('historyContent').innerHTML = 'Gagal load data';
             });
 
-        });
+    });
+</script>
+
+<script>
+    document.addEventListener('click', function(e) {
+
+        if (e.target.closest('.btn-hapus')) {
+
+            let btn = e.target.closest('.btn-hapus');
+            let id = btn.dataset.id;
+            let card = btn.closest('.history-card');
+
+            Swal.fire({
+                title: 'Hapus transaksi?',
+                text: "Data tidak bisa dikembalikan!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Ya, hapus',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+
+                if (result.isConfirmed) {
+
+                    fetch(`/mutasi/${id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest' // 🔥 WAJIB
+                            }
+                        })
+                        .then(res => {
+                            if (!res.ok) {
+                                throw new Error('Response gagal');
+                            }
+                            return res.json();
+                        })
+                        .then(data => {
+
+                            if (data.success) {
+
+                                Swal.fire('Berhasil!', 'Data dihapus', 'success');
+
+                                card.style.transition = "0.3s";
+                                card.style.opacity = "0";
+                                setTimeout(() => card.remove(), 300);
+
+                            } else {
+                                Swal.fire('Gagal!', 'Tidak bisa hapus', 'error');
+                            }
+
+                        })
+                        .catch(err => {
+                            console.error('ERROR:', err); // 🔥 biar keliatan di console
+                            Swal.fire('Error!', 'Terjadi kesalahan', 'error');
+                        });
+
+                }
+
+            });
+        }
 
     });
 </script>

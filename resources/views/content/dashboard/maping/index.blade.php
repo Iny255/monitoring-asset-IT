@@ -35,87 +35,59 @@
         <div class="card-body">
 
             {{-- SEARCH --}}
-            <form method="GET" class="row g-2 mb-3">
+            <form method="GET" class="d-flex flex-wrap gap-2 mb-3 align-items-center">
 
-                <div class="col-md-2">
-                    <select name="lokasi" class="form-control">
-                        <option value="">Semua Lokasi</option>
-                        @foreach ($lokasis as $l)
-                            <option value="{{ $l->id }}" {{ request('lokasi') == $l->id ? 'selected' : '' }}>
-                                {{ $l->nama_lokasi }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="col-md-2">
-                    <select name="perusahaan" class="form-control">
-                        <option value="">Semua Perusahaan</option>
-                        @foreach ($perusahaans as $p)
-                            <option value="{{ $p->id }}" {{ request('perusahaan') == $p->id ? 'selected' : '' }}>
-                                {{ $p->nama_perusahaan }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="col-md-2">
-                    <select name="barang" class="form-control">
-                        <option value="">Semua Barang</option>
-                        @foreach ($barangs as $b)
-                            <option value="{{ $b->id }}" {{ request('barang') == $b->id ? 'selected' : '' }}>
-                                {{ $b->nama_barang }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div class="col-md-2">
-                    <select name="tahun" class="form-control">
-                        <option value="">Semua Tahun</option>
-                        @for ($i = date('Y'); $i >= 2018; $i--)
-                            <option value="{{ $i }}" {{ request('tahun') == $i ? 'selected' : '' }}>
-                                {{ $i }}
-                            </option>
-                        @endfor
-                    </select>
-                </div>
-                <div class="col-md-2">
-
-                    <select name="status" class="form-control">
-
-                        <option value="aktif" {{ request('status', 'aktif') == 'aktif' ? 'selected' : '' }}>
-                            Aktif
+                <select name="lokasi" class="form-select w-auto">
+                    <option value="">Lokasi</option>
+                    @foreach ($lokasis as $l)
+                        <option value="{{ $l->id }}" {{ request('lokasi') == $l->id ? 'selected' : '' }}>
+                            {{ $l->nama_lokasi }}
                         </option>
+                    @endforeach
+                </select>
 
-                        <option value="dicabut" {{ request('status') == 'dicabut' ? 'selected' : '' }}>
-                            Dicabut
+                <select name="perusahaan" class="form-select w-auto">
+                    <option value="">Perusahaan</option>
+                    @foreach ($perusahaans as $p)
+                        <option value="{{ $p->id }}" {{ request('perusahaan') == $p->id ? 'selected' : '' }}>
+                            {{ $p->nama_perusahaan }}
                         </option>
+                    @endforeach
+                </select>
 
-                    </select>
+                <select name="tahun" class="form-select w-auto">
+                    <option value="">Tahun</option>
+                    @for ($i = date('Y'); $i >= 2018; $i--)
+                        <option value="{{ $i }}" {{ request('tahun') == $i ? 'selected' : '' }}>
+                            {{ $i }}
+                        </option>
+                    @endfor
+                </select>
 
-                </div>
-                <div class="col-md-2">
-                    <input type="text" name="search" class="form-control" placeholder="Search bebas..."
+                <select name="status" class="form-select w-auto">
+                    <option value="aktif" {{ request('status', 'aktif') == 'aktif' ? 'selected' : '' }}>Aktif</option>
+                    <option value="dicabut" {{ request('status') == 'dicabut' ? 'selected' : '' }}>Dicabut</option>
+                </select>
+
+                <!-- 🔍 SEARCH UTAMA -->
+                <div class="input-group" style="width: 250px;">
+                    <span class="input-group-text"><i class="bx bx-search"></i></span>
+                    <input type="text" name="search" class="form-control" placeholder="Nama / Device / Barang / Type"
                         value="{{ request('search') }}">
                 </div>
 
-                <div class="col-md-2 d-flex gap-2">
-                    <button class="btn btn-primary w-100">Filter</button>
+                <!-- BUTTON -->
+                <button class="btn btn-primary">Filter</button>
 
-                    {{-- PETUGAS & MANAGER BISA CETAK --}}
-                    @if (auth()->user()->role === 'petugas')
-                        <a href="{{ route('maping.print', request()->query()) }}" target="_blank"
-                            class="btn btn-success w-100">
-                            Cetak
-                        </a>
-                    @elseif (auth()->user()->role === 'manager')
-                        <a href="{{ route('manager.maping.cetak', request()->query()) }}" target="_blank"
-                            class="btn btn-success w-100">
-                            Cetak
-                        </a>
-                    @endif
-                </div>
+                <a href="{{ route('maping.index') }}" class="btn btn-secondary">Reset</a>
+
+                @if (auth()->user()->role === 'petugas')
+                    <a href="{{ route('maping.print', request()->query()) }}" target="_blank"
+                        class="btn btn-success">Cetak</a>
+                @elseif (auth()->user()->role === 'manager')
+                    <a href="{{ route('manager.maping.cetak', request()->query()) }}" target="_blank"
+                        class="btn btn-success">Cetak</a>
+                @endif
 
             </form>
 
