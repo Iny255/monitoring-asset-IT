@@ -53,9 +53,10 @@
                                 </td>
 
                                 <td class="text-center">
-                                    <span class="badge bg-dark px-3 py-2">
+                                    <button class="badge bg-dark px-3 py-2 border-0 btn-detail" style="cursor:pointer"
+                                        data-id="{{ $p->id_maping }}">
                                         {{ optional($p->keluar)->kode_barang ?? '-' }}
-                                    </span>
+                                    </button>
                                 </td>
 
                                 <td>
@@ -75,11 +76,11 @@
                                 </td>
 
                                 <td>
-                                  {{ optional($p->perusahaan)->nama_perusahaan ?? '-' }}
+                                    {{ optional($p->perusahaan)->nama_perusahaan ?? '-' }}
                                 </td>
 
                                 <td>
-                                   {{ optional($p->karyawan)->nama_karyawan ?? '-' }}
+                                    {{ optional($p->karyawan)->nama_karyawan ?? '-' }}
                                 </td>
 
                                 <td class="text-center">
@@ -139,19 +140,38 @@
 
         </div>
     </div>
+    <!-- MODAL DETAIL -->
+    <div class="modal fade" id="modalDetail" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+
+                <div class="modal-header text-white" style="background: linear-gradient(90deg,#0d3b66,#7b8dff);">
+                    <h5 class="mb-0 text-white">Informasi Barang</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+
+                <div class="modal-body" id="detailContent">
+                    <div class="text-center py-5">
+                        <span class="spinner-border"></span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
 
 @endsection
 
 
 {{-- SWEET ALERT --}}
-@section('page-script')
+@section('scripts')
     <script>
         document.addEventListener("DOMContentLoaded", function() {
 
-            const buttons = document.querySelectorAll(".btn-hapus");
-
-            buttons.forEach(button => {
-
+            // =========================
+            // HAPUS DATA
+            // =========================
+            document.querySelectorAll(".btn-hapus").forEach(button => {
                 button.addEventListener("click", function() {
 
                     let form = this.closest("form");
@@ -166,12 +186,45 @@
                         confirmButtonText: "Ya, Hapus",
                         cancelButtonText: "Batal"
                     }).then((result) => {
-
                         if (result.isConfirmed) {
                             form.submit();
                         }
-
                     });
+
+                });
+            });
+
+            // =========================
+            // DETAIL BARANG (INI YANG KAMU BELUM ADA 🔥)
+            // =========================
+            document.querySelectorAll('.btn-detail').forEach(btn => {
+
+                btn.addEventListener('click', function() {
+
+                    let id = this.dataset.id;
+
+                    let modal = new bootstrap.Modal(document.getElementById('modalDetail'));
+                    modal.show();
+
+                    // loading dulu
+                    document.getElementById('detailContent').innerHTML = `
+                <div class="text-center py-5">
+                    <span class="spinner-border"></span>
+                </div>
+            `;
+
+                    fetch(`/dashboard/maping/detail/${id}`)
+                        .then(res => res.text())
+                        .then(html => {
+                            document.getElementById('detailContent').innerHTML = html;
+                        })
+                        .catch(() => {
+                            document.getElementById('detailContent').innerHTML = `
+                        <div class="text-danger text-center">
+                            Gagal memuat data
+                        </div>
+                    `;
+                        });
 
                 });
 

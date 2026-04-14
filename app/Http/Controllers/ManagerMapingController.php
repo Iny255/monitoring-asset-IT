@@ -12,12 +12,14 @@ class ManagerMapingController extends Controller
 {
     public function maping(Request $request)
     {
+        $status = $request->get('status', 'aktif');
+
         $query = Maping::with([
             'lokasi',
             'perusahaan',
             'keluar.masuk.kategori',
             'keluar.karyawan'
-        ]);
+        ])->where('status', $status);
 
         // FILTER
         if ($request->filled('lokasi')) {

@@ -33,61 +33,41 @@
         </div>
 
         <div class="card-body">
-
+            {{-- 🔔 INDIKATOR FILTER --}}
+            @if (request()->query())
+                <div class="alert alert-info">
+                    🔎 Filter aktif
+                </div>
+            @endif
             {{-- SEARCH --}}
-            <form method="GET" class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
 
-                <select name="lokasi" class="form-select w-auto">
-                    <option value="">Lokasi</option>
-                    @foreach ($lokasis as $l)
-                        <option value="{{ $l->id }}" {{ request('lokasi') == $l->id ? 'selected' : '' }}>
-                            {{ $l->nama_lokasi }}
-                        </option>
-                    @endforeach
-                </select>
+                {{-- KIRI: FILTER & RESET --}}
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
+                        🔍 Filter
+                    </button>
 
-                <select name="perusahaan" class="form-select w-auto">
-                    <option value="">Perusahaan</option>
-                    @foreach ($perusahaans as $p)
-                        <option value="{{ $p->id }}" {{ request('perusahaan') == $p->id ? 'selected' : '' }}>
-                            {{ $p->nama_perusahaan }}
-                        </option>
-                    @endforeach
-                </select>
-
-                <select name="tahun" class="form-select w-auto">
-                    <option value="">Tahun</option>
-                    @for ($i = date('Y'); $i >= 2018; $i--)
-                        <option value="{{ $i }}" {{ request('tahun') == $i ? 'selected' : '' }}>
-                            {{ $i }}
-                        </option>
-                    @endfor
-                </select>
-
-                <select name="status" class="form-select w-auto">
-                    <option value="aktif" {{ request('status', 'aktif') == 'aktif' ? 'selected' : '' }}>Aktif</option>
-                    <option value="dicabut" {{ request('status') == 'dicabut' ? 'selected' : '' }}>Dicabut</option>
-                </select>
-
-                <!-- 🔍 SEARCH UTAMA -->
-                <div class="input-group" style="width: 250px;">
-                    <span class="input-group-text"><i class="bx bx-search"></i></span>
-                    <input type="text" name="search" class="form-control" placeholder="Nama / Device / Barang / Type"
-                        value="{{ request('search') }}">
+                    <a href="{{ route('maping.index') }}" class="btn btn-secondary">
+                        Reset
+                    </a>
                 </div>
 
-                <!-- BUTTON -->
-                <button class="btn btn-primary">Filter</button>
+                {{-- KANAN: CETAK --}}
+                <div>
+                    @if (auth()->user()->role === 'petugas')
+                        <a href="{{ route('maping.print', request()->query()) }}" target="_blank" class="btn btn-success">
+                            🖨️ Cetak
+                        </a>
+                    @elseif (auth()->user()->role === 'manager')
+                        <a href="{{ route('manager.maping.cetak', request()->query()) }}" target="_blank"
+                            class="btn btn-success">
+                            🖨️ Cetak
+                        </a>
+                    @endif
+                </div>
 
-                <a href="{{ route('maping.index') }}" class="btn btn-secondary">Reset</a>
-
-                @if (auth()->user()->role === 'petugas')
-                    <a href="{{ route('maping.print', request()->query()) }}" target="_blank"
-                        class="btn btn-success">Cetak</a>
-                @elseif (auth()->user()->role === 'manager')
-                    <a href="{{ route('manager.maping.cetak', request()->query()) }}" target="_blank"
-                        class="btn btn-success">Cetak</a>
-                @endif
+            </div>
 
             </form>
 
@@ -229,8 +209,8 @@
 
                             <div class="col-md-6 mb-3">
                                 <label>Tanggal Pencabutan</label>
-                                <input type="date" name="tanggal_cabut" class="form-control"
-                                    value="{{ date('Y-m-d') }}" required>
+                                <input type="date" name="tanggal_cabut" class="form-control" value="{{ date('Y-m-d') }}"
+                                    required>
                             </div>
 
                             <div class="col-md-6 mb-3">
@@ -269,6 +249,100 @@
 
                 </div>
 
+            </form>
+        </div>
+    </div>
+    <!-- MODAL FILTER -->
+    <div class="modal fade" id="modalFilter" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <form method="GET">
+                <div class="modal-content">
+
+                    <div class="modal-header text-white" style="background: linear-gradient(90deg,#0d3b66,#7b8dff);">
+                        <h5 class="mb-0 text-white">Filter Data Mapping</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+                                <label>Lokasi</label>
+                                <select name="lokasi" class="form-select">
+                                    <option value="">-- Semua --</option>
+                                    @foreach ($lokasis as $l)
+                                        <option value="{{ $l->id }}"
+                                            {{ request('lokasi') == $l->id ? 'selected' : '' }}>
+                                            {{ $l->nama_lokasi }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label>Perusahaan</label>
+                                <select name="perusahaan" class="form-select">
+                                    <option value="">-- Semua --</option>
+                                    @foreach ($perusahaans as $p)
+                                        <option value="{{ $p->id }}"
+                                            {{ request('perusahaan') == $p->id ? 'selected' : '' }}>
+                                            {{ $p->nama_perusahaan }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label>Tahun</label>
+                                <select name="tahun" class="form-select">
+                                    <option value="">-- Semua --</option>
+                                    @for ($i = date('Y'); $i >= 2018; $i--)
+                                        <option value="{{ $i }}"
+                                            {{ request('tahun') == $i ? 'selected' : '' }}>
+                                            {{ $i }}
+                                        </option>
+                                    @endfor
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label>Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="aktif"
+                                        {{ request()->get('status', 'aktif') == 'aktif' ? 'selected' : '' }}>Aktif</option>
+                                    <option value="dicabut" {{ request('status') == 'dicabut' ? 'selected' : '' }}>Dicabut
+                                    </option>
+                                </select>
+                            </div>
+
+                            {{-- 🔥 TAMBAHAN BARU --}}
+                            <div class="col-md-6 mb-3">
+                                <label>Merek</label>
+                                <input type="text" name="merek" class="form-control"
+                                    value="{{ request('merek') }}" placeholder="Contoh: Lenovo">
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label>Type</label>
+                                <input type="text" name="type" class="form-control" value="{{ request('type') }}"
+                                    placeholder="Contoh: Ideapad">
+                            </div>
+
+                            <div class="col-md-12 mb-3">
+                                <label>Search</label>
+                                <input type="text" name="search" class="form-control"
+                                    value="{{ request('search') }}" placeholder="Nama / Device / Barang / Processor">
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-primary">Terapkan Filter</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    </div>
+
+                </div>
             </form>
         </div>
     </div>
@@ -366,5 +440,6 @@
 
         });
     </script>
+
 
 @endsection

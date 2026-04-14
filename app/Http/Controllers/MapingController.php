@@ -25,7 +25,7 @@ class MapingController extends Controller
    */
   public function index(Request $request)
   {
-    $status = $request->status ?? 'aktif';
+    $status = $request->get('status', 'aktif');
 
     $query = Maping::with(['lokasi', 'perusahaan', 'keluar.masuk.kategori', 'keluar.karyawan'])->where(
       'status',
@@ -58,6 +58,19 @@ class MapingController extends Controller
     if ($request->filled('barang')) {
       $query->whereHas('keluar.masuk.kategori', function ($q) use ($request) {
         $q->where('id', $request->barang);
+      });
+    }
+    // Filter Merek
+    if ($request->filled('merek')) {
+      $query->whereHas('keluar.masuk', function ($q) use ($request) {
+        $q->where('merek', 'like', '%' . $request->merek . '%');
+      });
+    }
+
+    // Filter Type
+    if ($request->filled('type')) {
+      $query->whereHas('keluar.masuk', function ($q) use ($request) {
+        $q->where('type', 'like', '%' . $request->type . '%');
       });
     }
 
@@ -362,6 +375,19 @@ class MapingController extends Controller
         $q->where('id', $request->barang);
       });
     }
+    // Filter Merek
+    if ($request->filled('merek')) {
+      $query->whereHas('keluar.masuk', function ($q) use ($request) {
+        $q->where('merek', 'like', '%' . $request->merek . '%');
+      });
+    }
+
+    // Filter Type
+    if ($request->filled('type')) {
+      $query->whereHas('keluar.masuk', function ($q) use ($request) {
+        $q->where('type', 'like', '%' . $request->type . '%');
+      });
+    }
 
     if ($request->filled('search')) {
       $search = $request->search;
@@ -568,5 +594,11 @@ class MapingController extends Controller
       ->get();
 
     return view('content.dashboard.maping.history_user', compact('histories'));
+  }
+  public function detailAjax($id)
+  {
+    $maping = Maping::with(['lokasi', 'perusahaan', 'keluar.masuk.kategori', 'keluar.karyawan'])->findOrFail($id);
+
+    return view('content.dashboard.maping.detail_ajax', compact('maping'));
   }
 }

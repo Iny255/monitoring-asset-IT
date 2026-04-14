@@ -27,6 +27,10 @@ minimum-scale=1.0, maximum-scale=1.0" />
     <!-- Styles Template -->
     @include('layouts/sections/styles')
 
+    <!-- Core-dark CSS -->
+    <link rel="stylesheet" href="{{ asset('assets/css/core-dark.css') }}">
+
+
     <!-- Custom CSS -->
     <link rel="stylesheet" href="{{ asset('assets/css/custom.css') }}">
 
