@@ -54,7 +54,7 @@
 
                                 <td class="text-center">
                                     <button class="badge bg-dark px-3 py-2 border-0 btn-detail" style="cursor:pointer"
-                                        data-id="{{ $p->id_maping }}">
+                                        data-url="{{ route('maping.detail', $p->id_maping) }}">
                                         {{ optional($p->keluar)->kode_barang ?? '-' }}
                                     </button>
                                 </td>
@@ -195,35 +195,40 @@
             });
 
             // =========================
-            // DETAIL BARANG (INI YANG KAMU BELUM ADA 🔥)
+            // DETAIL BARANG (FIX)
             // =========================
             document.querySelectorAll('.btn-detail').forEach(btn => {
 
                 btn.addEventListener('click', function() {
 
-                    let id = this.dataset.id;
+                    let url = this.dataset.url;
 
-                    let modal = new bootstrap.Modal(document.getElementById('modalDetail'));
+                    let modalEl = document.getElementById('modalDetail');
+                    let modal = new bootstrap.Modal(modalEl);
                     modal.show();
 
-                    // loading dulu
+                    // loading
                     document.getElementById('detailContent').innerHTML = `
                 <div class="text-center py-5">
                     <span class="spinner-border"></span>
                 </div>
             `;
 
-                    fetch(`/dashboard/maping/detail/${id}`)
-                        .then(res => res.text())
+                    fetch(url)
+                        .then(res => {
+                            if (!res.ok) throw new Error('404');
+                            return res.text();
+                        })
                         .then(html => {
                             document.getElementById('detailContent').innerHTML = html;
                         })
-                        .catch(() => {
+                        .catch(err => {
                             document.getElementById('detailContent').innerHTML = `
                         <div class="text-danger text-center">
-                            Gagal memuat data
+                            Gagal memuat data (URL salah / route belum ada)
                         </div>
                     `;
+                            console.error(err);
                         });
 
                 });

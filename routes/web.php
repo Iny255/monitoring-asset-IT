@@ -151,6 +151,8 @@ Route::middleware(['auth'])->group(function () {
       'history.cabut.hapus'
     );
     Route::get('/maping/{id}/history-user', [MapingController::class, 'historyUser']);
-    Route::get('/maping/{id}/detail-ajax', [MapingController::class, 'detailAjax']);
+    // Route::get('/maping/{id}/detail-ajax', [MapingController::class, 'detailAjax']);
+    Route::get('/maping/{id}/detail-ajax', [MapingController::class, 'detailAjax'])
+    ->name('maping.detail');
   });
 });
