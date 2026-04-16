@@ -75,6 +75,17 @@ minimum-scale=1.0, maximum-scale=1.0" />
     <!-- Layout Content -->
     @yield('layoutContent')
     <!-- /Layout Content -->
+    <!-- FOOTER -->
+    <footer class="app-footer">
+        <div class="footer-container">
+            <div class="footer-left">
+                © {{ date('Y') }} IT Developer Sembilan Group
+            </div>
+            <div class="footer-right">
+                Monitoring Asset System
+            </div>
+        </div>
+    </footer>
 
     <!-- Scripts Template -->
     @include('layouts/sections/scripts')
@@ -136,8 +147,8 @@ minimum-scale=1.0, maximum-scale=1.0" />
         });
     </script>
 
-    
-    
+
+
 </body>
 
 </html>
