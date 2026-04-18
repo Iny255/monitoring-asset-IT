@@ -27,6 +27,9 @@ class LoginController extends Controller
         $user = Auth::user();
 
         switch ($user->role) {
+          case 'super_admin':
+        return redirect('/dashboard/superadmin');
+
             case 'manager':
                 return redirect('/dashboard/manager');
             case 'petugas':

@@ -106,7 +106,7 @@
                         <!-- KODE PERUSAHAAN -->
                         <div class="mb-3">
                             <label class="form-label">Kode Perusahaan</label>
-                            <input type="text" name="kode_perusahaan" class="form-control" value="{{ $kodePerusahaan }}"
+                            <input type="text"  class="form-control" value="{{ $kodePerusahaan }}"
                                 readonly>
                         </div>
 

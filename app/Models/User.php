@@ -10,58 +10,51 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+  use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
+  /**
+   * The attributes that are mass assignable.
+   *
+   * @var array<int, string>
+   */
 
-    const ROLE_PETUGAS = 'petugas';
-    const ROLE_MANAGER = 'manager';
+  const ROLE_PETUGAS = 'petugas';
+  const ROLE_MANAGER = 'manager';
 
+  protected $fillable = ['username', 'name', 'email', 'password', 'role'];
 
-    protected $fillable = [
-        'username',
-        'name',
-        'email',
-        'password',
-        'role',
-    ];
+  /**
+   * The attributes that should be hidden for serialization.
+   *
+   * @var array<int, string>
+   */
+  protected $hidden = ['password', 'remember_token'];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
+  /**
+   * The attributes that should be cast.
+   *
+   * @var array<string, string>
+   */
+  protected $casts = [
+    'email_verified_at' => 'datetime',
+    'password' => 'hashed',
+  ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-        'password' => 'hashed',
-    ];
+  public function scopePetugasOrParticipant($query)
+  {
+    return $query->whereIn('role', ['petugas', 'manager']);
+  }
 
-   public function scopePetugasOrParticipant($query)
-    {
-        return $query->whereIn('role', ['petugas', 'manager']);
-    }
-
-    public function getDashboardUrl()
-{
+  public function getDashboardUrl()
+  {
     return match ($this->role) {
-        'manager' => '/dashboard/manager',
-        'petugas' => '/dashboard/petugas',
-        default => '/login'
+      'manager' => '/dashboard/manager',
+      'petugas' => '/dashboard/petugas',
+      default => '/login',
     };
-}
-    
+  }
+  public function perusahaan()
+  {
+    return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
+  }
 }

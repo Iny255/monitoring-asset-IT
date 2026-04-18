@@ -1,97 +1,94 @@
 {
   "menu": [
     {
+      "url": "dashboard/superadmin",
+      "name": "Dashboard",
+      "icon": "menu-icon tf-icons bi bi-house-door",
+      "slug": "dashboard-superadmin",
+      "roles": ["super_admin"]
+    },
+    {
       "url": "dashboard/manager",
       "name": "Dashboard",
       "icon": "menu-icon tf-icons bi bi-house-door",
       "slug": "dashboard-manager",
-      "roles": ["manager"]
+      "roles": ["manager", "super_admin"]
     },
     {
       "name": "Laporan",
       "icon": "menu-icon tf-icons bi bi-file-earmark-text",
       "slug": "laporan-manager",
-      "roles": ["manager"],
+      "roles": ["manager", "super_admin"],
       "submenu": [
         {
           "url": "manager/laporan/stok",
           "name": "Laporan Stok",
-          "icon": "menu-icon tf-icons bi bi-box-seam",
-          "slug": "laporan-stok"
+          "icon": "menu-icon tf-icons bi bi-box-seam"
         },
         {
           "url": "manager/laporan/masuk",
           "name": "Aset Masuk",
-          "icon": "menu-icon tf-icons bi bi-box-arrow-in-down",
-          "slug": "laporan-masuk"
+          "icon": "menu-icon tf-icons bi bi-box-arrow-in-down"
         },
         {
           "url": "manager/laporan/keluar",
           "name": "Aset Keluar",
-          "icon": "menu-icon tf-icons bi bi-box-arrow-up",
-          "slug": "laporan-keluar"
+          "icon": "menu-icon tf-icons bi bi-box-arrow-up"
         },
         {
           "url": "manager/laporan/peminjaman",
           "name": "Peminjaman",
-          "icon": "menu-icon tf-icons bi bi-clipboard-check",
-          "slug": "laporan-peminjaman"
+          "icon": "menu-icon tf-icons bi bi-clipboard-check"
         }
-        
       ]
-      
     },
-     {
+    {
       "url": "manager/maping",
       "name": "Maping",
       "icon": "menu-icon tf-icons bi bi-diagram-3",
       "slug": "manager-maping",
-      "roles": ["manager"]
+      "roles": ["manager", "super_admin"]
     },
-  
     {
       "url": "dashboard/petugas",
       "name": "Dashboard",
       "icon": "menu-icon tf-icons bi bi-house-door",
       "slug": "dashboard-petugas",
-      "roles": ["petugas"]
+      "roles": ["petugas", "super_admin"]
     },
     {
       "url": "dashboard/user",
       "name": "Users",
       "icon": "menu-icon tf-icons bi bi-people",
       "slug": "user",
-      "roles": ["petugas"]
+      "roles": ["super_admin"]
     },
     {
       "name": "Master Data",
       "icon": "menu-icon tf-icons bx bx-data",
       "slug": "master-data",
-      "roles": ["petugas"],
+      "roles": ["petugas", "super_admin"],
       "submenu": [
         {
           "url": "dashboard/kategori",
           "name": "Kategori Barang",
-          "icon": "menu-icon tf-icons bi bi-tags",
-          "slug": "dashboard-kategori"
+          "icon": "menu-icon tf-icons bi bi-tags"
         },
         {
           "url": "dashboard/karyawan",
           "name": "Karyawan",
-          "icon": "menu-icon tf-icons bi bi-people",
-          "slug": "dashboard-karyawan"
+          "icon": "menu-icon tf-icons bi bi-people"
         },
         {
           "url": "dashboard/perusahaan",
           "name": "Perusahaan",
           "icon": "menu-icon tf-icons bi bi-building",
-          "slug": "dashboard-perusahaan"
+          "roles": ["super_admin"]
         },
         {
           "url": "dashboard/lokasi",
           "name": "Lokasi Barang",
-          "icon": "menu-icon tf-icons bi bi-geo-alt",
-          "slug": "dashboard-lokasi"
+          "icon": "menu-icon tf-icons bi bi-geo-alt"
         }
       ]
     },
@@ -99,19 +96,17 @@
       "name": "Transaksi",
       "icon": "menu-icon tf-icons bi bi-arrow-left-right",
       "slug": "transaksi",
-      "roles": ["petugas"],
+      "roles": ["petugas", "super_admin"],
       "submenu": [
         {
           "url": "dashboard/transaksi-masuk",
           "name": "Aset Masuk",
-          "icon": "menu-icon tf-icons bi bi-box-arrow-in-down",
-          "slug": "dashboard-transaksi-masuk"
+          "icon": "menu-icon tf-icons bi bi-box-arrow-in-down"
         },
         {
           "url": "dashboard/transaksi-keluar",
           "name": "Aset Keluar",
-          "icon": "menu-icon tf-icons bi bi-box-arrow-up",
-          "slug": "dashboard-transaksi-keluar"
+          "icon": "menu-icon tf-icons bi bi-box-arrow-up"
         }
       ]
     },
@@ -120,32 +115,30 @@
       "name": "Maping",
       "icon": "menu-icon tf-icons bi bi-diagram-3",
       "slug": "dashboard-maping",
-      "roles": ["petugas"]
+      "roles": ["petugas", "super_admin"]
     },
     {
       "url": "dashboard/peminjaman",
       "name": "Peminjaman Barang",
       "icon": "menu-icon tf-icons bi bi-clipboard-check",
       "slug": "dashboard-peminjaman",
-      "roles": ["petugas","manager"]
+      "roles": ["petugas", "manager", "super_admin"]
     },
     {
       "name": "History",
       "icon": "menu-icon tf-icons bi bi-journal-text",
       "slug": "dashboard-history",
-      "roles": ["manager", "petugas"],
+      "roles": ["manager", "petugas", "super_admin"],
       "submenu": [
         {
           "url": "dashboard/history/mutasi",
           "name": "Mutasi",
-          "icon": "menu-icon tf-icons bi bi-clock-history",
-          "slug": "history-mutasi"
+          "icon": "menu-icon tf-icons bi bi-clock-history"
         },
         {
           "url": "dashboard/history/pencabutan",
           "name": "Pencabutan",
-          "icon": "menu-icon tf-icons bi bi-power",
-          "slug": "history-pencabutan"
+          "icon": "menu-icon tf-icons bi bi-power"
         }
       ]
     }

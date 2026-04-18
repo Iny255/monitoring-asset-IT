@@ -48,7 +48,7 @@
     <div class="menu-inner-shadow"></div>
 
     <ul class="menu-inner py-1">
-        @foreach ($menuData[0]->menu as $menu)
+      @foreach ($menuData->menu as $menu)
             @if (in_array(Auth::user()->role, $menu->roles))
                 @php
                     $activeClass = '';
