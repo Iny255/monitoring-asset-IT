@@ -31,6 +31,10 @@ return new class extends Migration
                 ->references('id')
                 ->on('kategoris')
                 ->onDelete('cascade');
+                
+            $table->foreignId('perusahaan_id')
+                ->constrained()
+                ->cascadeOnDelete();
         });
     }
 

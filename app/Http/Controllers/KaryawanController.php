@@ -2,9 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Main;
-use App\Models\Post;
-use App\Models\User;
 use App\Models\Karyawan;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
@@ -17,14 +14,15 @@ class KaryawanController extends Controller
      */
     public function index(Request $request)
     {
+        $perusahaanId = auth()->user()->id_perusahaan;
         $search = $request->search;
 
-        $karyawans = Karyawan::query();
+        $karyawans = Karyawan::where('id_perusahaan', $perusahaanId);
 
         if ($search) {
             $karyawans->where(function ($query) use ($search) {
                 $query->where('nama_karyawan', 'like', "%{$search}%")
-                      ->orWhere('kode_karyawan', 'like', "%{$search}%");
+                    ->orWhere('kode_karyawan', 'like', "%{$search}%");
             });
         }
 
@@ -44,7 +42,6 @@ class KaryawanController extends Controller
                 'nama_karyawan' => 'required|string|max:100',
                 'jabatan' => 'required|string|max:50',
                 'divisi' => 'required|string|max:50',
-                'perusahaan' => 'required|string|max:50',
             ],
             [
                 'kode_karyawan.unique' => 'Kode karyawan sudah terdaftar.',
@@ -52,6 +49,8 @@ class KaryawanController extends Controller
         );
 
         try {
+            $validated['id_perusahaan'] = auth()->user()->id_perusahaan;
+
             Karyawan::create($validated);
 
             return redirect()->route('karyawan.index')
@@ -59,7 +58,7 @@ class KaryawanController extends Controller
         } catch (\Exception $e) {
             Log::error($e->getMessage());
 
-            return back()->with('error', 'Terjadi kesalahan saat menyimpan data.');
+            return back()->with('error', 'Error: ' . $e->getMessage()); // 🔥 biar kelihatan error asli
         }
     }
 
@@ -68,23 +67,22 @@ class KaryawanController extends Controller
      */
     public function update(Request $request, Karyawan $karyawan)
     {
-        $validated = $request->validate(
-            [
-                'kode_karyawan' => [
-                    'required',
-                    'string',
-                    'max:20',
-                    Rule::unique('karyawans', 'kode_karyawan')->ignore($karyawan->id),
-                ],
-                'nama_karyawan' => 'required|string|max:100',
-                'jabatan' => 'required|string|max:50',
-                'divisi' => 'required|string|max:50',
-                'perusahaan' => 'required|string|max:50',
+        // 🔒 pastikan tidak beda perusahaan
+        if ($karyawan->id_perusahaan != auth()->user()->id_perusahaan) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'kode_karyawan' => [
+                'required',
+                'string',
+                'max:20',
+                Rule::unique('karyawans', 'kode_karyawan')->ignore($karyawan->id),
             ],
-            [
-                'kode_karyawan.unique' => 'Kode karyawan sudah digunakan.',
-            ]
-        );
+            'nama_karyawan' => 'required|string|max:100',
+            'jabatan' => 'required|string|max:50',
+            'divisi' => 'required|string|max:50',
+        ]);
 
         try {
             $karyawan->update($validated);
@@ -94,15 +92,18 @@ class KaryawanController extends Controller
         } catch (\Exception $e) {
             Log::error($e->getMessage());
 
-            return back()->with('error', 'Gagal memperbarui data.');
+            return back()->with('error', 'Error: ' . $e->getMessage());
         }
     }
-
     /**
-     * Remove the specified resource.
+     * Remove the specified resource from storage.
      */
     public function destroy(Karyawan $karyawan)
     {
+        if ($karyawan->id_perusahaan != auth()->user()->id_perusahaan) {
+            abort(403);
+        }
+
         try {
             $karyawan->delete();
 
@@ -111,7 +112,7 @@ class KaryawanController extends Controller
         } catch (\Exception $e) {
             Log::error($e->getMessage());
 
-            return back()->with('error', 'Gagal menghapus data.');
+            return back()->with('error', 'Error: ' . $e->getMessage());
         }
     }
 }

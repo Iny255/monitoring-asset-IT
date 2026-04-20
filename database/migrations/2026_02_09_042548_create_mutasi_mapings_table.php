@@ -4,26 +4,57 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
+return new class extends Migration {
+
     public function up(): void
     {
         Schema::create('mutasi_mapings', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('id_maping')->constrained('mapings')->cascadeOnDelete();
 
-            $table->foreignId('dari_lokasi')->nullable()->constrained('lokasis');
-            $table->foreignId('ke_lokasi')->nullable()->constrained('lokasis');
+            // 🔥 RELASI UTAMA
+            $table->foreignId('id_maping')
+                ->constrained('mapings')
+                ->cascadeOnDelete();
 
-            $table->foreignId('dari_perusahaan')->nullable()->constrained('perusahaans');
-            $table->foreignId('ke_perusahaan')->nullable()->constrained('perusahaans');
+            // 🔥 WAJIB MULTI PERUSAHAAN
+            $table->foreignId('id_perusahaan')
+                ->constrained('perusahaans')
+                ->cascadeOnDelete();
 
-            $table->foreignId('dari_karyawan')->nullable()->constrained('karyawans');
-            $table->foreignId('ke_karyawan')->nullable()->constrained('karyawans');
+            // ================= LOKASI =================
+            $table->foreignId('dari_lokasi')
+                ->nullable()
+                ->constrained('lokasis')
+                ->nullOnDelete();
 
+            $table->foreignId('ke_lokasi')
+                ->nullable()
+                ->constrained('lokasis')
+                ->nullOnDelete();
+
+            // ================= PERUSAHAAN =================
+            $table->foreignId('dari_perusahaan')
+                ->nullable()
+                ->constrained('perusahaans')
+                ->nullOnDelete();
+
+            $table->foreignId('ke_perusahaan')
+                ->nullable()
+                ->constrained('perusahaans')
+                ->nullOnDelete();
+
+            // ================= KARYAWAN =================
+            $table->foreignId('dari_karyawan')
+                ->nullable()
+                ->constrained('karyawans')
+                ->nullOnDelete();
+
+            $table->foreignId('ke_karyawan')
+                ->nullable()
+                ->constrained('karyawans')
+                ->nullOnDelete();
+
+            // ================= DATA =================
             $table->string('dari_no_inventaris')->nullable();
             $table->string('ke_no_inventaris')->nullable();
 
@@ -36,15 +67,23 @@ return new class extends Migration
             $table->string('dari_data_non_ppn')->nullable();
             $table->string('ke_data_non_ppn')->nullable();
 
+            // ================= META =================
             $table->date('tanggal_mutasi');
 
+            // 🔥 OPTIONAL (RECOMMENDED)
+            $table->foreignId('created_by')
+                ->nullable()
+                ->constrained('users')
+                ->nullOnDelete();
+
             $table->timestamps();
+
+            // ================= INDEX =================
+            $table->index('id_perusahaan');
+            $table->index('id_maping');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('mutasi_mapings');

@@ -6,6 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+
 class UserSeeder extends Seeder
 {
   /**
@@ -13,12 +14,12 @@ class UserSeeder extends Seeder
    */
   public function run(): void
   {
-    DB::table('users')->truncate(); // 🔥 biar tidak double saat seeding ulang
+    DB::table('users')->delete(); // Hapus semua data lama untuk menghindari duplikasi
 
     DB::table('users')->insert([
       [
         'username' => 'manager.9',
-        'name' => 'Manager',
+        'name' => 'Manager PT Sembilan',
         'email' => 'manager9@gmail.com',
         'password' => Hash::make('manager'),
         'role' => 'manager',
@@ -28,7 +29,7 @@ class UserSeeder extends Seeder
       ],
       [
         'username' => 'petugas.9',
-        'name' => 'Staff IT ',
+        'name' => 'Staff IT PT Sembilan',
         'email' => 'petugas1@gmail.com',
         'password' => Hash::make('petugas'),
         'role' => 'petugas',
@@ -38,7 +39,7 @@ class UserSeeder extends Seeder
       ],
       [
         'username' => 'manager.45',
-        'name' => 'Manager',
+        'name' => 'Manager PT Padma',
         'email' => 'manager45@gmail.com',
         'password' => Hash::make('manager'),
         'role' => 'manager',
@@ -48,7 +49,7 @@ class UserSeeder extends Seeder
       ],
       [
         'username' => 'petugas.45',
-        'name' => 'Staff IT',
+        'name' => 'Staff IT PT Padma',
         'email' => 'petugas45@gmail.com',
         'password' => Hash::make('petugas'),
         'role' => 'petugas',
@@ -61,8 +62,9 @@ class UserSeeder extends Seeder
         'name' => 'Super Admin',
         'email' => 'superadmin@gmail.com',
         'password' => Hash::make('admin'),
+
         'role' => 'super_admin',
-        'id_perusahaan' => null, // 🔥 penting!
+        'id_perusahaan' => null,
         'created_at' => now(),
         'updated_at' => now(),
       ],

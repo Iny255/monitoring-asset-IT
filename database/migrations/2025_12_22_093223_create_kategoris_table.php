@@ -5,27 +5,29 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use App\Models\Keluar;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
-    {
-        Schema::create('kategoris', function (Blueprint $table) {
-            $table->id();
-            $table->string('nama_barang',50);
-            $table->timestamps();
-        });
-    }
+return new class extends Migration {
+  /**
+   * Run the migrations.
+   */
+  public function up(): void
+  {
+    Schema::create('kategoris', function (Blueprint $table) {
+      $table->id();
+      $table->string('nama_barang', 50);
+      $table->timestamps();
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('kategoris');
-    }
+      $table
+        ->foreignId('perusahaan_id')
+        ->constrained('perusahaans')
+        ->cascadeOnDelete();
+    });
+  }
 
-    
+  /**
+   * Reverse the migrations.
+   */
+  public function down(): void
+  {
+    Schema::dropIfExists('kategoris');
+  }
 };

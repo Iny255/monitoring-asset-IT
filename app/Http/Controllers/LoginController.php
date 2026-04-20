@@ -27,21 +27,24 @@ class LoginController extends Controller
         $user = Auth::user();
 
         switch ($user->role) {
-          case 'super_admin':
-        return redirect('/dashboard/superadmin');
+            case 'super_admin':
+                return redirect()->route('dashboard.superadmin');
 
             case 'manager':
-                return redirect('/dashboard/manager');
+                return redirect()->route('dashboard.manager');
+
             case 'petugas':
-                return redirect('/dashboard/petugas');
+                return redirect()->route('dashboard.petugas');
+
             default:
                 Auth::logout();
                 return redirect('/login')->with('loginError', 'Role tidak dikenali.');
         }
     }
 
-    return back()->with('loginError', 'Email atau password salah.');
+    return back()->with('loginError', 'Username atau password salah.');
 }
+
   public function logout(Request $request)
   {
     Auth::logout();

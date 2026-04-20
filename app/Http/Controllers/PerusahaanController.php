@@ -24,7 +24,16 @@ class PerusahaanController extends Controller
 
     $perusahaans = $perusahaans->latest()->paginate(5);
 
-    return view('content.dashboard.perusahaan.index', compact('perusahaans'));
+    // 🔥 Generate next kode for modal
+    $last = Perusahaan::orderBy('id', 'desc')->first();
+    if ($last && $last->kode_perusahaan) {
+      $number = (int) substr($last->kode_perusahaan, 2) + 1;
+    } else {
+      $number = 1;
+    }
+    $kodePerusahaan = 'PT' . str_pad($number, 4, '0', STR_PAD_LEFT);
+
+    return view('content.dashboard.perusahaan.index', compact('perusahaans', 'kodePerusahaan'));
   }
 
   public function store(Request $request)
@@ -51,6 +60,9 @@ class PerusahaanController extends Controller
       Perusahaan::create([
         'kode_perusahaan' => $kode,
         'nama_perusahaan' => $request->nama_perusahaan,
+        'logo' => null,
+        'primary_color' => '#007bff',
+        'secondary_color' => '#6c757d',
       ]);
 
       return redirect()
@@ -77,6 +89,9 @@ class PerusahaanController extends Controller
     try {
       $perusahaan->update([
         'nama_perusahaan' => $request->nama_perusahaan,
+        'logo' => $perusahaan->logo,
+        'primary_color' => $perusahaan->primary_color,
+        'secondary_color' => $perusahaan->secondary_color,
       ]);
 
       return redirect()

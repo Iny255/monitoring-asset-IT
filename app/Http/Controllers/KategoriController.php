@@ -2,9 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Main;
-use App\Models\Post;
-use App\Models\User;
 use App\Models\Kategori;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -16,21 +13,24 @@ class KategoriController extends Controller
    */
   public function index(Request $request)
   {
+    $perusahaan = auth()->user()->perusahaan;
+    
     $search = $request->input('search');
 
-    $kategoris = Kategori::latest();
+    $kategoris = Kategori::where('perusahaan_id', $perusahaan->id)->latest();
 
     if ($search) {
-      $kategoris = $kategoris->where(function ($query) use ($search) {
+      $kategoris->where(function ($query) use ($search) {
         $query->where('nama_barang', 'like', '%' . $search . '%')
-          ->orWhere('id', 'like', '%' . $search . '%');
+          ->orWhere('kode_barang', 'like', '%' . $search . '%');
       });
     }
 
     $kategoris = $kategoris->paginate(5);
 
     // 🔥 GENERATE KODE BARANG DI INDEX
-    $last = Kategori::orderBy('kode_barang', 'desc')->first();
+    $last = Kategori::where('perusahaan_id', $perusahaan->id)
+      ->orderBy('kode_barang', 'desc')->first();
 
     if ($last) {
       $number = (int) substr($last->kode_barang, 2) + 1;
@@ -47,51 +47,28 @@ class KategoriController extends Controller
   }
 
   /**
-   * Show the form for creating a new resource.
-   */
-  public function create() {}
-
-  /**
    * Store a newly created resource in storage.
    */
   public function store(Request $request)
   {
+    $perusahaan = auth()->user()->perusahaan;
+    
     $validatedData = $request->validate([
-      'kode_barang' => 'required|string|unique:kategoris,kode_barang',
+      'kode_barang' => 'required|string|unique:kategoris,kode_barang,NULL,id,perusahaan_id,' . $perusahaan->id,
       'nama_barang' => 'required|string|max:50',
     ]);
 
     try {
+      $validatedData['perusahaan_id'] = $perusahaan->id;
       $kategori = Kategori::create($validatedData);
 
-      if ($kategori) {
-        return redirect('/dashboard/kategori')->with('success', 'Data kategori barang berhasil disimpan.');
-      } else {
-        return redirect('/dashboard/kategori')->with('error', 'Gagal menyimpan data kategori barang.');
-      }
+      return redirect('/dashboard/kategori')->with('success', 'Data kategori barang berhasil disimpan.');
     } catch (\Exception $e) {
       Log::error($e->getMessage());
 
       return redirect('/dashboard/kategori')
        ->with('error', 'Data kategori barang tidak berhasil disimpan.');
     }
-  }
-
-  /**
-   * Display the specified resource.
-   */
-  public function show(Kategori $kategori)
-  {
-    //
-  }
-
-
-  /**
-   * Show the form for editing the specified resource.
-   */
-  public function edit(Kategori $kategori)
-  {
-    return view('content.dashboard.kategori.edit', compact('kategori'));
   }
 
   /**
@@ -126,3 +103,4 @@ class KategoriController extends Controller
       ->with('success', 'Kategori Barang berhasil dihapus');
   }
 }
+

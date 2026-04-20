@@ -98,6 +98,7 @@ class KeluarController extends Controller
      */
     public function store(Request $request)
     {
+        $perusahaan = auth()->user()->perusahaan;
         $request->validate([
             'kode_keluar'   => 'required|unique:keluars,kode_keluar',
             'id_masuk'      => 'required|exists:masuks,id',
@@ -147,7 +148,7 @@ class KeluarController extends Controller
                 'kode_barang'    => $request->kode_barang,
                 'jumlah'         => $request->jumlah,
                 'jenis_penerima' => $request->jenis_penerima,
-
+                'id_perusahaan'  => $perusahaan->id,
                 // PERORANGAN
                 'id_karyawan'    => $request->jenis_penerima == 'Perorangan'
                     ? $request->id_karyawan
@@ -178,7 +179,7 @@ class KeluarController extends Controller
                 ->with('success', 'Transaksi keluar berhasil disimpan');
         } catch (\Exception $e) {
             DB::rollBack();
-
+            // dd($e->getMessage());
             return back()
                 ->withInput()
                 ->with('error', 'Terjadi kesalahan, silakan ulangi');
@@ -188,12 +189,12 @@ class KeluarController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show($id)
+    public function show(Keluar $keluar)
     {
-        $keluar = Keluar::with([
+        $keluar->load([
             'masuk.kategori',
             'karyawan'
-        ])->findOrFail($id);
+        ]);
 
         return view('content.dashboard.transaksi-keluar.show', compact('keluar'));
     }
@@ -383,7 +384,9 @@ class KeluarController extends Controller
             'nama_karyawan' => 'required'
         ]);
 
-        $karyawan = Karyawan::where('nama_karyawan', $request->nama_karyawan)->first();
+        $karyawan = Karyawan::with('perusahaan')
+            ->where('nama_karyawan', $request->nama_karyawan)
+            ->first();
 
         if (!$karyawan) {
             return response()->json(['status' => false]);
@@ -394,7 +397,7 @@ class KeluarController extends Controller
             'data' => [
                 'id'         => $karyawan->id,
                 'divisi'     => $karyawan->divisi,
-                'perusahaan' => $karyawan->perusahaan,
+                'perusahaan' => $karyawan->perusahaan->nama_perusahaan ?? '-', // 🔥 FIX
             ]
         ]);
     }

@@ -5,45 +5,55 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
-  /**
-   * Run the migrations.
-   */
   public function up(): void
   {
     Schema::create('peminjamans', function (Blueprint $table) {
       $table->id();
+
+      // ================= RELASI =================
       $table
         ->foreignId('kategori_id')
-        ->constrained()
-        ->cascadeOnDelete();
-      $table
-        ->foreignId('karyawan_id')
-        ->constrained()
-        ->cascadeOnDelete();
-      $table
-        ->foreignId('perusahaan_id')
-        ->constrained()
-        ->cascadeOnDelete();
-      $table
-        ->foreignId('lokasi_id')
-        ->constrained()
+        ->constrained('kategoris')
         ->cascadeOnDelete();
 
+      $table
+        ->foreignId('karyawan_id')
+        ->constrained('karyawans')
+        ->cascadeOnDelete();
+
+      $table
+        ->foreignId('perusahaan_id')
+        ->constrained('perusahaans')
+        ->cascadeOnDelete();
+
+      $table
+        ->foreignId('lokasi_id')
+        ->constrained('lokasis')
+        ->cascadeOnDelete();
+
+      // 🔥 TAMBAH INI (WAJIB)
+      $table
+        ->foreignId('keluar_id')
+        ->nullable()
+        ->constrained('keluars')
+        ->nullOnDelete();
+
+      // ================= TANGGAL =================
       $table->date('tanggal_pinjam');
       $table->date('tanggal_rencana_kembali');
       $table->date('tanggal_kembali')->nullable();
 
-      $table->enum('status', ['pending', 'disetujui', 'dipinjam', 'dikembalikan', 'ditolak'])->default('pending');
+      // ================= STATUS =================
+      $table->enum('status', ['pending','dipinjam', 'dikembalikan', 'ditolak'])->default('pending');
 
-      $table->text('keperluan',100)->nullable();
-      $table->text('catatan',100)->nullable();
+      // ================= KETERANGAN =================
+      $table->string('keperluan', 100)->nullable(); // ✅ FIX
+      $table->string('catatan', 100)->nullable(); // ✅ FIX
+
       $table->timestamps();
     });
   }
 
-  /**
-   * Reverse the migrations.
-   */
   public function down(): void
   {
     Schema::dropIfExists('peminjamans');

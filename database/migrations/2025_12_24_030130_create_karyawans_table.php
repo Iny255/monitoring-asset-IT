@@ -19,6 +19,10 @@ return new class extends Migration
             $table->string('divisi',50);
             $table->string('perusahaan',50);
             $table->timestamps();
+
+             $table->foreignId('id_perusahaan')
+            ->constrained('perusahaans')
+            ->onDelete('cascade');
         });
     }
 

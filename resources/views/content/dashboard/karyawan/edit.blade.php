@@ -54,7 +54,7 @@
                                    name="jabatan"
                                    class="form-control form-control-lg @error('jabatan') is-invalid @enderror"
                                    value="{{ old('jabatan', $karyawan->jabatan) }}"
-                                   placeholder="Staff IT">
+                                   placeholder="Staff IT {{ isset($perusahaan) ? $perusahaan->nama_perusahaan : '' }}">
                             @error('jabatan')
                                 <div class="invalid-feedback">{{ $message }}</div>
                             @enderror

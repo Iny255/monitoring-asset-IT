@@ -410,7 +410,8 @@
                         cancelButtonText: 'Batal'
                     }).then((result) => {
                         if (result.isConfirmed) {
-                            window.location.href = url;
+                    alert('Route maping.mutasi belum didefinisikan. Fitur mutasi akan ditambahkan nanti.');
+return false;
                         }
                     });
 

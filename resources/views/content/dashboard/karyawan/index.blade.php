@@ -3,279 +3,268 @@
 @section('title', 'Karyawan')
 
 @section('content')
+
+<div class="container-xxl flex-grow-1 container-p-y">
+
+    {{-- ALERT --}}
     @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <div class="alert alert-success alert-dismissible fade show">
             {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <button class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
 
     @if (session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <div class="alert alert-danger alert-dismissible fade show">
             {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            <button class="btn-close" data-bs-dismiss="alert"></button>
         </div>
     @endif
-    </h4>
 
+    {{-- CARD --}}
     <div class="card">
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="">
-                    <h5 class="text-primary mb-0">Data Karyawan</h5>
-                </div>
-                <div class="">
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahKaryawan">
-                        Tambah Data Karyawan
-                    </button>
-                </div>
-            </div>
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="text-primary mb-0">Data Karyawan</h5>
+
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahKaryawan">
+                Tambah Data Karyawan
+            </button>
         </div>
+
         <div class="card-body">
-            <form method="GET" action="{{ url('/dashboard/karyawan') }}" class="row g-3 mb-4">
-                <div class="col-md-7 text">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="flex-grow-1 me-2">
-                            <input type="text" name="search" class="form-control w-100"
-                                placeholder="Cari berdasarkan nama karyawan" value="{{ request('search') }}">
-                        </div>
-                        <div>
-                            <button type="submit" class="btn btn-primary">Cari</button>
-                        </div>
-                    </div>
+
+            {{-- SEARCH --}}
+            <form method="GET" class="row mb-4">
+                <div class="col-md-6 d-flex">
+                    <input type="text" name="search" class="form-control me-2"
+                        placeholder="Cari nama / kode karyawan..." value="{{ request('search') }}">
+                    <button class="btn btn-primary">Cari</button>
                 </div>
             </form>
 
-            <div class="table-responsive text-nowrap">
+            {{-- TABLE --}}
+            <div class="table-responsive">
                 <table class="table table-bordered">
-                    <thead class="table-primary">
-                        <tr class="center">
-                            <th width=>KODE KARYAWAN</th>
-                            <th>NAMA KARYAWAN</th>
+                    <thead class="table-primary text-center">
+                        <tr>
+                            <th>KODE</th>
+                            <th>NAMA</th>
                             <th>JABATAN</th>
                             <th>DIVISI</th>
                             <th>PERUSAHAAN</th>
-                            <th width=>Actions</th>
+                            <th>ACTION</th>
                         </tr>
                     </thead>
+
                     <tbody>
-                        @foreach ($karyawans as $karyawan)
+                        @forelse ($karyawans as $karyawan)
                             <tr>
                                 <td>{{ $karyawan->kode_karyawan }}</td>
                                 <td>{{ $karyawan->nama_karyawan }}</td>
                                 <td>{{ $karyawan->jabatan }}</td>
                                 <td>{{ $karyawan->divisi }}</td>
-                                <td>{{ $karyawan->perusahaan }}</td>
+
+                                {{-- ✅ FIX RELASI --}}
                                 <td>
-                                    <button class="btn btn-warning btn-sm btn-edit" data-id="{{ $karyawan->id }}"
+                                    {{ $karyawan->perusahaan->nama_perusahaan ?? '-' }}
+                                </td>
+
+                                <td class="text-center">
+                                    <button class="btn btn-warning btn-sm btn-edit"
+                                        data-id="{{ $karyawan->id }}"
                                         data-kode="{{ $karyawan->kode_karyawan }}"
-                                        data-nama="{{ $karyawan->nama_karyawan }}" data-jabatan="{{ $karyawan->jabatan }}"
+                                        data-nama="{{ $karyawan->nama_karyawan }}"
+                                        data-jabatan="{{ $karyawan->jabatan }}"
                                         data-divisi="{{ $karyawan->divisi }}"
-                                        data-perusahaan="{{ $karyawan->perusahaan }}">
+                                        data-perusahaan="{{ $karyawan->perusahaan->nama_perusahaan ?? '-' }}">
                                         <i class="bx bx-edit-alt"></i>
                                     </button>
+
                                     <form id="delete-form-{{ $karyawan->id }}"
-                                        action="{{ route('karyawan.destroy', $karyawan->id) }}" method="POST"
-                                        style="display:none;">
+                                        action="{{ route('karyawan.destroy', $karyawan->id) }}"
+                                        method="POST" style="display:none;">
                                         @csrf
                                         @method('DELETE')
                                     </form>
-                                    <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $karyawan->id }}">
+
+                                    <button class="btn btn-danger btn-sm btn-delete"
+                                        data-id="{{ $karyawan->id }}">
                                         <i class="bx bx-trash"></i>
                                     </button>
-
                                 </td>
-                        @endforeach
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="text-center">Data tidak ditemukan</td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
-                <div class="mt-4">
-                    {{ $karyawans->links('pagination::bootstrap-4') }}
-                </div>
             </div>
+
+            {{-- PAGINATION --}}
+            <div class="mt-3">
+                {{ $karyawans->links('pagination::bootstrap-5') }}
+            </div>
+
         </div>
     </div>
 
-    <!-- MODAL TAMBAH KARYAWAN -->
-    <div class="modal fade" id="modalTambahKaryawan" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content rounded-4 border-0 shadow">
+</div>
 
-                <div class="modal-header border-0">
-                    <h5 class="modal-title fw-semibold">Tambah Data Karyawan</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+
+{{-- ================= MODAL TAMBAH ================= --}}
+<div class="modal fade" id="modalTambahKaryawan" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <form action="{{ route('karyawan.store') }}" method="POST">
+                @csrf
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Tambah Karyawan</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
-                <div class="modal-body px-4">
+                <div class="modal-body">
 
-                    <form action="{{ route('karyawan.store') }}" method="POST">
-                        @csrf
+                    <div class="mb-3">
+                        <label>Kode Karyawan</label>
+                        <input type="text" name="kode_karyawan"
+                            class="form-control @error('kode_karyawan') is-invalid @enderror"
+                            value="{{ old('kode_karyawan') }}">
+                        @error('kode_karyawan')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Kode Karyawan</label>
-                            <input type="text" name="kode_karyawan"
-                                class="form-control @error('kode_karyawan') is-invalid @enderror"
-                                value="{{ old('kode_karyawan') }}">
-                            @error('kode_karyawan')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                    <div class="mb-3">
+                        <label>Nama Karyawan</label>
+                        <input type="text" name="nama_karyawan"
+                            class="form-control @error('nama_karyawan') is-invalid @enderror"
+                            value="{{ old('nama_karyawan') }}">
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Nama Karyawan</label>
-                            <input type="text" name="nama_karyawan"
-                                class="form-control @error('nama_karyawan') is-invalid @enderror"
-                                value="{{ old('nama_karyawan') }}">
-                            @error('nama_karyawan')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                        </div>
+                    <div class="mb-3">
+                        <label>Jabatan</label>
+                        <input type="text" name="jabatan" class="form-control">
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Jabatan</label>
-                            <input type="text" name="jabatan" class="form-control @error('jabatan') is-invalid @enderror"
-                                value="{{ old('jabatan') }}">
-                        </div>
+                    <div class="mb-3">
+                        <label>Divisi</label>
+                        <input type="text" name="divisi" class="form-control">
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Divisi</label>
-                            <input type="text" name="divisi" class="form-control @error('divisi') is-invalid @enderror"
-                                value="{{ old('divisi') }}">
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Perusahaan</label>
-                            <input type="text" name="perusahaan"
-                                class="form-control @error('perusahaan') is-invalid @enderror"
-                                value="{{ old('perusahaan') }}">
-                        </div>
-
-                        <div class="text-end mt-4">
-                            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">
-                                Batal
-                            </button>
-                            <button type="submit" class="btn btn-primary">
-                                Simpan
-                            </button>
-                        </div>
-
-                    </form>
+                    {{-- ❌ PERUSAHAAN DIHAPUS (AUTO DARI LOGIN) --}}
 
                 </div>
-            </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button class="btn btn-primary">Simpan</button>
+                </div>
+
+            </form>
+
         </div>
     </div>
-    <!-- MODAL EDIT KARYAWAN -->
-    <div class="modal fade" id="modalEditKaryawan" tabindex="-1">
-        <div class="modal-dialog modal-lg modal-dialog-centered">
-            <div class="modal-content rounded-4 border-0 shadow">
+</div>
 
-                <div class="modal-header border-0">
-                    <h5 class="modal-title fw-semibold">Edit Data Karyawan</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+
+{{-- ================= MODAL EDIT ================= --}}
+<div class="modal fade" id="modalEditKaryawan" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+
+            <form id="formEditKaryawan" method="POST">
+                @csrf
+                @method('PUT')
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Karyawan</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
 
-                <div class="modal-body px-4">
+                <div class="modal-body">
 
-                    <form id="formEditKaryawan" method="POST">
-                        @csrf
-                        @method('PUT')
+                    <input type="hidden" id="edit_id">
 
-                        <div class="mb-3">
-                            <label class="form-label">Kode Karyawan</label>
-                            <input type="text" name="kode_karyawan" id="edit_kode" class="form-control" required>
-                        </div>
+                    <div class="mb-3">
+                        <label>Kode</label>
+                        <input type="text" id="edit_kode" name="kode_karyawan" class="form-control">
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Nama Karyawan</label>
-                            <input type="text" name="nama_karyawan" id="edit_nama" class="form-control" required>
-                        </div>
+                    <div class="mb-3">
+                        <label>Nama</label>
+                        <input type="text" id="edit_nama" name="nama_karyawan" class="form-control">
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Jabatan</label>
-                            <input type="text" name="jabatan" id="edit_jabatan" class="form-control">
-                        </div>
+                    <div class="mb-3">
+                        <label>Jabatan</label>
+                        <input type="text" id="edit_jabatan" name="jabatan" class="form-control">
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Divisi</label>
-                            <input type="text" name="divisi" id="edit_divisi" class="form-control">
-                        </div>
+                    <div class="mb-3">
+                        <label>Divisi</label>
+                        <input type="text" id="edit_divisi" name="divisi" class="form-control">
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Perusahaan</label>
-                            <input type="text" name="perusahaan" id="edit_perusahaan" class="form-control">
-                        </div>
-
-                        <div class="text-end mt-4">
-                            <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">
-                                Batal
-                            </button>
-                            <button type="submit" class="btn btn-warning">
-                                Update
-                            </button>
-                        </div>
-
-                    </form>
+                    <div class="mb-3">
+                        <label>Perusahaan</label>
+                        <input type="text" id="edit_perusahaan" class="form-control" readonly>
+                    </div>
 
                 </div>
-            </div>
+
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button class="btn btn-warning">Update</button>
+                </div>
+
+            </form>
+
         </div>
     </div>
-@endsection
-@push('scripts')
-    <script src="{{ asset('js/karyawan.js') }}"></script>
-@endpush
+</div>
+
+
+{{-- ================= SCRIPT ================= --}}
 @section('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
+<script>
+document.addEventListener('DOMContentLoaded', function() {
 
-            /* ================= DELETE ================= */
-            document.querySelectorAll('.btn-delete').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const id = this.dataset.id;
+    /* DELETE */
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id;
 
-                    Swal.fire({
-                        title: 'Apakah kamu yakin?',
-                        text: "Data karyawan ini akan dihapus!",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'Ya, hapus!',
-                        cancelButtonText: 'Batal'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            document.getElementById(`delete-form-${id}`).submit();
-                        }
-                    });
-                });
-            });
-
-
-            /* ================= EDIT POPUP ================= */
-            document.querySelectorAll('.btn-edit').forEach(btn => {
-                btn.addEventListener('click', function() {
-
-                    const id = this.dataset.id;
-
-                    document.getElementById('edit_kode').value = this.dataset.kode;
-                    document.getElementById('edit_nama').value = this.dataset.nama;
-                    document.getElementById('edit_jabatan').value = this.dataset.jabatan;
-                    document.getElementById('edit_divisi').value = this.dataset.divisi;
-                    document.getElementById('edit_perusahaan').value = this.dataset.perusahaan;
-
-                    document.getElementById('formEditKaryawan')
-                        .action = `/dashboard/karyawan/${id}`;
-
-                    var modal = new bootstrap.Modal(document.getElementById('modalEditKaryawan'));
-                    modal.show();
-                });
-            });
-
-
-            /* ================= AUTO OPEN MODAL TAMBAH JIKA ERROR ================= */
-            @if ($errors->any())
-                var modalTambah = new bootstrap.Modal(document.getElementById('modalTambahKaryawan'));
-                modalTambah.show();
-            @endif
-
+            if (confirm('Yakin hapus data?')) {
+                document.getElementById(`delete-form-${id}`).submit();
+            }
         });
-    </script>
+    });
+
+    /* EDIT */
+    document.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.addEventListener('click', function() {
+
+            const id = this.dataset.id;
+
+            document.getElementById('edit_kode').value = this.dataset.kode;
+            document.getElementById('edit_nama').value = this.dataset.nama;
+            document.getElementById('edit_jabatan').value = this.dataset.jabatan;
+            document.getElementById('edit_divisi').value = this.dataset.divisi;
+            document.getElementById('edit_perusahaan').value = this.dataset.perusahaan;
+
+            document.getElementById('formEditKaryawan')
+                .action = `/dashboard/karyawan/${id}`;
+
+            new bootstrap.Modal(document.getElementById('modalEditKaryawan')).show();
+        });
+    });
+
+});
+</script>
+@endsection
+
 @endsection

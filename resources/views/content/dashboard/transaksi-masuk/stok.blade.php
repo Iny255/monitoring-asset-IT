@@ -31,7 +31,7 @@
 
         {{-- SEARCH --}}
         <form method="GET" 
-              action="{{ auth()->user()->role == 'manager' ? route('manager.laporan.stok') : route('masuk.stok') }}" 
+              action="{{ auth()->user()->role == 'manager' ? route('manager.laporan.stok') : route('transaksi-masuk.stok') }}" 
               class="row g-3 mb-4">
 
             <div class="col-md-7 d-flex">
@@ -63,7 +63,7 @@
                         <td>{{ $stok->merek }}</td>
                         <td class="text-center">
                             <span class="badge bg-success">
-                                {{ $stok->stok }}
+                                {{ $stok->jumlah }}
                             </span>
                         </td>
                     </tr>

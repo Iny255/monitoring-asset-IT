@@ -40,8 +40,8 @@
                     <a href="{{ route('manager.laporan.stok') }}" class="btn btn-info btn-sm px-3">
                         Cek Stok
                     </a>
-                @else
-                    <a href="{{ route('masuk.stok') }}" class="btn btn-info btn-sm px-3">
+@else
+                    <a href="{{ url('/dashboard/transaksi-masuk/stok') }}" class="btn btn-info btn-sm px-3">
                         Cek Stok
                     </a>
                 @endif

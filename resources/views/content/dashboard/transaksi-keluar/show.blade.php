@@ -44,7 +44,7 @@
                                 </tr>
                                 <tr>
                                     <th>Tanggal Beli</th>
-                                    <td>{{ \Carbon\Carbon::parse($keluar->masuk->tgl_beli)->format('d-m-Y') }}</td>
+                                    {{ \Carbon\Carbon::parse(optional($keluar->masuk)->tgl_beli)->format('d-m-Y') ?? '-' }}
                                 </tr>
                                 <tr>
                                     <th>Kode Barang</th>

@@ -12,13 +12,13 @@
       "name": "Dashboard",
       "icon": "menu-icon tf-icons bi bi-house-door",
       "slug": "dashboard-manager",
-      "roles": ["manager", "super_admin"]
+      "roles": ["manager"]
     },
     {
       "name": "Laporan",
       "icon": "menu-icon tf-icons bi bi-file-earmark-text",
       "slug": "laporan-manager",
-      "roles": ["manager", "super_admin"],
+      "roles": ["manager"],
       "submenu": [
         {
           "url": "manager/laporan/stok",
@@ -47,14 +47,14 @@
       "name": "Maping",
       "icon": "menu-icon tf-icons bi bi-diagram-3",
       "slug": "manager-maping",
-      "roles": ["manager", "super_admin"]
+      "roles": ["manager"]
     },
     {
       "url": "dashboard/petugas",
       "name": "Dashboard",
       "icon": "menu-icon tf-icons bi bi-house-door",
       "slug": "dashboard-petugas",
-      "roles": ["petugas", "super_admin"]
+      "roles": ["petugas"]
     },
     {
       "url": "dashboard/user",

@@ -4,50 +4,55 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
+return new class extends Migration {
+
     public function up(): void
     {
         Schema::create('mapings', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_lokasi');
-            $table->unsignedBigInteger('id_keluar');
-            $table->unsignedBigInteger('id_perusahaan');
+
+            // ================= RELASI =================
+            $table->foreignId('id_lokasi')
+                ->constrained('lokasis')
+                ->cascadeOnDelete();
+
+            $table->foreignId('id_keluar')
+                ->constrained('keluars')
+                ->cascadeOnDelete();
+
+            $table->foreignId('id_perusahaan')
+                ->constrained('perusahaans')
+                ->cascadeOnDelete();
+
+            // ================= SPESIFIKASI =================
             $table->string('processor', 100)->nullable();
-            $table->string('device_id', 50)->nullable()->unique();
-            $table->string('produk_id', 50)->nullable()->unique();
+            $table->string('device_id', 50)->nullable();
+            $table->string('produk_id', 50)->nullable();
             $table->integer('ram')->nullable();
             $table->string('system', 50)->nullable();
-            $table->string('version', 5)->nullable();
+            $table->string('version', 20)->nullable(); // 🔥 dari 5 jadi 20 (lebih realistis)
             $table->date('instal_on')->nullable();
+
+            // ================= DATA =================
             $table->string('aplikasi', 100)->nullable();
             $table->string('data_p', 100)->nullable();
             $table->string('data_n', 100)->nullable();
+
+            // 🔥 TAMBAHAN PENTING
+            $table->enum('status', ['aktif', 'dicabut'])->default('aktif');
+
             $table->timestamps();
 
-            $table->foreign('id_lokasi')
-                ->references('id')
-                ->on('lokasis')
-                ->onDelete('cascade');
+            // ================= INDEX =================
+            $table->index('id_perusahaan');
+            $table->index('id_keluar');
 
-            $table->foreign('id_keluar')
-                ->references('id')
-                ->on('keluars')
-                ->onDelete('cascade');
-
-            $table->foreign('id_perusahaan')
-                ->references('id')
-                ->on('perusahaans')
-                ->onDelete('cascade');
+            // 🔥 UNIQUE PER PERUSAHAAN (AMAN)
+            $table->unique(['device_id', 'id_perusahaan']);
+            $table->unique(['produk_id', 'id_perusahaan']);
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('mapings');

@@ -13,7 +13,7 @@ class MasukPolicy
      */
     public function viewAny(User $user): bool
     {
-        return in_array($user->role, ['petugas', 'manager']);
+        return in_array($user->role, ['petugas', 'manager', 'super_admin']);
     }
 
     /**
@@ -21,7 +21,7 @@ class MasukPolicy
      */
     public function view(User $user, Masuk $masuk): bool
     {
-        return in_array($user->role, ['petugas', 'manager']);
+        return in_array($user->role, ['petugas', 'manager', 'super_admin']);
     }
 
     /**
@@ -29,7 +29,7 @@ class MasukPolicy
      */
     public function create(User $user): bool
     {
-        return $user->role === 'petugas';
+        return in_array($user->role, ['petugas', 'super_admin']);
     }
 
     /**
@@ -37,7 +37,7 @@ class MasukPolicy
      */
     public function update(User $user, Masuk $masuk): bool
     {
-        return $user->role === 'petugas';
+        return in_array($user->role, ['petugas', 'super_admin']);
     }
 
     /**
@@ -45,7 +45,7 @@ class MasukPolicy
      */
     public function delete(User $user, Masuk $masuk): bool
     {
-        return $user->role === 'petugas';
+        return in_array($user->role, ['petugas', 'super_admin']);
     }
 
     /**
