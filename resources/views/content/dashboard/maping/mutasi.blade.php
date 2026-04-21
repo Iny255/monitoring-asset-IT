@@ -3,7 +3,9 @@
 @section('title', 'Mutasi Data Maping')
 
 @section('content')
+
     <link rel="stylesheet" href="{{ asset('css/mutasi.css') }}">
+
     <div class="container-fluid">
 
         <div class="card shadow-sm border-0">
@@ -24,20 +26,34 @@
                             <select name="ke_lokasi" class="form-control" required>
                                 <option value="">-- Pilih Lokasi --</option>
                                 @foreach ($lokasi as $l)
-                                    <option value="{{ $l->id }}">{{ $l->nama_lokasi }}</option>
+                                    <option value="{{ $l->id }}">
+                                        {{ $l->nama_lokasi }}
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
 
+                        {{-- PERUSAHAAN (SUDAH FILTER AMAN) --}}
                         {{-- PERUSAHAAN --}}
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Perusahaan Baru</label>
-                            <select name="ke_perusahaan" class="form-control" required>
-                                <option value="">-- Pilih Perusahaan --</option>
-                                @foreach ($perusahaan as $p)
-                                    <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
-                                @endforeach
-                            </select>
+
+                            @if ($modePerusahaan === 'select')
+                                <select name="ke_perusahaan" class="form-control" required>
+                                    <option value="">-- Pilih Perusahaan --</option>
+                                    @foreach ($perusahaan as $p)
+                                        <option value="{{ $p->id }}">
+                                            {{ $p->nama_perusahaan }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            @else
+                                <input type="hidden" name="ke_perusahaan" value="{{ $perusahaan->id }}">
+
+                                <div class="form-control bg-light">
+                                    {{ $perusahaan->nama_perusahaan }}
+                                </div>
+                            @endif
                         </div>
 
                         {{-- KARYAWAN AUTOCOMPLETE --}}
@@ -51,7 +67,6 @@
 
                             <div id="result_karyawan" class="autocomplete-box" style="display:none;"></div>
                         </div>
-
 
                         {{-- NO INVENTARIS --}}
                         <div class="col-md-6 mb-3">
@@ -79,12 +94,11 @@
                             <input type="text" name="ke_data_non_ppn" class="form-control">
                         </div>
 
-                        {{-- TANGGAL --}}
+                        {{-- TANGGAL MUTASI --}}
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Tanggal Mutasi</label>
                             <input type="date" name="tanggal_mutasi" class="form-control" required>
                         </div>
-
 
                     </div>
 
@@ -92,7 +106,8 @@
                         <a href="{{ route('maping.index') }}" class="btn btn-secondary">
                             Kembali
                         </a>
-                        <button class="btn btn-primary">
+
+                        <button type="submit" class="btn btn-primary">
                             Simpan Mutasi
                         </button>
                     </div>
@@ -104,6 +119,7 @@
 
     </div>
 
+    {{-- AUTOCOMPLETE KARYAWAN --}}
     <script>
         document.addEventListener("DOMContentLoaded", function() {
 
@@ -111,68 +127,76 @@
             const resultBox = document.getElementById("result_karyawan");
             const hiddenId = document.getElementById("ke_karyawan");
 
-            input.addEventListener("keyup", function() {
+            console.log("INPUT:", input);
+
+            if (!input || !resultBox || !hiddenId) {
+                console.log("ELEMENT TIDAK LENGKAP");
+                return;
+            }
+
+            input.addEventListener("input", function() {
+
                 let keyword = this.value;
+
+                console.log("typing:", keyword);
 
                 if (keyword.length < 2) {
                     resultBox.style.display = "none";
+                    resultBox.innerHTML = "";
                     return;
                 }
 
-                fetch("{{ route('karyawan.search') }}?q=" + keyword)
+                fetch("{{ route('karyawan.search') }}?q=" + encodeURIComponent(keyword))
                     .then(res => res.json())
                     .then(data => {
 
-                        console.log(data); // DEBUG
+                        console.log("RESULT:", data);
 
                         resultBox.innerHTML = "";
 
-                        if (data.length === 0) {
+                        if (!data || data.length === 0) {
                             resultBox.style.display = "none";
                             return;
                         }
 
-                        let html = `
-                    <table class="autocomplete-table">
-                        <thead>
-                            <tr>
-                                <th>Nama Karyawan</th>
-                            </tr>
-                        </thead>
-                        <tbody class="autocomplete-body">
-                `;
-
                         data.forEach(k => {
-                            html += `
-                        <tr class="autocomplete-row" data-id="${k.id}" data-nama="${k.nama_karyawan}">
-                            <td>${k.nama_karyawan}</td>
-                        </tr>
-                    `;
-                        });
 
-                        html += `</tbody></table>`;
+                            const div = document.createElement("div");
 
-                        resultBox.innerHTML = html;
-                        resultBox.style.display = "block";
+                            div.textContent = k.nama_karyawan;
+                            div.style.padding = "8px";
+                            div.style.cursor = "pointer";
+                            div.style.borderBottom = "1px solid #eee";
+                            div.style.background = "#fff";
 
-                        // EVENT CLICK
-                        document.querySelectorAll('.autocomplete-row').forEach(row => {
-                            row.addEventListener('click', function() {
-                                input.value = this.dataset.nama;
-                                hiddenId.value = this.dataset.id;
-                                resultBox.style.display = "none";
+                            div.addEventListener("mouseenter", () => {
+                                div.style.background = "#f2f2f2";
                             });
+
+                            div.addEventListener("mouseleave", () => {
+                                div.style.background = "#fff";
+                            });
+
+                            div.addEventListener("click", () => {
+                                input.value = k.nama_karyawan;
+                                hiddenId.value = k.id;
+                                resultBox.style.display = "none";
+                                resultBox.innerHTML = "";
+                            });
+
+                            resultBox.appendChild(div);
                         });
 
+                        resultBox.style.display = "block";
                     })
                     .catch(err => {
-                        console.error('ERROR:', err);
+                        console.log("FETCH ERROR:", err);
                     });
             });
 
-            // Klik luar → close
+            // klik luar untuk tutup
             document.addEventListener("click", function(e) {
-                if (!input.contains(e.target) && !resultBox.contains(e.target)) {
+                if (!resultBox.contains(e.target) && e.target !== input) {
                     resultBox.style.display = "none";
                 }
             });

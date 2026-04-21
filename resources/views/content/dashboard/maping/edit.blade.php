@@ -89,15 +89,11 @@
                     {{-- PERUSAHAAN --}}
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Perusahaan</label>
-                        <select name="id_perusahaan" class="form-select">
-                            <option value="">-- Pilih Perusahaan --</option>
-                            @foreach ($perusahaans as $perusahaan)
-                                <option value="{{ $perusahaan->id }}"
-                                    {{ $maping->id_perusahaan == $perusahaan->id ? 'selected' : '' }}>
-                                    {{ $perusahaan->nama_perusahaan }}
-                                </option>
-                            @endforeach
-                        </select>
+
+                        <input type="text" class="form-control"
+                            value="{{ auth()->user()->perusahaan->nama_perusahaan }}" readonly>
+
+                        <input type="hidden" name="id_perusahaan" value="{{ auth()->user()->id_perusahaan }}">
                     </div>
                     {{-- STATUS INVENTARIS --}}
                     <div class="col-md-6">

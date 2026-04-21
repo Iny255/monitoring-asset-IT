@@ -34,7 +34,7 @@ class AppServiceProvider extends ServiceProvider
             } else {
                 $perusahaan = $user->perusahaan;
             }
-            $view->with('perusahaan', $perusahaan);
+           
         }
     });
   }

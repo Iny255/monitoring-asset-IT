@@ -134,7 +134,7 @@
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Perusahaan</label>
                             <input type="text" id="perusahaan" class="form-control"
-                                value="{{ optional($keluar->karyawan)->perusahaan }}" readonly>
+                                value="{{ $keluar->karyawan?->perusahaan?->nama_perusahaan ?? '-' }}" readonly>
                         </div>
 
                     </div>

@@ -30,23 +30,20 @@ Route::post('/login', [LoginController::class, 'authenticate']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 
 Route::middleware(['auth'])->group(function () {
-
   /*
     |--------------------------------------------------------------------------
     | SUPER ADMIN
     |--------------------------------------------------------------------------
     */
   Route::middleware(['role:super_admin'])->group(function () {
-
-    Route::get(
-      '/dashboard/superadmin',
-      [App\Http\Controllers\main_dashboard\DashboardSuperAdminController::class, 'index']
-    )->name('dashboard.superadmin');
+    Route::get('/dashboard/superadmin', [
+      App\Http\Controllers\main_dashboard\DashboardSuperAdminController::class,
+      'index',
+    ])->name('dashboard.superadmin');
 
     Route::resource('/dashboard/user', DashboardUserController::class);
     Route::resource('/dashboard/perusahaan', PerusahaanController::class);
   });
-
 
   /*
     |--------------------------------------------------------------------------
@@ -54,40 +51,43 @@ Route::middleware(['auth'])->group(function () {
     |--------------------------------------------------------------------------
     */
   Route::middleware(['role:petugas,super_admin'])->group(function () {
-
-    Route::get(
-      '/dashboard/petugas',
-      [DashboardPetugasController::class, 'petugas']
-    )->name('dashboard.petugas');
+    Route::get('/dashboard/petugas', [DashboardPetugasController::class, 'petugas'])->name('dashboard.petugas');
 
     Route::resource('/dashboard/kategori', KategoriController::class);
-    Route::resource('/dashboard/karyawan', KaryawanController::class);
+    Route::resource('/dashboard/karyawan', KaryawanController::class)->except(['show']);
     Route::resource('/dashboard/lokasi', LokasiController::class);
-    Route::get('/dashboard/transaksi-masuk/stok', [MasukController::class, 'stok'])
-      ->name('transaksi-masuk.stok');
-    Route::resource('/dashboard/transaksi-masuk', MasukController::class)
-      ->parameters([
-        'transaksi-masuk' => 'masuk'
-      ]);
-    Route::get(
-      '/dashboard/transaksi-masuk/{masuk}/download',
-      [MasukController::class, 'download']
-    )->name('transaksi-masuk.download');
+    Route::get('/dashboard/transaksi-masuk/stok', [MasukController::class, 'stok'])->name('transaksi-masuk.stok');
+    Route::resource('/dashboard/transaksi-masuk', MasukController::class)->parameters([
+      'transaksi-masuk' => 'masuk',
+    ]);
+    Route::get('/dashboard/transaksi-masuk/{masuk}/download', [MasukController::class, 'download'])->name(
+      'transaksi-masuk.download'
+    );
 
     Route::resource('/dashboard/transaksi-keluar', KeluarController::class);
-    Route::post(
-      '/dashboard/transaksi-keluar/autofill',
-      [KeluarController::class, 'autofillByKodeMasuk']
-    )->name('transaksi-keluar.autofill');
-    Route::post(
-      '/dashboard/transaksi-keluar/get-karyawan',
-      [KeluarController::class, 'getKaryawanByNama']
-    )->name('keluar.getKaryawanByNama');
+    Route::post('/dashboard/transaksi-keluar/autofill', [KeluarController::class, 'autofillByKodeMasuk'])->name(
+      'transaksi-keluar.autofill'
+    );
+    Route::post('/dashboard/transaksi-keluar/get-karyawan', [KeluarController::class, 'getKaryawanByNama'])->name(
+      'keluar.getKaryawanByNama'
+    );
+    Route::get('/dashboard/maping/print', [MapingController::class, 'print'])->name('maping.print');
     Route::resource('/dashboard/maping', MapingController::class);
-    Route::get('/dashboard/maping/mutasi/{id}', [MapingController::class, 'mutasi'])->name('maping.mutasi');
-    Route::post('/dashboard/maping/cabut/{id}', [MapingController::class, 'cabut'])->name('maping.cabut');
-  });
+    Route::post('/dashboard/maping/get-barang', [MapingController::class, 'getBarangByKeluar'])->name(
+      'maping.getBarang'
+    );
+    Route::get('/dashboard/karyawan/search', [MapingController::class, 'searchKaryawan'])->name('karyawan.search');
 
+    Route::get('/dashboard/maping/mutasi/{id}', [MapingController::class, 'mutasiForm'])->name('maping.mutasi');
+    Route::post('/dashboard/maping/mutasi/{id}', [MapingController::class, 'mutasiStore'])->name('maping.mutasi.store');
+    Route::get('/dashboard/history/mutasi', [MapingController::class, 'historyGlobal'])->name('maping.historyGlobal');
+    Route::get('/maping/{id}/history-user', [MapingController::class, 'historyUser'])->name('maping.historyUser');
+
+    Route::get('/maping/{id}/detail-ajax', [MapingController::class, 'detailAjax'])->name('maping.detailAjax');
+
+    Route::post('/dashboard/maping/cabut/{id}', [MapingController::class, 'cabut'])->name('maping.cabut');
+    Route::get('/dashboard/history/pencabutan', [MapingController::class, 'historyCabut'])->name('maping.historyCabut');
+  });
 
   /*
     |--------------------------------------------------------------------------
@@ -95,28 +95,19 @@ Route::middleware(['auth'])->group(function () {
     |--------------------------------------------------------------------------
     */
   Route::middleware(['role:manager,super_admin'])->group(function () {
+    Route::get('/dashboard/manager', [DashboardManagerController::class, 'index'])->name('dashboard.manager');
 
-    Route::get(
-      '/dashboard/manager',
-      [DashboardManagerController::class, 'index']
-    )->name('dashboard.manager');
+    Route::get('/manager/laporan/stok', [LaporanController::class, 'stok'])->name('manager.laporan.stok');
 
-    Route::get(
-      '/manager/laporan/stok',
-      [LaporanController::class, 'stok']
-    )->name('manager.laporan.stok');
+    Route::get('/manager/laporan/masuk', [LaporanController::class, 'laporanMasuk'])->name('manager.laporan.masuk');
 
-    Route::get(
-      '/manager/laporan/masuk',
-      [LaporanController::class, 'laporanMasuk']
-    )->name('manager.laporan.masuk');
+    Route::get('/manager/laporan/keluar', [LaporanController::class, 'laporanKeluar'])->name('manager.laporan.keluar');
+    Route::get('/manager/maping', [ManagerMapingController::class, 'maping'])->name('manager.maping.index');
 
-    Route::get(
-      '/manager/laporan/keluar',
-      [LaporanController::class, 'laporanKeluar']
-    )->name('manager.laporan.keluar');
+    Route::get('/manager/maping/{id}', [ManagerMapingController::class, 'showmaping'])->name('manager.maping.show');
+
+    Route::get('/manager/maping/print', [ManagerMapingController::class, 'cetakmaping'])->name('manager.maping.cetak');
   });
-
 
   /*
     |--------------------------------------------------------------------------
@@ -124,27 +115,16 @@ Route::middleware(['auth'])->group(function () {
     |--------------------------------------------------------------------------
     */
   Route::middleware(['role:manager,petugas,super_admin'])->group(function () {
-
     Route::resource('/dashboard/peminjaman', PeminjamanController::class);
 
-    Route::get(
-      '/dashboard/history/mutasi',
-      [MapingController::class, 'historyGlobal']
-    )->name('maping.historyGlobal');
+    Route::get('/dashboard/history/mutasi', [MapingController::class, 'historyGlobal'])->name('maping.historyGlobal');
 
-    Route::get(
-      '/dashboard/history/pencabutan',
-      [MapingController::class, 'historyCabut']
-    )->name('maping.historyCabut');
+    Route::get('/dashboard/history/pencabutan', [MapingController::class, 'historyCabut'])->name('maping.historyCabut');
 
-    Route::delete(
-      '/dashboard/history/pencabutan/{id}',
-      [MapingController::class, 'hapusCabut']
-    )->name('history.cabut.hapus');
+    Route::delete('/dashboard/history/pencabutan/{id}', [MapingController::class, 'hapusCabut'])->name(
+      'history.cabut.hapus'
+    );
 
-    Route::get(
-      '/maping/{id}/detail-ajax',
-      [MapingController::class, 'detailAjax']
-    )->name('maping.detail');
+    Route::get('/maping/{id}/detail-ajax', [MapingController::class, 'detailAjax'])->name('maping.detail');
   });
 });

@@ -350,76 +350,76 @@ class MapingController extends Controller
 
   public function print(Request $request)
   {
-    $query = Maping::with(['lokasi', 'perusahaan', 'keluar.masuk.kategori', 'keluar.karyawan'])->where(
-      'status',
-      'aktif'
-    );
+   $user = auth()->user();
 
-    // FILTER SAMA DENGAN INDEX
-    if ($request->filled('lokasi')) {
-      $query->where('id_lokasi', $request->lokasi);
+    $query = Maping::with([
+        'lokasi',
+        'perusahaan',
+        'keluar.masuk.kategori',
+        'keluar.karyawan'
+    ])->where('status', 'aktif');
+
+    // 🔥 FILTER PERUSAHAAN OTOMATIS UNTUK PETUGAS
+    if ($user->role !== 'super_admin') {
+        $query->where('id_perusahaan', $user->id_perusahaan);
+        $namaPerusahaan = $user->perusahaan->nama_perusahaan ?? 'Perusahaan';
+    } else {
+        $namaPerusahaan = 'Sembilan Group';
     }
 
-    if ($request->filled('perusahaan')) {
-      $query->where('id_perusahaan', $request->perusahaan);
+    // filter tambahan tetap jalan
+    if ($request->filled('lokasi')) {
+        $query->where('id_lokasi', $request->lokasi);
     }
 
     if ($request->filled('tahun')) {
-      $query->whereHas('keluar.masuk', function ($q) use ($request) {
-        $q->whereYear('tgl_beli', $request->tahun);
-      });
+        $query->whereHas('keluar.masuk', function ($q) use ($request) {
+            $q->whereYear('tgl_beli', $request->tahun);
+        });
     }
 
     if ($request->filled('barang')) {
-      $query->whereHas('keluar.masuk.kategori', function ($q) use ($request) {
-        $q->where('id', $request->barang);
-      });
-    }
-    // Filter Merek
-    if ($request->filled('merek')) {
-      $query->whereHas('keluar.masuk', function ($q) use ($request) {
-        $q->where('merek', 'like', '%' . $request->merek . '%');
-      });
-    }
-
-    // Filter Type
-    if ($request->filled('type')) {
-      $query->whereHas('keluar.masuk', function ($q) use ($request) {
-        $q->where('type', 'like', '%' . $request->type . '%');
-      });
+        $query->whereHas('keluar.masuk.kategori', function ($q) use ($request) {
+            $q->where('id', $request->barang);
+        });
     }
 
     if ($request->filled('search')) {
-      $search = $request->search;
+        $search = $request->search;
 
-      $query->where(function ($q) use ($search) {
-        $q->where('processor', 'like', "%$search%")
-          ->orWhere('device_id', 'like', "%$search%")
-          ->orWhere('produk_id', 'like', "%$search%");
-      });
+        $query->where(function ($q) use ($search) {
+            $q->where('processor', 'like', "%$search%")
+              ->orWhere('device_id', 'like', "%$search%")
+              ->orWhere('produk_id', 'like', "%$search%");
+        });
     }
 
     $mapings = $query->get();
-
-    // ===============================
-    // PENENTU JUDUL PERUSAHAAN (FIX)
-    // ===============================
-    if ($request->filled('perusahaan') && $mapings->count()) {
-      $namaPerusahaan = optional($mapings->first()->perusahaan)->nama_perusahaan ?? 'Sembilan Group';
-    } else {
-      $namaPerusahaan = 'Sembilan Group';
-    }
 
     return view('content.dashboard.maping.print', compact('mapings', 'namaPerusahaan'));
   }
   public function mutasiForm($id)
   {
+
     $maping = Maping::findOrFail($id);
     $lokasi = Lokasi::all();
-    $perusahaan = Perusahaan::all();
-    $karyawan = Karyawan::all();
 
-    return view('content.dashboard.maping.mutasi', compact('maping', 'lokasi', 'perusahaan', 'karyawan'));
+    $user = auth()->user();
+
+    if ($user->role === 'super_admin') {
+        $perusahaan = Perusahaan::all();
+        $modePerusahaan = 'select';
+    } else {
+        $perusahaan = $user->perusahaan; // single object
+        $modePerusahaan = 'fixed';
+    }
+
+    return view('content.dashboard.maping.mutasi', compact(
+        'maping',
+        'lokasi',
+        'perusahaan',
+        'modePerusahaan'
+    ));
   }
 
   public function mutasiStore(Request $request, $id)

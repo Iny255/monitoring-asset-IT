@@ -36,9 +36,10 @@ class Keluar extends Model
   }
 
   public function masuk()
-  {
+{
     return $this->belongsTo(Masuk::class, 'id_masuk');
-  }
+      
+}
 
   public function perusahaan()
   {

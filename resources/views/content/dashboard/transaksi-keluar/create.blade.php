@@ -146,7 +146,11 @@
 
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Perusahaan</label>
-                            <input type="text" name="perusahaan_klr" id="perusahaan_klr" class="form-control">
+                            <input type="text" class="form-control"
+                                value="{{ auth()->user()->perusahaan->nama_perusahaan }}" readonly>
+                            <input type="hidden" name="perusahaan_klr"
+                                value="{{ auth()->user()->perusahaan->nama_perusahaan }}">
+
                         </div>
 
                     </div>

@@ -28,23 +28,25 @@
                                 </tr>
                                 <tr>
                                     <th>Kode Masuk</th>
-                                    <td>{{ $keluar->masuk->kode_masuk ?? '-' }}</td>
+                                    <td>{{ $keluar->masuk?->kode_masuk ?? '-' }}</td>
                                 </tr>
                                 <tr>
                                     <th>Nama Barang</th>
-                                    <td>{{ $keluar->masuk->kategori->nama_barang ?? '-' }}</td>
+                                    <td>{{ $keluar->masuk?->kategori?->nama_barang ?? '-' }}</td>
                                 </tr>
                                 <tr>
                                     <th>Type</th>
-                                    <td>{{ $keluar->masuk->type ?? '-' }}</td>
+                                    <td>{{ $keluar->masuk?->type ?? '-' }}</td>
                                 </tr>
                                 <tr>
                                     <th>Merek</th>
-                                    <td>{{ $keluar->masuk->merek ?? '-' }}</td>
+                                    <td>{{ $keluar->masuk?->merek ?? '-' }}</td>
                                 </tr>
                                 <tr>
                                     <th>Tanggal Beli</th>
-                                    {{ \Carbon\Carbon::parse(optional($keluar->masuk)->tgl_beli)->format('d-m-Y') ?? '-' }}
+                                    <td>
+                                        {{ $keluar->masuk?->tgl_beli ? \Carbon\Carbon::parse($keluar->masuk->tgl_beli)->format('d-m-Y') : '-' }}
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th>Kode Barang</th>
@@ -78,7 +80,7 @@
                             Foto Barang
                         </div>
                         <div class="card-body d-flex align-items-center justify-content-center">
-                            @if ($keluar->masuk && $keluar->masuk->gambar)
+                            @if ($keluar->masuk?->gambar)
                                 <img src="{{ asset('storage/' . $keluar->masuk->gambar) }}"
                                     class="img-fluid rounded shadow" style="max-height: 280px;">
                             @else
@@ -107,15 +109,15 @@
                                 @if ($keluar->jenis_penerima == 'Perorangan')
                                     <tr>
                                         <th width="40%">Nama Karyawan</th>
-                                        <td>{{ optional($keluar->karyawan)->nama_karyawan ?? '-' }}</td>
+                                        <td>{{ $keluar->karyawan?->nama_karyawan ?? '-' }}</td>
                                     </tr>
                                     <tr>
                                         <th>Divisi</th>
-                                        <td>{{ optional($keluar->karyawan)->divisi ?? '-' }}</td>
+                                        <td>{{ $keluar->karyawan?->divisi ?? '-' }}</td>
                                     </tr>
                                     <tr>
                                         <th>Perusahaan</th>
-                                        <td>{{ optional($keluar->karyawan)->perusahaan ?? '-' }}</td>
+                                        <td>{{ $keluar->karyawan?->perusahaan?->nama_perusahaan ?? '-' }}</td>
                                     </tr>
 
                                     {{-- PERDIVISI --}}
@@ -142,7 +144,6 @@
                 </div>
             </div>
 
-
             {{-- TOMBOL --}}
             <div class="mt-4">
                 @auth
@@ -160,6 +161,5 @@
 
         </div>
     </div>
-
 
 @endsection

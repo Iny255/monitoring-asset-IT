@@ -115,4 +115,5 @@ class KaryawanController extends Controller
             return back()->with('error', 'Error: ' . $e->getMessage());
         }
     }
+   
 }
