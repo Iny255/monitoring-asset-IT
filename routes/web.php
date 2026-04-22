@@ -114,8 +114,13 @@ Route::middleware(['auth'])->group(function () {
     | SHARED (SEMUA ROLE)
     |--------------------------------------------------------------------------
     */
+  Route::get(
+    '/dashboard/peminjaman/search-karyawan',
+    [PeminjamanController::class, 'searchKaryawan']
+  )->name('peminjaman.search');
   Route::middleware(['role:manager,petugas,super_admin'])->group(function () {
     Route::resource('/dashboard/peminjaman', PeminjamanController::class);
+    Route::get('/dashboard/peminjaman/get-nama-barang/{kode}', [PeminjamanController::class, 'getNamaBarang']);
 
     Route::get('/dashboard/history/mutasi', [MapingController::class, 'historyGlobal'])->name('maping.historyGlobal');
 

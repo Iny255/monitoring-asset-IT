@@ -18,20 +18,13 @@ class PeminjamanController extends Controller
      */
     public function index(Request $request)
     {
-        $query = Peminjaman::with([
-            'karyawan',
-            'kategori',
-            'keluar.masuk.kategori',
-            'perusahaan',
-            'lokasi'
-        ]);
+        $query = Peminjaman::with(['karyawan', 'kategori', 'keluar.masuk.kategori', 'perusahaan', 'lokasi']);
 
         // ================= SEARCH =================
         if ($request->search) {
             $search = $request->search;
 
             $query->where(function ($q) use ($search) {
-
                 // Cari KODE BARANG (dari tabel keluar)
                 $q->whereHas('keluar', function ($k) use ($search) {
                     $k->where('kode_barang', 'like', "%{$search}%");
@@ -66,13 +59,10 @@ class PeminjamanController extends Controller
         $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
         $lokasis = Lokasi::orderBy('nama_lokasi')->get();
 
-        return view('content.dashboard.peminjaman.create', compact(
-            'keluars',
-            'kategoris',
-            'karyawans',
-            'perusahaans',
-            'lokasis'
-        ));
+        return view(
+            'content.dashboard.peminjaman.create',
+            compact('keluars', 'kategoris', 'karyawans', 'perusahaans', 'lokasis')
+        );
     }
 
     /**
@@ -81,69 +71,30 @@ class PeminjamanController extends Controller
     public function store(Request $request)
     {
         // ================= VALIDASI =================
-        $request->validate([
-            'keluar_id' => 'required|exists:keluars,id',
-            'karyawan_id' => 'required|exists:karyawans,id',
-            'perusahaan_id' => 'required|exists:perusahaans,id',
-            'lokasi_id' => 'required|exists:lokasis,id',
-            'tanggal_pinjam' => 'required|date',
-            'tanggal_rencana_kembali' => 'required|date|after_or_equal:tanggal_pinjam',
-            'keperluan' => 'nullable|string|max:255',
-            'catatan' => 'nullable|string|max:255',
-        ]);
+        $data = $request->all();
 
-        DB::beginTransaction();
-
-        try {
-
-            // Ambil kategori dari relasi keluar → masuk → kategori
-            $keluar = Keluar::with('masuk.kategori')->findOrFail($request->keluar_id);
-
-            $kategori_id = optional($keluar->masuk->kategori)->id;
-
-            // Simpan
-            Peminjaman::create([
-                'kategori_id' => $kategori_id,
-                'keluar_id' => $request->keluar_id,
-                'karyawan_id' => $request->karyawan_id,
-                'perusahaan_id' => $request->perusahaan_id,
-                'lokasi_id' => $request->lokasi_id,
-                'tanggal_pinjam' => $request->tanggal_pinjam,
-                'tanggal_rencana_kembali' => $request->tanggal_rencana_kembali,
-                'status' => 'Dipinjam',
-                'keperluan' => $request->keperluan,
-                'catatan' => $request->catatan,
-            ]);
-
-            DB::commit();
-
-            return redirect()
-                ->route('peminjaman.index')
-                ->with('success', 'Data peminjaman berhasil disimpan');
-        } catch (\Exception $e) {
-
-            DB::rollBack();
-
-            return back()
-                ->withInput()
-                ->with('error', 'Gagal menyimpan data: ' . $e->getMessage());
+        if ($request->tipe_peminjam == 'internal') {
+            $data['karyawan_id'] = $request->karyawan_id;
+            $data['nama_eksternal'] = null;
+            $data['perusahaan_eksternal'] = null;
+        } else {
+            $data['karyawan_id'] = null;
         }
-    }
 
+        Peminjaman::create($data);
+
+        return redirect()->route('peminjaman.index')
+            ->with('success', 'Data berhasil disimpan');
+    }
 
     /**
      * Display the specified resource.
      */
     public function show($id)
     {
-        $peminjaman = Peminjaman::with([
-        'keluar.masuk.kategori',
-        'karyawan',
-        'perusahaan',
-        'lokasi'
-    ])->findOrFail($id);
+        $peminjaman = Peminjaman::with(['keluar.masuk.kategori', 'karyawan', 'perusahaan', 'lokasi'])->findOrFail($id);
 
-    return view('content.dashboard.peminjaman.show', compact('peminjaman'));
+        return view('content.dashboard.peminjaman.show', compact('peminjaman'));
     }
 
     /**
@@ -151,21 +102,12 @@ class PeminjamanController extends Controller
      */
     public function edit($id)
     {
-        $peminjaman = Peminjaman::with([
-            'keluar.masuk.kategori',
-            'karyawan',
-            'perusahaan',
-            'lokasi'
-        ])->findOrFail($id);
+        $peminjaman = Peminjaman::with(['keluar.masuk.kategori', 'karyawan', 'perusahaan', 'lokasi'])->findOrFail($id);
 
         $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
-        $lokasis     = Lokasi::orderBy('nama_lokasi')->get();
+        $lokasis = Lokasi::orderBy('nama_lokasi')->get();
 
-        return view('content.dashboard.peminjaman.edit', compact(
-            'peminjaman',
-            'perusahaans',
-            'lokasis'
-        ));
+        return view('content.dashboard.peminjaman.edit', compact('peminjaman', 'perusahaans', 'lokasis'));
     }
 
     /**
@@ -226,7 +168,6 @@ class PeminjamanController extends Controller
             ->with('success', 'Data peminjaman berhasil dihapus');
     }
 
-
     public function getNamaBarang($kode)
     {
         $data = Keluar::with('masuk.kategori')
@@ -235,14 +176,14 @@ class PeminjamanController extends Controller
 
         if (!$data || !$data->masuk || !$data->masuk->kategori) {
             return response()->json([
-                'status' => 'not_found'
+                'status' => 'not_found',
             ]);
         }
 
         return response()->json([
             'status' => 'ok',
             'nama_barang' => $data->masuk->kategori->nama_barang,
-            'keluar_id' => $data->id
+            'keluar_id' => $data->id,
         ]);
     }
 
@@ -250,15 +191,8 @@ class PeminjamanController extends Controller
     {
         $keyword = $request->q;
 
-        if (!$keyword) {
-            return response()->json([]);
-        }
-
-        $data = Karyawan::where('nama_karyawan', 'like', "%{$keyword}%")
-            ->orderBy('nama_karyawan')
+        return Karyawan::where('nama_karyawan', 'like', "%$keyword%")
             ->limit(10)
             ->get(['id', 'nama_karyawan']);
-
-        return response()->json($data);
     }
 }
