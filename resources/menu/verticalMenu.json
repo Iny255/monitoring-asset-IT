@@ -34,12 +34,8 @@
           "url": "manager/laporan/keluar",
           "name": "Aset Keluar",
           "icon": "menu-icon tf-icons bi bi-box-arrow-up"
-        },
-        {
-          "url": "manager/laporan/peminjaman",
-          "name": "Peminjaman",
-          "icon": "menu-icon tf-icons bi bi-clipboard-check"
         }
+       
       ]
     },
     {

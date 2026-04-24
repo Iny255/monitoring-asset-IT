@@ -36,17 +36,35 @@
 
                                 <tr>
                                     <th>Peminjam</th>
-                                    <td>{{ $peminjaman->karyawan->nama_karyawan ?? '-' }}</td>
+                                    <td>
+                                        @if ($peminjaman->tipe_peminjam === 'external')
+                                            {{ $peminjaman->nama_eksternal ?? '-' }}
+                                        @else
+                                            {{ optional($peminjaman->karyawan)->nama_karyawan ?? '-' }}
+                                        @endif
+                                    </td>
                                 </tr>
 
                                 <tr>
                                     <th>Perusahaan</th>
-                                    <td>{{ $peminjaman->perusahaan->nama_perusahaan ?? '-' }}</td>
+                                    <td>
+                                        @if ($peminjaman->tipe_peminjam === 'external')
+                                            {{ $peminjaman->perusahaan_eksternal ?? '-' }}
+                                        @else
+                                            {{ optional($peminjaman->perusahaan)->nama_perusahaan ?? '-' }}
+                                        @endif
+                                    </td>
                                 </tr>
 
                                 <tr>
                                     <th>Lokasi</th>
-                                    <td>{{ $peminjaman->lokasi->nama_lokasi ?? '-' }}</td>
+                                    <td>
+                                        @if ($peminjaman->tipe_peminjam === 'external')
+                                            {{ $peminjaman->lokasi_manual ?? '-' }}
+                                        @else
+                                            {{ optional($peminjaman->lokasi)->nama_lokasi ?? '-' }}
+                                        @endif
+                                    </td>
                                 </tr>
 
                                 <tr>

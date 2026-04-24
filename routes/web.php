@@ -100,13 +100,27 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/manager/laporan/stok', [LaporanController::class, 'stok'])->name('manager.laporan.stok');
 
     Route::get('/manager/laporan/masuk', [LaporanController::class, 'laporanMasuk'])->name('manager.laporan.masuk');
+    Route::get('/manager/laporan/masuk/{id}', [LaporanController::class, 'show'])->name('manager.laporan.masuk.show');
 
-    Route::get('/manager/laporan/keluar', [LaporanController::class, 'laporanKeluar'])->name('manager.laporan.keluar');
+    Route::get('/manager/laporan/keluar', [LaporanController::class, 'laporanKeluar'])
+    ->name('manager.laporan.keluar');
+    Route::get('/manager/laporan/keluar/{id}', [LaporanController::class, 'showKeluar'])->name(
+      'manager.laporan.keluar.show'
+    );
+
+    Route::get('/manager/laporan/peminjaman', [LaporanController::class, 'laporanPeminjaman'])->name(
+      'manager.laporan.peminjaman'
+    );
+
+    Route::get('/manager/laporan/peminjaman/{id}', [LaporanController::class, 'showPeminjaman'])
+    ->name('manager.laporan.peminjaman.show');
+
     Route::get('/manager/maping', [ManagerMapingController::class, 'maping'])->name('manager.maping.index');
 
-    Route::get('/manager/maping/{id}', [ManagerMapingController::class, 'showmaping'])->name('manager.maping.show');
-
+  
     Route::get('/manager/maping/print', [ManagerMapingController::class, 'cetakmaping'])->name('manager.maping.cetak');
+    Route::get('/manager/maping/{id}', [ManagerMapingController::class, 'showmaping'])->name('manager.maping.show');
+    
   });
 
   /*
@@ -114,15 +128,18 @@ Route::middleware(['auth'])->group(function () {
     | SHARED (SEMUA ROLE)
     |--------------------------------------------------------------------------
     */
-  Route::get(
-    '/dashboard/peminjaman/search-karyawan',
-    [PeminjamanController::class, 'searchKaryawan']
-  )->name('peminjaman.search');
+  Route::get('/dashboard/peminjaman/search-karyawan', [PeminjamanController::class, 'searchKaryawan'])->name(
+    'peminjaman.search'
+  );
   Route::middleware(['role:manager,petugas,super_admin'])->group(function () {
     Route::resource('/dashboard/peminjaman', PeminjamanController::class);
     Route::get('/dashboard/peminjaman/get-nama-barang/{kode}', [PeminjamanController::class, 'getNamaBarang']);
+    Route::get('/peminjaman/cek-status/{kode}', [PeminjamanController::class, 'cekStatus']);
 
     Route::get('/dashboard/history/mutasi', [MapingController::class, 'historyGlobal'])->name('maping.historyGlobal');
+    Route::get('/maping/{id}/history-user', [MapingController::class, 'historyUser'])
+    ->name('maping.historyUser');
+    Route::delete('/mutasi/{id}', [MapingController::class, 'destroyMutasi']);
 
     Route::get('/dashboard/history/pencabutan', [MapingController::class, 'historyCabut'])->name('maping.historyCabut');
 

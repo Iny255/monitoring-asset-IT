@@ -119,7 +119,7 @@
             <div class="mt-4">
                 @auth
                     @if (auth()->user()->role === 'manager')
-                        <a href="{{ route('manager.maping') }}" class="btn btn-secondary px-4">
+                        <a href="{{ route('manager.maping.index') }}" class="btn btn-secondary px-4">
                             ← Kembali
                         </a>
                     @else

@@ -130,21 +130,47 @@
 
         let id = btn.dataset.id;
 
-        document.getElementById('historyContent').innerHTML = 'Loading...';
+        let content = document.getElementById('historyContent');
+        content.innerHTML = 'Loading...';
 
-        fetch(`/maping/${id}/history-user`)
-            .then(res => res.text())
+        fetch(`/maping/${id}/history-user`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'text/html'
+                }
+            })
+            .then(res => {
+
+                // 🔥 HANDLE ERROR STATUS (403, 404, 500)
+                if (!res.ok) {
+                    if (res.status === 403) {
+                        throw new Error('Akses ditolak (403)');
+                    }
+                    if (res.status === 404) {
+                        throw new Error('Data tidak ditemukan (404)');
+                    }
+                    throw new Error('Terjadi kesalahan server');
+                }
+
+                return res.text();
+            })
             .then(html => {
 
-                document.getElementById('historyContent').innerHTML = html;
+                content.innerHTML = html;
 
                 let modal = new bootstrap.Modal(document.getElementById('modalHistory'));
                 modal.show();
 
             })
             .catch(err => {
+
                 console.error(err);
-                document.getElementById('historyContent').innerHTML = 'Gagal load data';
+
+                content.innerHTML = `
+            <div class="text-danger text-center">
+                ${err.message}
+            </div>
+        `;
             });
 
     });

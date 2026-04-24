@@ -350,48 +350,46 @@ class MapingController extends Controller
 
   public function print(Request $request)
   {
-   $user = auth()->user();
+    $user = auth()->user();
 
-    $query = Maping::with([
-        'lokasi',
-        'perusahaan',
-        'keluar.masuk.kategori',
-        'keluar.karyawan'
-    ])->where('status', 'aktif');
+    $query = Maping::with(['lokasi', 'perusahaan', 'keluar.masuk.kategori', 'keluar.karyawan'])->where(
+      'status',
+      'aktif'
+    );
 
     // 🔥 FILTER PERUSAHAAN OTOMATIS UNTUK PETUGAS
     if ($user->role !== 'super_admin') {
-        $query->where('id_perusahaan', $user->id_perusahaan);
-        $namaPerusahaan = $user->perusahaan->nama_perusahaan ?? 'Perusahaan';
+      $query->where('id_perusahaan', $user->id_perusahaan);
+      $namaPerusahaan = $user->perusahaan->nama_perusahaan ?? 'Perusahaan';
     } else {
-        $namaPerusahaan = 'Sembilan Group';
+      $namaPerusahaan = 'Sembilan Group';
     }
 
     // filter tambahan tetap jalan
     if ($request->filled('lokasi')) {
-        $query->where('id_lokasi', $request->lokasi);
+      $query->where('id_lokasi', $request->lokasi);
     }
 
     if ($request->filled('tahun')) {
-        $query->whereHas('keluar.masuk', function ($q) use ($request) {
-            $q->whereYear('tgl_beli', $request->tahun);
-        });
+      $query->whereHas('keluar.masuk', function ($q) use ($request) {
+        $q->whereYear('tgl_beli', $request->tahun);
+      });
     }
 
     if ($request->filled('barang')) {
-        $query->whereHas('keluar.masuk.kategori', function ($q) use ($request) {
-            $q->where('id', $request->barang);
-        });
+      $query->whereHas('keluar.masuk.kategori', function ($q) use ($request) {
+        $q->where('id', $request->barang);
+      });
     }
 
     if ($request->filled('search')) {
-        $search = $request->search;
+      $search = $request->search;
 
-        $query->where(function ($q) use ($search) {
-            $q->where('processor', 'like', "%$search%")
-              ->orWhere('device_id', 'like', "%$search%")
-              ->orWhere('produk_id', 'like', "%$search%");
-        });
+      $query->where(function ($q) use ($search) {
+        $q->where('processor', 'like', "%$search%")
+          ->orWhere('device_id', 'like', "%$search%")
+          ->orWhere('produk_id', 'like', "%$search%");
+      });
     }
 
     $mapings = $query->get();
@@ -400,26 +398,20 @@ class MapingController extends Controller
   }
   public function mutasiForm($id)
   {
-
     $maping = Maping::findOrFail($id);
     $lokasi = Lokasi::all();
 
     $user = auth()->user();
 
     if ($user->role === 'super_admin') {
-        $perusahaan = Perusahaan::all();
-        $modePerusahaan = 'select';
+      $perusahaan = Perusahaan::all();
+      $modePerusahaan = 'select';
     } else {
-        $perusahaan = $user->perusahaan; // single object
-        $modePerusahaan = 'fixed';
+      $perusahaan = $user->perusahaan; // single object
+      $modePerusahaan = 'fixed';
     }
 
-    return view('content.dashboard.maping.mutasi', compact(
-        'maping',
-        'lokasi',
-        'perusahaan',
-        'modePerusahaan'
-    ));
+    return view('content.dashboard.maping.mutasi', compact('maping', 'lokasi', 'perusahaan', 'modePerusahaan'));
   }
 
   public function mutasiStore(Request $request, $id)
@@ -520,14 +512,12 @@ class MapingController extends Controller
     $mutasi = \App\Models\MutasiMaping::findOrFail($id);
     $mutasi->delete();
 
-    // ✅ kalau AJAX
     if (request()->ajax()) {
-      return response()->json([
-        'success' => true,
-      ]);
+        return response()->json([
+            'success' => true,
+        ]);
     }
 
-    // ✅ kalau NON AJAX (fallback aman)
     return back()->with('success', 'Data berhasil dihapus');
   }
   public function cabut(Request $request, $id)
@@ -581,17 +571,25 @@ class MapingController extends Controller
   }
   public function historyUser($id)
   {
-    $histories = MutasiMaping::with([
+    // dd(auth()->user()->role);
+    $query = MutasiMaping::with([
       'dariLokasi',
       'keLokasi',
       'dariPerusahaan',
       'kePerusahaan',
       'dariKaryawan',
       'keKaryawan',
-    ])
-      ->where('id_maping', $id)
-      ->orderBy('tanggal_mutasi', 'desc') // ⬅️ penting
-      ->get();
+      'maping', // 🔥 WAJIB
+    ])->where('id_maping', $id);
+
+    // 🔥 FILTER PERUSAHAAN
+    if (auth()->user()->role !== 'super_admin') {
+      $query->whereHas('maping', function ($q) {
+        $q->where('id_perusahaan', auth()->user()->id_perusahaan);
+      });
+    }
+
+    $histories = $query->get();
 
     return view('content.dashboard.maping.history_user', compact('histories'));
   }

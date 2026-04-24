@@ -8,20 +8,36 @@ use Illuminate\Support\Facades\Auth;
 
 class CheckRole
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  \Closure  $next
-     * @param  string  ...$roles
-     * @return mixed
-     */
-    public function handle(Request $request, Closure $next, ...$roles)
-    {
-        if (!Auth::check() || !in_array(Auth::user()->role, $roles)) {
-            abort(403, 'Unauthorized action.');
-        }
-
-        return $next($request);
+  /**
+   * Handle an incoming request.
+   *
+   * @param  \Illuminate\Http\Request  $request
+   * @param  \Closure  $next
+   * @param  string  ...$roles
+   * @return mixed
+   */
+  public function handle(Request $request, Closure $next, ...$roles)
+  {
+    if (!Auth::check()) {
+      abort(403, 'User belum login');
     }
+
+    $userRole = strtolower(trim(Auth::user()->role));
+
+    // normalisasi semua role dari route
+    $roles = array_map(function ($role) {
+      return strtolower(trim($role));
+    }, $roles);
+
+    // 🔥 bypass super admin
+    if ($userRole === 'super_admin') {
+      return $next($request);
+    }
+
+    if (!in_array($userRole, $roles)) {
+      abort(403, 'Role tidak diizinkan: ' . $userRole);
+    }
+
+    return $next($request);
+  }
 }

@@ -146,7 +146,7 @@
                                                 <i class="bx bx-trash"></i>
                                             </button>
                                         @elseif(auth()->user()->role === 'manager')
-                                            <a href="{{ route('laporan.keluar.show', $keluar->id) }}"
+                                            <a href="{{ route('manager.laporan.keluar.show', $keluar->id) }}"
                                                 class="btn btn-info btn-sm">
                                                 <i class="bx bx-show"></i>
                                             </a>

@@ -10,175 +10,177 @@ use Illuminate\Support\Facades\Storage;
 
 class MasukController extends Controller
 {
-    public function index(Request $request)
-    {
-        $perusahaan = auth()->user()->perusahaan;
-        $search = $request->input('search');
+  public function index(Request $request)
+  {
+    $perusahaan = auth()->user()->perusahaan;
+    $search = $request->input('search');
 
-        $masuks = Masuk::with('kategori')
-            ->where('perusahaan_id', $perusahaan->id) // ✅ FIX
-            ->latest();
+    $masuks = Masuk::with('kategori')
+      ->where('perusahaan_id', $perusahaan->id) // ✅ FIX
+      ->latest();
 
-        if ($search) {
-            $masuks->where(function ($query) use ($search) {
-                $query->where('kode_masuk', 'like', "%{$search}%")
-                    ->orWhereHas('kategori', function ($q) use ($search) {
-                        $q->where('nama_barang', 'like', "%{$search}%");
-                    });
-            });
-        }
-
-        $masuks = $masuks->paginate(10);
-
-        return view('content.dashboard.transaksi-masuk.index', compact('masuks'));
+    if ($search) {
+      $masuks->where(function ($query) use ($search) {
+        $query->where('kode_masuk', 'like', "%{$search}%")->orWhereHas('kategori', function ($q) use ($search) {
+          $q->where('nama_barang', 'like', "%{$search}%");
+        });
+      });
     }
 
-    public function create()
-    {
-        $perusahaan = auth()->user()->perusahaan;
+    $masuks = $masuks->paginate(10);
 
-        $kategoris = Kategori::where('perusahaan_id', $perusahaan->id)->get(); // ✅ FIX
+    return view('content.dashboard.transaksi-masuk.index', compact('masuks'));
+  }
 
-        $last = Masuk::latest()->first();
-        $kodeMasuk = 'MSK-' . str_pad(($last->id ?? 0) + 1, 5, '0', STR_PAD_LEFT);
+  public function create()
+  {
+    $perusahaan = auth()->user()->perusahaan;
 
-        return view('content.dashboard.transaksi-masuk.create', compact('kategoris', 'kodeMasuk'));
+    $kategoris = Kategori::where('perusahaan_id', $perusahaan->id)->get(); // ✅ FIX
+
+    $last = Masuk::latest()->first();
+    $kodeMasuk = 'MSK-' . str_pad(($last->id ?? 0) + 1, 5, '0', STR_PAD_LEFT);
+
+    return view('content.dashboard.transaksi-masuk.create', compact('kategoris', 'kodeMasuk'));
+  }
+
+  public function store(Request $request)
+  {
+    $perusahaan = auth()->user()->perusahaan;
+
+    $validated = $request->validate([
+      'kode_masuk' => 'required|unique:masuks,kode_masuk',
+      'id_kategori' => 'required|exists:kategoris,id',
+      'type' => 'required|string|max:100',
+      'merek' => 'required|string|max:100',
+      'jumlah' => 'required|integer',
+      'tgl_beli' => 'required|date',
+      'supplier' => 'required|string|max:100',
+      'garansi' => 'required|integer',
+      'harga' => 'required|numeric',
+      'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+    ]);
+
+    // ✅ FIX UTAMA
+    $validated['perusahaan_id'] = $perusahaan->id;
+
+    if ($request->hasFile('gambar')) {
+      $validated['gambar'] = $request->file('gambar')->store('masuk', 'public');
     }
 
-    public function store(Request $request)
-    {
-        $perusahaan = auth()->user()->perusahaan;
+    try {
+      Masuk::create($validated);
 
-        $validated = $request->validate([
-            'kode_masuk' => 'required|unique:masuks,kode_masuk',
-            'id_kategori' => 'required|exists:kategoris,id',
-            'type' => 'required|string|max:100',
-            'merek' => 'required|string|max:100',
-            'jumlah' => 'required|integer',
-            'tgl_beli' => 'required|date',
-            'supplier' => 'required|string|max:100',
-            'garansi' => 'required|integer',
-            'harga' => 'required|numeric',
-            'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-        ]);
+      return redirect()
+        ->route('transaksi-masuk.index')
+        ->with('success', 'Data berhasil disimpan');
+    } catch (\Exception $e) {
+      Log::error($e->getMessage());
+      return back()->with('error', 'Gagal menyimpan data');
+    }
+  }
 
-        // ✅ FIX UTAMA
-        $validated['perusahaan_id'] = $perusahaan->id;
+  public function show($id)
+  {
+    $query = Masuk::with('kategori');
 
-        if ($request->hasFile('gambar')) {
-            $validated['gambar'] = $request->file('gambar')->store('masuk', 'public');
-        }
-
-        try {
-            Masuk::create($validated);
-
-            return redirect()
-                ->route('transaksi-masuk.index')
-                ->with('success', 'Data berhasil disimpan');
-        } catch (\Exception $e) {
-            Log::error($e->getMessage());
-            return back()->with('error', 'Gagal menyimpan data');
-        }
+    // 🔥 FILTER PERUSAHAAN
+    if (auth()->user()->role !== 'super_admin') {
+      $query->where('perusahaan_id', auth()->user()->id_perusahaan);
     }
 
-    public function show(Masuk $masuk)
-    {
-        $perusahaan = auth()->user()->perusahaan;
+    $masuk = $query->findOrFail($id);
 
-        $masuk = Masuk::with('kategori')
-            ->where('perusahaan_id', $perusahaan->id)
-            ->findOrFail($masuk->id);
+    return view('content.dashboard.transaksi-masuk.show', compact('masuk'));
+  }
 
-        return view('content.dashboard.transaksi-masuk.show', compact('masuk'));
+  public function edit(Masuk $masuk)
+  {
+    $perusahaan = auth()->user()->perusahaan;
+
+    $kategoris = Kategori::where('perusahaan_id', $perusahaan->id)->get(); // ✅ FIX
+
+    return view('content.dashboard.transaksi-masuk.edit', compact('masuk', 'kategoris'));
+  }
+
+  public function update(Request $request, Masuk $masuk)
+  {
+    $validated = $request->validate([
+      'id_kategori' => 'required|exists:kategoris,id',
+      'type' => 'required|string|max:100',
+      'merek' => 'required|string|max:100',
+      'jumlah' => 'required|integer',
+      'tgl_beli' => 'required|date',
+      'supplier' => 'required|string|max:100',
+      'garansi' => 'required|integer',
+      'harga' => 'required|numeric',
+      'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+    ]);
+
+    if ($request->hasFile('gambar')) {
+      if ($masuk->gambar) {
+        Storage::delete('public/' . $masuk->gambar);
+      }
+
+      $validated['gambar'] = $request->file('gambar')->store('masuk', 'public');
     }
 
-    public function edit(Masuk $masuk)
-    {
-        $perusahaan = auth()->user()->perusahaan;
+    try {
+      $masuk->update($validated);
 
-        $kategoris = Kategori::where('perusahaan_id', $perusahaan->id)->get(); // ✅ FIX
+      return redirect()
+        ->route('transaksi-masuk.index')
+        ->with('success', 'Data berhasil diupdate');
+    } catch (\Exception $e) {
+      Log::error($e->getMessage());
+      return back()->with('error', 'Gagal update data');
+    }
+  }
 
-        return view('content.dashboard.transaksi-masuk.edit', compact('masuk', 'kategoris'));
+  public function destroy(Masuk $masuk)
+  {
+    try {
+      if ($masuk->gambar) {
+        Storage::delete('public/' . $masuk->gambar);
+      }
+
+      $masuk->delete();
+
+      return redirect()
+        ->route('transaksi-masuk.index')
+        ->with('success', 'Data berhasil dihapus');
+    } catch (\Exception $e) {
+      Log::error($e->getMessage());
+      return back()->with('error', 'Gagal hapus data');
+    }
+  }
+
+  public function download(Masuk $masuk)
+  {
+    if ($masuk->gambar && Storage::exists('public/' . $masuk->gambar)) {
+      return Storage::download('public/' . $masuk->gambar);
     }
 
-    public function update(Request $request, Masuk $masuk)
-    {
-        $validated = $request->validate([
-            'id_kategori' => 'required|exists:kategoris,id',
-            'type' => 'required|string|max:100',
-            'merek' => 'required|string|max:100',
-            'jumlah' => 'required|integer',
-            'tgl_beli' => 'required|date',
-            'supplier' => 'required|string|max:100',
-            'garansi' => 'required|integer',
-            'harga' => 'required|numeric',
-            'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-        ]);
+    abort(404, 'File tidak ditemukan');
+  }
 
-        if ($request->hasFile('gambar')) {
-            if ($masuk->gambar) {
-                Storage::delete('public/' . $masuk->gambar);
-            }
+  public function stok(Request $request)
+  {
+    $perusahaan = auth()->user()->perusahaan;
+    $search = $request->search;
 
-            $validated['gambar'] = $request->file('gambar')->store('masuk', 'public');
-        }
+    $stoks = Masuk::with('kategori')
+      ->where('perusahaan_id', $perusahaan->id)
+      ->where('jumlah', '>', 0); // hanya tampil yang masih ada stok
 
-        try {
-            $masuk->update($validated);
-
-            return redirect()
-                ->route('transaksi-masuk.index')
-                ->with('success', 'Data berhasil diupdate');
-        } catch (\Exception $e) {
-            Log::error($e->getMessage());
-            return back()->with('error', 'Gagal update data');
-        }
+    if ($search) {
+      $stoks->whereHas('kategori', function ($q) use ($search) {
+        $q->where('nama_barang', 'like', "%{$search}%");
+      });
     }
 
-    public function destroy(Masuk $masuk)
-    {
-        try {
-            if ($masuk->gambar) {
-                Storage::delete('public/' . $masuk->gambar);
-            }
+    $stoks = $stoks->get();
 
-            $masuk->delete();
-
-            return redirect()
-                ->route('transaksi-masuk.index')
-                ->with('success', 'Data berhasil dihapus');
-        } catch (\Exception $e) {
-            Log::error($e->getMessage());
-            return back()->with('error', 'Gagal hapus data');
-        }
-    }
-
-    public function download(Masuk $masuk)
-    {
-        if ($masuk->gambar && Storage::exists('public/' . $masuk->gambar)) {
-            return Storage::download('public/' . $masuk->gambar);
-        }
-
-        abort(404, 'File tidak ditemukan');
-    }
-
-    public function stok(Request $request)
-    {
-        $perusahaan = auth()->user()->perusahaan;
-        $search = $request->search;
-
-        $stoks = Masuk::with('kategori')
-            ->where('perusahaan_id', $perusahaan->id)
-            ->where('jumlah', '>', 0); // hanya tampil yang masih ada stok
-
-        if ($search) {
-            $stoks->whereHas('kategori', function ($q) use ($search) {
-                $q->where('nama_barang', 'like', "%{$search}%");
-            });
-        }
-
-        $stoks = $stoks->get();
-
-        return view('content.dashboard.transaksi-masuk.stok', compact('stoks'));
-    }
+    return view('content.dashboard.transaksi-masuk.stok', compact('stoks'));
+  }
 }

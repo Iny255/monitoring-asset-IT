@@ -48,9 +48,15 @@
                         🔍 Filter
                     </button>
 
-                    <a href="{{ route('maping.index') }}" class="btn btn-secondary">
-                        Reset
-                    </a>
+                    @if (auth()->user()->role === 'manager')
+                        <a href="{{ route('manager.maping.index') }}" class="btn btn-secondary">
+                            Reset
+                        </a>
+                    @else
+                        <a href="{{ route('maping.index') }}" class="btn btn-secondary">
+                            Reset
+                        </a>
+                    @endif
                 </div>
 
                 {{-- KANAN: CETAK --}}
@@ -209,8 +215,8 @@
 
                             <div class="col-md-6 mb-3">
                                 <label>Tanggal Pencabutan</label>
-                                <input type="date" name="tanggal_cabut" class="form-control" value="{{ date('Y-m-d') }}"
-                                    required>
+                                <input type="date" name="tanggal_cabut" class="form-control"
+                                    value="{{ date('Y-m-d') }}" required>
                             </div>
 
                             <div class="col-md-6 mb-3">
@@ -354,89 +360,89 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
 
-                    // DELETE
-                    document.querySelectorAll('.btn-delete').forEach(btn => {
-                        btn.addEventListener('click', function() {
-                            const id = this.dataset.id;
+            // DELETE
+            document.querySelectorAll('.btn-delete').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
 
-                            Swal.fire({
-                                title: 'Apakah kamu yakin?',
-                                text: "Data mapping ini akan dihapus!",
-                                icon: 'warning',
-                                showCancelButton: true,
-                                confirmButtonText: 'Ya, hapus!',
-                                cancelButtonText: 'Batal'
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    document.getElementById(`delete-form-${id}`).submit();
-                                }
-                            });
-                        });
-                    });
-
-                    // EDIT
-                    document.querySelectorAll('.btn-edit').forEach(btn => {
-                        btn.addEventListener('click', function() {
-                            const id = this.dataset.id;
-
-                            Swal.fire({
-                                title: 'Edit data ini?',
-                                text: 'Kamu akan diarahkan ke halaman edit',
-                                icon: 'question',
-                                showCancelButton: true,
-                                confirmButtonText: 'Ya, Edit',
-                                cancelButtonText: 'Batal'
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    window.location.href = `/dashboard/maping/${id}/edit`;
-                                }
-                            });
-                        });
-                    });
-
-                    // MUTASI
-                    document.querySelectorAll('.btn-mutasi').forEach(btn => {
-                        btn.addEventListener('click', function() {
-
-                            const id = this.dataset.id;
-                            const url = `/dashboard/maping/mutasi/${id}`;
-
-                            Swal.fire({
-                                title: 'Mutasi data ini?',
-                                icon: 'question',
-                                showCancelButton: true,
-                                confirmButtonText: 'Ya, Mutasi',
-                                cancelButtonText: 'Batal'
-                            }).then((result) => {
-                                if (result.isConfirmed) {
-                                    window.location.href = url;
-                                }
-                            });
-
-                        });
-                    });
-                    // CABUT INVENTARIS
-                    document.querySelectorAll('.btn-cabut').forEach(btn => {
-
-                        btn.addEventListener('click', function() {
-
-                            const id = this.dataset.id;
-                            const kode = this.dataset.kode;
-                            const nama = this.dataset.nama;
-
-                            document.getElementById('cabut_kode').value = kode;
-                            document.getElementById('cabut_nama').value = nama;
-
-                            const url = "{{ route('maping.cabut', ':id') }}".replace(':id', id);
-                            document.getElementById('formCabut').action = url;
-
-                            let modal = new bootstrap.Modal(document.getElementById('modalCabut'));
-                            modal.show();
-
-                        });
-
+                    Swal.fire({
+                        title: 'Apakah kamu yakin?',
+                        text: "Data mapping ini akan dihapus!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, hapus!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            document.getElementById(`delete-form-${id}`).submit();
+                        }
                     });
                 });
+            });
+
+            // EDIT
+            document.querySelectorAll('.btn-edit').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
+
+                    Swal.fire({
+                        title: 'Edit data ini?',
+                        text: 'Kamu akan diarahkan ke halaman edit',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Edit',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = `/dashboard/maping/${id}/edit`;
+                        }
+                    });
+                });
+            });
+
+            // MUTASI
+            document.querySelectorAll('.btn-mutasi').forEach(btn => {
+                btn.addEventListener('click', function() {
+
+                    const id = this.dataset.id;
+                    const url = `/dashboard/maping/mutasi/${id}`;
+
+                    Swal.fire({
+                        title: 'Mutasi data ini?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Mutasi',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = url;
+                        }
+                    });
+
+                });
+            });
+            // CABUT INVENTARIS
+            document.querySelectorAll('.btn-cabut').forEach(btn => {
+
+                btn.addEventListener('click', function() {
+
+                    const id = this.dataset.id;
+                    const kode = this.dataset.kode;
+                    const nama = this.dataset.nama;
+
+                    document.getElementById('cabut_kode').value = kode;
+                    document.getElementById('cabut_nama').value = nama;
+
+                    const url = "{{ route('maping.cabut', ':id') }}".replace(':id', id);
+                    document.getElementById('formCabut').action = url;
+
+                    let modal = new bootstrap.Modal(document.getElementById('modalCabut'));
+                    modal.show();
+
+                });
+
+            });
+        });
     </script>
 
 

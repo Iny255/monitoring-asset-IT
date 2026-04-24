@@ -80,7 +80,11 @@
                                 </td>
 
                                 <td>
-                                    {{ optional($p->karyawan)->nama_karyawan ?? '-' }}
+                                    @if ($p->tipe_peminjam === 'external')
+                                        {{ $p->nama_eksternal ?? '-' }}
+                                    @else
+                                        {{ optional($p->karyawan)->nama_karyawan ?? '-' }}
+                                    @endif
                                 </td>
 
                                 <td>
@@ -134,7 +138,7 @@
 
                                             {{-- ================= MANAGER ================= --}}
                                         @elseif(auth()->user()->role === 'manager')
-                                            <a href="{{ route('laporan.peminjaman.show', $p->id) }}"
+                                            <a href="{{ route('manager.laporan.peminjaman.show', $p->id) }}"
                                                 class="btn btn-info btn-sm">
                                                 <i class="bx bx-show"></i> Detail
                                             </a>

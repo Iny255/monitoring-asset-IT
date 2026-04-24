@@ -28,6 +28,10 @@ class Peminjaman extends Model
     'status',
     'keperluan',
     'catatan',
+    'nama_eksternal',
+    'perusahaan_eksternal',
+    'lokasi_manual',
+    'tipe_peminjam',
   ];
 
   // ================= RELASI =================
@@ -63,7 +67,11 @@ class Peminjaman extends Model
   {
     // 🔥 AUTO ISI PERUSAHAAN
     static::creating(function ($model) {
-      if (auth()->check() && auth()->user()->role != 'super_admin') {
+      if (
+        auth()->check() &&
+        auth()->user()->role != 'super_admin' &&
+        $model->tipe_peminjam !== 'external' // 🔥 TAMBAHAN PENTING
+      ) {
         $model->perusahaan_id = auth()->user()->id_perusahaan;
       }
     });
@@ -71,7 +79,9 @@ class Peminjaman extends Model
     // 🔥 AUTO FILTER DATA
     static::addGlobalScope('perusahaan', function ($query) {
       if (auth()->check() && auth()->user()->role != 'super_admin') {
-        $query->where('perusahaan_id', auth()->user()->id_perusahaan);
+        $query->where(function ($q) {
+          $q->where('perusahaan_id', auth()->user()->id_perusahaan)->orWhere('tipe_peminjam', 'external'); // 🔥 TAMBAHAN
+        });
       }
     });
   }

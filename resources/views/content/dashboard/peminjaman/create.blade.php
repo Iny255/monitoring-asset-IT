@@ -4,162 +4,196 @@
 
 @section('content')
     <link rel="stylesheet" href="{{ asset('css/peminjaman.css') }}">
+
     <div class="container-fluid">
         <div class="row">
-            <div class="col-lg-10 col-md-12">
+            <div class="col-lg-10">
 
-                <!-- CARD -->
-                <div class="card border-0 shadow-sm rounded-4">
-
-                    <div class="card-header border-0 px-4 pt-4">
+                <div class="card shadow-sm">
+                    <div class="card-header">
                         <h5 class="text-primary mb-0">Pengajuan Peminjaman</h5>
-                        <small class="text-muted">
-                            Silakan isi data peminjaman barang
-                        </small>
                     </div>
 
-
-                    <div class="card-body px-4 pb-4">
+                    <div class="card-body">
 
                         <form action="{{ route('peminjaman.store') }}" method="POST">
                             @csrf
 
+                            {{-- 🔥 TIPE --}}
+                            <input type="hidden" name="jenis_perusahaan" id="jenis_perusahaan_input" value="internal">
+
                             <div class="row">
 
-                                {{-- KIRI --}}
+                                {{-- ================= KIRI ================= --}}
                                 <div class="col-md-6">
 
+                                    {{-- KODE --}}
                                     <div class="mb-3">
-                                        <label class="form-label fw-medium">Kode Barang</label>
-                                        <input type="text" id="kode_barang" class="form-control"
-                                            placeholder="Ketik kode barang...">
+                                        <label>Kode Barang</label>
+                                        <input type="text" id="kode_barang" class="form-control">
                                         <input type="hidden" name="keluar_id" id="keluar_id">
                                     </div>
 
+                                    {{-- NAMA --}}
                                     <div class="mb-3">
-                                        <label class="form-label fw-medium">Nama Barang</label>
+                                        <label>Nama Barang</label>
                                         <input type="text" id="nama_barang" class="form-control" readonly>
                                     </div>
 
+                                    {{-- JENIS --}}
                                     <div class="mb-3">
-                                        <label class="form-label">Tipe Peminjam</label>
-                                        <select id="tipe_peminjam" name="tipe_peminjam" class="form-control">
-                                            <option value="internal">Karyawan Internal</option>
-                                            <option value="eksternal">Pihak Eksternal</option>
+                                        <label>Jenis Peminjam</label>
+                                        <select id="jenis_perusahaan" class="form-control">
+                                            <option value="internal">Internal</option>
+                                            <option value="external">Eksternal</option>
                                         </select>
                                     </div>
 
-                                    {{-- ================= INTERNAL (AUTOCOMPLETE) ================= --}}
-                                    <div id="field_karyawan" class="mb-3 position-relative">
-                                        <label class="form-label">Peminjam (Karyawan)</label>
-                                        <input type="text" id="nama" class="form-control" autocomplete="off">
-                                        <input type="hidden" name="karyawan_id" id="karyawan_id">
-                                        <div id="hasil_nama" class="autocomplete-box d-none"></div>
+                                    {{-- ===== INTERNAL ===== --}}
+                                    <div id="form_internal">
+
+                                        <div class="mb-3 position-relative">
+                                            <label>Nama Karyawan</label>
+                                            <input type="text" id="nama" class="form-control" autocomplete="off">
+                                            <input type="hidden" name="karyawan_id" id="karyawan_id">
+                                            <div id="hasil_nama" class="autocomplete-box d-none"></div>
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label>Perusahaan</label>
+                                            <input type="text" class="form-control"
+                                                value="{{ auth()->user()->perusahaan->nama_perusahaan ?? '-' }}" readonly>
+                                            <input type="hidden" name="perusahaan_id"
+                                                value="{{ auth()->user()->perusahaan->id ?? '' }}">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label>Lokasi</label>
+                                            <select name="lokasi_id" class="form-control">
+                                                @foreach ($lokasis as $l)
+                                                    <option value="{{ $l->id }}">{{ $l->nama_lokasi }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+
                                     </div>
 
-                                    {{-- ================= EKSTERNAL ================= --}}
-                                    <div id="field_eksternal" class="mb-3 d-none">
-                                        <label class="form-label">Nama Peminjam</label>
-                                        <input type="text" name="nama_eksternal" class="form-control">
-                                    </div>
+                                    {{-- ===== EXTERNAL ===== --}}
+                                    <div id="form_external" class="d-none">
 
-                                    <div id="field_perusahaan" class="mb-3 d-none">
-                                        <label class="form-label">Asal Perusahaan</label>
-                                        <input type="text" name="perusahaan_eksternal" class="form-control">
-                                    </div>
+                                        <div class="mb-3">
+                                            <label>Nama Peminjam</label>
+                                            <input type="text" name="nama_eksternal" class="form-control">
+                                        </div>
 
-                                    {{-- LOKASI --}}
-                                    <div class="mb-3">
-                                        <label class="form-label fw-medium">Lokasi</label>
-                                        <select name="lokasi_id" class="form-control" required>
-                                            <option value="">-- Pilih Lokasi --</option>
-                                            @foreach ($lokasis as $l)
-                                                <option value="{{ $l->id }}">
-                                                    {{ $l->nama_lokasi }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                        <div class="mb-3">
+                                            <label>Perusahaan</label>
+                                            <input type="text" name="perusahaan_eksternal" class="form-control">
+                                        </div>
+
+                                        <div class="mb-3">
+                                            <label>Lokasi</label>
+                                            <input type="text" name="lokasi_manual" class="form-control">
+                                        </div>
+
                                     </div>
 
                                 </div>
 
-
-                                {{-- KANAN --}}
+                                {{-- ================= KANAN ================= --}}
                                 <div class="col-md-6">
 
-                                    {{-- TANGGAL PINJAM --}}
                                     <div class="mb-3">
-                                        <label class="form-label fw-medium">Tanggal Pinjam</label>
+                                        <label>Tanggal Pinjam</label>
                                         <input type="date" name="tanggal_pinjam" class="form-control" required>
                                     </div>
 
-                                    {{-- RENCANA KEMBALI --}}
                                     <div class="mb-3">
-                                        <label class="form-label fw-medium">Rencana Kembali</label>
+                                        <label>Rencana Kembali</label>
                                         <input type="date" name="tanggal_rencana_kembali" class="form-control" required>
                                     </div>
 
-                                    {{-- KEPERLUAN --}}
                                     <div class="mb-3">
-                                        <label class="form-label fw-medium">Keperluan</label>
-                                        <textarea name="keperluan" class="form-control" rows="2"
-                                            placeholder="Contoh: Operasional, Meeting, dll"></textarea>
+                                        <label>Keperluan</label>
+                                        <textarea name="keperluan" class="form-control"></textarea>
                                     </div>
 
-                                    {{-- CATATAN --}}
                                     <div class="mb-3">
-                                        <label class="form-label fw-medium">Catatan</label>
-                                        <textarea name="catatan" class="form-control" rows="2"></textarea>
+                                        <label>Catatan</label>
+                                        <textarea name="catatan" class="form-control"></textarea>
                                     </div>
 
                                 </div>
 
                             </div>
 
-
-                            {{-- BUTTON --}}
-                            <div class="d-flex justify-content-end gap-2 mt-2">
-                                <a href="{{ route('peminjaman.index') }}" class="btn btn-secondary px-4">
-                                    Batal
-                                </a>
-
-                                <button type="submit" class="btn btn-primary px-4">
-                                    Simpan
-                                </button>
+                            <div class="mt-3 text-end">
+                                <button class="btn btn-primary">Simpan</button>
                             </div>
 
                         </form>
 
-                        <!-- END CARD -->
-
                     </div>
                 </div>
             </div>
-
+        </div>
+    </div>
 @endsection
-        <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-        <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
+        const kodeInput = document.getElementById('kode_barang');
+        const namaInput = document.getElementById('nama_barang');
+        const keluarId = document.getElementById('keluar_id');
 
-                let swalShown = false; // supaya swal hanya muncul sekali
-                let lastKode = null; // supaya tidak request berulang
+        const jenis = document.getElementById('jenis_perusahaan');
+        const hiddenJenis = document.getElementById('jenis_perusahaan_input');
 
-                const kodeInput = document.getElementById('kode_barang');
-                const namaInput = document.getElementById('nama_barang');
-                const keluarId = document.getElementById('keluar_id');
+        const internal = document.getElementById('form_internal');
+        const external = document.getElementById('form_external');
 
-                namaInput.addEventListener('focus', function () {
+        const inputNama = document.getElementById('nama');
+        const inputId = document.getElementById('karyawan_id');
+        const resultBox = document.getElementById('hasil_nama');
 
-                    let kode = kodeInput.value.trim();
+        // ================= SWITCH INTERNAL / EXTERNAL =================
+        jenis.addEventListener('change', function() {
+            hiddenJenis.value = this.value;
 
-                    if (!kode) return;
+            if (this.value === 'external') {
+                internal.classList.add('d-none');
+                external.classList.remove('d-none');
+            } else {
+                internal.classList.remove('d-none');
+                external.classList.add('d-none');
+            }
+        });
 
-                    // cegah request berulang jika kode sama
-                    if (lastKode === kode) return;
-                    lastKode = kode;
+        // ================= CEK BARANG =================
+        kodeInput.addEventListener('blur', function() {
+
+            let kode = this.value.trim();
+            if (!kode) return;
+
+            fetch(`/peminjaman/cek-status/${kode}`)
+                .then(res => res.json())
+                .then(res => {
+
+                    if (res.dipinjam) {
+
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Barang sedang dipinjam!',
+                            text: 'Tidak bisa dipinjam ulang'
+                        });
+
+                        kodeInput.value = '';
+                        namaInput.value = '';
+                        keluarId.value = '';
+                        return;
+                    }
 
                     fetch(`/dashboard/peminjaman/get-nama-barang/${kode}`)
                         .then(res => res.json())
@@ -168,287 +202,79 @@
                             if (data.status === 'ok') {
                                 namaInput.value = data.nama_barang;
                                 keluarId.value = data.keluar_id;
-                                swalShown = false; // reset jika data ketemu
                             } else {
-                                namaInput.value = '';
-                                keluarId.value = '';
-
-                                if (!swalShown) {
-                                    swalShown = true;
-
-                                    Swal.fire({
-                                        icon: 'warning',
-                                        title: 'Data Tidak Ditemukan',
-                                        text: 'Kode barang tidak ditemukan',
-                                        confirmButtonText: 'OK'
-                                    });
-                                }
+                                Swal.fire('Kode tidak ditemukan');
                             }
-                        })
-                        .catch(() => {
 
-                            namaInput.value = '';
-                            keluarId.value = '';
-
-                            if (!swalShown) {
-                                swalShown = true;
-
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'Error',
-                                    text: 'Gagal mengambil data barang'
-                                });
-                            }
                         });
 
                 });
 
-            });
-        </script>
+        });
 
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
+        // ================= AUTOCOMPLETE =================
+        let debounce;
 
-                const inputNama = document.getElementById('nama');
-                const inputId = document.getElementById('karyawan_id');
-                const resultBox = document.getElementById('hasil_nama');
+        inputNama.addEventListener('input', function() {
 
-                if (!inputNama || !inputId || !resultBox) return;
+            let keyword = this.value.trim();
 
-                let debounce;
+            if (keyword.length < 2) {
+                closeDropdown();
+                return;
+            }
 
-                inputNama.addEventListener('input', function () {
+            clearTimeout(debounce);
 
-                    let keyword = this.value.trim();
+            debounce = setTimeout(() => {
 
-                    if (keyword.length < 2) {
-                        closeDropdown();
-                        return;
-                    }
+                fetch(`/dashboard/peminjaman/search-karyawan?q=${keyword}`)
+                    .then(res => res.json())
+                    .then(data => {
 
-                    clearTimeout(debounce);
+                        resultBox.innerHTML = '';
 
-                    debounce = setTimeout(() => {
+                        if (!data.length) {
+                            resultBox.innerHTML =
+                                `<div class="p-2 text-muted">Tidak ditemukan</div>`;
+                            resultBox.classList.remove('d-none');
+                            return;
+                        }
 
-                        fetch(
-                            `{{ url('/dashboard/peminjaman/search-karyawan') }}?q=${encodeURIComponent(keyword)}`
-                        )
-                            .then(res => res.json())
-                            .then(data => {
+                        data.forEach(item => {
 
-                                resultBox.innerHTML = '';
+                            let div = document.createElement('div');
+                            div.classList.add('autocomplete-item');
+                            div.textContent = item.nama_karyawan;
 
-                                if (!data.length) {
-                                    resultBox.innerHTML = `
-                            <div class="p-2 text-muted small">
-                                Data tidak ditemukan
-                            </div>`;
-                                    resultBox.classList.remove('d-none');
-                                    return;
-                                }
-
-                                data.forEach(item => {
-
-                                    const div = document.createElement('div');
-                                    div.className = 'autocomplete-item';
-                                    div.textContent = item.nama_karyawan;
-
-                                    div.addEventListener('mousedown', function (e) {
-                                        e.preventDefault();
-                                        inputNama.value = item.nama_karyawan;
-                                        inputId.value = item.id;
-                                        closeDropdown();
-                                    });
-
-                                    resultBox.appendChild(div);
-                                });
-
-                                resultBox.classList.remove('d-none');
-                            })
-                            .catch(err => {
-                                console.log(err);
+                            div.addEventListener('mousedown', function(e) {
+                                e.preventDefault();
+                                inputNama.value = item.nama_karyawan;
+                                inputId.value = item.id;
                                 closeDropdown();
                             });
 
-                    }, 300);
-                });
-
-                function closeDropdown() {
-                    resultBox.innerHTML = '';
-                    resultBox.classList.add('d-none');
-                }
-
-                document.addEventListener('click', function (e) {
-                    if (!resultBox.contains(e.target) && e.target !== inputNama) {
-                        closeDropdown();
-                    }
-                });
-
-            });
-        </script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
-
-                const kodeInput = document.getElementById('kode_barang');
-                const namaInput = document.getElementById('nama_barang');
-                const keluarId = document.getElementById('keluar_id');
-
-                if (!kodeInput) return;
-
-                let lastKode = null;
-                let swalShown = false;
-
-                kodeInput.addEventListener('blur', function () {
-
-                    let kode = this.value.trim();
-                    if (!kode) return;
-
-                    if (kode === lastKode) return;
-                    lastKode = kode;
-
-                    // 1️⃣ CEK STATUS DULU
-                    fetch(`/peminjaman/cek-status/${kode}`)
-                        .then(res => res.json())
-                        .then(status => {
-
-                            // ❌ MASIH DIPINJAM
-                            if (status.dipinjam) {
-
-                                if (!swalShown) {
-                                    swalShown = true;
-
-                                    Swal.fire({
-                                        icon: 'warning',
-                                        title: 'Barang Belum Dikembalikan',
-                                        text: 'Kode barang ini masih dipinjam dan belum dikembalikan',
-                                        confirmButtonColor: '#d33'
-                                    });
-                                }
-
-                                kodeInput.value = '';
-                                namaInput.value = '';
-                                keluarId.value = '';
-                                kodeInput.focus();
-                                return; // STOP JANGAN AMBIL NAMA BARANG
-                            }
-
-                            // 2️⃣ JIKA TIDAK DIPINJAM → BARU AMBIL NAMA BARANG
-                            fetch(`/dashboard/peminjaman/get-nama-barang/${kode}`)
-                                .then(res => res.json())
-                                .then(data => {
-
-                                    if (data.status === 'ok') {
-                                        namaInput.value = data.nama_barang;
-                                        keluarId.value = data.keluar_id;
-                                        swalShown = false;
-                                    } else {
-
-                                        namaInput.value = '';
-                                        keluarId.value = '';
-
-                                        Swal.fire({
-                                            icon: 'warning',
-                                            title: 'Data Tidak Ditemukan',
-                                            text: 'Kode barang tidak ditemukan'
-                                        });
-                                    }
-
-                                });
-
-                        })
-                        .catch(() => {
-                            console.log('Gagal cek status barang');
+                            resultBox.appendChild(div);
                         });
 
-                });
+                        resultBox.classList.remove('d-none');
 
-            });
+                    });
 
-        </script>
-        <script>
-            document.addEventListener('DOMContentLoaded', function () {
+            }, 300);
 
-                // ================= SWITCH TIPE =================
-                const tipe = document.getElementById('tipe_peminjam');
-                const fieldKaryawan = document.getElementById('field_karyawan');
-                const fieldEksternal = document.getElementById('field_eksternal');
-                const fieldPerusahaan = document.getElementById('field_perusahaan');
+        });
 
-                tipe.addEventListener('change', function () {
-                    if (this.value === 'internal') {
-                        fieldKaryawan.classList.remove('d-none');
-                        fieldEksternal.classList.add('d-none');
-                        fieldPerusahaan.classList.add('d-none');
-                    } else {
-                        fieldKaryawan.classList.add('d-none');
-                        fieldEksternal.classList.remove('d-none');
-                        fieldPerusahaan.classList.remove('d-none');
-                    }
-                });
+        function closeDropdown() {
+            resultBox.innerHTML = '';
+            resultBox.classList.add('d-none');
+        }
 
-                // ================= AUTOCOMPLETE =================
-                const inputNama = document.getElementById('nama');
-                const inputId = document.getElementById('karyawan_id');
-                const resultBox = document.getElementById('hasil_nama');
+        document.addEventListener('click', function(e) {
+            if (!resultBox.contains(e.target) && e.target !== inputNama) {
+                closeDropdown();
+            }
+        });
 
-                let debounce;
-
-                inputNama.addEventListener('input', function () {
-
-                    let keyword = this.value.trim();
-
-                    if (keyword.length < 2) {
-                        closeDropdown();
-                        return;
-                    }
-
-                    clearTimeout(debounce);
-
-                    debounce = setTimeout(() => {
-
-                        fetch("{{ route('peminjaman.search') }}?q=" + keyword)
-                            .then(res => res.json())
-                            .then(data => {
-
-                                resultBox.innerHTML = '';
-
-                                if (!data.length) {
-                                    resultBox.innerHTML = `<div class="p-2 text-muted small">Tidak ditemukan</div>`;
-                                    resultBox.classList.remove('d-none');
-                                    return;
-                                }
-
-                                data.forEach(item => {
-                                    const div = document.createElement('div');
-                                    div.className = 'autocomplete-item';
-                                    div.textContent = item.nama_karyawan;
-
-                                    div.addEventListener('mousedown', function (e) {
-                                        e.preventDefault();
-                                        inputNama.value = item.nama_karyawan;
-                                        inputId.value = item.id;
-                                        closeDropdown();
-                                    });
-
-                                    resultBox.appendChild(div);
-                                });
-
-                                resultBox.classList.remove('d-none');
-                            });
-
-                    }, 300);
-                });
-
-                function closeDropdown() {
-                    resultBox.innerHTML = '';
-                    resultBox.classList.add('d-none');
-                }
-
-                document.addEventListener('click', function (e) {
-                    if (!resultBox.contains(e.target) && e.target !== inputNama) {
-                        closeDropdown();
-                    }
-                });
-
-            });
-        </script>
+    });
+</script>

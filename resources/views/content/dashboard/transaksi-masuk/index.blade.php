@@ -154,7 +154,7 @@
                                         </td>
                                     @elseif (auth()->user()->role === 'manager')
                                         <td class="text-center">
-                                            <a href="{{ route('transaksi-masuk.show', $masuk->id) }}"
+                                            <a href="{{ route('manager.laporan.masuk.show', $masuk->id) }}"
                                                 class="btn btn-info btn-sm">
                                                 <i class="bx bx-show"></i>
                                             </a>
