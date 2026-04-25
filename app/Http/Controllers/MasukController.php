@@ -7,7 +7,7 @@ use App\Models\Kategori;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-
+use Illuminate\Validation\Rule;
 class MasukController extends Controller
 {
   public function index(Request $request)
@@ -36,10 +36,15 @@ class MasukController extends Controller
   {
     $perusahaan = auth()->user()->perusahaan;
 
-    $kategoris = Kategori::where('perusahaan_id', $perusahaan->id)->get(); // ✅ FIX
+    $kategoris = Kategori::where('perusahaan_id', $perusahaan->id)->get();
 
-    $last = Masuk::latest()->first();
-    $kodeMasuk = 'MSK-' . str_pad(($last->id ?? 0) + 1, 5, '0', STR_PAD_LEFT);
+    $last = Masuk::where('perusahaan_id', $perusahaan->id)
+      ->orderBy('id', 'desc')
+      ->first();
+
+    $number = $last ? ((int) substr($last->kode_masuk, 4)) + 1 : 1;
+
+    $kodeMasuk = 'MSK-' . str_pad($number, 5, '0', STR_PAD_LEFT);
 
     return view('content.dashboard.transaksi-masuk.create', compact('kategoris', 'kodeMasuk'));
   }
@@ -49,7 +54,10 @@ class MasukController extends Controller
     $perusahaan = auth()->user()->perusahaan;
 
     $validated = $request->validate([
-      'kode_masuk' => 'required|unique:masuks,kode_masuk',
+      'kode_masuk' => [
+        'required',
+        Rule::unique('masuks')->where(fn($q) => $q->where('perusahaan_id', auth()->user()->id_perusahaan)),
+      ],
       'id_kategori' => 'required|exists:kategoris,id',
       'type' => 'required|string|max:100',
       'merek' => 'required|string|max:100',

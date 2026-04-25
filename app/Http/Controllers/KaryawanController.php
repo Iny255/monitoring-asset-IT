@@ -9,111 +9,119 @@ use Illuminate\Support\Facades\Log;
 
 class KaryawanController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(Request $request)
-    {
-        $perusahaanId = auth()->user()->id_perusahaan;
-        $search = $request->search;
+  /**
+   * Display a listing of the resource.
+   */
+  public function index(Request $request)
+  {
+    $perusahaanId = auth()->user()->id_perusahaan;
+    $search = $request->search;
 
-        $karyawans = Karyawan::where('id_perusahaan', $perusahaanId);
+    $karyawans = Karyawan::where('id_perusahaan', $perusahaanId);
 
-        if ($search) {
-            $karyawans->where(function ($query) use ($search) {
-                $query->where('nama_karyawan', 'like', "%{$search}%")
-                    ->orWhere('kode_karyawan', 'like', "%{$search}%");
-            });
-        }
-
-        $karyawans = $karyawans->latest()->paginate(5);
-
-        return view('content.dashboard.karyawan.index', compact('karyawans'));
+    if ($search) {
+      $karyawans->where(function ($query) use ($search) {
+        $query->where('nama_karyawan', 'like', "%{$search}%")->orWhere('kode_karyawan', 'like', "%{$search}%");
+      });
     }
 
-    /**
-     * Store a newly created resource.
-     */
-    public function store(Request $request)
-    {
-        $validated = $request->validate(
-            [
-                'kode_karyawan' => 'required|string|max:20|unique:karyawans,kode_karyawan',
-                'nama_karyawan' => 'required|string|max:100',
-                'jabatan' => 'required|string|max:50',
-                'divisi' => 'required|string|max:50',
-            ],
-            [
-                'kode_karyawan.unique' => 'Kode karyawan sudah terdaftar.',
-            ]
-        );
+    $karyawans = $karyawans->latest()->paginate(5);
 
-        try {
-            $validated['id_perusahaan'] = auth()->user()->id_perusahaan;
+    return view('content.dashboard.karyawan.index', compact('karyawans'));
+  }
 
-            Karyawan::create($validated);
+  /**
+   * Store a newly created resource.
+   */
+  public function store(Request $request)
+  {
+    $validated = $request->validate(
+      [
+        'kode_karyawan' => [
+          'required',
+          'string',
+          'max:20',
+          Rule::unique('karyawans')->where(fn($query) => $query->where('id_perusahaan', auth()->user()->id_perusahaan)),
+        ],
+        'nama_karyawan' => 'required|string|max:100',
+        'jabatan' => 'required|string|max:50',
+        'divisi' => 'required|string|max:50',
+      ],
+      [
+        'kode_karyawan.unique' => 'Kode karyawan sudah terdaftar di perusahaan ini.',
+      ]
+    );
 
-            return redirect()->route('karyawan.index')
-                ->with('success', 'Data karyawan berhasil disimpan.');
-        } catch (\Exception $e) {
-            Log::error($e->getMessage());
+    try {
+      $validated['id_perusahaan'] = auth()->user()->id_perusahaan;
 
-            return back()->with('error', 'Error: ' . $e->getMessage()); // 🔥 biar kelihatan error asli
-        }
+      Karyawan::create($validated);
+
+      return redirect()
+        ->route('karyawan.index')
+        ->with('success', 'Data karyawan berhasil disimpan.');
+    } catch (\Exception $e) {
+      Log::error($e->getMessage());
+
+      return back()->with('error', 'Error: ' . $e->getMessage()); // 🔥 biar kelihatan error asli
+    }
+  }
+
+  /**
+   * Update the specified resource.
+   */
+  public function update(Request $request, Karyawan $karyawan)
+  {
+    // 🔒 pastikan tidak beda perusahaan
+    if ($karyawan->id_perusahaan != auth()->user()->id_perusahaan) {
+      abort(403);
     }
 
-    /**
-     * Update the specified resource.
-     */
-    public function update(Request $request, Karyawan $karyawan)
-    {
-        // 🔒 pastikan tidak beda perusahaan
-        if ($karyawan->id_perusahaan != auth()->user()->id_perusahaan) {
-            abort(403);
-        }
+    $validated = $request->validate([
+      'kode_karyawan' => [
+        'required',
+        'string',
+        'max:20',
+        Rule::unique('karyawans')
+          ->where(fn($query) => $query->where('id_perusahaan', auth()->user()->id_perusahaan))
+          ->ignore($karyawan->id),
+      ],
+      'nama_karyawan' => 'required|string|max:100',
+      'jabatan' => 'required|string|max:50',
+      'divisi' => 'required|string|max:50',
+    ]);
 
-        $validated = $request->validate([
-            'kode_karyawan' => [
-                'required',
-                'string',
-                'max:20',
-                Rule::unique('karyawans', 'kode_karyawan')->ignore($karyawan->id),
-            ],
-            'nama_karyawan' => 'required|string|max:100',
-            'jabatan' => 'required|string|max:50',
-            'divisi' => 'required|string|max:50',
-        ]);
+    try {
+      $karyawan->update($validated);
 
-        try {
-            $karyawan->update($validated);
+      return redirect()
+        ->route('karyawan.index')
+        ->with('success', 'Data karyawan berhasil diperbarui.');
+    } catch (\Exception $e) {
+      Log::error($e->getMessage());
 
-            return redirect()->route('karyawan.index')
-                ->with('success', 'Data karyawan berhasil diperbarui.');
-        } catch (\Exception $e) {
-            Log::error($e->getMessage());
-
-            return back()->with('error', 'Error: ' . $e->getMessage());
-        }
+      return back()->with('error', 'Error: ' . $e->getMessage());
     }
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Karyawan $karyawan)
-    {
-        if ($karyawan->id_perusahaan != auth()->user()->id_perusahaan) {
-            abort(403);
-        }
-
-        try {
-            $karyawan->delete();
-
-            return redirect()->route('karyawan.index')
-                ->with('success', 'Karyawan berhasil dihapus.');
-        } catch (\Exception $e) {
-            Log::error($e->getMessage());
-
-            return back()->with('error', 'Error: ' . $e->getMessage());
-        }
+  }
+  /**
+   * Remove the specified resource from storage.
+   */
+  public function destroy(Karyawan $karyawan)
+  {
+    if ($karyawan->id_perusahaan != auth()->user()->id_perusahaan) {
+      abort(403);
     }
-   
+
+    try {
+      $karyawan->delete();
+
+      return redirect()
+        ->route('karyawan.index')
+        ->with('success', 'Karyawan berhasil dihapus.');
+    } catch (\Exception $e) {
+      Log::error($e->getMessage());
+
+      return back()->with('error', 'Error: ' . $e->getMessage());
+    }
+  }
 }

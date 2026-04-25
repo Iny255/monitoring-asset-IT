@@ -12,7 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Validation\Rule;
 class KeluarController extends Controller
 {
   /**
@@ -21,6 +21,10 @@ class KeluarController extends Controller
   public function index(Request $request)
   {
     $query = Keluar::with(['masuk.kategori', 'karyawan']);
+    // 🔥 WAJIB FILTER PERUSAHAAN
+    if (auth()->user()->role !== 'super_admin') {
+      $query->where('id_perusahaan', auth()->user()->id_perusahaan);
+    }
 
     if ($request->search) {
       $search = $request->search;
@@ -62,6 +66,7 @@ class KeluarController extends Controller
     $tahun = Carbon::now()->year;
 
     $last = Keluar::whereYear('created_at', $tahun)
+      ->where('id_perusahaan', auth()->user()->id_perusahaan)
       ->orderBy('id', 'desc')
       ->first();
 
@@ -93,9 +98,15 @@ class KeluarController extends Controller
   {
     $perusahaan = auth()->user()->perusahaan;
     $request->validate([
-      'kode_keluar' => 'required|unique:keluars,kode_keluar',
+      'kode_keluar' => [
+        'required',
+        Rule::unique('keluars')->where(fn($q) => $q->where('id_perusahaan', auth()->user()->id_perusahaan)),
+      ],
       'id_masuk' => 'required|exists:masuks,id',
-      'kode_barang' => 'required|unique:keluars,kode_barang',
+      'kode_barang' => [
+        'required',
+        Rule::unique('keluars')->where(fn($q) => $q->where('id_perusahaan', auth()->user()->id_perusahaan)),
+      ],
       'jumlah' => 'required|integer|min:1',
       'keterangan' => 'required|string|max:100',
       'warna' => 'required|string|max:50',
@@ -196,7 +207,10 @@ class KeluarController extends Controller
    */
   public function edit($id)
   {
-    $keluar = Keluar::with(['masuk.kategori', 'karyawan'])->findOrFail($id);
+    $keluar = Keluar::with(['masuk.kategori', 'karyawan'])
+      ->where('id', $id)
+      ->where('id_perusahaan', auth()->user()->id_perusahaan)
+      ->firstOrFail();
 
     return view('content.dashboard.transaksi-keluar.edit', compact('keluar'));
   }
@@ -209,7 +223,12 @@ class KeluarController extends Controller
     $perusahaan = auth()->user()->perusahaan;
     $request->validate([
       'id_masuk' => 'required|exists:masuks,id',
-      'kode_barang' => 'required|unique:keluars,kode_barang,' . $id,
+      'kode_barang' => [
+        'required',
+        Rule::unique('keluars')
+          ->where(fn($q) => $q->where('id_perusahaan', auth()->user()->id_perusahaan))
+          ->ignore($id),
+      ],
       'jumlah' => 'required|integer|min:1',
       'keterangan' => 'required|max:50',
       'warna' => 'required|max:50',
@@ -290,7 +309,10 @@ class KeluarController extends Controller
     DB::beginTransaction();
 
     try {
-      $keluar = Keluar::with('masuk')->findOrFail($id);
+      $keluar = Keluar::with('masuk')
+        ->where('id', $id)
+        ->where('id_perusahaan', auth()->user()->id_perusahaan)
+        ->firstOrFail();
 
       // 🔒 LOCK DATA MASUK
       $masuk = Masuk::where('id', $keluar->id_masuk)
@@ -322,6 +344,7 @@ class KeluarController extends Controller
   {
     $masuk = Masuk::with('kategori')
       ->where('kode_masuk', $kode)
+      ->where('id_perusahaan', auth()->user()->id_perusahaan)
       ->first();
 
     if (!$masuk) {
@@ -342,11 +365,15 @@ class KeluarController extends Controller
   }
   public function autofillByKodeMasuk(Request $request)
   {
-    $masuk = \App\Models\Masuk::where('kode_masuk', $request->kode_masuk)->first();
+    $masuk = Masuk::with('kategori') // 🔥 WAJIB
+      ->where('kode_masuk', $request->kode_masuk)
+      ->where('id_perusahaan', auth()->user()->id_perusahaan)
+      ->first();
 
     if (!$masuk) {
       return response()->json([
         'status' => false,
+        'message' => 'Data tidak ditemukan',
       ]);
     }
 
@@ -354,10 +381,10 @@ class KeluarController extends Controller
       'status' => true,
       'data' => [
         'id_masuk' => $masuk->id,
-        'nama_barang' => $masuk->kategori->nama_barang, // <- seperti dulu
-        'type' => $masuk->type,
-        'merek' => $masuk->merek,
-        'tgl_beli' => $masuk->tgl_beli,
+        'nama_barang' => optional($masuk->kategori)->nama_barang ?? '-', // 🔥 AMAN
+        'type' => $masuk->type ?? '-',
+        'merek' => $masuk->merek ?? '-',
+        'tgl_beli' => $masuk->tgl_beli ?? null,
       ],
     ]);
   }
@@ -368,8 +395,11 @@ class KeluarController extends Controller
       'nama_karyawan' => 'required',
     ]);
 
+    $user = auth()->user();
+
     $karyawan = Karyawan::with('perusahaan')
       ->where('nama_karyawan', $request->nama_karyawan)
+      ->where('id_perusahaan', $user->id_perusahaan) // 🔥 FIX DI SINI
       ->first();
 
     if (!$karyawan) {
@@ -381,7 +411,7 @@ class KeluarController extends Controller
       'data' => [
         'id' => $karyawan->id,
         'divisi' => $karyawan->divisi,
-        'perusahaan' => $karyawan->perusahaan->nama_perusahaan ?? '-', // 🔥 FIX
+        'perusahaan' => $karyawan->perusahaan->nama_perusahaan ?? '-',
       ],
     ]);
   }

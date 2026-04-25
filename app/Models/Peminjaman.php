@@ -66,21 +66,29 @@ class Peminjaman extends Model
   protected static function booted()
   {
     // 🔥 AUTO ISI PERUSAHAAN
+
     static::creating(function ($model) {
-      if (
-        auth()->check() &&
-        auth()->user()->role != 'super_admin' &&
-        $model->tipe_peminjam !== 'external' // 🔥 TAMBAHAN PENTING
-      ) {
+      // ✅ SIMPAN SIAPA YANG BUAT
+      if (auth()->check()) {
+        $model->created_by = auth()->id();
+      }
+
+      // ✅ AUTO ISI PERUSAHAAN (NON EXTERNAL)
+      if (auth()->check() && auth()->user()->role != 'super_admin' && $model->tipe_peminjam !== 'external') {
         $model->perusahaan_id = auth()->user()->id_perusahaan;
       }
     });
 
-    // 🔥 AUTO FILTER DATA
     static::addGlobalScope('perusahaan', function ($query) {
       if (auth()->check() && auth()->user()->role != 'super_admin') {
         $query->where(function ($q) {
-          $q->where('perusahaan_id', auth()->user()->id_perusahaan)->orWhere('tipe_peminjam', 'external'); // 🔥 TAMBAHAN
+          // 🔒 INTERNAL
+          $q->where('perusahaan_id', auth()->user()->id_perusahaan)
+
+            // 🔒 EXTERNAL (HANYA MILIK USER)
+            ->orWhere(function ($q2) {
+              $q2->where('tipe_peminjam', 'external')->where('created_by', auth()->id());
+            });
         });
       }
     });

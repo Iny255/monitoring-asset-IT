@@ -17,7 +17,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-
+use Illuminate\Validation\Rule;
 class MapingController extends Controller
 {
   /**
@@ -186,8 +186,23 @@ class MapingController extends Controller
       'id_lokasi' => 'required|exists:lokasis,id',
       'id_perusahaan' => 'required|exists:perusahaans,id',
       'processor' => 'nullable|string|max:100',
-      'device_id' => 'nullable|string|max:50|unique:mapings,device_id',
-      'produk_id' => 'nullable|string|max:50|unique:mapings,produk_id',
+      'device_id' => [
+        'nullable',
+        'string',
+        'max:50',
+        Rule::unique('mapings')->where(function ($q) use ($request) {
+          return $q->where('id_perusahaan', $request->id_perusahaan);
+        }),
+      ],
+
+      'produk_id' => [
+        'nullable',
+        'string',
+        'max:50',
+        Rule::unique('mapings')->where(function ($q) use ($request) {
+          return $q->where('id_perusahaan', $request->id_perusahaan);
+        }),
+      ],
       'ram' => 'nullable|integer|min:1',
       'system' => 'nullable|string|max:50',
       'version' => 'nullable|string|max:5',
@@ -282,10 +297,23 @@ class MapingController extends Controller
 
       // spesifikasi nullable
       'processor' => 'nullable|string|max:100',
+      'device_id' => [
+        'nullable',
+        'string',
+        'max:50',
+        Rule::unique('mapings')
+          ->where(fn($q) => $q->where('id_perusahaan', $request->id_perusahaan))
+          ->ignore($maping->id),
+      ],
 
-      'device_id' => ['nullable', 'string', 'max:50', 'unique:mapings,device_id,' . $maping->id],
-
-      'produk_id' => ['nullable', 'string', 'max:50', 'unique:mapings,produk_id,' . $maping->id],
+      'produk_id' => [
+        'nullable',
+        'string',
+        'max:50',
+        Rule::unique('mapings')
+          ->where(fn($q) => $q->where('id_perusahaan', $request->id_perusahaan))
+          ->ignore($maping->id),
+      ],
 
       'ram' => 'nullable|integer|min:1',
       'system' => 'nullable|string|max:50',
@@ -513,9 +541,9 @@ class MapingController extends Controller
     $mutasi->delete();
 
     if (request()->ajax()) {
-        return response()->json([
-            'success' => true,
-        ]);
+      return response()->json([
+        'success' => true,
+      ]);
     }
 
     return back()->with('success', 'Data berhasil dihapus');
