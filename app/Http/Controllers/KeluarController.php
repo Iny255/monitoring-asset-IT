@@ -367,7 +367,7 @@ class KeluarController extends Controller
   {
     $masuk = Masuk::with('kategori') // 🔥 WAJIB
       ->where('kode_masuk', $request->kode_masuk)
-      ->where('id_perusahaan', auth()->user()->id_perusahaan)
+      ->where('perusahaan_id', auth()->user()->id_perusahaan)
       ->first();
 
     if (!$masuk) {

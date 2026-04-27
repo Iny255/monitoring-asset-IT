@@ -189,32 +189,38 @@
                         kode_barang: kodeBarang
                     })
                 })
-                .then(res => res.json())
+                .then(res => {
+                    // 🔥 Handle error 500 / non-JSON
+                    if (!res.ok) {
+                        throw new Error('Server error');
+                    }
+                    return res.json();
+                })
                 .then(res => {
 
-                    // ❌ Kode tidak ditemukan
+                    // ❌ Kode tidak ditemukan / beda perusahaan
                     if (!res.status) {
                         resetBarang();
 
                         if (!sudahValidasi) {
                             sudahValidasi = true;
-                            Swal.fire('Gagal', 'Kode barang tidak ditemukan', 'error');
+                            Swal.fire('Gagal', res.message || 'Kode barang tidak valid', 'error');
                         }
                         return;
                     }
 
-                    // ❌ Kode sudah dipakai
+                    // ❌ Sudah dipakai
                     if (res.used) {
                         resetBarang();
 
                         if (!sudahValidasi) {
                             sudahValidasi = true;
-                            Swal.fire('Gagal', 'Kode barang sudah dipakai', 'error');
+                            Swal.fire('Gagal', res.message || 'Kode barang sudah digunakan', 'error');
                         }
                         return;
                     }
 
-                    // ✅ Data ditemukan & belum dipakai
+                    // ✅ Data valid
                     sudahValidasi = false;
 
                     document.getElementById('id_keluar').value = res.data.id_keluar ?? '';
@@ -225,15 +231,24 @@
                     document.getElementById('nama_karyawan').value = res.data.nama_karyawan ?? '';
                 })
                 .catch(err => {
-                    console.error(err);
+                    console.error('Fetch error:', err);
+
                     resetBarang();
+
+                    if (!sudahValidasi) {
+                        sudahValidasi = true;
+                        Swal.fire('Error', 'Terjadi kesalahan pada server (500)', 'error');
+                    }
                 });
         }
 
-        document.getElementById('nama_barang').addEventListener('focus', function() {
-            const kodeBarang = document.getElementById('kode_barang').value.trim();
+        // 🔥 Trigger saat user pindah dari input kode barang
+        document.getElementById('kode_barang').addEventListener('blur', function() {
+            const kodeBarang = this.value.trim();
 
             if (!kodeBarang) {
+                resetBarang();
+
                 if (!sudahValidasi) {
                     sudahValidasi = true;
                     Swal.fire('Peringatan', 'Isi kode barang terlebih dahulu', 'warning');
@@ -244,7 +259,7 @@
             fetchBarang(kodeBarang);
         });
 
-        // reset flag jika kode diubah
+        // 🔥 Reset validasi saat user mengetik ulang
         document.getElementById('kode_barang').addEventListener('input', function() {
             sudahValidasi = false;
         });
