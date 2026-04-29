@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Karyawan;
+use App\Models\Perusahaan;
 use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -14,10 +15,22 @@ class KaryawanController extends Controller
    */
   public function index(Request $request)
   {
-    $perusahaanId = auth()->user()->id_perusahaan;
+    $user = auth()->user();
     $search = $request->search;
+    $perusahaanId = $request->perusahaan_id;
 
-    $karyawans = Karyawan::where('id_perusahaan', $perusahaanId);
+    // 🔥 ambil data perusahaan untuk dropdown
+    $perusahaans = Perusahaan::all();
+
+    if ($user->role === 'super_admin') {
+      $karyawans = Karyawan::with('perusahaan');
+
+      if ($perusahaanId) {
+        $karyawans->where('id_perusahaan', $perusahaanId);
+      }
+    } else {
+      $karyawans = Karyawan::with('perusahaan')->where('id_perusahaan', $user->id_perusahaan);
+    }
 
     if ($search) {
       $karyawans->where(function ($query) use ($search) {
@@ -27,7 +40,7 @@ class KaryawanController extends Controller
 
     $karyawans = $karyawans->latest()->paginate(5);
 
-    return view('content.dashboard.karyawan.index', compact('karyawans'));
+    return view('content.dashboard.karyawan.index', compact('karyawans', 'perusahaans'));
   }
 
   /**
@@ -35,25 +48,29 @@ class KaryawanController extends Controller
    */
   public function store(Request $request)
   {
+    $user = auth()->user();
+
+    $perusahaanId = $user->role === 'super_admin' ? $request->id_perusahaan : $user->id_perusahaan;
+
     $validated = $request->validate(
       [
         'kode_karyawan' => [
           'required',
           'string',
           'max:20',
-          Rule::unique('karyawans')->where(fn($query) => $query->where('id_perusahaan', auth()->user()->id_perusahaan)),
+          Rule::unique('karyawans')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
         ],
         'nama_karyawan' => 'required|string|max:100',
         'jabatan' => 'required|string|max:50',
         'divisi' => 'required|string|max:50',
       ],
       [
-        'kode_karyawan.unique' => 'Kode karyawan sudah terdaftar di perusahaan ini.',
+        'kode_karyawan.unique' => 'Kode karyawan sudah ada di perusahaan ini.',
       ]
     );
 
     try {
-      $validated['id_perusahaan'] = auth()->user()->id_perusahaan;
+      $validated['id_perusahaan'] = $perusahaanId;
 
       Karyawan::create($validated);
 
@@ -62,8 +79,7 @@ class KaryawanController extends Controller
         ->with('success', 'Data karyawan berhasil disimpan.');
     } catch (\Exception $e) {
       Log::error($e->getMessage());
-
-      return back()->with('error', 'Error: ' . $e->getMessage()); // 🔥 biar kelihatan error asli
+      return back()->with('error', $e->getMessage());
     }
   }
 
@@ -72,56 +88,63 @@ class KaryawanController extends Controller
    */
   public function update(Request $request, Karyawan $karyawan)
   {
-    // 🔒 pastikan tidak beda perusahaan
-    if ($karyawan->id_perusahaan != auth()->user()->id_perusahaan) {
-      abort(403);
-    }
+     $user = auth()->user();
 
-    $validated = $request->validate([
-      'kode_karyawan' => [
-        'required',
-        'string',
-        'max:20',
-        Rule::unique('karyawans')
-          ->where(fn($query) => $query->where('id_perusahaan', auth()->user()->id_perusahaan))
-          ->ignore($karyawan->id),
-      ],
-      'nama_karyawan' => 'required|string|max:100',
-      'jabatan' => 'required|string|max:50',
-      'divisi' => 'required|string|max:50',
-    ]);
+        $perusahaanId = $user->role === 'super_admin'
+            ? $request->id_perusahaan
+            : $user->id_perusahaan;
 
-    try {
-      $karyawan->update($validated);
+        if ($user->role !== 'super_admin' &&
+            $karyawan->id_perusahaan != $user->id_perusahaan) {
+            abort(403);
+        }
 
-      return redirect()
-        ->route('karyawan.index')
-        ->with('success', 'Data karyawan berhasil diperbarui.');
-    } catch (\Exception $e) {
-      Log::error($e->getMessage());
+        $validated = $request->validate([
+            'kode_karyawan' => [
+                'required',
+                'string',
+                'max:20',
+                Rule::unique('karyawans')
+                    ->where(fn($q) => $q->where('id_perusahaan', $perusahaanId))
+                    ->ignore($karyawan->id),
+            ],
+            'nama_karyawan' => 'required|string|max:100',
+            'jabatan' => 'required|string|max:50',
+            'divisi' => 'required|string|max:50',
+        ]);
 
-      return back()->with('error', 'Error: ' . $e->getMessage());
-    }
+        try {
+            $validated['id_perusahaan'] = $perusahaanId;
+
+            $karyawan->update($validated);
+
+            return redirect()->route('karyawan.index')
+                ->with('success', 'Data berhasil diperbarui.');
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return back()->with('error', $e->getMessage());
+        }
   }
   /**
    * Remove the specified resource from storage.
    */
   public function destroy(Karyawan $karyawan)
   {
-    if ($karyawan->id_perusahaan != auth()->user()->id_perusahaan) {
-      abort(403);
-    }
+     $user = auth()->user();
 
-    try {
-      $karyawan->delete();
+        if ($user->role !== 'super_admin' &&
+            $karyawan->id_perusahaan != $user->id_perusahaan) {
+            abort(403);
+        }
 
-      return redirect()
-        ->route('karyawan.index')
-        ->with('success', 'Karyawan berhasil dihapus.');
-    } catch (\Exception $e) {
-      Log::error($e->getMessage());
+        try {
+            $karyawan->delete();
 
-      return back()->with('error', 'Error: ' . $e->getMessage());
-    }
+            return redirect()->route('karyawan.index')
+                ->with('success', 'Karyawan berhasil dihapus.');
+        } catch (\Exception $e) {
+            Log::error($e->getMessage());
+            return back()->with('error', $e->getMessage());
+        }
   }
 }

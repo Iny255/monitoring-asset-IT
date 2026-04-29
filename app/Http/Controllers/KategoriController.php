@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Kategori;
+use App\Models\Perusahaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -13,37 +14,62 @@ class KategoriController extends Controller
    */
   public function index(Request $request)
   {
-    $perusahaan = auth()->user()->perusahaan;
-    
+    $user = auth()->user();
     $search = $request->input('search');
+    $perusahaanId = $request->perusahaan_id;
 
-    $kategoris = Kategori::where('perusahaan_id', $perusahaan->id)->latest();
+    // 🔥 QUERY UTAMA + RELASI
+    if ($user->role === 'super_admin') {
+      $query = \App\Models\Kategori::with('perusahaan');
 
+      // filter perusahaan (optional)
+      if ($perusahaanId) {
+        $query->where('perusahaan_id', $perusahaanId);
+      }
+    } else {
+      $query = \App\Models\Kategori::with('perusahaan')->where('perusahaan_id', $user->perusahaan->id);
+    }
+
+    // 🔍 SEARCH
     if ($search) {
-      $kategoris->where(function ($query) use ($search) {
-        $query->where('nama_barang', 'like', '%' . $search . '%')
-          ->orWhere('kode_barang', 'like', '%' . $search . '%');
+      $query->where(function ($q) use ($search) {
+        $q->where('nama_barang', 'like', '%' . $search . '%')->orWhere('kode_barang', 'like', '%' . $search . '%');
       });
     }
 
-    $kategoris = $kategoris->paginate(5);
+    // PAGINATION
+    $kategoris = $query->latest()->paginate(5);
 
-    // 🔥 GENERATE KODE BARANG DI INDEX
-    $last = Kategori::where('perusahaan_id', $perusahaan->id)
-      ->orderBy('kode_barang', 'desc')->first();
-
-    if ($last) {
-      $number = (int) substr($last->kode_barang, 2) + 1;
+    // 🔥 GENERATE KODE BARANG
+    // 🔥 tentukan perusahaan (dari filter atau default)
+    if ($user->role === 'super_admin') {
+      $perusahaanFix = $perusahaanId;
     } else {
-      $number = 1;
+      $perusahaanFix = $user->perusahaan->id;
     }
 
-    $kodeBarang = 'KD' . str_pad($number, 4, '0', STR_PAD_LEFT);
+    // 🔥 generate kode berdasarkan perusahaan
+    if ($perusahaanFix) {
+      $last = Kategori::where('perusahaan_id', $perusahaanFix)
+        ->orderBy('kode_barang', 'desc')
+        ->first();
 
-    return view(
-      'content.dashboard.kategori.index',
-      compact('kategoris', 'kodeBarang')
-    );
+      if ($last && $last->kode_barang) {
+        $number = (int) substr($last->kode_barang, 2) + 1;
+      } else {
+        $number = 1;
+      }
+
+      $kodeBarang = 'KD' . str_pad($number, 4, '0', STR_PAD_LEFT);
+    } else {
+      // kalau belum pilih perusahaan
+      $kodeBarang = 'Pilih Perusahaan Dulu';
+    }
+
+    // 🔥 AMBIL SEMUA PERUSAHAAN (UNTUK DROPDOWN)
+    $perusahaans = \App\Models\Perusahaan::all();
+
+    return view('content.dashboard.kategori.index', compact('kategoris', 'kodeBarang', 'perusahaans'));
   }
 
   /**
@@ -51,23 +77,28 @@ class KategoriController extends Controller
    */
   public function store(Request $request)
   {
-    $perusahaan = auth()->user()->perusahaan;
-    
+    $user = auth()->user();
+
     $validatedData = $request->validate([
-      'kode_barang' => 'required|string|unique:kategoris,kode_barang,NULL,id,perusahaan_id,' . $perusahaan->id,
+      'kode_barang' => 'required|string|max:10',
       'nama_barang' => 'required|string|max:50',
     ]);
 
     try {
-      $validatedData['perusahaan_id'] = $perusahaan->id;
-      $kategori = Kategori::create($validatedData);
+      // 🔥 SET PERUSAHAAN
+      if ($user->role === 'super_admin') {
+        $validatedData['perusahaan_id'] = $request->perusahaan_id;
+      } else {
+        $validatedData['perusahaan_id'] = $user->perusahaan->id;
+      }
 
-      return redirect('/dashboard/kategori')->with('success', 'Data kategori barang berhasil disimpan.');
+      Kategori::create($validatedData);
+
+      return redirect('/dashboard/kategori')->with('success', 'Data kategori berhasil disimpan.');
     } catch (\Exception $e) {
       Log::error($e->getMessage());
 
-      return redirect('/dashboard/kategori')
-       ->with('error', 'Data kategori barang tidak berhasil disimpan.');
+      return back()->with('error', 'Gagal menyimpan data.');
     }
   }
 
@@ -85,9 +116,9 @@ class KategoriController extends Controller
 
       return redirect()
         ->route('kategori.index')
-        ->with('success', 'Data kategori berhasil diperbarui.');
+        ->with('success', 'Data berhasil diperbarui.');
     } catch (\Exception $e) {
-      return back()->with('error', 'Gagal mengupdate data.');
+      return back()->with('error', 'Gagal update.');
     }
   }
 
@@ -99,8 +130,24 @@ class KategoriController extends Controller
     $kategori = Kategori::findOrFail($id);
     $kategori->delete();
 
-    return redirect()->back()
-      ->with('success', 'Kategori Barang berhasil dihapus');
+    return back()->with('success', 'Data berhasil dihapus.');
+  }
+  public function getKode($id)
+  {
+    $last = Kategori::where('perusahaan_id', $id)
+      ->orderBy('kode_barang', 'desc')
+      ->first();
+
+    if ($last && $last->kode_barang) {
+      $number = (int) substr($last->kode_barang, 2) + 1;
+    } else {
+      $number = 1;
+    }
+
+    $kode = 'KD' . str_pad($number, 4, '0', STR_PAD_LEFT);
+
+    return response()->json([
+      'kode' => $kode,
+    ]);
   }
 }
-

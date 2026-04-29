@@ -21,7 +21,7 @@ class User extends Authenticatable
   const ROLE_PETUGAS = 'petugas';
   const ROLE_MANAGER = 'manager';
 
-  protected $fillable = ['username', 'name', 'email', 'password', 'role'];
+  protected $fillable = ['username', 'name', 'email', 'password', 'role', 'id_perusahaan'];
 
   /**
    * The attributes that should be hidden for serialization.

@@ -28,7 +28,7 @@ Route::get('/login', [LoginController::class, 'index'])
 
 Route::post('/login', [LoginController::class, 'authenticate']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-
+ Route::get('/get-kode-kategori/{id}', [KategoriController::class, 'getKode']);
 Route::middleware(['auth'])->group(function () {
   /*
     |--------------------------------------------------------------------------
@@ -42,7 +42,10 @@ Route::middleware(['auth'])->group(function () {
     ])->name('dashboard.superadmin');
 
     Route::resource('/dashboard/user', DashboardUserController::class);
+    Route::get('/dashboard/hapususer/{id}', [DashboardUserController::class, 'hapususer']);
+    Route::get('/dashboard/detailuser/{id}', [DashboardUserController::class, 'show']);
     Route::resource('/dashboard/perusahaan', PerusahaanController::class);
+    
   });
 
   /*

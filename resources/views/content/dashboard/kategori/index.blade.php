@@ -3,250 +3,312 @@
 @section('title', 'Kategori')
 
 @section('content')
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
 
-    @if (session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-    </h4>
+    <div class="container-fluid">
 
-    <div class="card">
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="">
-                    <h5 class="text-primary mb-0">Data Kategori Barang</h5>
-                </div>
-                <div class="">
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahKategori">
-                        Tambah Data Kategori
-                    </button>
-                </div>
+        {{-- ALERT --}}
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show">
+                {{ session('success') }}
             </div>
-            <div class="card-body">
-                <form method="GET" action="{{ url('/dashboard/kategori') }}" class="row g-3 mb-4">
-                    <div class="col-md-7 text">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <div class="flex-grow-1 me-2">
-                                <input type="text" name="search" class="form-control w-100"
-                                    placeholder="Cari berdasarkan nama barang" value="{{ request('search') }}">
-                            </div>
-                            <div>
-                                <button type="submit" class="btn btn-primary">Cari</button>
-                            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show">
+                {{ session('error') }}
+            </div>
+        @endif
+
+        <div class="card shadow-sm border-0">
+
+            {{-- HEADER --}}
+            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-semibold text-primary">Data Kategori Barang</h5>
+
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahKategori">
+                    <i class="bx bx-plus"></i> Tambah Data
+                </button>
+            </div>
+
+            {{-- BODY --}}
+            <div class="card-body p-4">
+                @if (auth()->user()->role === 'super_admin')
+                    <form method="GET" class="row mb-3">
+
+                        <div class="col-md-4">
+                            <select name="perusahaan_id" class="form-control">
+                                <option value="">-- Semua Perusahaan --</option>
+
+                                @foreach ($perusahaans as $p)
+                                    <option value="{{ $p->id }}">
+                                        {{ $p->nama_perusahaan }}
+                                    </option>
+                                @endforeach
+                            </select>
                         </div>
+
+                        <div class="col-md-2">
+                            <button class="btn btn-primary">Filter</button>
+                        </div>
+
+                    </form>
+                @endif
+
+                {{-- SEARCH --}}
+                <form method="GET" class="row mb-4">
+                    <div class="col-md-6 d-flex">
+                        <input type="text" name="search" class="form-control me-2"
+                            placeholder="Cari nama / kode barang..." value="{{ request('search') }}">
+                        <button class="btn btn-primary">Cari</button>
                     </div>
                 </form>
 
-                <div class="table-responsive text-nowrap">
+                {{-- TABLE --}}
+                <div class="table-responsive">
                     <table class="table table-bordered">
-                        <thead class="table-primary">
-                            <tr class="center">
-                                <th width=>KODE BARANG</th>
+                        <thead class="table-primary text-center">
+                            <tr>
+                                <th>KODE</th>
                                 <th>NAMA BARANG</th>
-                                <th width=>Actions</th>
+
+                                @if (auth()->user()->role === 'super_admin')
+                                    <th>PERUSAHAAN</th>
+                                @endif
+
+                                <th>ACTION</th>
                             </tr>
                         </thead>
+
                         <tbody>
-                            @foreach ($kategoris as $kategori)
+                            @forelse ($kategoris as $kategori)
                                 <tr>
                                     <td>{{ $kategori->kode_barang }}</td>
                                     <td>{{ $kategori->nama_barang }}</td>
 
-                                    <td>
+                                    @if (auth()->user()->role === 'super_admin')
+                                        <td>
+                                            {{ $kategori->perusahaan->nama_perusahaan ?? '-' }}
+                                        </td>
+                                    @endif
+
+                                    <td class="text-center">
                                         <button class="btn btn-warning btn-sm btn-edit" data-id="{{ $kategori->id }}"
                                             data-kode="{{ $kategori->kode_barang }}"
                                             data-nama="{{ $kategori->nama_barang }}">
                                             <i class="bx bx-edit-alt"></i>
                                         </button>
+
                                         <form id="delete-form-{{ $kategori->id }}"
                                             action="{{ route('kategori.destroy', $kategori->id) }}" method="POST"
                                             style="display:none;">
                                             @csrf
                                             @method('DELETE')
                                         </form>
+
                                         <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $kategori->id }}">
                                             <i class="bx bx-trash"></i>
                                         </button>
-
                                     </td>
-                            @endforeach
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="text-center">
+                                        Data tidak ditemukan
+                                    </td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
-                    <div class="mt-4">
-                        {{ $kategoris->links('pagination::bootstrap-4') }}
-                    </div>
                 </div>
+
+                {{-- PAGINATION --}}
+                <div class="mt-3">
+                    {{ $kategoris->links('pagination::bootstrap-5') }}
+                </div>
+
             </div>
         </div>
-        <!-- MODAL TAMBAH KATEGORI -->
-        <div class="modal fade" id="modalTambahKategori" tabindex="-1">
-            <div class="modal-dialog modal-md modal-dialog-centered">
-                <div class="modal-content rounded-4 border-0 shadow">
+    </div>
 
-                    <div class="modal-header border-0">
-                        <h5 class="modal-title fw-semibold">
-                            Tambah Kategori Barang
-                        </h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal">
-                        </button>
-                    </div>
+    {{-- ================= MODAL TAMBAH ================= --}}
+    <div class="modal fade" id="modalTambahKategori">
+        <div class="modal-dialog">
+            <div class="modal-content">
 
-                    <div class="modal-body px-4">
+                <form action="{{ route('kategori.store') }}" method="POST">
+                    @csrf
 
-                        <form action="{{ route('kategori.store') }}" method="POST">
-                            @csrf
-
-                            <!-- KODE BARANG -->
-                            <div class="mb-3">
-                                <label class="form-label fw-medium">
-                                    Kode Barang
-                                </label>
-                                <input type="text" name="kode_barang" class="form-control"
-                                    value="{{ $kodeBarang ?? '' }}" readonly>
-                            </div>
-
-                            <!-- NAMA BARANG -->
-                            <div class="mb-3">
-                                <label class="form-label fw-medium">
-                                    Nama Barang
-                                </label>
-                                <input type="text" name="nama_barang"
-                                    class="form-control @error('nama_barang') is-invalid @enderror"
-                                    value="{{ old('nama_barang') }}" placeholder="Contoh: Laptop" required>
-
-                                @error('nama_barang')
-                                    <div class="invalid-feedback">
-                                        {{ $message }}
-                                    </div>
-                                @enderror
-                            </div>
-
-                            <div class="text-end mt-4">
-                                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">
-                                    Batal
-                                </button>
-                                <button type="submit" class="btn btn-primary">
-                                    Simpan
-                                </button>
-                            </div>
-
-                        </form>
-
-                    </div>
-
-                </div>
-            </div>
-        </div>
-        <!-- MODAL EDIT KATEGORI -->
-        <div class="modal fade" id="modalEditKategori" tabindex="-1">
-            <div class="modal-dialog modal-md modal-dialog-centered">
-                <div class="modal-content rounded-4 border-0 shadow">
-
-                    <div class="modal-header border-0">
-                        <h5 class="modal-title fw-semibold">
-                            Edit Kategori Barang
-                        </h5>
+                    <div class="modal-header">
+                        <h5 class="modal-title">Tambah Kategori</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
 
-                    <div class="modal-body px-4">
+                    <div class="modal-body">
 
-                        <form id="formEditKategori" method="POST">
-                            @csrf
-                            @method('PUT')
-
-                            <!-- KODE BARANG (READONLY) -->
+                        {{-- SUPER ADMIN --}}
+                        @if (auth()->user()->role === 'super_admin')
                             <div class="mb-3">
-                                <label class="form-label fw-medium">Kode Barang</label>
-                                <input type="text" id="edit_kode_barang" class="form-control" readonly>
+                                <label class="form-label">Perusahaan</label>
+                                <select name="perusahaan_id" id="perusahaanSelect" class="form-control" required>
+                                    <option value="">-- pilih perusahaan --</option>
+                                    @foreach ($perusahaans as $p)
+                                        <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
+                                    @endforeach
+                                </select>
                             </div>
+                        @endif
 
-                            <!-- NAMA BARANG -->
-                            <div class="mb-3">
-                                <label class="form-label fw-medium">Nama Barang</label>
-                                <input type="text" name="nama_barang" id="edit_nama_barang" class="form-control"
-                                    required>
-                            </div>
+                        <div class="mb-3">
+                            <label class="form-label">Kode Barang</label>
+                            <input type="text" id="kodeBarang" name="kode_barang" class="form-control" readonly>
+                        </div>
 
-                            <div class="text-end mt-4">
-                                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">
-                                    Batal
-                                </button>
-                                <button type="submit" class="btn btn-primary">
-                                    Update
-                                </button>
-                            </div>
-
-                        </form>
+                        <div class="mb-3">
+                            <label class="form-label">Nama Barang</label>
+                            <input type="text" name="nama_barang" class="form-control" required>
+                        </div>
 
                     </div>
-                </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-primary">Simpan</button>
+                    </div>
+
+                </form>
+
             </div>
         </div>
-    @endsection
-    <!--/ Striped Rows -->
-    @section('scripts')
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
+    </div>
 
-                /* ================= DELETE ================= */
-                document.querySelectorAll('.btn-delete').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const id = this.dataset.id;
+    {{-- ================= MODAL EDIT ================= --}}
+    <div class="modal fade" id="modalEditKategori">
+        <div class="modal-dialog">
+            <div class="modal-content">
 
-                        Swal.fire({
-                            title: 'Apakah kamu yakin?',
-                            text: "Data kategori ini akan dihapus!",
-                            icon: 'warning',
-                            showCancelButton: true,
-                            confirmButtonText: 'Ya, hapus!',
-                            cancelButtonText: 'Batal'
-                        }).then((result) => {
-                            if (result.isConfirmed) {
-                                document.getElementById(`delete-form-${id}`).submit();
-                            }
+                <form id="formEditKategori" method="POST">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Kategori</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body">
+
+                        <div class="mb-3">
+                            <label class="form-label">Kode Barang</label>
+                            <input type="text" id="edit_kode_barang" class="form-control" readonly>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Nama Barang</label>
+                            <input type="text" name="nama_barang" id="edit_nama_barang" class="form-control" required>
+                        </div>
+
+                    </div>
+
+                    <div class="modal-footer">
+                        <button class="btn btn-primary">Update</button>
+                    </div>
+
+                </form>
+
+            </div>
+        </div>
+    </div>
+
+@endsection
+
+@section('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            // DELETE
+            document.querySelectorAll('.btn-delete').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    if (confirm('Yakin hapus data?')) {
+                        document.getElementById('delete-form-' + this.dataset.id).submit();
+                    }
+                });
+            });
+
+            // EDIT
+            document.querySelectorAll('.btn-edit').forEach(btn => {
+                btn.addEventListener('click', function() {
+
+                    document.getElementById('edit_kode_barang').value = this.dataset.kode;
+                    document.getElementById('edit_nama_barang').value = this.dataset.nama;
+
+                    document.getElementById('formEditKategori').action =
+                        `/dashboard/kategori/${this.dataset.id}`;
+
+                    new bootstrap.Modal(document.getElementById('modalEditKategori')).show();
+                });
+            });
+
+        });
+
+
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const btnTambah = document.querySelector('[data-bs-target="#modalTambahKategori"]');
+
+            if (!btnTambah) return;
+
+            btnTambah.addEventListener('click', function() {
+
+                const kodeInput = document.getElementById('kodeBarang');
+                const select = document.getElementById('perusahaanSelect');
+
+                // reset
+                if (kodeInput) kodeInput.value = '';
+
+                // ===============================
+                // 👤 PETUGAS
+                // ===============================
+                if (!select && kodeInput) {
+
+                   let perusahaanId = @json(auth()->user()->id_perusahaan);
+
+                    if (!perusahaanId) {
+                        console.log('Perusahaan kosong!');
+                        return;
+                    }
+
+                    fetch(`/get-kode-kategori/${perusahaanId}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            kodeInput.value = data.kode;
                         });
-                    });
-                });
+                }
 
+                // ===============================
+                // 👑 SUPER ADMIN
+                // ===============================
+                if (select) {
 
-                /* ================= EDIT POPUP ================= */
-                document.querySelectorAll('.btn-edit').forEach(btn => {
-                    btn.addEventListener('click', function() {
+                    select.onchange = function() {
 
-                        const id = this.dataset.id;
-                        const kode = this.dataset.kode;
-                        const nama = this.dataset.nama;
+                        let perusahaanId = this.value;
 
-                        // Isi form modal
-                        document.getElementById('edit_kode_barang').value = kode;
-                        document.getElementById('edit_nama_barang').value = nama;
+                        if (!perusahaanId) {
+                            kodeInput.value = '';
+                            return;
+                        }
 
-                        // Set action form
-                        document.getElementById('formEditKategori')
-                            .action = `/dashboard/kategori/${id}`;
+                        fetch(`/get-kode-kategori/${perusahaanId}`)
+                            .then(res => res.json())
+                            .then(data => {
+                                kodeInput.value = data.kode;
+                            });
+                    };
 
-                        // Tampilkan modal
-                        var modal = new bootstrap.Modal(document.getElementById('modalEditKategori'));
-                        modal.show();
-                    });
-                });
-
-
-                /* ================= AUTO OPEN MODAL TAMBAH JIKA ERROR ================= */
-                @if ($errors->any())
-                    var modalTambah = new bootstrap.Modal(document.getElementById('modalTambahKategori'));
-                    modalTambah.show();
-                @endif
+                }
 
             });
-        </script>
-    @endsection
+
+        });
+    </script>
+
+@endsection

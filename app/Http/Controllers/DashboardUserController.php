@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Main;
 use App\Models\Post;
 use App\Models\User;
+use App\Models\Perusahaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
@@ -16,23 +17,25 @@ class DashboardUserController extends Controller
    */
   public function index(Request $request)
   {
-    
-
     $search = $request->input('search');
 
-    $users = User::latest();
+    // 🔥 ambil data user
+    $users = User::query();
 
+    // 🔍 fitur search
     if ($search) {
-      $users = $users->where(function ($query) use ($search) {
-        $query->where('username', 'like', '%' . $search . '%')
-          ->orWhere('email', 'like', '%' . $search . '%');
+      $users->where(function ($query) use ($search) {
+        $query->where('username', 'like', '%' . $search . '%')->orWhere('email', 'like', '%' . $search . '%');
       });
     }
 
-    // Pagination
-    $users = $users->paginate(5);
+    // 🔥 pagination
+    $users = $users->latest()->paginate(5);
 
-    return view('content.dashboard.user.index', compact('users'));
+    // 🔥 ambil semua perusahaan (untuk dropdown create & edit)
+    $perusahaans = Perusahaan::all();
+
+    return view('content.dashboard.user.index', compact('users', 'perusahaans'));
   }
 
   public function hapususer($id)
@@ -47,7 +50,7 @@ class DashboardUserController extends Controller
   /**
    * Show the form for creating a new resource.
    */
-  
+
   /**
    * Store a newly created resource in storage.
    */
@@ -55,31 +58,25 @@ class DashboardUserController extends Controller
   {
     $validatedData = $request->validate([
       'username' => ['required', 'min:3', 'max:100', 'unique:users'],
-      'name'=> ['required','min:3', 'max:100', 'unique:users'],
+      'name' => ['required', 'min:3', 'max:100'],
       'email' => 'required|email|unique:users',
       'password' => 'required|min:5|max:100',
-      'role' => 'required|string|max:20'
+      'role' => 'required|in:petugas,manager,super_admin',
+
+      // 🔥 kalau bukan super_admin wajib perusahaan
+      'id_perusahaan' => 'nullable|exists:perusahaans,id',
     ]);
 
-    // Hash the password before storing it
+    // 🔥 kalau super_admin → perusahaan null
+    if ($request->role === 'super_admin') {
+      $validatedData['id_perusahaan'] = null;
+    }
+
     $validatedData['password'] = Hash::make($validatedData['password']);
 
-    try {
-      // Save the data using Eloquent
-      $user = User::create($validatedData);
+    User::create($validatedData);
 
-      if ($user) {
-        // Redirect with success message
-        return redirect('/dashboard/user')->with('success', 'Data user berhasil disimpan.');
-      } else {
-        // Redirect with error message if failed to save
-        return redirect('/dashboard/user')->with('error', 'Gagal menyimpan data user.');
-      }
-    } catch (\Exception $e) {
-      // Log error and redirect with error message
-      Log::error($e->getMessage());
-      return redirect('/dashboard/user/create')->with('error', 'Data user tidak berhasil disimpan. Kesalahan: ' . $e->getMessage());
-    }
+    return redirect('/dashboard/user')->with('success', 'Data user berhasil disimpan.');
   }
 
   /**
@@ -87,10 +84,23 @@ class DashboardUserController extends Controller
    */
   public function show(string $id)
   {
+    $authUser = auth()->user();
+
+    // 🔥 HANYA SUPER ADMIN BOLEH AKSES
+    if ($authUser->role !== 'super_admin') {
+      abort(404); // langsung not found
+    }
+
     $user = User::find($id);
 
+    // 🔥 kalau data tidak ada
     if (!$user) {
-      return redirect('/dashboard/user')->with('error', 'Data user tidak ditemukan.');
+      abort(404);
+    }
+
+    // 🔥 OPTIONAL: super admin tidak boleh lihat dirinya sendiri
+    if ($authUser->id == $user->id) {
+      abort(404);
     }
 
     return view('content.dashboard.user.detail', compact('user'));
@@ -99,7 +109,6 @@ class DashboardUserController extends Controller
   /**
    * Show the form for editing the specified resource.
    */
- 
 
   /**
    * Update the specified resource in storage.
@@ -108,25 +117,35 @@ class DashboardUserController extends Controller
   {
     $request->validate([
       'username' => 'required|string|max:100',
-      'name'=>'required|string|max:100',
+      'name' => 'required|string|max:100',
       'email' => 'required|email|max:100',
-      'password' => 'nullable|string|min:8|confirmed', // Tambahkan 'confirmed' untuk validasi password konfirmasi
-      'role' => 'required|string|in:petugas,manager',
+      'password' => 'nullable|string|min:8',
+      'role' => 'required|in:petugas,manager,super_admin',
+      'id_perusahaan' => 'nullable|exists:perusahaans,id',
     ]);
 
     $user = User::findOrFail($id);
-    $user->username = $request->input('username');
-    $user->name     = $request->input ('name'); 
-    $user->email = $request->input('email');
-    // Update password hanya jika diisi
+
+    $user->username = $request->username;
+    $user->name = $request->name;
+    $user->email = $request->email;
+
     if ($request->filled('password')) {
-      $user->password = bcrypt($request->input('password'));
+      $user->password = bcrypt($request->password);
     }
 
-    $user->role = $request->input('role');
+    $user->role = $request->role;
+
+    // 🔥 kalau super_admin → null
+    if ($request->role === 'super_admin') {
+      $user->id_perusahaan = null;
+    } else {
+      $user->id_perusahaan = $request->id_perusahaan;
+    }
+
     $user->save();
 
-    return redirect('/dashboard/user')->with('success', 'Data user berhasil disimpan.');
+    return redirect('/dashboard/user')->with('success', 'Data user berhasil diperbarui.');
   }
 
   /**
