@@ -27,7 +27,7 @@
             <h5 class="text-primary mb-0">Data Barang Masuk</h5>
 
             @auth
-                @if (auth()->user()->role === 'petugas')
+                @if (auth()->user()->role === 'petugas' || auth()->user()->role === 'super_admin')
                     <a href="{{ route('transaksi-masuk.create') }}" class="btn btn-primary btn-sm">
                         <i class="bx bx-plus"></i> Tambah Data
                     </a>
@@ -40,11 +40,38 @@
 
             {{-- SEARCH --}}
             <form method="GET" class="row g-3 mb-4">
-                <div class="col-md-7 d-flex">
+
+                {{-- 🔍 SEARCH --}}
+                <div class="col-md-5 d-flex">
                     <input type="text" name="search" class="form-control me-2" placeholder="Cari kode / nama barang"
                         value="{{ request('search') }}">
-                    <button type="submit" class="btn btn-primary">Cari</button>
                 </div>
+
+                {{-- 🏢 FILTER PERUSAHAAN (SUPER ADMIN ONLY) --}}
+                @if (auth()->user()->role === 'super_admin')
+                    <div class="col-md-4">
+                        <select name="perusahaan_id" class="form-select">
+                            <option value="">-- Semua Perusahaan --</option>
+                            @foreach ($perusahaans as $p)
+                                <option value="{{ $p->id }}"
+                                    {{ request('perusahaan_id') == $p->id ? 'selected' : '' }}>
+                                    {{ $p->nama_perusahaan }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+                @endif
+
+                {{-- 🔘 BUTTON --}}
+                <div class="col-md-3 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">Cari</button>
+
+                    {{-- 🔄 RESET --}}
+                    <a href="{{ route('transaksi-masuk.index') }}" class="btn btn-secondary">
+                        Reset
+                    </a>
+                </div>
+
             </form>
 
 
@@ -55,6 +82,9 @@
                         <tr>
                             <th>No</th>
                             <th>KODE MASUK</th>
+                            @if (auth()->user()->role === 'super_admin')
+                                <th>PERUSAHAAN</th>
+                            @endif
                             <th>NAMA BARANG</th>
                             <th>TYPE</th>
                             <th>MEREK</th>
@@ -64,7 +94,7 @@
                             <th>GAMBAR</th>
 
                             @auth
-                                @if (in_array(auth()->user()->role, ['petugas', 'manager']))
+                                @if (in_array(auth()->user()->role, ['petugas', 'manager', 'super_admin']))
                                     <th>AKSI</th>
                                 @endif
                             @endauth
@@ -76,29 +106,47 @@
                         @forelse ($masuks as $index => $masuk)
                             <tr>
 
+                                {{-- NO --}}
                                 <td class="text-center">
                                     {{ $masuks->firstItem() + $index }}
                                 </td>
 
+                                {{-- KODE --}}
                                 <td class="text-center">
                                     <span class="badge bg-label-primary">
                                         {{ $masuk->kode_masuk }}
                                     </span>
                                 </td>
 
+                                {{-- PERUSAHAAN (HANYA SUPER ADMIN) --}}
+                                @if (auth()->user()->role === 'super_admin')
+                                    <td class="text-center">
+                                        <span class="badge bg-label-info">
+                                            {{ optional($masuk->perusahaan)->nama_perusahaan ?? '-' }}
+                                        </span>
+                                    </td>
+                                @endif
+
+                                {{-- NAMA BARANG --}}
                                 <td>
                                     {{ $masuk->kategori->nama_barang ?? '-' }}
                                 </td>
 
+                                {{-- TYPE --}}
                                 <td>{{ $masuk->type }}</td>
+
+                                {{-- MEREK --}}
                                 <td>{{ $masuk->merek }}</td>
 
+                                {{-- JUMLAH --}}
                                 <td class="text-center">{{ $masuk->jumlah }}</td>
 
+                                {{-- TANGGAL --}}
                                 <td class="text-center">
                                     {{ \Carbon\Carbon::parse($masuk->tgl_beli)->format('d-m-Y') }}
                                 </td>
 
+                                {{-- SUPPLIER --}}
                                 <td>{{ $masuk->supplier }}</td>
 
                                 {{-- GAMBAR --}}
@@ -111,62 +159,51 @@
                                     @endif
                                 </td>
 
-
                                 {{-- AKSI --}}
-                                @auth
-                                    @if (auth()->user()->role === 'petugas')
-                                        <td class="text-center">
-                                            <div class="d-flex justify-content-center gap-1">
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-1">
 
-                                                {{-- DETAIL --}}
-                                                <a href="{{ route('transaksi-masuk.show', $masuk->id) }}"
-                                                    class="btn btn-info btn-sm">
-                                                    <i class="bx bx-show"></i>
-                                                </a>
+                                        <a href="{{ route('transaksi-masuk.show', $masuk->id) }}"
+                                            class="btn btn-info btn-sm">
+                                            <i class="bx bx-show"></i>
+                                        </a>
 
-                                                {{-- EDIT --}}
-                                                <a href="{{ route('transaksi-masuk.edit', $masuk->id) }}"
-                                                    class="btn btn-warning btn-sm">
-                                                    <i class="bx bx-edit-alt"></i>
-                                                </a>
-
-                                                {{-- DELETE --}}
-                                                <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $masuk->id }}">
-                                                    <i class="bx bx-trash"></i>
-                                                </button>
-
-                                                {{-- DOWNLOAD --}}
-                                                @if ($masuk->gambar)
-                                                    <a href="{{ route('transaksi-masuk.download', $masuk->id) }}"
-                                                        class="btn btn-success btn-sm">
-                                                        <i class="bx bx-download"></i>
-                                                    </a>
-                                                @endif
-
-                                            </div>
-
-                                            <form id="delete-form-{{ $masuk->id }}"
-                                                action="{{ route('transaksi-masuk.destroy', $masuk->id) }}" method="POST"
-                                                style="display:none;">
-                                                @csrf
-                                                @method('DELETE')
-                                            </form>
-                                        </td>
-                                    @elseif (auth()->user()->role === 'manager')
-                                        <td class="text-center">
-                                            <a href="{{ route('manager.laporan.masuk.show', $masuk->id) }}"
-                                                class="btn btn-info btn-sm">
-                                                <i class="bx bx-show"></i>
+                                        @if (in_array(auth()->user()->role, ['petugas', 'super_admin']))
+                                            <a href="{{ route('transaksi-masuk.edit', $masuk->id) }}"
+                                                class="btn btn-warning btn-sm">
+                                                <i class="bx bx-edit-alt"></i>
                                             </a>
-                                        </td>
-                                    @endif
-                                @endauth
+
+                                            <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $masuk->id }}">
+                                                <i class="bx bx-trash"></i>
+                                            </button>
+                                        @endif
+
+                                        @if ($masuk->gambar)
+                                            <a href="{{ route('transaksi-masuk.download', $masuk->id) }}"
+                                                class="btn btn-success btn-sm">
+                                                <i class="bx bx-download"></i>
+                                            </a>
+                                        @endif
+
+                                    </div>
+
+                                    <form id="delete-form-{{ $masuk->id }}"
+                                        action="{{ route('transaksi-masuk.destroy', $masuk->id) }}" method="POST"
+                                        style="display:none;">
+                                        @csrf
+                                        @method('DELETE')
+                                    </form>
+                                </td>
 
                             </tr>
-
                         @empty
                             <tr>
-                                <td colspan="10" class="text-center text-muted">
+                                @php
+                                    $colspan = auth()->user()->role === 'super_admin' ? 11 : 10;
+                                @endphp
+
+                                <td colspan="{{ $colspan }}" class="text-center text-muted">
                                     Data barang masuk belum ada.
                                 </td>
                             </tr>
@@ -189,7 +226,7 @@
 
 {{-- SCRIPT --}}
 @auth
-    @if (auth()->user()->role === 'petugas')
+    @if (auth()->user()->role === 'petugas' || auth()->user()->role === 'super_admin')
         @section('scripts')
             <script>
                 document.addEventListener('DOMContentLoaded', function() {
@@ -213,6 +250,47 @@
 
                         });
                     });
+
+                });
+            </script>
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+
+                    const perusahaanSelect = document.querySelector('[name="id_perusahaan"]');
+                    const kategoriSelect = document.getElementById('kategori');
+
+                    function loadKategori(id) {
+
+                        if (!id) {
+                            kategoriSelect.innerHTML = '<option value="">-- Pilih Barang --</option>';
+                            return;
+                        }
+
+                        fetch('/dashboard/get-kategori/' + id)
+                            .then(res => res.json())
+                            .then(data => {
+
+                                let html = '<option value="">-- Pilih Barang --</option>';
+
+                                data.forEach(item => {
+                                    html += `<option value="${item.id}">${item.nama_barang}</option>`;
+                                });
+
+                                kategoriSelect.innerHTML = html;
+                            });
+                    }
+
+                    if (perusahaanSelect) {
+
+                        perusahaanSelect.addEventListener('change', function() {
+                            loadKategori(this.value);
+                        });
+
+                        // 🔥 auto load saat pertama
+                        if (perusahaanSelect.value) {
+                            loadKategori(perusahaanSelect.value);
+                        }
+                    }
 
                 });
             </script>

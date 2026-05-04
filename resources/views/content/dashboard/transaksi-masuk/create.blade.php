@@ -6,8 +6,8 @@
 
     <style>
         /* =========================
-       DARK MODE ONLY
-    ========================= */
+                                       DARK MODE ONLY
+                                    ========================= */
 
         .dark-style .card-dark {
             background: #1f2a3c;
@@ -82,24 +82,47 @@
                             @csrf
 
                             <div class="row">
+                                {{-- PERUSAHAAN (HANYA SUPER ADMIN) --}}
+                                @if (auth()->user()->role === 'super_admin')
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label fw-medium">Perusahaan</label>
+
+                                        <select name="id_perusahaan"
+                                            class="form-select @error('id_perusahaan') is-invalid @enderror" required>
+
+                                            <option value="">-- Pilih Perusahaan --</option>
+
+                                            @foreach ($perusahaans as $p)
+                                                <option value="{{ $p->id }}"
+                                                    {{ old('id_perusahaan') == $p->id ? 'selected' : '' }}>
+                                                    {{ $p->nama_perusahaan }}
+                                                </option>
+                                            @endforeach
+
+                                        </select>
+
+                                        @error('id_perusahaan')
+                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @enderror
+                                    </div>
+                                @endif
 
                                 {{-- KODE MASUK --}}
                                 <div class="col-md-6 mb-3">
 
                                     <label class="form-label fw-medium">Kode Masuk</label>
 
-                                    <input type="text" name="kode_masuk" class="form-control" value="{{ $kodeMasuk }}"
-                                        readonly>
+                                    <input type="text" id="kode_masuk" name="kode_masuk" class="form-control"
+                                        value="{{ $kodeMasuk }}" readonly>
 
                                 </div>
-
 
                                 {{-- NAMA BARANG --}}
                                 <div class="col-md-6 mb-3">
 
                                     <label class="form-label fw-medium">Nama Barang</label>
 
-                                    <select name="id_kategori"
+                                    <select name="id_kategori" id="kategori"
                                         class="form-select @error('id_kategori') is-invalid @enderror" required>
 
                                         <option value="">-- Pilih Barang --</option>
@@ -281,24 +304,117 @@
 @endsection
 
 
-<script>
-    function validateFileSize(input) {
+@section('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
 
-        const file = input.files[0];
+            // =========================
+            // ELEMENT
+            // =========================
+            const perusahaanSelect = document.querySelector('[name="id_perusahaan"]');
+            const kategoriSelect = document.getElementById('kategori');
+            const kodeInput = document.getElementById('kode_masuk');
 
-        if (file) {
+            // =========================
+            // VALIDATE FILE SIZE
+            // =========================
+            window.validateFileSize = function(input) {
+                const file = input.files[0];
 
-            const maxSize = 2 * 1024 * 1024;
+                if (file) {
+                    const maxSize = 2 * 1024 * 1024;
 
-            if (file.size > maxSize) {
+                    if (file.size > maxSize) {
+                        alert("Ukuran gambar maksimal 2MB!");
+                        input.value = "";
+                    }
+                }
+            };
 
-                alert("Ukuran gambar maksimal 2MB!");
-
-                input.value = "";
-
+            // =========================
+            // DEFAULT STATE (SUPER ADMIN)
+            // =========================
+            if (kategoriSelect && perusahaanSelect) {
+                kategoriSelect.disabled = true;
+                kategoriSelect.innerHTML = '<option value="">-- Pilih Perusahaan dulu --</option>';
             }
 
-        }
+            // =========================
+            // LOAD KODE MASUK
+            // =========================
+            function loadKode(id) {
+                if (!id || !kodeInput) return;
 
-    }
-</script>
+                fetch('/dashboard/get-kode-masuk/' + id)
+                    .then(res => res.json())
+                    .then(data => {
+                        kodeInput.value = data.kode;
+                    })
+                    .catch(err => console.log('Kode Error:', err));
+            }
+
+            // =========================
+            // LOAD KATEGORI
+            // =========================
+            function loadKategori(id) {
+                if (!id || !kategoriSelect) return;
+
+                kategoriSelect.innerHTML = '<option>Loading...</option>';
+                kategoriSelect.disabled = true;
+
+                fetch('/dashboard/get-kategori/' + id)
+                    .then(res => res.json())
+                    .then(data => {
+
+                        let html = '<option value="">-- Pilih Barang --</option>';
+
+                        if (data.length === 0) {
+                            html = '<option value="">Data barang kosong</option>';
+                        } else {
+                            data.forEach(item => {
+                                html += `<option value="${item.id}">${item.nama_barang}</option>`;
+                            });
+                        }
+
+                        kategoriSelect.innerHTML = html;
+
+                        // 🔥 AKTIFKAN SELECT
+                        kategoriSelect.disabled = false;
+
+                    })
+                    .catch(err => {
+                        console.log('Kategori Error:', err);
+                        kategoriSelect.innerHTML = '<option>Error load data</option>';
+                        kategoriSelect.disabled = true;
+                    });
+            }
+
+            // =========================
+            // EVENT: CHANGE PERUSAHAAN
+            // =========================
+            if (perusahaanSelect) {
+
+                perusahaanSelect.addEventListener('change', function() {
+
+                    let id = this.value;
+
+                    if (!id) {
+                        kategoriSelect.innerHTML = '<option>-- Pilih Perusahaan dulu --</option>';
+                        kategoriSelect.disabled = true;
+                        return;
+                    }
+
+                    loadKode(id);
+                    loadKategori(id);
+                });
+
+                // 🔥 AUTO LOAD JIKA SUDAH ADA VALUE (EDIT / OLD VALUE)
+                if (perusahaanSelect.value) {
+                    loadKode(perusahaanSelect.value);
+                    loadKategori(perusahaanSelect.value);
+                }
+            }
+
+        });
+    </script>
+@endsection

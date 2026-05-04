@@ -225,11 +225,27 @@
         document.addEventListener('DOMContentLoaded', function() {
 
             // DELETE
+            // DELETE SWEET ALERT
             document.querySelectorAll('.btn-delete').forEach(btn => {
                 btn.addEventListener('click', function() {
-                    if (confirm('Yakin hapus data?')) {
-                        document.getElementById('delete-form-' + this.dataset.id).submit();
-                    }
+
+                    let id = this.dataset.id;
+
+                    Swal.fire({
+                        title: 'Yakin hapus?',
+                        text: "Data tidak bisa dikembalikan!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#696cff',
+                        cancelButtonColor: '#8592a3',
+                        confirmButtonText: 'Ya, hapus!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            document.getElementById('delete-form-' + id).submit();
+                        }
+                    });
+
                 });
             });
 
@@ -269,7 +285,7 @@
                 // ===============================
                 if (!select && kodeInput) {
 
-                   let perusahaanId = @json(auth()->user()->id_perusahaan);
+                    let perusahaanId = @json(auth()->user()->id_perusahaan);
 
                     if (!perusahaanId) {
                         console.log('Perusahaan kosong!');

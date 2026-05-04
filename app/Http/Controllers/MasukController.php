@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Masuk;
 use App\Models\Kategori;
+use App\Models\Perusahaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -12,13 +13,30 @@ class MasukController extends Controller
 {
   public function index(Request $request)
   {
-    $perusahaan = auth()->user()->perusahaan;
-    $search = $request->input('search');
+    $user = auth()->user();
 
-    $masuks = Masuk::with('kategori')
-      ->where('perusahaan_id', $perusahaan->id) // ✅ FIX
-      ->latest();
+    if (!$user) {
+      abort(403);
+    }
 
+    $search = $request->search;
+    $perusahaanId = $request->perusahaan_id;
+
+    // 🔥 FIX: wajib ada ini
+    $perusahaans = $user->role === 'super_admin' ? \App\Models\Perusahaan::all() : collect();
+
+    $masuks = Masuk::with(['kategori', 'perusahaan']);
+
+    // 🔥 FILTER ROLE
+    if ($user->role !== 'super_admin') {
+      $masuks->where('perusahaan_id', $user->id_perusahaan);
+    } else {
+      if ($perusahaanId) {
+        $masuks->where('perusahaan_id', $perusahaanId);
+      }
+    }
+
+    // 🔍 SEARCH
     if ($search) {
       $masuks->where(function ($query) use ($search) {
         $query->where('kode_masuk', 'like', "%{$search}%")->orWhereHas('kategori', function ($q) use ($search) {
@@ -27,64 +45,82 @@ class MasukController extends Controller
       });
     }
 
-    $masuks = $masuks->paginate(10);
+    $masuks = $masuks
+      ->latest()
+      ->paginate(5)
+      ->appends($request->query());
 
-    return view('content.dashboard.transaksi-masuk.index', compact('masuks'));
+    // 🔥 FIX: kirim ke view
+    return view('content.dashboard.transaksi-masuk.index', compact('masuks', 'perusahaans'));
   }
 
   public function create()
   {
-    $perusahaan = auth()->user()->perusahaan;
+    $user = auth()->user();
 
-    $kategoris = Kategori::where('perusahaan_id', $perusahaan->id)->get();
+    if ($user->role === 'super_admin') {
+      // 🔥 ambil semua perusahaan
+      $perusahaans = Perusahaan::all();
 
-    $last = Masuk::where('perusahaan_id', $perusahaan->id)
-      ->orderBy('id', 'desc')
-      ->first();
+      $kategoris = collect(); // kosong dulu
+      $kodeMasuk = null;
+    } else {
+      $perusahaanId = $user->id_perusahaan;
 
-    $number = $last ? ((int) substr($last->kode_masuk, 4)) + 1 : 1;
+      $perusahaans = [];
 
-    $kodeMasuk = 'MSK-' . str_pad($number, 5, '0', STR_PAD_LEFT);
+      $kategoris = Kategori::where('perusahaan_id', $perusahaanId)->get();
 
-    return view('content.dashboard.transaksi-masuk.create', compact('kategoris', 'kodeMasuk'));
+      $last = Masuk::where('perusahaan_id', $perusahaanId)
+        ->orderBy('id', 'desc')
+        ->first();
+
+      $number = $last ? (int) substr($last->kode_masuk, 4) + 1 : 1;
+
+      $kodeMasuk = 'MSK-' . str_pad($number, 5, '0', STR_PAD_LEFT);
+    }
+
+    return view('content.dashboard.transaksi-masuk.create', compact('kategoris', 'kodeMasuk', 'perusahaans'));
   }
 
   public function store(Request $request)
   {
-    $perusahaan = auth()->user()->perusahaan;
+    $user = auth()->user();
+
+    // 🔥 tentukan perusahaan
+    $perusahaanId = $user->role === 'super_admin' ? $request->id_perusahaan : $user->id_perusahaan;
 
     $validated = $request->validate([
-      'kode_masuk' => [
-        'required',
-        Rule::unique('masuks')->where(fn($q) => $q->where('perusahaan_id', auth()->user()->id_perusahaan)),
-      ],
-      'id_kategori' => 'required|exists:kategoris,id',
+      'kode_masuk' => ['required', Rule::unique('masuks')->where(fn($q) => $q->where('perusahaan_id', $perusahaanId))],
+      'id_kategori' => 'required',
       'type' => 'required|string|max:100',
       'merek' => 'required|string|max:100',
-      'jumlah' => 'required|integer',
+      'jumlah' => 'required|integer|min:1',
       'tgl_beli' => 'required|date',
-      'supplier' => 'required|string|max:100',
       'garansi' => 'required|integer',
-      'harga' => 'required|numeric',
-      'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+      'supplier' => 'required|string|max:100',
+      'harga' => 'required',
+      'gambar' => 'nullable|image|max:2048',
+      'id_perusahaan' => $user->role === 'super_admin' ? 'required' : 'nullable',
     ]);
 
-    // ✅ FIX UTAMA
-    $validated['perusahaan_id'] = $perusahaan->id;
-
-    if ($request->hasFile('gambar')) {
-      $validated['gambar'] = $request->file('gambar')->store('masuk', 'public');
-    }
-
     try {
+      // 🔥 upload gambar
+      if ($request->hasFile('gambar')) {
+        $validated['gambar'] = $request->file('gambar')->store('masuk', 'public');
+      }
+
+      $validated['perusahaan_id'] = $perusahaanId;
+
       Masuk::create($validated);
 
       return redirect()
         ->route('transaksi-masuk.index')
-        ->with('success', 'Data berhasil disimpan');
+        ->with('success', 'Data berhasil disimpan.');
     } catch (\Exception $e) {
       Log::error($e->getMessage());
-      return back()->with('error', 'Gagal menyimpan data');
+
+      return back()->with('error', 'Gagal menyimpan data.');
     }
   }
 
@@ -104,11 +140,23 @@ class MasukController extends Controller
 
   public function edit(Masuk $masuk)
   {
-    $perusahaan = auth()->user()->perusahaan;
+    $user = auth()->user();
 
-    $kategoris = Kategori::where('perusahaan_id', $perusahaan->id)->get(); // ✅ FIX
+    // 🔥 SUPER ADMIN
+    if ($user->role === 'super_admin') {
+      // ambil kategori berdasarkan perusahaan data yg diedit
+      $kategoris = Kategori::where('perusahaan_id', $masuk->perusahaan_id)->get();
 
-    return view('content.dashboard.transaksi-masuk.edit', compact('masuk', 'kategoris'));
+      // ambil semua perusahaan untuk dropdown
+      $perusahaans = Perusahaan::all();
+    } else {
+      // 🔥 USER BIASA
+      $kategoris = Kategori::where('perusahaan_id', $user->id_perusahaan)->get();
+
+      $perusahaans = [];
+    }
+
+    return view('content.dashboard.transaksi-masuk.edit', compact('masuk', 'kategoris', 'perusahaans'));
   }
 
   public function update(Request $request, Masuk $masuk)
@@ -190,5 +238,25 @@ class MasukController extends Controller
     $stoks = $stoks->get();
 
     return view('content.dashboard.transaksi-masuk.stok', compact('stoks'));
+  }
+  public function getKode($id)
+  {
+    $last = Masuk::where('perusahaan_id', $id)
+      ->orderBy('id', 'desc')
+      ->first();
+
+    $number = $last ? (int) substr($last->kode_masuk, 4) + 1 : 1;
+
+    $kode = 'MSK-' . str_pad($number, 5, '0', STR_PAD_LEFT);
+
+    return response()->json([
+      'kode' => $kode,
+    ]);
+  }
+  public function getKategori($id)
+  {
+    $kategoris = \App\Models\Kategori::where('perusahaan_id', $id)->get();
+
+    return response()->json($kategoris);
   }
 }

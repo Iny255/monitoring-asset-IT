@@ -8,6 +8,17 @@ use Illuminate\Support\Facades\Log;
 
 class PerusahaanController extends Controller
 {
+  public function __construct()
+  {
+    $this->middleware(function ($request, $next) {
+      if (auth()->user()->role !== 'super_admin') {
+        abort(403); // atau 404
+      }
+
+      return $next($request);
+    });
+  }
+
   public function index(Request $request)
   {
     $search = $request->input('search');

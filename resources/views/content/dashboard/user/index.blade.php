@@ -168,7 +168,9 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            Batal
+                        </button>
                         <button class="btn btn-primary">Simpan</button>
                     </div>
 
@@ -236,7 +238,9 @@
                     </div>
 
                     <div class="modal-footer">
-                        <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                            Batal
+                        </button>
                         <button class="btn btn-primary">Update</button>
                     </div>
 
@@ -264,9 +268,23 @@
         }
 
         function confirmDelete(id) {
-            if (confirm('Yakin hapus data ini?')) {
-                window.location.href = '/dashboard/hapususer/' + id;
-            }
+
+            Swal.fire({
+                title: 'Yakin hapus?',
+                text: "Data tidak bisa dikembalikan!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#696cff',
+                cancelButtonColor: '#8592a3',
+                confirmButtonText: 'Ya, hapus!',
+                cancelButtonText: 'Batal'
+            }).then((result) => {
+
+                if (result.isConfirmed) {
+                    window.location.href = '/dashboard/hapususer/' + id;
+                }
+
+            });
         }
     </script>
 

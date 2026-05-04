@@ -109,6 +109,12 @@
                                             </button>
 
                                             <!-- DELETE -->
+                                            <form id="delete-form-{{ $karyawan->id }}"
+                                                action="{{ route('karyawan.destroy', $karyawan->id) }}" method="POST"
+                                                style="display:none;">
+                                                @csrf
+                                                @method('DELETE')
+                                            </form>
                                             <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $karyawan->id }}">
                                                 <i class="bx bx-trash"></i>
                                             </button>
@@ -181,6 +187,7 @@
     </div>
 
     {{-- ================= MODAL EDIT ================= --}}
+    {{-- ================= MODAL EDIT ================= --}}
     <div class="modal fade" id="modalEditKaryawan">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -189,26 +196,56 @@
                     @csrf
                     @method('PUT')
 
+                    {{-- 🔥 HEADER --}}
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Karyawan</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    {{-- BODY --}}
                     <div class="modal-body">
 
-                        <input type="text" id="edit_kode" name="kode_karyawan" class="form-control mb-2">
-                        <input type="text" id="edit_nama" name="nama_karyawan" class="form-control mb-2">
-                        <input type="text" id="edit_jabatan" name="jabatan" class="form-control mb-2">
-                        <input type="text" id="edit_divisi" name="divisi" class="form-control mb-2">
+                        <div class="mb-3">
+                            <label>Kode</label>
+                            <input type="text" id="edit_kode" name="kode_karyawan" class="form-control">
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Nama</label>
+                            <input type="text" id="edit_nama" name="nama_karyawan" class="form-control">
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Jabatan</label>
+                            <input type="text" id="edit_jabatan" name="jabatan" class="form-control">
+                        </div>
+
+                        <div class="mb-3">
+                            <label>Divisi</label>
+                            <input type="text" id="edit_divisi" name="divisi" class="form-control">
+                        </div>
 
                         @if (auth()->user()->role === 'super_admin')
-                            <select name="id_perusahaan" id="edit_perusahaan" class="form-select">
-                                @foreach ($perusahaans as $p)
-                                    <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
-                                @endforeach
-                            </select>
+                            <div class="mb-3">
+                                <label>Perusahaan</label>
+                                <select name="id_perusahaan" id="edit_perusahaan" class="form-select">
+                                    @foreach ($perusahaans as $p)
+                                        <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
                         @else
-                            <input type="text" id="edit_perusahaan_text" class="form-control" readonly>
+                            <div class="mb-3">
+                                <label>Perusahaan</label>
+                                <input type="text" id="edit_perusahaan_text" class="form-control" readonly>
+                            </div>
                         @endif
 
                     </div>
 
+                    {{-- FOOTER --}}
                     <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                         <button class="btn btn-warning">Update</button>
                     </div>
 
@@ -226,9 +263,24 @@
                 // DELETE
                 document.querySelectorAll('.btn-delete').forEach(btn => {
                     btn.onclick = function() {
-                        if (confirm('Yakin hapus?')) {
-                            document.getElementById('delete-form-' + this.dataset.id).submit();
-                        }
+
+                        let id = this.dataset.id;
+
+                        Swal.fire({
+                            title: 'Yakin hapus?',
+                            text: "Data tidak bisa dikembalikan!",
+                            icon: 'warning',
+                            showCancelButton: true,
+                            confirmButtonColor: '#696cff',
+                            cancelButtonColor: '#8592a3',
+                            confirmButtonText: 'Ya, hapus!',
+                            cancelButtonText: 'Batal'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                document.getElementById('delete-form-' + id).submit();
+                            }
+                        });
+
                     }
                 });
 

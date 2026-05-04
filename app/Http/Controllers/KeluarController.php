@@ -20,45 +20,51 @@ class KeluarController extends Controller
    */
   public function index(Request $request)
   {
-    $query = Keluar::with(['masuk.kategori', 'karyawan']);
-    // 🔥 WAJIB FILTER PERUSAHAAN
-    if (auth()->user()->role !== 'super_admin') {
-      $query->where('id_perusahaan', auth()->user()->id_perusahaan);
+    $user = auth()->user();
+
+    $query = Keluar::with(['masuk.kategori', 'karyawan', 'perusahaan']);
+
+    // 🔥 FIX ROLE
+    if ($user->role !== 'super_admin') {
+      $query->where('id_perusahaan', $user->id_perusahaan);
+    } else {
+      // optional filter perusahaan
+      if ($request->perusahaan_id) {
+        $query->where('id_perusahaan', $request->perusahaan_id);
+      }
     }
 
+    // 🔍 SEARCH
     if ($request->search) {
       $search = $request->search;
 
       $query->where(function ($q) use ($search) {
-        // ================= KOLOM DI TABEL KELUAR =================
         $q->where('kode_keluar', 'like', "%$search%")
           ->orWhere('kode_barang', 'like', "%$search%")
-          ->orWhere('warna', 'like', "%$search%");
-
-        // ================= RELASI MASUK =================
-        $q->orWhereHas('masuk', function ($m) use ($search) {
-          $m->where('kode_masuk', 'like', "%$search%")
-            ->orWhere('type', 'like', "%$search%")
-            ->orWhere('merek', 'like', "%$search%");
-        });
-
-        // ================= RELASI KATEGORI (NAMA BARANG) =================
-        $q->orWhereHas('masuk.kategori', function ($k) use ($search) {
-          $k->where('nama_barang', 'like', "%$search%");
-        });
-
-        // ================= RELASI KARYAWAN =================
-        $q->orWhereHas('karyawan', function ($k) use ($search) {
-          $k->where('nama_karyawan', 'like', "%$search%")
-            ->orWhere('divisi', 'like', "%$search%")
-            ->orWhere('perusahaan', 'like', "%$search%");
-        });
+          ->orWhere('warna', 'like', "%$search%")
+          ->orWhereHas('masuk', function ($m) use ($search) {
+            $m->where('kode_masuk', 'like', "%$search%")
+              ->orWhere('type', 'like', "%$search%")
+              ->orWhere('merek', 'like', "%$search%");
+          })
+          ->orWhereHas('masuk.kategori', function ($k) use ($search) {
+            $k->where('nama_barang', 'like', "%$search%");
+          })
+          ->orWhereHas('karyawan', function ($k) use ($search) {
+            $k->where('nama_karyawan', 'like', "%$search%");
+          });
       });
     }
 
-    $keluars = $query->orderByDesc('id')->paginate(5);
+    $keluars = $query
+      ->latest()
+      ->paginate(5)
+      ->appends($request->query());
 
-    return view('content.dashboard.transaksi-keluar.index', compact('keluars'));
+    // 🔥 TAMBAHAN (untuk filter dropdown)
+    $perusahaans = $user->role === 'super_admin' ? \App\Models\Perusahaan::all() : collect();
+
+    return view('content.dashboard.transaksi-keluar.index', compact('keluars', 'perusahaans'));
   }
 
   private function generateKodeKeluar()
@@ -207,10 +213,13 @@ class KeluarController extends Controller
    */
   public function edit($id)
   {
-    $keluar = Keluar::with(['masuk.kategori', 'karyawan'])
-      ->where('id', $id)
-      ->where('id_perusahaan', auth()->user()->id_perusahaan)
-      ->firstOrFail();
+    $query = Keluar::with(['masuk.kategori', 'karyawan']);
+
+    if (auth()->user()->role !== 'super_admin') {
+      $query->where('id_perusahaan', auth()->user()->id_perusahaan);
+    }
+
+    $keluar = $query->findOrFail($id);
 
     return view('content.dashboard.transaksi-keluar.edit', compact('keluar'));
   }
@@ -309,35 +318,30 @@ class KeluarController extends Controller
     DB::beginTransaction();
 
     try {
-      $keluar = Keluar::with('masuk')
-        ->where('id', $id)
-        ->where('id_perusahaan', auth()->user()->id_perusahaan)
-        ->firstOrFail();
+      $query = Keluar::with('masuk');
 
-      // 🔒 LOCK DATA MASUK
+      if (auth()->user()->role !== 'super_admin') {
+        $query->where('id_perusahaan', auth()->user()->id_perusahaan);
+      }
+
+      $keluar = $query->findOrFail($id);
+
       $masuk = Masuk::where('id', $keluar->id_masuk)
         ->lockForUpdate()
         ->first();
 
-      // ➕ KEMBALIKAN STOK
       if ($masuk) {
         $masuk->increment('jumlah', $keluar->jumlah);
       }
 
-      // 🗑️ HAPUS TRANSAKSI KELUAR
       $keluar->delete();
 
       DB::commit();
 
-      return redirect()
-        ->back()
-        ->with('success', 'Transaksi keluar berhasil dihapus dan stok dikembalikan');
+      return back()->with('success', 'Data berhasil dihapus');
     } catch (\Exception $e) {
       DB::rollBack();
-
-      return redirect()
-        ->back()
-        ->with('error', 'Gagal menghapus data');
+      return back()->with('error', 'Gagal hapus data');
     }
   }
   public function getMasukByKode($kode)

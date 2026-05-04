@@ -55,17 +55,34 @@ class Masuk extends Model
 
   protected static function booted()
   {
-    // 🔥 AUTO ISI PERUSAHAAN
+    // 🔥 AUTO SET PERUSAHAAN
     static::creating(function ($model) {
-      if (auth()->check() && auth()->user()->role != 'super_admin') {
-        $model->perusahaan_id = auth()->user()->id_perusahaan;
+      $user = auth()->user();
+
+      if (!$user) {
+        return;
+      }
+
+      if ($user->role !== 'super_admin') {
+        $model->perusahaan_id = $user->id_perusahaan;
       }
     });
 
-    // 🔥 AUTO FILTER DATA
+    // 🔥 GLOBAL SCOPE (FIX FINAL)
     static::addGlobalScope('perusahaan', function ($query) {
-      if (auth()->check() && auth()->user()->role != 'super_admin') {
-        $query->where('perusahaan_id', auth()->user()->id_perusahaan);
+      // 🔥 INI KUNCI UTAMA
+      if (app()->runningInConsole()) {
+        return;
+      }
+
+      $user = auth()->user();
+
+      if (!$user) {
+        return;
+      }
+
+      if ($user->role !== 'super_admin') {
+        $query->where('perusahaan_id', $user->id_perusahaan);
       }
     });
   }

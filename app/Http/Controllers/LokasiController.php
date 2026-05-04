@@ -2,10 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Main;
-use App\Models\Post;
-use App\Models\User;
 use App\Models\Lokasi;
+use App\Models\Perusahaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
@@ -17,32 +15,39 @@ class LokasiController extends Controller
    */
   public function index(Request $request)
   {
-    $search = $request->input('search');
+    $user = auth()->user();
 
-    $lokasis = Lokasi::latest();
+    if (!$user) {
+      abort(403);
+    }
+
+    $search = $request->search;
+    $perusahaanId = $request->perusahaan_id;
+
+    $perusahaans = $user->role === 'super_admin' ? Perusahaan::all() : [];
+
+    $lokasis = Lokasi::with('perusahaan');
+
+    if ($user->role !== 'super_admin') {
+      $lokasis->where('id_perusahaan', $user->id_perusahaan);
+    } else {
+      if ($perusahaanId) {
+        $lokasis->where('id_perusahaan', $perusahaanId);
+      }
+    }
 
     if ($search) {
-      $lokasis = $lokasis->where(function ($query) use ($search) {
-        $query->where('nama_lokasi', 'like', '%' . $search . '%')->orWhere('id', 'like', '%' . $search . '%');
+      $lokasis->where(function ($query) use ($search) {
+        $query->where('nama_lokasi', 'like', "%{$search}%")->orWhere('kode_lokasi', 'like', "%{$search}%");
       });
     }
 
-    $lokasis = $lokasis->paginate(5);
+    $lokasis = $lokasis
+      ->latest()
+      ->paginate(5)
+      ->appends(request()->query());
 
-    // 🔥 GENERATE KODE LOKASI DI INDEX
-    $last = Lokasi::where('id_perusahaan', auth()->user()->id_perusahaan)
-      ->orderBy('id', 'desc')
-      ->first();
-
-    if ($last) {
-      $number = (int) substr($last->kode_lokasi, 2) + 1;
-    } else {
-      $number = 1;
-    }
-
-    $kodeLokasi = 'LK' . str_pad($number, 4, '0', STR_PAD_LEFT);
-
-    return view('content.dashboard.lokasi.index', compact('lokasis', 'kodeLokasi'));
+    return view('content.dashboard.lokasi.index', compact('lokasis', 'perusahaans'));
   }
 
   /**
@@ -57,25 +62,32 @@ class LokasiController extends Controller
    */
   public function store(Request $request)
   {
-    $validatedData = $request->validate([
+    $user = auth()->user();
+
+    // 🔥 tentukan perusahaan
+    $perusahaanId = $user->role === 'super_admin' ? $request->id_perusahaan : $user->id_perusahaan;
+
+    $validated = $request->validate([
       'kode_lokasi' => [
         'required',
-        'string',
-        Rule::unique('lokasis')->where(fn($q) => $q->where('id_perusahaan', auth()->user()->id_perusahaan)),
+        Rule::unique('lokasis')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
       ],
       'nama_lokasi' => 'required|string|max:50',
+      'id_perusahaan' => $user->role === 'super_admin' ? 'required' : 'nullable',
     ]);
 
     try {
-      $validatedData['id_perusahaan'] = auth()->user()->id_perusahaan;
+      $validated['id_perusahaan'] = $perusahaanId;
 
-      Lokasi::create($validatedData);
+      Lokasi::create($validated);
 
-      return redirect('/dashboard/lokasi')->with('success', 'Data lokasi berhasil disimpan.');
+      return redirect()
+        ->route('lokasi.index')
+        ->with('success', 'Data lokasi berhasil disimpan.');
     } catch (\Exception $e) {
       Log::error($e->getMessage());
 
-      return redirect('/dashboard/lokasi')->with('error', 'Data lokasi tidak berhasil disimpan.');
+      return back()->with('error', 'Gagal menyimpan data.');
     }
   }
 
@@ -100,19 +112,26 @@ class LokasiController extends Controller
    */
   public function update(Request $request, Lokasi $lokasi)
   {
+    $user = auth()->user();
+
+    $perusahaanId = $user->role === 'super_admin' ? $request->id_perusahaan : $user->id_perusahaan;
+
+    // 🔒 proteksi data lintas perusahaan
+    if ($user->role !== 'super_admin' && $lokasi->id_perusahaan != $user->id_perusahaan) {
+      abort(403);
+    }
+
     $validated = $request->validate([
       'nama_lokasi' => 'required|string|max:50',
     ]);
 
-    try {
-      $lokasi->update($validated);
+    $validated['id_perusahaan'] = $perusahaanId;
 
-      return redirect()
-        ->route('lokasi.index')
-        ->with('success', 'Data lokasi diperbarui.');
-    } catch (\Exception $e) {
-      return back()->with('error', 'Gagal mengupdate data.');
-    }
+    $lokasi->update($validated);
+
+    return redirect()
+      ->route('lokasi.index')
+      ->with('success', 'Data lokasi diperbarui.');
   }
 
   /**
@@ -121,10 +140,33 @@ class LokasiController extends Controller
   public function destroy($id)
   {
     $lokasi = Lokasi::findOrFail($id);
+    $user = auth()->user();
+
+    // 🔒 proteksi
+    if ($user->role !== 'super_admin' && $lokasi->id_perusahaan != $user->id_perusahaan) {
+      abort(403);
+    }
+
     $lokasi->delete();
 
-    return redirect()
-      ->back()
-      ->with('success', 'Lokasi berhasil dihapus');
+    return back()->with('success', 'Lokasi berhasil dihapus');
+  }
+  public function getKode($id)
+  {
+    $last = Lokasi::where('id_perusahaan', $id)
+      ->orderBy('id', 'desc')
+      ->first();
+
+    if ($last && $last->kode_lokasi) {
+      $number = (int) substr($last->kode_lokasi, 2) + 1;
+    } else {
+      $number = 1;
+    }
+
+    $kode = 'LK' . str_pad($number, 4, '0', STR_PAD_LEFT);
+
+    return response()->json([
+      'kode' => $kode,
+    ]);
   }
 }

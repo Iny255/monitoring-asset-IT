@@ -3,244 +3,342 @@
 @section('title', 'Lokasi')
 
 @section('content')
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
 
-    @if (session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        </div>
-    @endif
-    </h4>
+    <div class="container-xxl flex-grow-1 container-p-y">
 
-    <div class="card">
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <div class="">
-                    <h5 class="text-primary mb-0">Data Lokasi Barang</h5>
-                </div>
-                <div class="">
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahLokasi">
-                        Tambah Data Lokasi
-                    </button>
-                </div>
+        {{-- ALERT --}}
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show">
+                {{ session('success') }}
+                <button class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        </div>
-        <div class="card-body">
-            <form method="GET" action="{{ url('/dashboard/lokasi') }}" class="row g-3 mb-4">
-                <div class="col-md-7 text">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="flex-grow-1 me-2">
-                            <input type="text" name="search" class="form-control w-100"
-                                placeholder="Cari berdasarkan lokasi" value="{{ request('search') }}">
-                        </div>
-                        <div>
-                            <button type="submit" class="btn btn-primary">Cari</button>
-                        </div>
-                    </div>
-                </div>
-            </form>
+        @endif
 
-            <div class="table-responsive text-nowrap">
-                <table class="table table-bordered">
-                    <thead class="table-primary">
-                        <tr class="center">
-                            <th width=>KODE LOKASI</th>
-                            <th>NAMA LOKASI</th>
-                            <th width=>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($lokasis as $lokasi)
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show">
+                {{ session('error') }}
+                <button class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        <div class="card">
+
+            {{-- HEADER --}}
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="text-primary mb-0">Data Lokasi Barang</h5>
+
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahLokasi">
+                    Tambah Data Lokasi
+                </button>
+            </div>
+
+            {{-- BODY --}}
+            <div class="card-body">
+
+                {{-- FILTER + SEARCH --}}
+                <form method="GET" class="row g-3 align-items-end mb-4">
+
+                    @if (auth()->user()->role === 'super_admin')
+                        <div class="col-md-4">
+                            <label class="form-label">Perusahaan</label>
+                            <select name="perusahaan_id" class="form-select">
+                                <option value="">Semua Perusahaan</option>
+                                @foreach ($perusahaans as $p)
+                                    <option value="{{ $p->id }}"
+                                        {{ request('perusahaan_id') == $p->id ? 'selected' : '' }}>
+                                        {{ $p->nama_perusahaan }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
+
+                    <div class="col-md-5">
+                        <label class="form-label">Pencarian</label>
+                        <input type="text" name="search" class="form-control" placeholder="Cari kode / nama lokasi..."
+                            value="{{ request('search') }}">
+                    </div>
+
+                    <div class="col-md-3 d-flex gap-2">
+                        <button class="btn btn-primary w-100">
+                            <i class="bx bx-search"></i> Cari
+                        </button>
+
+                        <a href="{{ route('lokasi.index') }}" class="btn btn-secondary w-100">
+                            Reset
+                        </a>
+                    </div>
+
+                </form>
+
+                {{-- TABLE --}}
+                <div class="table-responsive">
+                    <table class="table table-bordered align-middle">
+                        <thead class="table-primary text-center">
                             <tr>
-                                <td>{{ $lokasi->kode_lokasi }}</td>
-                                <td>{{ $lokasi->nama_lokasi }}</td>
+                                <th>KODE</th>
+                                <th>NAMA LOKASI</th>
 
-                                <td>
-                                    <button class="btn btn-warning btn-sm btn-edit" data-id="{{ $lokasi->id }}"
-                                        data-kode="{{ $lokasi->kode_lokasi }}" data-nama="{{ $lokasi->nama_lokasi }}">
-                                        <i class="bx bx-edit-alt"></i>
-                                    </button>
-                                    <form id="delete-form-{{ $lokasi->id }}"
-                                        action="{{ route('lokasi.destroy', $lokasi->id) }}" method="POST"
-                                        style="display:none;">
-                                        @csrf
-                                        @method('DELETE')
-                                    </form>
-                                    <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $lokasi->id }}">
-                                        <i class="bx bx-trash"></i>
-                                    </button>
-                                </td>
-                        @endforeach
-                    </tbody>
-                </table>
-                <div class="mt-4">
-                    {{ $lokasis->links('pagination::bootstrap-4') }}
+                                @if (auth()->user()->role === 'super_admin')
+                                    <th>PERUSAHAAN</th>
+                                @endif
+
+                                <th width="120">ACTION</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @forelse ($lokasis as $lokasi)
+                                <tr>
+                                    <td>{{ $lokasi->kode_lokasi }}</td>
+                                    <td>{{ $lokasi->nama_lokasi }}</td>
+
+                                    @if (auth()->user()->role === 'super_admin')
+                                        <td>{{ $lokasi->perusahaan->nama_perusahaan ?? '-' }}</td>
+                                    @endif
+
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center gap-2">
+
+                                            {{-- EDIT --}}
+                                            <button class="btn btn-warning btn-sm btn-edit" data-id="{{ $lokasi->id }}"
+                                                data-kode="{{ $lokasi->kode_lokasi }}"
+                                                data-nama="{{ $lokasi->nama_lokasi }}"
+                                                data-perusahaan_id="{{ $lokasi->id_perusahaan }}">
+                                                <i class="bx bx-edit-alt"></i>
+                                            </button>
+
+                                            {{-- DELETE --}}
+                                            <form id="delete-form-{{ $lokasi->id }}"
+                                                action="{{ route('lokasi.destroy', $lokasi->id) }}" method="POST"
+                                                style="display:none;">
+                                                @csrf
+                                                @method('DELETE')
+                                            </form>
+
+                                            <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $lokasi->id }}">
+                                                <i class="bx bx-trash"></i>
+                                            </button>
+
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="text-center">Data tidak ditemukan</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
-            </div>
-        </div>
-    </div>
-    <!-- MODAL TAMBAH LOKASI -->
-    <div class="modal fade" id="modalTambahLokasi" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
+                {{-- MODAL TAMBAH --}}
+                <div class="modal fade" id="modalTambahLokasi">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
 
-                <form action="{{ route('lokasi.store') }}" method="POST">
-                    @csrf
+                            <form action="{{ route('lokasi.store') }}" method="POST">
+                                @csrf
 
-                    <div class="modal-header">
-                        <h5 class="modal-title">Tambah Lokasi Barang</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-
-                    <div class="modal-body">
-
-                        <!-- KODE LOKASI -->
-                        <div class="mb-3">
-                            <label class="form-label">Kode Lokasi</label>
-                            <input type="text" name="kode_lokasi" class="form-control" value="{{ $kodeLokasi }}"
-                                readonly>
-                        </div>
-
-                        <!-- NAMA LOKASI -->
-                        <div class="mb-3">
-                            <label class="form-label">Nama Lokasi</label>
-                            <input type="text" name="nama_lokasi"
-                                class="form-control @error('nama_lokasi') is-invalid @enderror"
-                                value="{{ old('nama_lokasi') }}" required>
-
-                            @error('nama_lokasi')
-                                <div class="invalid-feedback">
-                                    {{ $message }}
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Tambah Lokasi</h5>
+                                    <button class="btn-close" data-bs-dismiss="modal"></button>
                                 </div>
-                            @enderror
+
+                                <div class="modal-body">
+
+                                    {{-- SUPER ADMIN --}}
+                                    @if (auth()->user()->role === 'super_admin')
+                                        <div class="mb-3">
+                                            <label>Perusahaan</label>
+                                            <select name="id_perusahaan" id="perusahaanSelect" class="form-select" required>
+                                                <option value="">-- pilih perusahaan --</option>
+                                                @foreach ($perusahaans as $p)
+                                                    <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @endif
+
+                                    <div class="mb-3">
+                                        <label>Kode Lokasi</label>
+                                        <input type="text" id="kodeLokasi" name="kode_lokasi" class="form-control"
+                                            readonly>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label>Nama Lokasi</label>
+                                        <input type="text" name="nama_lokasi" class="form-control" required>
+                                    </div>
+
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                    <button class="btn btn-primary">Simpan</button>
+                                </div>
+
+                            </form>
+
                         </div>
-
                     </div>
+                </div>
+                {{-- MODAL EDIT --}}
+                <div class="modal fade" id="modalEditLokasi">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
 
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            Batal
-                        </button>
-                        <button type="submit" class="btn btn-primary">
-                            Simpan
-                        </button>
+                            <form id="formEditLokasi" method="POST">
+                                @csrf
+                                @method('PUT')
+
+                                <div class="modal-header">
+                                    <h5 class="modal-title">Edit Lokasi</h5>
+                                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                                </div>
+
+                                <div class="modal-body">
+
+                                    {{-- SUPER ADMIN --}}
+                                    @if (auth()->user()->role === 'super_admin')
+                                        <div class="mb-3">
+                                            <label>Perusahaan</label>
+                                            <select name="id_perusahaan" id="edit_perusahaan" class="form-select">
+                                                @foreach ($perusahaans as $p)
+                                                    <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}
+                                                    </option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    @endif
+
+                                    <div class="mb-3">
+                                        <label>Kode Lokasi</label>
+                                        <input type="text" id="edit_kode" name="kode_lokasi" class="form-control"
+                                            readonly>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label>Nama Lokasi</label>
+                                        <input type="text" name="nama_lokasi" id="edit_nama" class="form-control"
+                                            required>
+                                    </div>
+
+                                </div>
+
+                                <div class="modal-footer">
+                                    <button class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                                    <button class="btn btn-warning">Update</button>
+                                </div>
+
+                            </form>
+
+                        </div>
                     </div>
-
-                </form>
+                </div>
+                {{-- PAGINATION --}}
+                <div class="mt-3">
+                    {{ $lokasis->links('pagination::bootstrap-5') }}
+                </div>
 
             </div>
         </div>
     </div>
-    <!-- MODAL EDIT LOKASI -->
-    <div class="modal fade" id="modalEditLokasi" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
 
-                <form id="formEditLokasi" method="POST">
-                    @csrf
-                    @method('PUT')
-
-                    <div class="modal-header">
-                        <h5 class="modal-title">Edit Lokasi Barang</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
-
-                    <div class="modal-body">
-
-                        <!-- KODE -->
-                        <div class="mb-3">
-                            <label class="form-label">Kode Lokasi</label>
-                            <input type="text" id="edit_kode_lokasi" class="form-control" readonly>
-                        </div>
-
-                        <!-- NAMA -->
-                        <div class="mb-3">
-                            <label class="form-label">Nama Lokasi</label>
-                            <input type="text" name="nama_lokasi" id="edit_nama_lokasi" class="form-control"
-                                required>
-                        </div>
-
-                    </div>
-
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            Batal
-                        </button>
-
-                        <button type="submit" class="btn btn-primary">
-                            Update
-                        </button>
-                    </div>
-
-                </form>
-
-            </div>
-        </div>
-    </div>
 @endsection
-<!--/ Striped Rows -->
+
+
 @section('scripts')
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        // DELETE
+        document.querySelectorAll('.btn-delete').forEach(btn => {
+            btn.onclick = function() {
 
-            // DELETE
-            document.querySelectorAll('.btn-delete').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const id = this.dataset.id;
+                let id = this.dataset.id;
 
-                    Swal.fire({
-                        title: 'Apakah kamu yakin?',
-                        text: "Data lokasi ini akan dihapus!",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'Ya, hapus!',
-                        cancelButtonText: 'Batal'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            document.getElementById(`delete-form-${id}`).submit();
-                        }
-                    });
+                Swal.fire({
+                    title: 'Yakin hapus?',
+                    text: "Data tidak bisa dikembalikan!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#696cff',
+                    cancelButtonColor: '#8592a3',
+                    confirmButtonText: 'Ya, hapus!',
+                    cancelButtonText: 'Batal'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        document.getElementById('delete-form-' + id).submit();
+                    }
                 });
-            });
 
-            // EDIT POPUP
-            document.querySelectorAll('.btn-edit').forEach(btn => {
-                btn.addEventListener('click', function() {
-
-                    const id = this.dataset.id;
-                    const kode = this.dataset.kode;
-                    const nama = this.dataset.nama;
-
-                    document.getElementById('edit_kode_lokasi').value = kode;
-                    document.getElementById('edit_nama_lokasi').value = nama;
-
-                    document.getElementById('formEditLokasi').action =
-                        `/dashboard/lokasi/${id}`;
-
-                    var editModal = new bootstrap.Modal(
-                        document.getElementById('modalEditLokasi')
-                    );
-                    editModal.show();
-                });
-            });
-
+            }
         });
-    </script>
 
-    @if ($errors->any())
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                var modal = new bootstrap.Modal(
-                    document.getElementById('modalTambahLokasi')
-                );
-                modal.show();
+
+        // EDIT
+        document.querySelectorAll('.btn-edit').forEach(btn => {
+            btn.onclick = function() {
+
+                let id = this.dataset.id;
+
+                document.getElementById('edit_kode').value = this.dataset.kode;
+                document.getElementById('edit_nama').value = this.dataset.nama;
+
+                @if (auth()->user()->role === 'super_admin')
+                    document.getElementById('edit_perusahaan').value = this.dataset.perusahaan_id;
+                @endif
+
+                document.getElementById('formEditLokasi').action =
+                    `/dashboard/lokasi/${id}`;
+
+                new bootstrap.Modal(document.getElementById('modalEditLokasi')).show();
+            }
+        });
+
+
+        // AUTO KODE
+        const select = document.getElementById('perusahaanSelect');
+        const kode = document.getElementById('kodeLokasi');
+
+        if (select) {
+            select.addEventListener('change', function() {
+
+                let perusahaanId = this.value;
+
+                if (!perusahaanId) {
+                    kode.value = '';
+                    return;
+                }
+
+                fetch(`/dashboard/get-kode-lokasi/${perusahaanId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        kode.value = data.kode;
+                    });
+
             });
-        </script>
-    @endif
+        }
+
+        //auto kode edit
+        const editPerusahaan = document.getElementById('edit_perusahaan');
+        const editKode = document.getElementById('edit_kode');
+
+        if (editPerusahaan) {
+            editPerusahaan.addEventListener('change', function() {
+
+                let perusahaanId = this.value;
+
+                if (!perusahaanId) {
+                    editKode.value = '';
+                    return;
+                }
+
+                fetch(`/dashboard/get-kode-lokasi/${perusahaanId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        editKode.value = data.kode;
+                    });
+
+            });
+        }
+    </script>
 @endsection

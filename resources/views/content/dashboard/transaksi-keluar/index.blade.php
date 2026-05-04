@@ -30,7 +30,7 @@
 
             <div class="d-flex gap-2">
 
-                @if (auth()->user()->role === 'petugas')
+                @if (auth()->user()->role === 'petugas' || auth()->user()->role === 'super_admin')
                     <a href="{{ route('transaksi-keluar.create') }}" class="btn btn-primary btn-sm px-3">
                         <i class="bx bx-plus"></i> Tambah Data
                     </a>
@@ -125,7 +125,7 @@
 
                                     <div class="aksi-btn d-flex justify-content-center flex-nowrap gap-1">
 
-                                        @if (auth()->user()->role === 'petugas')
+                                        @if (auth()->user()->role === 'petugas' || auth()->user()->role === 'super_admin')
                                             <a href="{{ route('transaksi-keluar.show', $keluar->id) }}"
                                                 class="btn btn-info btn-sm">
                                                 <i class="bx bx-show"></i>

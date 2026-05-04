@@ -28,13 +28,15 @@ Route::get('/login', [LoginController::class, 'index'])
 
 Route::post('/login', [LoginController::class, 'authenticate']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
- Route::get('/get-kode-kategori/{id}', [KategoriController::class, 'getKode']);
+Route::get('/get-kode-kategori/{id}', [KategoriController::class, 'getKode']);
+
 Route::middleware(['auth'])->group(function () {
   /*
     |--------------------------------------------------------------------------
     | SUPER ADMIN
     |--------------------------------------------------------------------------
     */
+
   Route::middleware(['role:super_admin'])->group(function () {
     Route::get('/dashboard/superadmin', [
       App\Http\Controllers\main_dashboard\DashboardSuperAdminController::class,
@@ -45,8 +47,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/hapususer/{id}', [DashboardUserController::class, 'hapususer']);
     Route::get('/dashboard/detailuser/{id}', [DashboardUserController::class, 'show']);
     Route::resource('/dashboard/perusahaan', PerusahaanController::class);
-    
   });
+  Route::get('/dashboard/get-kode-lokasi/{id}', [LokasiController::class, 'getKode']);
+  Route::get('/dashboard/get-kode-masuk/{id}', [MasukController::class, 'getKode']);
+  Route::get('/dashboard/get-kategori/{id}', [MasukController::class, 'getKategori']);
 
   /*
     |--------------------------------------------------------------------------
@@ -105,8 +109,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/manager/laporan/masuk', [LaporanController::class, 'laporanMasuk'])->name('manager.laporan.masuk');
     Route::get('/manager/laporan/masuk/{id}', [LaporanController::class, 'show'])->name('manager.laporan.masuk.show');
 
-    Route::get('/manager/laporan/keluar', [LaporanController::class, 'laporanKeluar'])
-    ->name('manager.laporan.keluar');
+    Route::get('/manager/laporan/keluar', [LaporanController::class, 'laporanKeluar'])->name('manager.laporan.keluar');
     Route::get('/manager/laporan/keluar/{id}', [LaporanController::class, 'showKeluar'])->name(
       'manager.laporan.keluar.show'
     );
@@ -115,15 +118,14 @@ Route::middleware(['auth'])->group(function () {
       'manager.laporan.peminjaman'
     );
 
-    Route::get('/manager/laporan/peminjaman/{id}', [LaporanController::class, 'showPeminjaman'])
-    ->name('manager.laporan.peminjaman.show');
+    Route::get('/manager/laporan/peminjaman/{id}', [LaporanController::class, 'showPeminjaman'])->name(
+      'manager.laporan.peminjaman.show'
+    );
 
     Route::get('/manager/maping', [ManagerMapingController::class, 'maping'])->name('manager.maping.index');
 
-  
     Route::get('/manager/maping/print', [ManagerMapingController::class, 'cetakmaping'])->name('manager.maping.cetak');
     Route::get('/manager/maping/{id}', [ManagerMapingController::class, 'showmaping'])->name('manager.maping.show');
-    
   });
 
   /*
@@ -140,8 +142,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/peminjaman/cek-status/{kode}', [PeminjamanController::class, 'cekStatus']);
 
     Route::get('/dashboard/history/mutasi', [MapingController::class, 'historyGlobal'])->name('maping.historyGlobal');
-    Route::get('/maping/{id}/history-user', [MapingController::class, 'historyUser'])
-    ->name('maping.historyUser');
+    Route::get('/maping/{id}/history-user', [MapingController::class, 'historyUser'])->name('maping.historyUser');
     Route::delete('/mutasi/{id}', [MapingController::class, 'destroyMutasi']);
 
     Route::get('/dashboard/history/pencabutan', [MapingController::class, 'historyCabut'])->name('maping.historyCabut');
