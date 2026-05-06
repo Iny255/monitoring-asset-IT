@@ -51,6 +51,7 @@ Route::middleware(['auth'])->group(function () {
   Route::get('/dashboard/get-kode-lokasi/{id}', [LokasiController::class, 'getKode']);
   Route::get('/dashboard/get-kode-masuk/{id}', [MasukController::class, 'getKode']);
   Route::get('/dashboard/get-kategori/{id}', [MasukController::class, 'getKategori']);
+  Route::get('/dashboard/get-kode-keluar/{id}', [KeluarController::class, 'getKodeKeluar']);
 
   /*
     |--------------------------------------------------------------------------

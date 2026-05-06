@@ -22,11 +22,21 @@
                 @csrf
 
                 <div class="row">
-
+                    @if (auth()->user()->role === 'super_admin')
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Perusahaan</label>
+                            <select name="perusahaan_id" id="perusahaan_select" class="form-select" required>
+                                <option value="">-- Pilih Perusahaan --</option>
+                                @foreach ($perusahaans as $p)
+                                    <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
                     <!-- KODE -->
                     <div class="col-md-6 mb-3">
                         <label class="form-label">Kode Keluar</label>
-                        <input type="text" name="kode_keluar" class="form-control" value="{{ $kodeKeluar }}" readonly>
+                        <input type="text" id="kode_keluar" name="kode_keluar" class="form-control" readonly>
                     </div>
 
                     <div class="col-md-6 mb-3">
@@ -136,25 +146,39 @@
 
                 <!-- PERDIVISI -->
                 <div id="group_divisi" style="display:none;">
-
                     <div class="row">
 
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Divisi</label>
+                            <label>Divisi</label>
                             <input type="text" name="divisi_klr" id="divisi_klr" class="form-control">
                         </div>
 
                         <div class="col-md-6 mb-3">
-                            <label class="form-label">Perusahaan</label>
-                            <input type="text" class="form-control"
-                                value="{{ auth()->user()->perusahaan->nama_perusahaan }}" readonly>
-                            <input type="hidden" name="perusahaan_klr"
-                                value="{{ auth()->user()->perusahaan->nama_perusahaan }}">
+                            <label>Perusahaan</label>
+
+                            {{-- SUPER ADMIN --}}
+                            @if (auth()->user()->role === 'super_admin')
+                                <select id="perusahaan_select_divisi" class="form-select">
+                                    <option value="">-- Pilih --</option>
+                                    @foreach ($perusahaans as $p)
+                                        <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
+                                    @endforeach
+                                </select>
+
+                                <input type="hidden" name="perusahaan_klr" id="perusahaan_hidden">
+
+                                {{-- PETUGAS --}}
+                            @else
+                                <input type="text" class="form-control"
+                                    value="{{ auth()->user()->perusahaan->nama_perusahaan }}" readonly>
+
+                                <input type="hidden" name="perusahaan_klr"
+                                    value="{{ auth()->user()->perusahaan->nama_perusahaan }}">
+                            @endif
 
                         </div>
 
                     </div>
-
                 </div>
 
 
@@ -176,10 +200,8 @@
 
                     </a>
 
-                    <button class="btn btn-primary">
-
+                    <button type="submit" class="btn btn-primary">
                         <i class="bx bx-save"></i> Simpan
-
                     </button>
 
                 </div>
@@ -195,99 +217,173 @@
         <meta name="csrf-token" content="{{ csrf_token() }}">
 
         <script>
-            document.getElementById('kode_masuk').addEventListener('blur', function() {
+            document.addEventListener('DOMContentLoaded', function() {
 
-                let kode = this.value.trim();
-                if (!kode) return;
+                const perusahaanSelect = document.getElementById('perusahaan_select');
+                const kodeKeluar = document.getElementById('kode_keluar');
 
-                fetch("{{ route('transaksi-keluar.autofill') }}", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
-                        },
-                        body: JSON.stringify({
-                            kode_masuk: kode
-                        })
-                    })
-                    .then(res => res.json())
-                    .then(res => {
+                // =========================
+                // 🔥 KODE KELUAR
+                // =========================
 
-                        if (!res.status) {
-                            Swal.fire('Gagal', 'Kode masuk tidak ditemukan', 'error');
-                            return;
-                        }
+                // SUPER ADMIN (hanya di perdivisi)
+                if (perusahaanSelect) {
+                    perusahaanSelect.addEventListener('change', function() {
 
-                        document.getElementById('id_masuk').value = res.data.id_masuk;
-                        document.getElementById('nama_barang').value = res.data.nama_barang;
-                        document.getElementById('type').value = res.data.type;
-                        document.getElementById('merek').value = res.data.merek;
-                        document.getElementById('tgl_beli').value = res.data.tgl_beli;
+                        let id = this.value;
+                        if (!id) return;
+
+                        fetch('/dashboard/get-kode-keluar/' + id)
+                            .then(res => res.json())
+                            .then(data => {
+
+                                // isi kode keluar
+                                if (kodeKeluar) kodeKeluar.value = data.kode;
+
+                                // ambil nama perusahaan
+                                let text = this.options[this.selectedIndex].text;
+
+                                // isi hidden perusahaan_klr
+                                let perusahaanHidden = document.getElementById('perusahaan_hidden');
+                                if (perusahaanHidden) perusahaanHidden.value = text;
+
+                            });
+
                     });
-            });
-
-            // KARYAWAN
-            document.getElementById('nama_karyawan').addEventListener('blur', function() {
-
-                let nama = this.value.trim();
-                if (!nama) return;
-
-                fetch("{{ route('keluar.getKaryawanByNama') }}", {
-                        method: "POST",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
-                        },
-                        body: JSON.stringify({
-                            nama_karyawan: nama
-                        })
-                    })
-                    .then(res => res.json())
-                    .then(res => {
-
-                        if (!res.status) {
-                            Swal.fire('Gagal', 'Nama karyawan tidak ditemukan', 'error');
-                            return;
-                        }
-
-                        document.getElementById('id_karyawan').value = res.data.id;
-                        document.getElementById('divisi').value = res.data.divisi;
-                        document.getElementById('perusahaan').value = res.data.perusahaan;
-                    });
-            });
-
-            document.getElementById('jenis_penerima').addEventListener('change', function() {
-
-                let jenis = this.value;
-
-                let groupKaryawan = document.getElementById('group_karyawan');
-                let groupDivisi = document.getElementById('group_divisi');
-
-                if (jenis === 'Perorangan') {
-
-                    groupKaryawan.style.display = 'block';
-                    groupDivisi.style.display = 'none';
-
-                    document.getElementById('nama_karyawan').required = true;
-                    document.getElementById('divisi_klr').required = false;
-                    document.getElementById('perusahaan_klr').required = false;
-
-                } else if (jenis === 'Perdivisi') {
-
-                    groupKaryawan.style.display = 'none';
-                    groupDivisi.style.display = 'block';
-
-                    document.getElementById('nama_karyawan').required = false;
-
-                    // reset karyawan
-                    document.getElementById('nama_karyawan').value = '';
-                    document.getElementById('id_karyawan').value = '';
-                    document.getElementById('divisi').value = '';
-                    document.getElementById('perusahaan').value = '';
                 }
+
+                // PETUGAS (auto tanpa pilih perusahaan)
+                else {
+                    fetch('/dashboard/get-kode-keluar/{{ auth()->user()->id_perusahaan }}')
+                        .then(res => res.json())
+                        .then(data => {
+                            if (kodeKeluar) kodeKeluar.value = data.kode;
+                        });
+                }
+
             });
+
+
+            // =========================
+            // 🔥 AUTOFILL BARANG
+            // =========================
+            let kodeMasukEl = document.getElementById('kode_masuk');
+
+            if (kodeMasukEl) {
+                kodeMasukEl.addEventListener('blur', function() {
+
+                    let kode = this.value.trim();
+                    if (!kode) return;
+
+                    fetch("{{ route('transaksi-keluar.autofill') }}", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-CSRF-TOKEN": document.querySelector('meta[name=\"csrf-token\"]').content
+                            },
+                            body: JSON.stringify({
+                                kode_masuk: kode
+                            })
+                        })
+                        .then(res => res.json())
+                        .then(res => {
+
+                            if (!res.status) {
+                                Swal.fire('Gagal', 'Kode masuk tidak ditemukan', 'error');
+                                return;
+                            }
+
+                            document.getElementById('id_masuk').value = res.data.id_masuk;
+                            document.getElementById('nama_barang').value = res.data.nama_barang;
+                            document.getElementById('type').value = res.data.type;
+                            document.getElementById('merek').value = res.data.merek;
+                            document.getElementById('tgl_beli').value = res.data.tgl_beli;
+                        });
+
+                });
+            }
+
+
+            // =========================
+            // 🔥 AUTOFILL KARYAWAN
+            // =========================
+            let karyawanEl = document.getElementById('nama_karyawan');
+
+            if (karyawanEl) {
+                karyawanEl.addEventListener('blur', function() {
+
+                    let nama = this.value.trim();
+                    if (!nama) return;
+
+                    fetch("{{ route('keluar.getKaryawanByNama') }}", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                                "X-CSRF-TOKEN": document.querySelector('meta[name=\"csrf-token\"]').content
+                            },
+                            body: JSON.stringify({
+                                nama_karyawan: nama
+                            })
+                        })
+                        .then(res => res.json())
+                        .then(res => {
+
+                            if (!res.status) {
+                                Swal.fire('Gagal', 'Nama karyawan tidak ditemukan', 'error');
+                                return;
+                            }
+
+                            document.getElementById('id_karyawan').value = res.data.id;
+                            document.getElementById('divisi').value = res.data.divisi;
+                            document.getElementById('perusahaan').value = res.data.perusahaan;
+                        });
+
+                });
+            }
+
+
+            // =========================
+            // 🔥 TOGGLE JENIS PENERIMA
+            // =========================
+            let jenisEl = document.getElementById('jenis_penerima');
+
+            if (jenisEl) {
+                jenisEl.addEventListener('change', function() {
+
+                    let jenis = this.value;
+
+                    let groupKaryawan = document.getElementById('group_karyawan');
+                    let groupDivisi = document.getElementById('group_divisi');
+
+                    if (jenis === 'Perorangan') {
+
+                        if (groupKaryawan) groupKaryawan.style.display = 'block';
+                        if (groupDivisi) groupDivisi.style.display = 'none';
+
+                        // reset divisi
+                        if (document.getElementById('divisi_klr'))
+                            document.getElementById('divisi_klr').value = '';
+
+                    } else if (jenis === 'Perdivisi') {
+
+                        if (groupKaryawan) groupKaryawan.style.display = 'none';
+                        if (groupDivisi) groupDivisi.style.display = 'block';
+
+                        // reset karyawan
+                        if (document.getElementById('nama_karyawan'))
+                            document.getElementById('nama_karyawan').value = '';
+
+                        if (document.getElementById('id_karyawan'))
+                            document.getElementById('id_karyawan').value = '';
+
+                        if (document.getElementById('divisi'))
+                            document.getElementById('divisi').value = '';
+
+                        if (document.getElementById('perusahaan'))
+                            document.getElementById('perusahaan').value = '';
+                    }
+
+                });
+            }
         </script>
-
-
-
     @endsection

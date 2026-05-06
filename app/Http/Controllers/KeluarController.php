@@ -13,6 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+
 class KeluarController extends Controller
 {
   /**
@@ -91,10 +92,14 @@ class KeluarController extends Controller
    */
   public function create()
   {
+    $user = auth()->user();
+
     $kodeKeluar = $this->generateKodeKeluar();
     $karyawans = Karyawan::orderBy('nama_karyawan')->get();
 
-    return view('content.dashboard.transaksi-keluar.create', compact('kodeKeluar', 'karyawans'));
+    $perusahaans = $user->role === 'super_admin' ? \App\Models\Perusahaan::all() : collect();
+
+    return view('content.dashboard.transaksi-keluar.create', compact('kodeKeluar', 'karyawans', 'perusahaans'));
   }
 
   /**
@@ -102,43 +107,58 @@ class KeluarController extends Controller
    */
   public function store(Request $request)
   {
-    $perusahaan = auth()->user()->perusahaan;
+    // dd($request->all());
+    $user = auth()->user();
+
+    // 🔥 TENTUKAN PERUSAHAAN
+    $perusahaanId = $user->role === 'super_admin' ? $request->perusahaan_id : $user->id_perusahaan;
+
+    // 🔒 VALIDASI
     $request->validate([
       'kode_keluar' => [
         'required',
-        Rule::unique('keluars')->where(fn($q) => $q->where('id_perusahaan', auth()->user()->id_perusahaan)),
+        Rule::unique('keluars')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
       ],
-      'id_masuk' => 'required|exists:masuks,id',
+
+      'id_masuk' => ['required', 'exists:masuks,id'],
+
       'kode_barang' => [
         'required',
-        Rule::unique('keluars')->where(fn($q) => $q->where('id_perusahaan', auth()->user()->id_perusahaan)),
+        Rule::unique('keluars')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
       ],
+
       'jumlah' => 'required|integer|min:1',
+
       'keterangan' => 'required|string|max:100',
+
       'warna' => 'required|string|max:50',
+
       'no_inventaris' => 'required|string|max:50',
+
       'jenis_penerima' => 'required|in:Perorangan,Perdivisi',
+
+      // 🔥 SUPER ADMIN
+      'perusahaan_id' => $user->role === 'super_admin' ? 'required|exists:perusahaans,id' : 'nullable',
     ]);
 
-    // PERORANGAN
+    // 🔥 VALIDASI PERORANGAN
     if ($request->jenis_penerima == 'Perorangan') {
       $request->validate([
         'id_karyawan' => 'required|exists:karyawans,id',
       ]);
     }
 
-    // DIVISI
+    // 🔥 VALIDASI PERDIVISI
     if ($request->jenis_penerima == 'Perdivisi') {
       $request->validate([
         'divisi_klr' => 'required',
-        'perusahaan_klr' => 'required',
       ]);
     }
 
     DB::beginTransaction();
 
     try {
-      // 🔒 LOCK STOK
+      // 🔒 AMBIL DATA MASUK
       $masuk = Masuk::where('id', $request->id_masuk)
         ->lockForUpdate()
         ->firstOrFail();
@@ -146,30 +166,41 @@ class KeluarController extends Controller
       // ❌ VALIDASI STOK
       if ($request->jumlah > $masuk->jumlah) {
         DB::rollBack();
+
         return back()
           ->withInput()
           ->with('error', 'Jumlah keluar melebihi stok tersedia!');
       }
 
+      // 🔥 AMBIL NAMA PERUSAHAAN
+      $namaPerusahaan = \App\Models\Perusahaan::find($perusahaanId)?->nama_perusahaan;
+
       // ✅ SIMPAN
-      $keluar = Keluar::create([
+      Keluar::create([
         'kode_keluar' => $request->kode_keluar,
+
         'id_masuk' => $request->id_masuk,
+
         'kode_barang' => $request->kode_barang,
+
         'jumlah' => $request->jumlah,
+
         'jenis_penerima' => $request->jenis_penerima,
-        'id_perusahaan' => $perusahaan->id,
-        // PERORANGAN
+
+        'id_perusahaan' => $perusahaanId,
+
+        // 🔥 PERORANGAN
         'id_karyawan' => $request->jenis_penerima == 'Perorangan' ? $request->id_karyawan : null,
 
-        // DIVISI MANUAL
+        // 🔥 PERDIVISI
         'divisi_klr' => $request->jenis_penerima == 'Perdivisi' ? $request->divisi_klr : null,
 
-        'perusahaan_klr' =>
-          $request->jenis_penerima == 'Perdivisi' ? auth()->user()->perusahaan->nama_perusahaan : null,
+        'perusahaan_klr' => $request->jenis_penerima == 'Perdivisi' ? $namaPerusahaan : null,
 
         'keterangan' => $request->keterangan,
+
         'warna' => $request->warna,
+
         'no_inventaris' => $request->no_inventaris,
       ]);
 
@@ -183,7 +214,12 @@ class KeluarController extends Controller
         ->with('success', 'Transaksi keluar berhasil disimpan');
     } catch (\Exception $e) {
       DB::rollBack();
-      // dd($e->getMessage());
+
+      // 🔥 DEBUG
+      dd($e->getMessage());
+
+      Log::error($e->getMessage());
+
       return back()
         ->withInput()
         ->with('error', 'Terjadi kesalahan, silakan ulangi');
@@ -195,15 +231,14 @@ class KeluarController extends Controller
    */
   public function show($id)
   {
-    $perusahaanId = auth()->user()->perusahaan->id;
+    $query = Keluar::with(['masuk.kategori', 'karyawan', 'perusahaan']);
 
-    $keluar = Keluar::with(['masuk.kategori', 'karyawan'])
-      ->where('id', $id)
-      ->where('id_perusahaan', $perusahaanId)
-      ->whereHas('masuk', function ($q) use ($perusahaanId) {
-        $q->where('perusahaan_id', $perusahaanId);
-      })
-      ->firstOrFail();
+    // 🔥 FIX ROLE
+    if (auth()->user()->role !== 'super_admin') {
+      $query->where('id_perusahaan', auth()->user()->id_perusahaan);
+    }
+
+    $keluar = $query->findOrFail($id);
 
     return view('content.dashboard.transaksi-keluar.show', compact('keluar'));
   }
@@ -213,15 +248,21 @@ class KeluarController extends Controller
    */
   public function edit($id)
   {
-    $query = Keluar::with(['masuk.kategori', 'karyawan']);
+    $user = auth()->user();
 
-    if (auth()->user()->role !== 'super_admin') {
-      $query->where('id_perusahaan', auth()->user()->id_perusahaan);
+    $query = Keluar::with(['masuk.kategori', 'karyawan', 'perusahaan']);
+
+    // PETUGAS hanya bisa edit perusahaannya sendiri
+    if ($user->role !== 'super_admin') {
+      $query->where('id_perusahaan', $user->id_perusahaan);
     }
 
     $keluar = $query->findOrFail($id);
 
-    return view('content.dashboard.transaksi-keluar.edit', compact('keluar'));
+    // 🔥 TAMBAHAN INI
+    $perusahaans = $user->role === 'super_admin' ? \App\Models\Perusahaan::all() : collect();
+
+    return view('content.dashboard.transaksi-keluar.edit', compact('keluar', 'perusahaans'));
   }
 
   /**
@@ -229,67 +270,97 @@ class KeluarController extends Controller
    */
   public function update(Request $request, $id)
   {
-    $perusahaan = auth()->user()->perusahaan;
+    $user = auth()->user();
+
+    // 🔥 TENTUKAN PERUSAHAAN
+    $perusahaanId = $user->role === 'super_admin' ? $request->perusahaan_id : $user->id_perusahaan;
+
+    // 🔒 VALIDASI
     $request->validate([
-      'id_masuk' => 'required|exists:masuks,id',
+      'perusahaan_id' => $user->role === 'super_admin' ? 'required|exists:perusahaans,id' : 'nullable',
+
+      'id_masuk' => [
+        'required',
+        Rule::exists('masuks', 'id')->where(fn($q) => $q->where('perusahaan_id', $perusahaanId)),
+      ],
+
       'kode_barang' => [
         'required',
         Rule::unique('keluars')
-          ->where(fn($q) => $q->where('id_perusahaan', auth()->user()->id_perusahaan))
+          ->where(fn($q) => $q->where('id_perusahaan', $perusahaanId))
           ->ignore($id),
       ],
+
       'jumlah' => 'required|integer|min:1',
-      'keterangan' => 'required|max:50',
+      'keterangan' => 'required|max:100',
       'warna' => 'required|max:50',
       'no_inventaris' => 'required|max:50',
       'jenis_penerima' => 'required|in:Perorangan,Perdivisi',
     ]);
 
-    // PERORANGAN
+    // 🔥 VALIDASI PERORANGAN
     if ($request->jenis_penerima == 'Perorangan') {
       $request->validate([
-        'id_karyawan' => 'required|exists:karyawans,id',
+        'id_karyawan' => [
+          'required',
+          Rule::exists('karyawans', 'id')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
+        ],
       ]);
     }
 
-    // PERDIVISI
+    // 🔥 VALIDASI PERDIVISI
     if ($request->jenis_penerima == 'Perdivisi') {
       $request->validate([
         'divisi_klr' => 'required',
-        'perusahaan_klr' => 'required',
       ]);
     }
 
     DB::beginTransaction();
 
     try {
-      $keluar = Keluar::findOrFail($id);
+      // 🔥 AMBIL DATA KELUAR
+      $keluar = Keluar::where('id', $id)
+        ->where('id_perusahaan', $perusahaanId)
+        ->firstOrFail();
 
       // 🔄 KEMBALIKAN STOK LAMA
-      $masukLama = Masuk::lockForUpdate()->find($keluar->id_masuk);
+      $masukLama = Masuk::lockForUpdate()->findOrFail($keluar->id_masuk);
+
       $masukLama->increment('jumlah', $keluar->jumlah);
 
-      // 🔒 LOCK STOK BARU
-      $masukBaru = Masuk::lockForUpdate()->findOrFail($request->id_masuk);
+      // 🔒 AMBIL DATA MASUK BARU
+      $masukBaru = Masuk::where('id', $request->id_masuk)
+        ->where('perusahaan_id', $perusahaanId)
+        ->lockForUpdate()
+        ->firstOrFail();
 
+      // ❌ VALIDASI STOK
       if ($request->jumlah > $masukBaru->jumlah) {
         DB::rollBack();
-        return back()->with('error', 'Jumlah keluar melebihi stok!');
+
+        return back()
+          ->withInput()
+          ->with('error', 'Jumlah keluar melebihi stok!');
       }
 
-      // ✏️ UPDATE DATA
+      // 🔥 NAMA PERUSAHAAN
+      $namaPerusahaan = \App\Models\Perusahaan::find($perusahaanId)?->nama_perusahaan;
+
+      // ✅ UPDATE DATA
       $keluar->update([
         'id_masuk' => $request->id_masuk,
         'kode_barang' => $request->kode_barang,
         'jumlah' => $request->jumlah,
         'jenis_penerima' => $request->jenis_penerima,
-        'id_perusahaan' => $perusahaan->id,
+        'id_perusahaan' => $perusahaanId,
+
+        // PERORANGAN
         'id_karyawan' => $request->jenis_penerima == 'Perorangan' ? $request->id_karyawan : null,
 
+        // PERDIVISI
         'divisi_klr' => $request->jenis_penerima == 'Perdivisi' ? $request->divisi_klr : null,
 
-        'perusahaan_klr' =>
-          $request->jenis_penerima == 'Perdivisi' ? auth()->user()->perusahaan->nama_perusahaan : null,
+        'perusahaan_klr' => $request->jenis_penerima == 'Perdivisi' ? $namaPerusahaan : null,
 
         'keterangan' => $request->keterangan,
         'warna' => $request->warna,
@@ -306,7 +377,12 @@ class KeluarController extends Controller
         ->with('success', 'Transaksi keluar berhasil diperbarui');
     } catch (\Exception $e) {
       DB::rollBack();
-      return back()->with('error', 'Terjadi kesalahan');
+
+      Log::error($e->getMessage());
+
+      return back()
+        ->withInput()
+        ->with('error', 'Terjadi kesalahan');
     }
   }
 
@@ -348,7 +424,7 @@ class KeluarController extends Controller
   {
     $masuk = Masuk::with('kategori')
       ->where('kode_masuk', $kode)
-      ->where('id_perusahaan', auth()->user()->id_perusahaan)
+      ->where('id_perusahaan', request('perusahaan_id') ?? auth()->user()->id_perusahaan)
       ->first();
 
     if (!$masuk) {
@@ -369,15 +445,23 @@ class KeluarController extends Controller
   }
   public function autofillByKodeMasuk(Request $request)
   {
-    $masuk = Masuk::with('kategori') // 🔥 WAJIB
-      ->where('kode_masuk', $request->kode_masuk)
-      ->where('perusahaan_id', auth()->user()->id_perusahaan)
-      ->first();
+    $query = Masuk::with('kategori')->where('kode_masuk', $request->kode_masuk);
+
+    // 🔥 BEDAKAN ROLE
+    if (auth()->user()->role !== 'super_admin') {
+      $query->where('perusahaan_id', auth()->user()->id_perusahaan);
+    } else {
+      // SUPER ADMIN pakai perusahaan dari dropdown
+      if ($request->perusahaan_id) {
+        $query->where('perusahaan_id', $request->perusahaan_id);
+      }
+    }
+
+    $masuk = $query->first();
 
     if (!$masuk) {
       return response()->json([
         'status' => false,
-        'message' => 'Data tidak ditemukan',
       ]);
     }
 
@@ -385,7 +469,7 @@ class KeluarController extends Controller
       'status' => true,
       'data' => [
         'id_masuk' => $masuk->id,
-        'nama_barang' => optional($masuk->kategori)->nama_barang ?? '-', // 🔥 AMAN
+        'nama_barang' => optional($masuk->kategori)->nama_barang ?? '-',
         'type' => $masuk->type ?? '-',
         'merek' => $masuk->merek ?? '-',
         'tgl_beli' => $masuk->tgl_beli ?? null,
@@ -401,10 +485,19 @@ class KeluarController extends Controller
 
     $user = auth()->user();
 
-    $karyawan = Karyawan::with('perusahaan')
-      ->where('nama_karyawan', $request->nama_karyawan)
-      ->where('id_perusahaan', $user->id_perusahaan) // 🔥 FIX DI SINI
-      ->first();
+    $query = Karyawan::with('perusahaan')->where('nama_karyawan', $request->nama_karyawan);
+
+    // 🔥 BEDAKAN ROLE
+    if ($user->role !== 'super_admin') {
+      $query->where('id_perusahaan', $user->id_perusahaan);
+    } else {
+      // SUPER ADMIN pakai perusahaan dari dropdown
+      if ($request->perusahaan_id) {
+        $query->where('id_perusahaan', $request->perusahaan_id);
+      }
+    }
+
+    $karyawan = $query->first();
 
     if (!$karyawan) {
       return response()->json(['status' => false]);
@@ -417,6 +510,23 @@ class KeluarController extends Controller
         'divisi' => $karyawan->divisi,
         'perusahaan' => $karyawan->perusahaan->nama_perusahaan ?? '-',
       ],
+    ]);
+  }
+  public function getKodeKeluar($id)
+  {
+    $tahun = now()->year;
+
+    $last = Keluar::where('id_perusahaan', $id)
+      ->whereYear('created_at', $tahun)
+      ->orderByDesc('id')
+      ->first();
+
+    $number = $last ? (int) substr($last->kode_keluar, -4) + 1 : 1;
+
+    $kode = 'KLR-' . $tahun . '-' . str_pad($number, 4, '0', STR_PAD_LEFT);
+
+    return response()->json([
+      'kode' => $kode,
     ]);
   }
 }

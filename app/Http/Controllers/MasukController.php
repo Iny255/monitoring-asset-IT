@@ -222,22 +222,40 @@ class MasukController extends Controller
 
   public function stok(Request $request)
   {
-    $perusahaan = auth()->user()->perusahaan;
+    $user = auth()->user();
+
     $search = $request->search;
 
-    $stoks = Masuk::with('kategori')
-      ->where('perusahaan_id', $perusahaan->id)
-      ->where('jumlah', '>', 0); // hanya tampil yang masih ada stok
+    $query = Masuk::with(['kategori', 'perusahaan'])->where('jumlah', '>', 0);
 
+    // 🔥 ROLE
+    if ($user->role !== 'super_admin') {
+      $query->where('perusahaan_id', $user->id_perusahaan);
+    } else {
+      // FILTER PERUSAHAAN
+      if ($request->perusahaan_id) {
+        $query->where('perusahaan_id', $request->perusahaan_id);
+      }
+    }
+
+    // 🔍 SEARCH
     if ($search) {
-      $stoks->whereHas('kategori', function ($q) use ($search) {
-        $q->where('nama_barang', 'like', "%{$search}%");
+      $query->where(function ($q) use ($search) {
+        $q->where('type', 'like', "%{$search}%")
+          ->orWhere('merek', 'like', "%{$search}%")
+          ->orWhereHas('kategori', function ($k) use ($search) {
+            $k->where('nama_barang', 'like', "%{$search}%");
+          });
       });
     }
 
-    $stoks = $stoks->get();
+    $stoks = $query->latest()->get();
 
-    return view('content.dashboard.transaksi-masuk.stok', compact('stoks'));
+    // 🔥 FILTER DROPDOWN
+    $perusahaans =
+      $user->role === 'super_admin' ? \App\Models\Perusahaan::orderBy('nama_perusahaan')->get() : collect();
+
+    return view('content.dashboard.transaksi-masuk.stok', compact('stoks', 'perusahaans'));
   }
   public function getKode($id)
   {

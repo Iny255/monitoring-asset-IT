@@ -40,7 +40,7 @@
                     <a href="{{ route('manager.laporan.stok') }}" class="btn btn-info btn-sm px-3">
                         Cek Stok
                     </a>
-@else
+                @else
                     <a href="{{ url('/dashboard/transaksi-masuk/stok') }}" class="btn btn-info btn-sm px-3">
                         Cek Stok
                     </a>
@@ -53,59 +53,114 @@
         {{-- BODY --}}
         <div class="card-body ">
 
-            {{-- SEARCH --}}
+            {{-- SEARCH + FILTER --}}
             <form method="GET" action="{{ route('transaksi-keluar.index') }}" class="row g-2 mb-4">
-                <div class="col-md-6 d-flex">
-                    <input type="text" name="search" class="form-control me-2"
-                        placeholder="Cari berdasarkan nama barang" value="{{ request('search') }}">
 
-                    <button type="submit" class="btn btn-primary px-4">
+                {{-- SEARCH --}}
+                <div class="col-md-4">
+                    <input type="text" name="search" class="form-control" placeholder="Cari berdasarkan nama barang"
+                        value="{{ request('search') }}">
+                </div>
+
+                {{-- FILTER PERUSAHAAN KHUSUS SUPER ADMIN --}}
+                @if (auth()->user()->role === 'super_admin')
+
+                    <div class="col-md-4">
+
+                        <select name="perusahaan_id" class="form-select">
+
+                            <option value="">-- Semua Perusahaan --</option>
+
+                            @foreach ($perusahaans as $p)
+                                <option value="{{ $p->id }}"
+                                    {{ request('perusahaan_id') == $p->id ? 'selected' : '' }}>
+
+                                    {{ $p->nama_perusahaan }}
+
+                                </option>
+                            @endforeach
+
+                        </select>
+
+                    </div>
+
+                @endif
+
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">
                         Cari
                     </button>
                 </div>
+
             </form>
 
 
             <div class="table-responsive">
+
                 <table class="table table-bordered table-hover">
+
                     <thead class="table-primary text-center">
+
                         <tr>
+
                             <th>KODE KELUAR</th>
+
+                            {{-- TAMBAHAN --}}
+                            <th>PERUSAHAAN</th>
+
                             <th>NAMA BARANG</th>
                             <th>TYPE</th>
                             <th>NAMA KARYAWAN</th>
                             <th>DIVISI</th>
                             <th>JUMLAH</th>
                             <th width="120">AKSI</th>
+
                         </tr>
+
                     </thead>
 
                     <tbody>
+
                         @forelse ($keluars as $keluar)
                             <tr>
+
                                 <td class="text-center">
+
                                     <span class="badge bg-label-primary">
                                         {{ $keluar->kode_keluar }}
                                     </span>
+
+                                </td>
+
+                                {{-- PERUSAHAAN --}}
+                                <td>
+                                    {{ $keluar->perusahaan->nama_perusahaan ?? '-' }}
                                 </td>
 
                                 {{-- NAMA BARANG --}}
-                                <td>{{ optional(optional($keluar->masuk)->kategori)->nama_barang ?? '-' }}</td>
+                                <td>
+                                    {{ optional(optional($keluar->masuk)->kategori)->nama_barang ?? '-' }}
+                                </td>
 
                                 {{-- TYPE --}}
-                                <td>{{ optional($keluar->masuk)->type ?? '-' }}</td>
+                                <td>
+                                    {{ optional($keluar->masuk)->type ?? '-' }}
+                                </td>
 
                                 {{-- NAMA KARYAWAN --}}
                                 <td>
+
                                     @if ($keluar->jenis_penerima == 'Perorangan')
                                         {{ optional($keluar->karyawan)->nama_karyawan ?? '-' }}
                                     @else
                                         -
                                     @endif
+
                                 </td>
 
                                 {{-- DIVISI --}}
                                 <td>
+
                                     @if ($keluar->jenis_penerima == 'Perorangan')
                                         {{ optional($keluar->karyawan)->divisi ?? '-' }}
                                     @elseif($keluar->jenis_penerima == 'Perdivisi')
@@ -113,12 +168,13 @@
                                     @else
                                         -
                                     @endif
+
                                 </td>
 
-
-
                                 {{-- JUMLAH --}}
-                                <td class="text-center">{{ $keluar->jumlah }}</td>
+                                <td class="text-center">
+                                    {{ $keluar->jumlah }}
+                                </td>
 
                                 {{-- AKSI --}}
                                 <td class="text-center aksi-col">
@@ -128,41 +184,59 @@
                                         @if (auth()->user()->role === 'petugas' || auth()->user()->role === 'super_admin')
                                             <a href="{{ route('transaksi-keluar.show', $keluar->id) }}"
                                                 class="btn btn-info btn-sm">
+
                                                 <i class="bx bx-show"></i>
+
                                             </a>
 
                                             <button class="btn btn-warning btn-sm btn-edit" data-id="{{ $keluar->id }}">
+
                                                 <i class="bx bx-edit-alt"></i>
+
                                             </button>
 
                                             <form id="delete-form-{{ $keluar->id }}"
                                                 action="{{ route('transaksi-keluar.destroy', $keluar->id) }}"
                                                 method="POST" style="display:none;">
+
                                                 @csrf
                                                 @method('DELETE')
+
                                             </form>
 
                                             <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $keluar->id }}">
+
                                                 <i class="bx bx-trash"></i>
+
                                             </button>
                                         @elseif(auth()->user()->role === 'manager')
                                             <a href="{{ route('manager.laporan.keluar.show', $keluar->id) }}"
                                                 class="btn btn-info btn-sm">
+
                                                 <i class="bx bx-show"></i>
+
                                             </a>
                                         @endif
 
                                     </div>
 
                                 </td>
+
                             </tr>
+
                         @empty
+
                             <tr>
-                                <td colspan="7" class="text-center text-muted">
+
+                                <td colspan="8" class="text-center text-muted">
+
                                     Data barang keluar belum ada.
+
                                 </td>
+
                             </tr>
                         @endforelse
+
                     </tbody>
 
                 </table>
@@ -170,6 +244,7 @@
                 <div class="mt-4">
                     {{ $keluars->links('pagination::bootstrap-4') }}
                 </div>
+
             </div>
         </div>
     </div>
