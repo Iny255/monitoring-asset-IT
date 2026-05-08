@@ -296,27 +296,43 @@
 
 
         // AUTO KODE
-        const select = document.getElementById('perusahaanSelect');
-        const kode = document.getElementById('kodeLokasi');
+        const kodeLokasi = document.getElementById('kodeLokasi');
 
-        if (select) {
-            select.addEventListener('change', function() {
+        @if (auth()->user()->role === 'super_admin')
+
+            // SUPER ADMIN
+            const perusahaanSelect =
+                document.getElementById('perusahaanSelect');
+
+            perusahaanSelect.addEventListener('change', function() {
 
                 let perusahaanId = this.value;
 
                 if (!perusahaanId) {
-                    kode.value = '';
+                    kodeLokasi.value = '';
                     return;
                 }
 
                 fetch(`/dashboard/get-kode-lokasi/${perusahaanId}`)
+
                     .then(res => res.json())
+
                     .then(data => {
-                        kode.value = data.kode;
+                        kodeLokasi.value = data.kode;
                     });
 
             });
-        }
+        @else
+
+            // PETUGAS
+            fetch(`/dashboard/get-kode-lokasi/{{ auth()->user()->id_perusahaan }}`)
+
+                .then(res => res.json())
+
+                .then(data => {
+                    kodeLokasi.value = data.kode;
+                });
+        @endif
 
         //auto kode edit
         const editPerusahaan = document.getElementById('edit_perusahaan');

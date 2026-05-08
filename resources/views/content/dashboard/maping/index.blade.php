@@ -24,7 +24,7 @@
                 <h5 class="text-primary mb-0">Data Mapping</h5>
 
                 {{-- HANYA PETUGAS BISA TAMBAH --}}
-                @if (auth()->user()->role == 'petugas')
+                @if (auth()->user()->role == 'petugas' || auth()->user()->role == 'super_admin')
                     <a href="/dashboard/maping/create" class="btn btn-primary">
                         Tambah Data Mapping
                     </a>
@@ -61,7 +61,7 @@
 
                 {{-- KANAN: CETAK --}}
                 <div>
-                    @if (auth()->user()->role === 'petugas')
+                    @if (auth()->user()->role === 'petugas' || auth()->user()->role === 'super_admin')
                         <a href="{{ route('maping.print', request()->query()) }}" target="_blank" class="btn btn-success">
                             🖨️ Cetak
                         </a>
@@ -119,7 +119,7 @@
                                 <td class="text-center">
 
                                     {{-- ================= PETUGAS ================= --}}
-                                    @if (auth()->user()->role === 'petugas')
+                                    @if (auth()->user()->role === 'petugas' || auth()->user()->role === 'super_admin')
                                         {{-- SHOW --}}
                                         <a href="{{ route('maping.show', $maping->id) }}" class="btn btn-info btn-sm">
                                             <i class="bx bx-show"></i>
@@ -272,31 +272,81 @@
                     <div class="modal-body">
                         <div class="row">
 
-                            <div class="col-md-6 mb-3">
-                                <label>Lokasi</label>
-                                <select name="lokasi" class="form-select">
-                                    <option value="">-- Semua --</option>
-                                    @foreach ($lokasis as $l)
-                                        <option value="{{ $l->id }}"
-                                            {{ request('lokasi') == $l->id ? 'selected' : '' }}>
-                                            {{ $l->nama_lokasi }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
+                            {{-- ========================================= --}}
+                            {{-- SUPER ADMIN --}}
+                            {{-- ========================================= --}}
+                            @if (auth()->user()->role === 'super_admin')
 
-                            <div class="col-md-6 mb-3">
-                                <label>Perusahaan</label>
-                                <select name="perusahaan" class="form-select">
-                                    <option value="">-- Semua --</option>
-                                    @foreach ($perusahaans as $p)
-                                        <option value="{{ $p->id }}"
-                                            {{ request('perusahaan') == $p->id ? 'selected' : '' }}>
-                                            {{ $p->nama_perusahaan }}
+                                {{-- PERUSAHAAN --}}
+                                <div class="col-md-6 mb-3">
+
+                                    <label>
+                                        Perusahaan
+                                    </label>
+
+                                    <select name="perusahaan" id="filter_perusahaan" class="form-select">
+
+                                        <option value="">
+                                            -- Pilih Perusahaan --
                                         </option>
-                                    @endforeach
-                                </select>
-                            </div>
+
+                                        @foreach ($perusahaans as $p)
+                                            <option value="{{ $p->id }}"
+                                                {{ request('perusahaan') == $p->id ? 'selected' : '' }}>
+
+                                                {{ $p->nama_perusahaan }}
+
+                                            </option>
+                                        @endforeach
+
+                                    </select>
+
+                                </div>
+
+                                {{-- LOKASI --}}
+                                <div class="col-md-6 mb-3">
+
+                                    <label>
+                                        Lokasi
+                                    </label>
+
+                                    <select name="lokasi" id="filter_lokasi" class="form-select">
+
+                                        <option value="">
+                                            -- Pilih Lokasi --
+                                        </option>
+
+                                    </select>
+
+                                </div>
+                            @else
+                                {{-- USER BIASA --}}
+                                <div class="col-md-6 mb-3">
+
+                                    <label>
+                                        Lokasi
+                                    </label>
+
+                                    <select name="lokasi" class="form-select">
+
+                                        <option value="">
+                                            -- Semua --
+                                        </option>
+
+                                        @foreach ($lokasis as $l)
+                                            <option value="{{ $l->id }}"
+                                                {{ request('lokasi') == $l->id ? 'selected' : '' }}>
+
+                                                {{ $l->nama_lokasi }}
+
+                                            </option>
+                                        @endforeach
+
+                                    </select>
+
+                                </div>
+
+                            @endif
 
                             <div class="col-md-6 mb-3">
                                 <label>Tahun</label>
@@ -442,6 +492,76 @@
                 });
 
             });
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const perusahaanSelect =
+                document.getElementById('filter_perusahaan');
+
+            const lokasiSelect =
+                document.getElementById('filter_lokasi');
+
+            // khusus super admin
+            if (perusahaanSelect && lokasiSelect) {
+
+                // load lokasi jika perusahaan sudah dipilih
+                if (perusahaanSelect.value) {
+
+                    loadLokasi(
+                        perusahaanSelect.value,
+                        "{{ request('lokasi') }}"
+                    );
+
+                }
+
+                perusahaanSelect.addEventListener('change', function() {
+
+                    lokasiSelect.innerHTML =
+                        '<option value="">-- Pilih Lokasi --</option>';
+
+                    if (!this.value) {
+                        return;
+                    }
+
+                    loadLokasi(this.value);
+
+                });
+
+            }
+
+            function loadLokasi(perusahaanId, selectedLokasi = null) {
+
+                fetch(`/maping/lokasi-by-perusahaan/${perusahaanId}`)
+
+                    .then(response => response.json())
+
+                    .then(data => {
+
+                        lokasiSelect.innerHTML =
+                            '<option value="">-- Semua --</option>';
+
+                        data.forEach(lokasi => {
+
+                            lokasiSelect.innerHTML += `
+                        <option value="${lokasi.id}"
+                            ${selectedLokasi == lokasi.id ? 'selected' : ''}>
+                            ${lokasi.nama_lokasi}
+                        </option>
+                    `;
+
+                        });
+
+                    })
+
+                    .catch(error => {
+
+                        console.log(error);
+
+                    });
+
+            }
+
         });
     </script>
 

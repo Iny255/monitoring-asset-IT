@@ -52,7 +52,7 @@ Route::middleware(['auth'])->group(function () {
   Route::get('/dashboard/get-kode-masuk/{id}', [MasukController::class, 'getKode']);
   Route::get('/dashboard/get-kategori/{id}', [MasukController::class, 'getKategori']);
   Route::get('/dashboard/get-kode-keluar/{id}', [KeluarController::class, 'getKodeKeluar']);
-
+  Route::get('/maping/lokasi-by-perusahaan/{id}', [MapingController::class, 'getLokasiByPerusahaan']);
   /*
     |--------------------------------------------------------------------------
     | PETUGAS (SUPERADMIN JUGA BISA)

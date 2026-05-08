@@ -126,10 +126,21 @@ class MapingController extends Controller
    */
   public function create()
   {
-    return view('content.dashboard.maping.create', [
-      'lokasis' => Lokasi::orderBy('nama_lokasi')->get(),
-      'perusahaans' => Perusahaan::orderBy('nama_perusahaan')->get(),
-    ]);
+    $user = auth()->user();
+
+    if ($user->role === 'super_admin') {
+      $lokasis = collect();
+
+      $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+    } else {
+      $lokasis = Lokasi::where('perusahaan_id', $user->id_perusahaan)
+        ->orderBy('nama_lokasi')
+        ->get();
+
+      $perusahaans = collect();
+    }
+
+    return view('content.dashboard.maping.create', compact('lokasis', 'perusahaans'));
   }
 
   public function getBarangByKeluar(Request $request)
@@ -140,9 +151,18 @@ class MapingController extends Controller
       ]);
 
       // 🔍 Cari TANPA filter dulu
-      $keluar = Keluar::with(['masuk.kategori', 'karyawan'])
-        ->where('kode_barang', $request->kode_barang)
-        ->first();
+      $query = Keluar::with(['masuk.kategori', 'karyawan'])->where('kode_barang', $request->kode_barang);
+
+      // 🔥 SUPER ADMIN FILTER PERUSAHAAN
+      if (auth()->user()->role === 'super_admin') {
+        if ($request->perusahaan_id) {
+          $query->where('id_perusahaan', $request->perusahaan_id);
+        }
+      } else {
+        $query->where('id_perusahaan', auth()->user()->id_perusahaan);
+      }
+
+      $keluar = $query->first();
 
       // ❌ Tidak ada sama sekali
       if (!$keluar) {
@@ -153,7 +173,7 @@ class MapingController extends Controller
       }
 
       // ❌ Ada tapi beda perusahaan
-      if ($keluar->id_perusahaan != auth()->user()->id_perusahaan) {
+      if (auth()->user()->role !== 'super_admin' && $keluar->id_perusahaan != auth()->user()->id_perusahaan) {
         return response()->json([
           'status' => false,
           'message' => 'Kode barang bukan milik perusahaan Anda',
@@ -198,6 +218,9 @@ class MapingController extends Controller
    */
   public function store(Request $request)
   {
+    $user = auth()->user();
+
+    $perusahaanId = $user->role === 'super_admin' ? $request->id_perusahaan : $user->id_perusahaan;
     $request->validate([
       'id_keluar' => [
         'required',
@@ -210,7 +233,7 @@ class MapingController extends Controller
         },
       ],
       'id_lokasi' => 'required|exists:lokasis,id',
-      'id_perusahaan' => 'required|exists:perusahaans,id',
+      'id_perusahaan' => $user->role === 'super_admin' ? 'required|exists:perusahaans,id' : 'nullable',
       'processor' => 'nullable|string|max:100',
       'device_id' => [
         'nullable',
@@ -244,7 +267,7 @@ class MapingController extends Controller
       Maping::create([
         'id_keluar' => $request->id_keluar,
         'id_lokasi' => $request->id_lokasi,
-        'id_perusahaan' => $request->id_perusahaan,
+        'id_perusahaan' => $perusahaanId,
         'processor' => $request->processor,
         'device_id' => $request->device_id,
         'produk_id' => $request->produk_id,
@@ -295,16 +318,24 @@ class MapingController extends Controller
   /**
    * Show the form for editing the specified resource.
    */
-  public function edit(Maping $maping)
+  public function edit($id)
   {
-    $maping = Maping::where('id', $maping->id)
-      ->when(auth()->user()->role !== 'super_admin', function ($q) {
-        $q->where('id_perusahaan', auth()->user()->id_perusahaan);
-      })
-      ->firstOrFail();
-    $lokasis = Lokasi::orderBy('nama_lokasi')->get();
+    $user = auth()->user();
 
-    return view('content.dashboard.maping.edit', compact('maping', 'lokasis'));
+    $maping = Maping::with(['keluar.masuk.kategori', 'keluar.karyawan', 'lokasi', 'perusahaan'])->findOrFail($id);
+
+    // proteksi perusahaan
+    if ($user->role !== 'super_admin' && $maping->id_perusahaan != $user->id_perusahaan) {
+      abort(403);
+    }
+
+    // lokasi sesuai perusahaan
+    $lokasis = Lokasi::where('id_perusahaan', $maping->id_perusahaan)->get();
+
+    // perusahaan untuk super admin
+    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+
+    return view('content.dashboard.maping.edit', compact('maping', 'lokasis', 'perusahaans'));
   }
 
   /**
@@ -510,12 +541,21 @@ class MapingController extends Controller
     if ($user->role === 'super_admin') {
       $namaPerusahaan = $request->filled('perusahaan')
         ? optional(Perusahaan::find($request->perusahaan))->nama_perusahaan
-        : 'SEMUA PERUSAHAAN';
+        : 'SEMBILAN GROUP';
     } else {
       $namaPerusahaan = $user->perusahaan->nama_perusahaan ?? 'Perusahaan';
     }
 
     return view('content.dashboard.maping.print', compact('mapings', 'namaPerusahaan'));
+  }
+
+  public function getLokasiByPerusahaan($id)
+  {
+    $lokasis = \App\Models\Lokasi::where('id_perusahaan', $id)
+      ->orderBy('nama_lokasi')
+      ->get();
+
+    return response()->json($lokasis);
   }
   public function mutasiForm($id)
   {
@@ -548,47 +588,80 @@ class MapingController extends Controller
     DB::beginTransaction();
 
     try {
+      // =====================================
+      // SIMPAN HISTORY MUTASI
+      // =====================================
+
       MutasiMaping::create([
+        // RELASI
         'id_maping' => $maping->id,
 
+        // 🔥 WAJIB UNTUK MULTI PERUSAHAAN
+        'id_perusahaan' => $request->ke_perusahaan,
+
+        // =================================
+        // DARI
+        // =================================
+
         'dari_lokasi' => $maping->id_lokasi,
-        'ke_lokasi' => $request->ke_lokasi,
-
         'dari_perusahaan' => $maping->id_perusahaan,
-        'ke_perusahaan' => $request->ke_perusahaan,
-
         'dari_karyawan' => optional($maping->keluar)->id_karyawan,
-        'ke_karyawan' => $request->ke_karyawan ?: optional($maping->keluar)->id_karyawan,
 
         'dari_no_inventaris' => optional($maping->keluar)->no_inventaris,
+        'dari_aplikasi' => $maping->aplikasi,
+        'dari_data_ppn' => $maping->data_p,
+        'dari_data_non_ppn' => $maping->data_n,
+
+        // =================================
+        // KE
+        // =================================
+
+        'ke_lokasi' => $request->ke_lokasi,
+        'ke_perusahaan' => $request->ke_perusahaan,
+
+        'ke_karyawan' => $request->ke_karyawan ?: optional($maping->keluar)->id_karyawan,
+
         'ke_no_inventaris' => $request->ke_no_inventaris,
 
-        'dari_aplikasi' => $maping->aplikasi,
         'ke_aplikasi' => $request->ke_aplikasi,
 
-        'dari_data_ppn' => $maping->data_p,
         'ke_data_ppn' => $request->ke_data_ppn,
 
-        'dari_data_non_ppn' => $maping->data_n,
         'ke_data_non_ppn' => $request->ke_data_non_ppn,
 
+        // =================================
+        // LAINNYA
+        // =================================
+
         'tanggal_mutasi' => $request->tanggal_mutasi,
+
         'keterangan' => $request->keterangan,
       ]);
 
+      // =====================================
       // UPDATE MAPING
+      // =====================================
+
       $maping->update([
         'id_lokasi' => $request->ke_lokasi,
+
         'id_perusahaan' => $request->ke_perusahaan,
+
         'aplikasi' => $request->ke_aplikasi,
+
         'data_p' => $request->ke_data_ppn,
+
         'data_n' => $request->ke_data_non_ppn,
       ]);
 
+      // =====================================
       // UPDATE KELUAR
+      // =====================================
+
       if ($maping->keluar) {
         $maping->keluar->update([
           'id_karyawan' => $request->ke_karyawan ?: $maping->keluar->id_karyawan,
+
           'no_inventaris' => $request->ke_no_inventaris ?: $maping->keluar->no_inventaris,
         ]);
       }
@@ -600,33 +673,62 @@ class MapingController extends Controller
         ->with('success', 'Mutasi berhasil disimpan');
     } catch (\Exception $e) {
       DB::rollBack();
+
       dd($e->getMessage());
     }
   }
   public function searchKaryawan(Request $request)
   {
     $q = $request->q;
+    $perusahaanId = $request->perusahaan_id;
 
-    if (!$q) {
-      return response()->json([]);
-    }
+    $karyawan = \App\Models\Karyawan::query()
 
-    $data = \App\Models\Karyawan::where('nama_karyawan', 'like', "%$q%")
-      ->where('id_perusahaan', auth()->user()->id_perusahaan) // 🔥 INI KUNCINYA
+      ->when($perusahaanId, function ($query) use ($perusahaanId) {
+        $query->where('id_perusahaan', $perusahaanId);
+      })
+
+      ->when($q, function ($query) use ($q) {
+        $query->where('nama_karyawan', 'like', '%' . $q . '%');
+      })
+
       ->limit(10)
+
       ->get(['id', 'nama_karyawan']);
 
-    return response()->json($data);
+    return response()->json($karyawan);
   }
 
-  public function historyGlobal()
+  public function historyGlobal(Request $request)
   {
-    $mapings = Maping::with(['keluar.masuk.kategori'])
-      ->whereHas('mutasiMapings') // hanya yang punya mutasi
-      ->latest()
-      ->paginate(5);
+    $query = Maping::with(['keluar.masuk.kategori', 'perusahaan']);
 
-    return view('content.dashboard.maping.history_global', compact('mapings'));
+    // =====================================
+    // FILTER SUPER ADMIN
+    // =====================================
+
+    if (auth()->user()->role === 'super_admin') {
+      if ($request->perusahaan) {
+        $query->where('id_perusahaan', $request->perusahaan);
+      }
+
+      $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+    } else {
+      $query->where('id_perusahaan', auth()->user()->id_perusahaan);
+
+      $perusahaans = [];
+    }
+
+    // =====================================
+    // PAGINATION
+    // =====================================
+
+    $mapings = $query
+      ->latest()
+      ->paginate(5)
+      ->appends($request->query());
+
+    return view('content.dashboard.maping.history_global', compact('mapings', 'perusahaans'));
   }
 
   public function destroyMutasi($id)

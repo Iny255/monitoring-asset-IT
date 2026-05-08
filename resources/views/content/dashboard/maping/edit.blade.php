@@ -28,13 +28,58 @@
                 <input type="hidden" id="id_maping" value="{{ $maping->id }}">
                 <div class="row g-3">
 
-                    {{-- KODE BARANG --}}
+                    {{-- ========================================= --}}
+                    {{-- PERUSAHAAN --}}
+                    {{-- ========================================= --}}
                     <div class="col-md-6">
-                        <label class="form-label fw-semibold">Kode Barang</label>
+
+                        <label class="form-label fw-semibold">
+                            Perusahaan
+                        </label>
+
+                        @if (auth()->user()->role === 'super_admin')
+
+                            <select name="id_perusahaan" id="id_perusahaan" class="form-select" required>
+
+                                <option value="">
+                                    -- Pilih Perusahaan --
+                                </option>
+
+                                @foreach ($perusahaans as $p)
+                                    <option value="{{ $p->id }}"
+                                        {{ $maping->id_perusahaan == $p->id ? 'selected' : '' }}>
+
+                                        {{ $p->nama_perusahaan }}
+
+                                    </option>
+                                @endforeach
+
+                            </select>
+                        @else
+                            <input type="text" class="form-control"
+                                value="{{ auth()->user()->perusahaan->nama_perusahaan ?? '-' }}" readonly>
+
+                            <input type="hidden" name="id_perusahaan" id="id_perusahaan"
+                                value="{{ auth()->user()->id_perusahaan }}">
+
+                        @endif
+
+                    </div>
+
+                    {{-- ========================================= --}}
+                    {{-- KODE BARANG --}}
+                    {{-- ========================================= --}}
+                    <div class="col-md-6">
+
+                        <label class="form-label fw-semibold">
+                            Kode Barang
+                        </label>
+
                         <input type="text" id="kode_barang" class="form-control"
                             value="{{ $maping->keluar->kode_barang ?? '' }}" autocomplete="off" required>
 
                         <input type="hidden" name="id_keluar" id="id_keluar" value="{{ $maping->id_keluar }}">
+
                     </div>
 
                     {{-- DATA BARANG --}}
@@ -72,29 +117,35 @@
 
                     </div>
 
+                    {{-- ========================================= --}}
                     {{-- LOKASI --}}
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Lokasi</label>
-                        <select name="id_lokasi" class="form-select">
-                            <option value="">-- Pilih Lokasi --</option>
+                    {{-- ========================================= --}}
+                    <div class="col-md-4">
+
+                        <label class="form-label fw-semibold">
+                            Lokasi
+                        </label>
+
+                        <select name="id_lokasi" id="id_lokasi" class="form-select" required>
+
+                            <option value="">
+                                -- Pilih Lokasi --
+                            </option>
+
                             @foreach ($lokasis as $lokasi)
                                 <option value="{{ $lokasi->id }}"
                                     {{ $maping->id_lokasi == $lokasi->id ? 'selected' : '' }}>
+
                                     {{ $lokasi->nama_lokasi }}
+
                                 </option>
                             @endforeach
+
                         </select>
+
                     </div>
 
-                    {{-- PERUSAHAAN --}}
-                    <div class="col-md-6">
-                        <label class="form-label fw-semibold">Perusahaan</label>
 
-                        <input type="text" class="form-control"
-                            value="{{ auth()->user()->perusahaan->nama_perusahaan }}" readonly>
-
-                        <input type="hidden" name="id_perusahaan" value="{{ auth()->user()->id_perusahaan }}">
-                    </div>
                     {{-- STATUS INVENTARIS --}}
                     <div class="col-md-6">
                         <label class="form-label fw-semibold">Status Inventaris</label>
@@ -194,119 +245,232 @@
 
 @endsection
 
-@section('scripts')
-    <meta name="csrf-token" content="{{ csrf_token() }}">
+
 
 @section('scripts')
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
     <script>
-        let sudahValidasi = false;
-        let kodeTerakhir = document.getElementById('kode_barang').value;
+        let kodeTerakhir =
+            document.getElementById('kode_barang').value;
 
-        /* ===============================
-           VALIDASI SAAT FOCUS NAMA BARANG
-        =================================*/
-        document.getElementById('nama_barang').addEventListener('focus', function() {
+        /* =====================================
+           VALIDASI KODE BARANG
+        ===================================== */
+        document.getElementById('nama_barang')
+            .addEventListener('focus', function() {
 
-            const kodeBarang = document.getElementById('kode_barang').value.trim();
-            const idMaping = document.getElementById('id_maping').value;
+                const kodeBarang =
+                    document.getElementById('kode_barang').value.trim();
 
-            // Jika kode kosong
-            if (!kodeBarang) {
-                if (!sudahValidasi) {
-                    sudahValidasi = true;
-                    Swal.fire('Peringatan', 'Isi kode barang dulu', 'warning');
+                const perusahaanId =
+                    document.getElementById('id_perusahaan')?.value;
+
+                const idMaping =
+                    document.getElementById('id_maping').value;
+
+                // validasi perusahaan
+                if (!perusahaanId) {
+
+                    Swal.fire(
+                        'Peringatan',
+                        'Pilih perusahaan terlebih dahulu',
+                        'warning'
+                    );
+
+                    return;
                 }
-                return;
-            }
 
-            // Jika kode tidak berubah → jangan validasi ulang
-            if (kodeBarang === kodeTerakhir) {
-                return;
-            }
+                // validasi kode
+                if (!kodeBarang) {
 
-            fetch("{{ route('maping.getBarang') }}", {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').content
-                    },
-                    body: JSON.stringify({
-                        kode_barang: kodeBarang,
-                        id_maping: idMaping // penting untuk EDIT
+                    Swal.fire(
+                        'Peringatan',
+                        'Isi kode barang terlebih dahulu',
+                        'warning'
+                    );
+
+                    return;
+                }
+
+                // kode tidak berubah
+                if (kodeBarang === kodeTerakhir) {
+                    return;
+                }
+
+                fetch("{{ route('maping.getBarang') }}", {
+
+                        method: "POST",
+
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-TOKEN": document.querySelector(
+                                'meta[name="csrf-token"]').content
+                        },
+
+                        body: JSON.stringify({
+                            kode_barang: kodeBarang,
+                            perusahaan_id: perusahaanId,
+                            id_maping: idMaping
+                        })
+
                     })
-                })
-                .then(res => res.json())
-                .then(res => {
 
-                    /* ===============================
-                       KODE TIDAK DITEMUKAN
-                    =================================*/
-                    if (!res.status && !res.used) {
+                    .then(res => res.json())
+
+                    .then(res => {
+
+                        // tidak ditemukan
+                        if (!res.status && !res.used) {
+
+                            resetBarang();
+
+                            Swal.fire(
+                                'Gagal',
+                                'Kode barang tidak ditemukan',
+                                'error'
+                            );
+
+                            return;
+                        }
+
+                        // sudah dipakai
+                        if (res.used) {
+
+                            resetBarang();
+
+                            Swal.fire(
+                                'Gagal',
+                                'Kode barang sudah dipakai',
+                                'error'
+                            );
+
+                            return;
+                        }
+
+                        // sukses
+                        kodeTerakhir = kodeBarang;
+
+                        document.getElementById('id_keluar').value =
+                            res.data.id_keluar ?? '';
+
+                        document.getElementById('nama_barang').value =
+                            res.data.nama_barang ?? '';
+
+                        document.getElementById('type').value =
+                            res.data.type ?? '';
+
+                        document.getElementById('merek').value =
+                            res.data.merek ?? '';
+
+                        document.getElementById('warna').value =
+                            res.data.warna ?? '';
+
+                        document.getElementById('nama_karyawan').value =
+                            res.data.nama_karyawan ?? '';
+
+                    })
+
+                    .catch(err => {
+
+                        console.log(err);
+
                         resetBarang();
 
-                        if (!sudahValidasi) {
-                            sudahValidasi = true;
-                            Swal.fire('Gagal', 'Kode barang tidak ditemukan', 'error');
-                        }
-                        return;
-                    }
+                        Swal.fire(
+                            'Error',
+                            'Terjadi kesalahan server',
+                            'error'
+                        );
 
-                    /* ===============================
-                       KODE SUDAH DIPAKAI
-                    =================================*/
-                    if (res.used) {
-                        resetBarang();
+                    });
 
-                        if (!sudahValidasi) {
-                            sudahValidasi = true;
-                            Swal.fire('Gagal', 'Kode barang sudah dipakai', 'error');
-                        }
-                        return;
-                    }
+            });
 
-                    /* ===============================
-                       DATA VALID
-                    =================================*/
-                    sudahValidasi = false;
-                    kodeTerakhir = kodeBarang;
-
-                    document.getElementById('id_keluar').value = res.data.id_keluar ?? '';
-                    document.getElementById('nama_barang').value = res.data.nama_barang ?? '';
-                    document.getElementById('type').value = res.data.type ?? '';
-                    document.getElementById('merek').value = res.data.merek ?? '';
-                    document.getElementById('warna').value = res.data.warna ?? '';
-                    document.getElementById('nama_karyawan').value = res.data.nama_karyawan ?? '';
-                })
-                .catch(err => {
-                    console.error(err);
-                    resetBarang();
-                });
-
-        });
-
-
-        /* ===============================
-           RESET FLAG JIKA KODE DIUBAH
-        =================================*/
-        document.getElementById('kode_barang').addEventListener('input', function() {
-            sudahValidasi = false;
-        });
-
-
-        /* ===============================
-           RESET FIELD BARANG
-        =================================*/
+        /* =====================================
+           RESET BARANG
+        ===================================== */
         function resetBarang() {
+
             document.getElementById('id_keluar').value = '';
             document.getElementById('nama_barang').value = '';
             document.getElementById('type').value = '';
             document.getElementById('merek').value = '';
             document.getElementById('warna').value = '';
             document.getElementById('nama_karyawan').value = '';
-        }
-    </script>
-@endsection
 
+        }
+
+        /* =====================================
+           LOAD LOKASI BERDASARKAN PERUSAHAAN
+        ===================================== */
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const perusahaanSelect =
+                document.getElementById('id_perusahaan');
+
+            const lokasiSelect =
+                document.getElementById('id_lokasi');
+
+            const lokasiSelected =
+                "{{ $maping->id_lokasi }}";
+
+            // super admin
+            if (
+                perusahaanSelect &&
+                "{{ auth()->user()->role }}" === 'super_admin'
+            ) {
+
+                loadLokasi(perusahaanSelect.value);
+
+                perusahaanSelect.addEventListener('change', function() {
+
+                    resetBarang();
+
+                    document.getElementById('kode_barang').value = '';
+
+                    loadLokasi(this.value);
+
+                });
+
+            }
+
+            function loadLokasi(perusahaanId) {
+
+                lokasiSelect.innerHTML =
+                    '<option value="">-- Pilih Lokasi --</option>';
+
+                if (!perusahaanId) {
+                    return;
+                }
+
+                fetch(`/maping/lokasi-by-perusahaan/${perusahaanId}`)
+
+                    .then(response => response.json())
+
+                    .then(data => {
+
+                        data.forEach(lokasi => {
+
+                            lokasiSelect.innerHTML += `
+                            <option value="${lokasi.id}"
+                                ${lokasi.id == lokasiSelected ? 'selected' : ''}>
+                                ${lokasi.nama_lokasi}
+                            </option>
+                        `;
+
+                        });
+
+                    })
+
+                    .catch(error => {
+
+                        console.log(error);
+
+                    });
+
+            }
+
+        });
+    </script>
 @endsection
