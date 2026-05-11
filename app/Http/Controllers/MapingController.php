@@ -701,7 +701,7 @@ class MapingController extends Controller
 
   public function historyGlobal(Request $request)
   {
-    $query = Maping::with(['keluar.masuk.kategori', 'perusahaan']);
+    $query = Maping::with(['keluar.masuk.kategori', 'perusahaan'])->whereHas('mutasiMapings');
 
     // =====================================
     // FILTER SUPER ADMIN
@@ -720,6 +720,22 @@ class MapingController extends Controller
     }
 
     // =====================================
+    // SEARCH BARANG
+    // =====================================
+
+    if ($request->search) {
+      $search = $request->search;
+
+      $query->where(function ($q) use ($search) {
+        $q->whereHas('keluar', function ($k) use ($search) {
+          $k->where('kode_barang', 'like', "%{$search}%");
+        })->orWhereHas('keluar.masuk.kategori', function ($k) use ($search) {
+          $k->where('nama_barang', 'like', "%{$search}%");
+        });
+      });
+    }
+
+    // =====================================
     // PAGINATION
     // =====================================
 
@@ -733,16 +749,25 @@ class MapingController extends Controller
 
   public function destroyMutasi($id)
   {
-    $mutasi = \App\Models\MutasiMaping::findOrFail($id);
-    $mutasi->delete();
+    try {
 
-    if (request()->ajax()) {
-      return response()->json([
-        'success' => true,
-      ]);
+        $mutasi = MutasiMaping::findOrFail($id);
+
+        $mutasi->delete();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'History mutasi berhasil dihapus'
+        ]);
+
+    } catch (\Exception $e) {
+
+        return response()->json([
+            'success' => false,
+            'message' => $e->getMessage()
+        ], 500);
+
     }
-
-    return back()->with('success', 'Data berhasil dihapus');
   }
   public function cabut(Request $request, $id)
   {
@@ -777,18 +802,53 @@ class MapingController extends Controller
       return back()->with('error', $e->getMessage());
     }
   }
-  public function historyCabut()
+  public function historyCabut(Request $request)
   {
-    $query = Pencabutan::with(['lokasi', 'perusahaan', 'karyawan', 'keluar.masuk.kategori']);
+    $query = Pencabutan::with(['keluar.masuk.kategori', 'lokasi', 'perusahaan', 'karyawan']);
 
-    // 🔒 FILTER PERUSAHAAN
-    if (auth()->user()->role !== 'super_admin') {
+    // =========================
+    // ROLE
+    // =========================
+    if (auth()->user()->role != 'super_admin') {
       $query->where('id_perusahaan', auth()->user()->id_perusahaan);
     }
 
-    $pencabutans = $query->latest()->paginate(10);
+    // =========================
+    // FILTER PERUSAHAAN
+    // =========================
+    if ($request->filled('perusahaan')) {
+      $query->where('id_perusahaan', $request->perusahaan);
+    }
 
-    return view('content.dashboard.maping.history_cabut', compact('pencabutans'));
+    // =========================
+    // SEARCH
+    // =========================
+    if ($request->filled('search')) {
+      $search = $request->search;
+
+      $query->where(function ($q) use ($search) {
+        $q->whereHas('keluar', function ($k) use ($search) {
+          $k->where('kode_barang', 'like', "%{$search}%");
+        })->orWhereHas('keluar.masuk.kategori', function ($k) use ($search) {
+          $k->where('nama_barang', 'like', "%{$search}%");
+        });
+      });
+    }
+
+    // =========================
+    // DATA
+    // =========================
+    $pencabutans = $query
+      ->latest()
+      ->paginate(5)
+      ->appends($request->query());
+
+    // =========================
+    // DATA PERUSAHAAN
+    // =========================
+    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+
+    return view('content.dashboard.maping.history_cabut', compact('pencabutans', 'perusahaans'));
   }
   public function hapusCabut($id)
   {

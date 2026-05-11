@@ -12,76 +12,100 @@
         <div class="card-header border-0 text-white py-4"
             style="background: linear-gradient(90deg,#0d3b66,#7b8dff); border-radius:12px 12px 0 0;">
 
-            <div class="row">
+            {{-- TITLE --}}
+            <div class="mb-3">
 
-                {{-- TITLE --}}
-                <div class="col-12 mb-3">
+                <h3 class="mb-1 text-white fw-bold">
+                    History Mutasi Barang
+                </h3>
 
-                    <h3 class="mb-1 text-white fw-bold">
-                        History Mutasi Barang
-                    </h3>
+                <small style="opacity:.9; font-size:14px;">
+                    Riwayat perpindahan lokasi, perusahaan, dan karyawan
+                </small>
 
-                    <small style="opacity:.9; font-size:14px;">
-                        Riwayat perpindahan lokasi, perusahaan, dan karyawan
-                    </small>
+            </div>
 
-                </div>
+            {{-- ========================================= --}}
+            {{-- FILTER --}}
+            {{-- ========================================= --}}
+            <form method="GET" action="{{ route('maping.historyGlobal') }}" class="row g-2 align-items-end">
 
-                {{-- FILTER --}}
+                {{-- FILTER PERUSAHAAN --}}
                 @if (auth()->user()->role === 'super_admin')
 
-                    <div class="col-md-4">
+                    <div class="col-md-3">
 
-                        <form method="GET">
+                        <label class="form-label text-white mb-1" style="font-size:11px; letter-spacing:.5px;">
 
-                            <label class="form-label text-white fw-semibold mb-2">
-                                Filter Perusahaan
-                            </label>
+                            PERUSAHAAN
 
-                            <div class="input-group">
+                        </label>
 
-                                <select name="perusahaan"
-                                    class="form-select border-0 shadow-sm"
-                                    onchange="this.form.submit()"
-                                    style="height:45px;">
+                        <select name="perusahaan" class="form-select border-0 shadow-sm"
+                            style="height:38px; font-size:13px;">
 
-                                    <option value="">
-                                        -- Semua Perusahaan --
-                                    </option>
+                            <option value="">
+                                -- Semua Perusahaan --
+                            </option>
 
-                                    @foreach ($perusahaans as $p)
+                            @foreach ($perusahaans as $p)
+                                <option value="{{ $p->id }}" {{ request('perusahaan') == $p->id ? 'selected' : '' }}>
 
-                                        <option value="{{ $p->id }}"
-                                            {{ request('perusahaan') == $p->id ? 'selected' : '' }}>
+                                    {{ $p->nama_perusahaan }}
 
-                                            {{ $p->nama_perusahaan }}
+                                </option>
+                            @endforeach
 
-                                        </option>
-
-                                    @endforeach
-
-                                </select>
-
-                                @if (request('perusahaan'))
-
-                                    <a href="{{ route('maping.historyGlobal') }}"
-                                        class="btn btn-light border-0 shadow-sm">
-
-                                        Reset
-
-                                    </a>
-
-                                @endif
-
-                            </div>
-
-                        </form>
+                        </select>
 
                     </div>
 
                 @endif
 
-            </div>
+
+                {{-- SEARCH --}}
+                <div class="{{ auth()->user()->role === 'super_admin' ? 'col-md-5' : 'col-md-7' }}">
+
+                    <label class="form-label text-white mb-1" style="font-size:11px; letter-spacing:.5px;">
+
+                        CARI BARANG
+
+                    </label>
+
+                    <input type="text" name="search" class="form-control border-0 shadow-sm"
+                        placeholder="Cari kode / nama barang..." value="{{ request('search') }}"
+                        style="height:38px; font-size:13px;">
+
+                </div>
+
+
+                {{-- BUTTON FILTER --}}
+                <div class="col-md-2">
+
+                    <button class="btn btn-light shadow-sm w-100" style="height:38px; font-size:13px;">
+
+                        Filter
+
+                    </button>
+
+                </div>
+
+
+                {{-- BUTTON RESET --}}
+                @if (request('search') || request('perusahaan'))
+                    <div class="col-md-2">
+
+                        <a href="{{ route('maping.historyGlobal') }}" class="btn btn-outline-light w-100"
+                            style="height:38px; font-size:13px;">
+
+                            Reset
+
+                        </a>
+
+                    </div>
+                @endif
+
+            </form>
 
         </div>
 
@@ -103,13 +127,10 @@
                                 No
                             </th>
 
-                            {{-- SUPER ADMIN --}}
                             @if (auth()->user()->role === 'super_admin')
-
                                 <th>
                                     Perusahaan
                                 </th>
-
                             @endif
 
                             <th width="180">
@@ -131,7 +152,6 @@
                     <tbody>
 
                         @forelse ($mapings as $m)
-
                             <tr>
 
                                 {{-- NOMOR --}}
@@ -141,35 +161,33 @@
 
                                 </td>
 
+
                                 {{-- PERUSAHAAN --}}
                                 @if (auth()->user()->role === 'super_admin')
-
                                     <td class="text-center">
 
-                                        <span class="badge rounded-pill bg-primary px-3 py-2"
-                                            style="font-size:13px;">
+                                        <span class="badge rounded-pill bg-primary px-3 py-2" style="font-size:13px;">
 
                                             {{ optional($m->perusahaan)->nama_perusahaan ?? '-' }}
 
                                         </span>
 
                                     </td>
-
                                 @endif
+
 
                                 {{-- KODE BARANG --}}
                                 <td class="text-center">
 
-                                    <button type="button"
-                                        class="badge bg-dark border-0 px-3 py-2 btn-show-detail"
-                                        data-id="{{ $m->id }}"
-                                        style="cursor:pointer; font-size:13px;">
+                                    <button type="button" class="badge bg-dark border-0 px-3 py-2 btn-show-detail"
+                                        data-id="{{ $m->id }}" style="cursor:pointer; font-size:13px;">
 
                                         {{ optional($m->keluar)->kode_barang ?? '-' }}
 
                                     </button>
 
                                 </td>
+
 
                                 {{-- JENIS BARANG --}}
                                 <td>
@@ -182,11 +200,11 @@
 
                                 </td>
 
+
                                 {{-- AKSI --}}
                                 <td class="text-center">
 
-                                    <button type="button"
-                                        class="btn btn-info btn-sm shadow-sm btn-show-history"
+                                    <button type="button" class="btn btn-info btn-sm shadow-sm btn-show-history"
                                         data-id="{{ $m->id }}">
 
                                         <i class="bx bx-show"></i>
@@ -211,7 +229,6 @@
                                 </td>
 
                             </tr>
-
                         @endforelse
 
                     </tbody>
@@ -220,47 +237,45 @@
 
             </div>
 
-            {{-- ========================================= --}}
-            {{-- PAGINATION --}}
-            {{-- ========================================= --}}
-            @if ($mapings->hasPages())
 
+            {{-- PAGINATION --}}
+            @if ($mapings->hasPages())
                 <div class="d-flex justify-content-end align-items-center mt-4">
 
-                    {{ $mapings->onEachSide(1)->links() }}
+                    {{ $mapings->appends(request()->query())->links() }}
 
                 </div>
-
             @endif
 
         </div>
 
     </div>
 
+
     {{-- ========================================= --}}
     {{-- MODAL HISTORY --}}
     {{-- ========================================= --}}
     <div class="modal fade" id="modalHistory" tabindex="-1">
 
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-dialog modal-xl">
 
             <div class="modal-content border-0 shadow">
 
-                <div class="modal-header text-white"
-                    style="background: linear-gradient(90deg,#0d3b66,#7b8dff);">
+                <div class="modal-header text-white" style="background: linear-gradient(90deg,#0d3b66,#7b8dff);">
 
                     <h5 class="mb-0 text-white fw-semibold">
+
                         History Mutasi
+
                     </h5>
 
-                    <button type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal">
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal">
+
                     </button>
 
                 </div>
 
-                <div class="modal-body" id="historyContent">
+                <div class="modal-body" id="historyContent" style="max-height:75vh; overflow-y:auto;">
 
                     <div class="text-center py-4">
 
@@ -280,30 +295,31 @@
 
     </div>
 
+
     {{-- ========================================= --}}
     {{-- MODAL DETAIL --}}
     {{-- ========================================= --}}
     <div class="modal fade" id="modalDetail" tabindex="-1">
 
-        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+       <div class="modal-dialog modal-lg" >
 
             <div class="modal-content border-0 shadow">
 
-                <div class="modal-header text-white"
-                    style="background: linear-gradient(90deg,#0d3b66,#7b8dff);">
+                <div class="modal-header text-white" style="background: linear-gradient(90deg,#0d3b66,#7b8dff);">
 
                     <h5 class="mb-0 text-white fw-semibold">
+
                         Informasi Barang
+
                     </h5>
 
-                    <button type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal">
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal">
+
                     </button>
 
                 </div>
 
-                <div class="modal-body" id="detailContent">
+              <div class="modal-body p-0" id="detailContent">
 
                     <div class="text-center py-4">
 
@@ -324,6 +340,7 @@
     </div>
 
 @endsection
+
 
 {{-- ========================================= --}}
 {{-- STYLE --}}
@@ -332,18 +349,40 @@
 
 <style>
 
-    .pagination{
-        margin-bottom:0;
-    }
+.modal-content{
+    overflow: visible !important;
+}
 
-    .pagination .page-link{
-        border-radius:8px;
-        margin:0 2px;
-    }
+.modal-body{
+    overflow: visible !important;
+}
+
+.history-card{
+    position: relative !important;
+    overflow: visible !important;
+    z-index: 1;
+}
+
+.btn-hapus{
+    position: absolute !important;
+    top: 15px !important;
+    right: 15px !important;
+
+    z-index: 999999 !important;
+
+    pointer-events: auto !important;
+
+    cursor: pointer !important;
+}
+
+.btn-hapus i{
+    pointer-events: none;
+}
 
 </style>
 
 @endsection
+
 
 {{-- ========================================= --}}
 {{-- SCRIPT --}}
@@ -352,7 +391,6 @@
 
     {{-- HISTORY --}}
     <script>
-
         document.addEventListener('click', function(e) {
 
             let btn = e.target.closest('.btn-show-history');
@@ -365,73 +403,72 @@
                 document.getElementById('historyContent');
 
             content.innerHTML = `
-                <div class="text-center py-4">
-                    <div class="spinner-border text-primary mb-3"></div>
-                    <div>Loading...</div>
-                </div>
-            `;
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary mb-3"></div>
+            <div>Loading...</div>
+        </div>
+    `;
 
             fetch(`/maping/${id}/history-user`, {
 
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Accept': 'text/html'
-                }
-
-            })
-
-            .then(res => {
-
-                if (!res.ok) {
-
-                    if (res.status === 403) {
-                        throw new Error('Akses ditolak (403)');
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'text/html'
                     }
 
-                    if (res.status === 404) {
-                        throw new Error('Data tidak ditemukan (404)');
+                })
+
+                .then(res => {
+
+                    if (!res.ok) {
+
+                        if (res.status === 403) {
+                            throw new Error('Akses ditolak (403)');
+                        }
+
+                        if (res.status === 404) {
+                            throw new Error('Data tidak ditemukan (404)');
+                        }
+
+                        throw new Error('Terjadi kesalahan server');
+
                     }
 
-                    throw new Error('Terjadi kesalahan server');
+                    return res.text();
 
-                }
+                })
 
-                return res.text();
+                .then(html => {
 
-            })
+                    content.innerHTML = html;
 
-            .then(html => {
+                    let modal =
+                        new bootstrap.Modal(
+                            document.getElementById('modalHistory')
+                        );
 
-                content.innerHTML = html;
+                    modal.show();
 
-                let modal =
-                    new bootstrap.Modal(
-                        document.getElementById('modalHistory')
-                    );
+                })
 
-                modal.show();
+                .catch(err => {
 
-            })
+                    console.error(err);
 
-            .catch(err => {
+                    content.innerHTML = `
+            <div class="alert alert-danger text-center">
+                ${err.message}
+            </div>
+        `;
 
-                console.error(err);
-
-                content.innerHTML = `
-                    <div class="alert alert-danger text-center">
-                        ${err.message}
-                    </div>
-                `;
-
-            });
+                });
 
         });
-
     </script>
+
 
     {{-- DETAIL --}}
     <script>
-
         document.addEventListener('click', function(e) {
 
             let btn = e.target.closest('.btn-show-detail');
@@ -441,44 +478,127 @@
             let id = btn.dataset.id;
 
             document.getElementById('detailContent').innerHTML = `
-                <div class="text-center py-4">
-                    <div class="spinner-border text-primary mb-3"></div>
-                    <div>Loading...</div>
-                </div>
-            `;
+        <div class="text-center py-4">
+            <div class="spinner-border text-primary mb-3"></div>
+            <div>Loading...</div>
+        </div>
+    `;
 
             fetch(`/maping/${id}/detail-ajax`)
 
-            .then(res => res.text())
+                .then(res => res.text())
 
-            .then(html => {
+                .then(html => {
 
-                document.getElementById('detailContent').innerHTML =
-                    html;
+                    document.getElementById('detailContent').innerHTML =
+                        html;
 
-                let modal =
-                    new bootstrap.Modal(
-                        document.getElementById('modalDetail')
-                    );
+                    let modal =
+                        new bootstrap.Modal(
+                            document.getElementById('modalDetail')
+                        );
 
-                modal.show();
+                    modal.show();
 
-            })
+                })
 
-            .catch(err => {
+                .catch(err => {
 
-                console.error(err);
+                    console.error(err);
 
-                document.getElementById('detailContent').innerHTML = `
-                    <div class="alert alert-danger text-center">
-                        Gagal load data
-                    </div>
-                `;
+                    document.getElementById('detailContent').innerHTML = `
+            <div class="alert alert-danger text-center">
+                Gagal load data
+            </div>
+        `;
 
-            });
+                });
 
         });
+    </script>
 
+
+    {{-- HAPUS HISTORY --}}
+    <script>
+        function hapusHistory(id) {
+            Swal.fire({
+
+                title: 'Hapus history?',
+                text: 'Data mutasi akan dihapus permanen',
+                icon: 'warning',
+
+                showCancelButton: true,
+
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#6c757d',
+
+                confirmButtonText: 'Ya, hapus',
+                cancelButtonText: 'Batal'
+
+            }).then((result) => {
+
+                if (!result.isConfirmed) return;
+
+                fetch(`/mutasi/${id}`, {
+
+                        method: 'DELETE',
+
+                        headers: {
+
+                            'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+
+                        }
+
+                    })
+
+                    .then(async res => {
+
+                        const data = await res.json();
+
+                        if (!res.ok) {
+
+                            throw new Error(
+                                data.message || 'Gagal menghapus data'
+                            );
+
+                        }
+
+                        return data;
+
+                    })
+
+                    .then(() => {
+
+                        Swal.fire({
+
+                            icon: 'success',
+                            title: 'Berhasil',
+                            text: 'History berhasil dihapus',
+                            timer: 1200,
+                            showConfirmButton: false
+
+                        });
+
+                        location.reload();
+
+                    })
+
+                    .catch(err => {
+
+                        Swal.fire({
+
+                            icon: 'error',
+                            title: 'Error',
+                            text: err.message
+
+                        });
+
+                    });
+
+            });
+        }
     </script>
 
 @endsection

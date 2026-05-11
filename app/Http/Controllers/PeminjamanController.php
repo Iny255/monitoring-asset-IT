@@ -20,32 +20,71 @@ class PeminjamanController extends Controller
   {
     $query = Peminjaman::with(['karyawan', 'kategori', 'keluar.masuk.kategori', 'perusahaan', 'lokasi']);
 
-    // ================= SEARCH =================
+    // =====================================
+    // SEARCH
+    // =====================================
+
     if ($request->search) {
       $search = $request->search;
 
       $query->where(function ($q) use ($search) {
-        // Cari KODE BARANG (dari tabel keluar)
+        // kode barang
         $q->whereHas('keluar', function ($k) use ($search) {
           $k->where('kode_barang', 'like', "%{$search}%");
         })
 
-          // Cari NAMA BARANG (dari kategori lewat masuk)
+          // nama barang
           ->orWhereHas('keluar.masuk.kategori', function ($k) use ($search) {
             $k->where('nama_barang', 'like', "%{$search}%");
           })
 
-          // Cari NAMA KARYAWAN
+          // nama karyawan
           ->orWhereHas('karyawan', function ($k) use ($search) {
             $k->where('nama_karyawan', 'like', "%{$search}%");
           });
       });
     }
 
-    // ================= ORDER & PAGINATION =================
-    $peminjamans = $query->orderBy('created_at', 'desc')->paginate(5);
+    // =====================================
+    // FILTER PERUSAHAAN
+    // =====================================
 
-    return view('content.dashboard.peminjaman.index', compact('peminjamans'));
+    if ($request->perusahaan) {
+      $query->where('perusahaan_id', $request->perusahaan);
+    }
+
+    // =====================================
+    // FILTER STATUS
+    // =====================================
+
+    if ($request->status) {
+      $query->where('status', $request->status);
+    }
+
+    // =====================================
+    // PETUGAS HANYA LIHAT PERUSAHAAN SENDIRI
+    // =====================================
+
+    if (auth()->user()->role != 'super_admin') {
+      $query->where('perusahaan_id', auth()->user()->id_perusahaan);
+    }
+
+    // =====================================
+    // DATA FILTER
+    // =====================================
+
+    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+
+    // =====================================
+    // PAGINATION
+    // =====================================
+
+    $peminjamans = $query
+      ->orderBy('created_at', 'desc')
+      ->paginate(5)
+      ->appends($request->query());
+
+    return view('content.dashboard.peminjaman.index', compact('peminjamans', 'perusahaans'));
   }
 
   /**
@@ -91,10 +130,12 @@ class PeminjamanController extends Controller
       $data['lokasi_id'] = null;
     } else {
       $data['karyawan_id'] = $request->karyawan_id;
+
       $data['perusahaan_id'] = $request->perusahaan_id;
+
       $data['lokasi_id'] = $request->lokasi_id;
 
-      // 🔥 kosongkan external biar bersih
+      // kosongkan external
       $data['nama_eksternal'] = null;
       $data['perusahaan_eksternal'] = null;
       $data['lokasi_manual'] = null;
@@ -254,9 +295,19 @@ class PeminjamanController extends Controller
   {
     $keyword = $request->q;
 
-    $data = Karyawan::where('nama_karyawan', 'like', "%$keyword%")
-      ->limit(10)
-      ->get(['id', 'nama_karyawan']);
+    $perusahaanId = $request->perusahaan_id;
+
+    $query = Karyawan::query();
+
+    // search nama
+    $query->where('nama_karyawan', 'like', "%{$keyword}%");
+
+    // filter perusahaan
+    if ($perusahaanId) {
+      $query->where('id_perusahaan', $perusahaanId);
+    }
+
+    $data = $query->limit(10)->get(['id', 'nama_karyawan']);
 
     return response()->json($data);
   }
@@ -279,5 +330,13 @@ class PeminjamanController extends Controller
     return response()->json([
       'dipinjam' => $dipinjam,
     ]);
+  }
+  public function lokasiByPerusahaan($id)
+  {
+    $lokasis = Lokasi::where('id_perusahaan', $id)
+      ->orderBy('nama_lokasi')
+      ->get();
+
+    return response()->json($lokasis);
   }
 }
