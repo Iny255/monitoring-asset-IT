@@ -133,9 +133,9 @@ class MapingController extends Controller
 
       $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
     } else {
-      $lokasis = Lokasi::where('perusahaan_id', $user->id_perusahaan)
-        ->orderBy('nama_lokasi')
-        ->get();
+     $lokasis = Lokasi::where('id_perusahaan', $user->id_perusahaan)
+    ->orderBy('nama_lokasi')
+    ->get();
 
       $perusahaans = collect();
     }

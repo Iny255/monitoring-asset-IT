@@ -27,7 +27,7 @@ class KategoriController extends Controller
         $query->where('perusahaan_id', $perusahaanId);
       }
     } else {
-      $query = \App\Models\Kategori::with('perusahaan')->where('perusahaan_id', $user->perusahaan->id);
+      $query = \App\Models\Kategori::with('perusahaan')->where('perusahaan_id', $user->id_perusahaan);
     }
 
     // 🔍 SEARCH
@@ -45,7 +45,7 @@ class KategoriController extends Controller
     if ($user->role === 'super_admin') {
       $perusahaanFix = $perusahaanId;
     } else {
-      $perusahaanFix = $user->perusahaan->id;
+      $perusahaanFix = $user->id_perusahaan;
     }
 
     // 🔥 generate kode berdasarkan perusahaan
@@ -89,7 +89,7 @@ class KategoriController extends Controller
       if ($user->role === 'super_admin') {
         $validatedData['perusahaan_id'] = $request->perusahaan_id;
       } else {
-        $validatedData['perusahaan_id'] = $user->perusahaan->id;
+        $validatedData['perusahaan_id'] = $user->id_perusahaan;
       }
 
       Kategori::create($validatedData);
@@ -134,17 +134,22 @@ class KategoriController extends Controller
   }
   public function getKode($id)
   {
+    $perusahaan = Perusahaan::findOrFail($id);
+
+    // ambil prefix perusahaan
+    $prefix = strtoupper(substr($perusahaan->nama_perusahaan, 0, 3));
+
     $last = Kategori::where('perusahaan_id', $id)
-      ->orderBy('kode_barang', 'desc')
+      ->latest('id')
       ->first();
 
-    if ($last && $last->kode_barang) {
-      $number = (int) substr($last->kode_barang, 2) + 1;
+    if ($last && preg_match('/(\d+)$/', $last->kode_barang, $match)) {
+      $number = (int) $match[1] + 1;
     } else {
       $number = 1;
     }
 
-    $kode = 'KD' . str_pad($number, 4, '0', STR_PAD_LEFT);
+    $kode = $prefix . '-KD' . str_pad($number, 4, '0', STR_PAD_LEFT);
 
     return response()->json([
       'kode' => $kode,

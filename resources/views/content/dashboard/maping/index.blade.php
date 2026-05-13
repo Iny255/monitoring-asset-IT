@@ -194,7 +194,7 @@
 
                 <div class="modal-content">
 
-                    <div class="modal-header bg-primary text-white">
+                   <div class="modal-header text-white modal-theme-header">
                         <h5 class="mb-0" style="color:white;">Form Pencabutan Inventaris</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
@@ -264,7 +264,14 @@
             <form method="GET">
                 <div class="modal-content">
 
-                    <div class="modal-header text-white" style="background: linear-gradient(90deg,#0d3b66,#7b8dff);">
+                    <div class="modal-header text-white"
+                        style="
+                            background: linear-gradient(
+                                90deg,
+                                var(--theme-primary),
+                                var(--theme-secondary)
+                            );
+                        ">
                         <h5 class="mb-0 text-white">Filter Data Mapping</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>

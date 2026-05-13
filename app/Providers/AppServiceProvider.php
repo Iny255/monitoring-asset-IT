@@ -2,34 +2,27 @@
 
 namespace App\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use App\Models\Perusahaan;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
 
 class AppServiceProvider extends ServiceProvider
 {
-  /**
-   * Register any application services.
-   */
   public function register(): void
   {
     //
   }
 
-  /**
-   * Bootstrap any application services.
-   */
   public function boot(): void
   {
-    // =====================================
-    // BOOTSTRAP PAGINATION
-    // =====================================
     Paginator::useBootstrapFive();
 
-    // =====================================
-    // GLOBAL VIEW SHARE
-    // =====================================
     View::composer('*', function ($view) {
+      // =====================================
+      // MENU
+      // =====================================
       $json = file_get_contents(resource_path('menu/verticalMenu.json'));
 
       $menuData = json_decode($json);
@@ -37,23 +30,53 @@ class AppServiceProvider extends ServiceProvider
       $view->with('menuData', $menuData);
 
       // =====================================
-      // COMPANY BRANDING
+      // DEFAULT THEME
+      // SUPER ADMIN = PT SEMBILAN
       // =====================================
 
-      $perusahaan = null;
+      $theme = [
+        'company_name' => 'PT Sembilan Matahari Sakti',
 
-      if (auth()->check()) {
-        $user = auth()->user();
+        'primary_color' => '#0b2f57',
 
-        if ($user->role === 'super_admin') {
-          $perusahaan = \App\Models\Perusahaan::where('nama_perusahaan', 'PT Sembilan Matahari Sakti')->first();
-        } else {
+        'secondary_color' => '#154b87',
+
+        'logo' => asset('assets/img/logo_sembilan.png'),
+      ];
+
+      // =====================================
+      // USER LOGIN
+      // =====================================
+
+      if (Auth::check()) {
+        $user = Auth::user();
+
+        // =====================================
+        // JIKA BUKAN SUPER ADMIN
+        // =====================================
+
+        if ($user->role !== 'super_admin') {
           $perusahaan = $user->perusahaan;
+
+          if ($perusahaan) {
+            $theme = [
+              'company_name' => $perusahaan->nama_perusahaan,
+
+              'primary_color' => $perusahaan->primary_color ?? '#0b2f57',
+
+              'secondary_color' => $perusahaan->secondary_color ?? '#154b87',
+
+              'logo' => $perusahaan->logo ? asset($perusahaan->logo) : asset('assets/img/logo_sembilan.png'),
+            ];
+          }
         }
       }
 
-      // share ke semua view
-      $view->with('perusahaanBrand', $perusahaan);
+      // =====================================
+      // SHARE GLOBAL
+      // =====================================
+
+      $view->with('theme', $theme);
     });
   }
 }

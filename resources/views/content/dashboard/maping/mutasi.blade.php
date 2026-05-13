@@ -11,7 +11,13 @@
         <div class="card shadow-sm border-0">
 
             {{-- HEADER --}}
-            <div class="card-header text-white py-3" style="background: linear-gradient(90deg,#0d3b66,#7b8dff);">
+            <div class="card-header text-white py-3" style="
+                    background: linear-gradient(
+                    90deg,
+                    var(--theme-primary),
+                    var(--theme-secondary)
+                    );
+                    ">
 
                 <h4 class="mb-0 text-white fw-bold">
                     Form Mutasi Barang

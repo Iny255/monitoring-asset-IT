@@ -12,6 +12,7 @@ use App\Models\MutasiMaping;
 use App\Models\Maping;
 use App\Models\User;
 use App\Models\Perusahaan;
+use Illuminate\Support\Facades\DB;
 
 class DashboardSuperAdminController extends Controller
 {
@@ -19,141 +20,129 @@ class DashboardSuperAdminController extends Controller
   {
     $now = Carbon::now('Asia/Jakarta');
 
-        /* =====================================
+    /* =====================================
         | TOTAL
         ===================================== */
 
-        $totalStok = Masuk::sum('jumlah');
+    $totalStok = Masuk::sum('jumlah');
 
-        $totalKeluar = Keluar::count();
+    $totalKeluar = Keluar::count();
 
-        $totalDigunakan = Maping::count();
+    $totalDigunakan = Maping::count();
 
-        $totalAset = $totalStok + $totalKeluar;
+    $totalAset = $totalStok + $totalKeluar;
 
-        /* =====================================
-        | KATEGORI
-        ===================================== */
+    /* =====================================
+    | KOMPOSISI ASET DINAMIS
+===================================== */
 
-        $totalLaptop = Masuk::whereHas('kategori', function ($q) {
-            $q->where('nama_barang', 'Laptop');
-        })->sum('jumlah');
+    $komposisiAset = Masuk::select('kategoris.nama_barang', DB::raw('SUM(masuks.jumlah) as total'))
+      ->join('kategoris', 'masuks.id_kategori', '=', 'kategoris.id')
+      ->groupBy('kategoris.nama_barang')
+      ->orderByDesc('total')
+      ->get();
 
-        $totalPrinter = Masuk::whereHas('kategori', function ($q) {
-            $q->where('nama_barang', 'Printer');
-        })->sum('jumlah');
-
-        $totalHp = Masuk::whereHas('kategori', function ($q) {
-            $q->whereIn('nama_barang', [
-                'HP',
-                'Tablet',
-                'HP/Tablet',
-                'Tablet/HP'
-            ]);
-        })->sum('jumlah');
-
-        /* =====================================
+    /* =====================================
         | PEMINJAMAN
         ===================================== */
 
-        $dipinjam = Peminjaman::where(
-            'status',
-            'Dipinjam'
-        )->count();
+    $dipinjam = Peminjaman::where('status', 'Dipinjam')->count();
 
-        $dikembalikan = Peminjaman::where(
-            'status',
-            'Dikembalikan'
-        )->count();
+    $dikembalikan = Peminjaman::where('status', 'Dikembalikan')->count();
 
-        /* =====================================
+    /* =====================================
         | MUTASI
         ===================================== */
 
-        $totalMutasi = MutasiMaping::count();
+    $totalMutasi = MutasiMaping::count();
 
-        /* =====================================
+    /* =====================================
         | USER
         ===================================== */
 
-        $perusahaanCount = Perusahaan::count();
+    $perusahaanCount = Perusahaan::count();
 
-        $petugasCount = User::where(
-            'role',
-            'petugas'
-        )->count();
+    $petugasCount = User::where('role', 'petugas')->count();
 
-        $managerCount = User::where(
-            'role',
-            'manager'
-        )->count();
+    $managerCount = User::where('role', 'manager')->count();
 
-        /* =====================================
+    /* =====================================
         | GRAFIK
         ===================================== */
 
-        $mutasiMasuk = Masuk::selectRaw(
-            'MONTH(created_at) bulan, COUNT(*) total'
-        )
-            ->groupBy('bulan')
-            ->pluck('total', 'bulan')
-            ->toArray();
+    $mutasiMasuk = Masuk::selectRaw('MONTH(created_at) bulan, COUNT(*) total')
+      ->groupBy('bulan')
+      ->pluck('total', 'bulan')
+      ->toArray();
 
-        $mutasiKeluar = Keluar::selectRaw(
-            'MONTH(created_at) bulan, COUNT(*) total'
-        )
-            ->groupBy('bulan')
-            ->pluck('total', 'bulan')
-            ->toArray();
+    $mutasiKeluar = Keluar::selectRaw('MONTH(created_at) bulan, COUNT(*) total')
+      ->groupBy('bulan')
+      ->pluck('total', 'bulan')
+      ->toArray();
 
-        $bulanLabel = [];
+    $bulanLabel = [];
 
-        $dataMasuk = [];
+    $dataMasuk = [];
 
-        $dataKeluar = [];
+    $dataKeluar = [];
 
-        for ($i = 1; $i <= 12; $i++) {
+    for ($i = 1; $i <= 12; $i++) {
+      $bulanLabel[] = Carbon::create()
+        ->month($i)
+        ->translatedFormat('M');
 
-            $bulanLabel[] = Carbon::create()
-                ->month($i)
-                ->translatedFormat('M');
+      $dataMasuk[] = $mutasiMasuk[$i] ?? 0;
 
-            $dataMasuk[] = $mutasiMasuk[$i] ?? 0;
+      $dataKeluar[] = $mutasiKeluar[$i] ?? 0;
+    }
 
-            $dataKeluar[] = $mutasiKeluar[$i] ?? 0;
-        }
-
-        /* =====================================
+    /* =====================================
         | LIST PERUSAHAAN
         ===================================== */
 
-        $perusahaanList = Perusahaan::withCount([
-            'masuk',
-            'keluar'
-        ])->get();
+    $perusahaanList = Perusahaan::with(['masuk', 'keluar', 'maping'])
+      ->get()
+      ->map(function ($p) {
+        $asetMasuk = $p->masuk->sum('jumlah');
 
-        return view(
-            'content.dashboard.superadmin',
-            compact(
-                'now',
-                'totalAset',
-                'totalStok',
-                'totalKeluar',
-                'totalDigunakan',
-                'totalLaptop',
-                'totalPrinter',
-                'totalHp',
-                'dipinjam',
-                'dikembalikan',
-                'totalMutasi',
-                'perusahaanCount',
-                'petugasCount',
-                'managerCount',
-                'bulanLabel',
-                'dataMasuk',
-                'dataKeluar',
-                'perusahaanList'
-            )
-        );
+        $asetKeluar = $p->keluar->count();
+
+        $asetDigunakan = $p->maping->count();
+
+        return (object) [
+          'nama_perusahaan' => $p->nama_perusahaan,
+
+          'aset_masuk' => $asetMasuk,
+
+          'aset_keluar' => $asetKeluar,
+
+          'aset_digunakan' => $asetDigunakan,
+
+          // TOTAL ASET
+          'total_aset' => $asetMasuk + $asetKeluar,
+        ];
+      });
+
+    return view(
+      'content.dashboard.superadmin',
+      compact(
+        'now',
+        'totalAset',
+        'totalStok',
+        'totalKeluar',
+        'totalDigunakan',
+        'komposisiAset',
+        'dipinjam',
+        'dikembalikan',
+        'totalMutasi',
+        'perusahaanCount',
+        'petugasCount',
+        'managerCount',
+        'bulanLabel',
+        'dataMasuk',
+        'dataKeluar',
+        'perusahaanList'
+      )
+    );
   }
 }

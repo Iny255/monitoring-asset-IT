@@ -10,10 +10,14 @@
         {{-- HEADER --}}
         {{-- ========================================= --}}
         <div class="card-header border-0 text-white py-4"
-            style="background: linear-gradient(90deg,#0d3b66,#7b8dff); border-radius:12px 12px 0 0;">
-
-            {{-- TITLE --}}
-            <div class="mb-3">
+            style="
+                    background: linear-gradient(
+                    90deg,
+                    var(--theme-primary),
+                    var(--theme-secondary)
+                    );
+                    ">
+            {{-- TITLE --}} <div class="mb-3">
 
                 <h3 class="mb-1 text-white fw-bold">
                     History Mutasi Barang
@@ -112,7 +116,7 @@
         {{-- ========================================= --}}
         {{-- BODY --}}
         {{-- ========================================= --}}
-        <div class="card-body">
+        <div class="card-body p-4">
 
             {{-- TABLE --}}
             <div class="table-responsive">
@@ -261,7 +265,12 @@
 
             <div class="modal-content border-0 shadow">
 
-                <div class="modal-header text-white" style="background: linear-gradient(90deg,#0d3b66,#7b8dff);">
+                <div class="modal-header text-white" style="background: linear-gradient(
+                    90deg,
+                    var(--theme-primary),
+                    var(--theme-secondary)
+                    );
+                    ">
 
                     <h5 class="mb-0 text-white fw-semibold">
 
@@ -301,11 +310,16 @@
     {{-- ========================================= --}}
     <div class="modal fade" id="modalDetail" tabindex="-1">
 
-       <div class="modal-dialog modal-lg" >
+        <div class="modal-dialog modal-lg">
 
             <div class="modal-content border-0 shadow">
 
-                <div class="modal-header text-white" style="background: linear-gradient(90deg,#0d3b66,#7b8dff);">
+                <div class="modal-header text-white" style="background: linear-gradient(
+                    90deg,
+                    var(--theme-primary),
+                    var(--theme-secondary)
+                    );
+                    ">
 
                     <h5 class="mb-0 text-white fw-semibold">
 
@@ -319,7 +333,7 @@
 
                 </div>
 
-              <div class="modal-body p-0" id="detailContent">
+                <div class="modal-body p-0" id="detailContent">
 
                     <div class="text-center py-4">
 
@@ -347,39 +361,37 @@
 {{-- ========================================= --}}
 @section('page-style')
 
-<style>
+    <style>
+        .modal-content {
+            overflow: visible !important;
+        }
 
-.modal-content{
-    overflow: visible !important;
-}
+        .modal-body {
+            overflow: visible !important;
+        }
 
-.modal-body{
-    overflow: visible !important;
-}
+        .history-card {
+            position: relative !important;
+            overflow: visible !important;
+            z-index: 1;
+        }
 
-.history-card{
-    position: relative !important;
-    overflow: visible !important;
-    z-index: 1;
-}
+        .btn-hapus {
+            position: absolute !important;
+            top: 15px !important;
+            right: 15px !important;
 
-.btn-hapus{
-    position: absolute !important;
-    top: 15px !important;
-    right: 15px !important;
+            z-index: 999999 !important;
 
-    z-index: 999999 !important;
+            pointer-events: auto !important;
 
-    pointer-events: auto !important;
+            cursor: pointer !important;
+        }
 
-    cursor: pointer !important;
-}
-
-.btn-hapus i{
-    pointer-events: none;
-}
-
-</style>
+        .btn-hapus i {
+            pointer-events: none;
+        }
+    </style>
 
 @endsection
 

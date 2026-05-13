@@ -31,30 +31,25 @@ class DashboardManagerController extends Controller
     /* ================= TOTAL ASET ================= */
     $totalAset = $totalStok + $totalKeluar;
 
-    /* ================= ASET PER KATEGORI ================= */
-    $totalLaptop = Masuk::whereHas('kategori', function ($q) {
-      $q->where('nama_barang', 'Laptop');
-    })
-      ->when($user->role !== 'super_admin', function ($q) use ($user) {
-        $q->where('perusahaan_id', $user->id_perusahaan);
-      })
-      ->sum('jumlah');
+    /* ================= KOMPOSISI ASET DINAMIS ================= */
 
-    $totalPrinter = Masuk::whereHas('kategori', function ($q) {
-      $q->where('nama_barang', 'Printer');
-    })
-      ->when($user->role !== 'super_admin', function ($q) use ($user) {
-        $q->where('perusahaan_id', $user->id_perusahaan);
-      })
-      ->sum('jumlah');
+    $komposisiAset = DB::table('masuks')
 
-    $totalHp = Masuk::whereHas('kategori', function ($q) {
-      $q->whereIn('nama_barang', ['HP', 'Tablet', 'HP/Tablet', 'Tablet/HP']);
-    })
-      ->when($user->role !== 'super_admin', function ($q) use ($user) {
-        $q->where('perusahaan_id', $user->id_perusahaan);
-      })
-      ->sum('jumlah');
+      ->join('kategoris', 'masuks.id_kategori', '=', 'kategoris.id')
+
+      ->select('kategoris.nama_barang', DB::raw('SUM(masuks.jumlah) as total'));
+
+    if ($user->role !== 'super_admin') {
+      $komposisiAset->where('masuks.perusahaan_id', $user->id_perusahaan);
+    }
+
+    $komposisiAset = $komposisiAset
+
+      ->groupBy('kategoris.nama_barang')
+
+      ->orderByDesc('total')
+
+      ->get();
 
     /* ================= PEMINJAMAN ================= */
     $dipinjam = Peminjaman::when($user->role !== 'super_admin', function ($q) use ($user) {
@@ -114,9 +109,7 @@ class DashboardManagerController extends Controller
       compact(
         'now',
         'totalAset',
-        'totalLaptop',
-        'totalPrinter',
-        'totalHp',
+        'komposisiAset',
         'dipinjam',
         'dikembalikan',
         'bulanLabel',

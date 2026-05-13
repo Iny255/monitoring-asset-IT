@@ -1,135 +1,356 @@
 @php
+
     $containerNav = $containerNav ?? 'container-fluid';
     $navbarDetached = $navbarDetached ?? '';
 
+    // =====================================
+    // THEME GLOBAL
+    // dari AppServiceProvider
+    // =====================================
+
+    $primaryColor = $theme['primary_color'] ?? '#0b2f57';
+
+    $secondaryColor = $theme['secondary_color'] ?? '#154b87';
+
+    $companyName =  'Monitoring Aset Divisi IT';
+
 @endphp
 
-<!-- Navbar -->
+
+<style>
+    :root {
+
+        --primary-theme: {{ $primaryColor }};
+        --secondary-theme: {{ $secondaryColor }};
+
+    }
+
+
+    /* =====================================
+       NAVBAR
+    ===================================== */
+    .layout-navbar {
+
+        background:
+            linear-gradient(135deg,
+                var(--primary-theme),
+                var(--secondary-theme)) !important;
+
+        border-radius: 16px;
+
+        margin-top: 10px;
+
+        min-height: 72px;
+
+        box-shadow:
+            0 4px 18px rgba(0, 0, 0, .10);
+
+        border: none !important;
+
+        padding-left: 14px;
+
+        padding-right: 14px;
+
+    }
+
+
+    /* =====================================
+       TITLE
+    ===================================== */
+    .navbar-title {
+
+        color: white;
+
+        font-weight: 700;
+
+        font-size: 28px;
+
+        letter-spacing: .3px;
+
+        line-height: 1;
+
+    }
+
+
+    /* =====================================
+       MENU ICON
+    ===================================== */
+    .layout-navbar .bx-menu {
+
+        color: white !important;
+
+        font-size: 28px;
+
+    }
+
+
+    /* =====================================
+       DARK MODE BUTTON
+    ===================================== */
+    .dark-toggle-btn {
+
+        border: none;
+
+        background: transparent;
+
+        color: white;
+
+        font-size: 24px;
+
+        display: flex;
+
+        align-items: center;
+
+        justify-content: center;
+
+        transition: .25s ease;
+
+    }
+
+
+    .dark-toggle-btn:hover {
+
+        transform: scale(1.08);
+
+    }
+
+
+    /* =====================================
+       USER AVATAR
+    ===================================== */
+    .navbar-user-avatar {
+
+        width: 42px;
+
+        height: 42px;
+
+        object-fit: cover;
+
+        border-radius: 50%;
+
+        border: 2px solid rgba(255, 255, 255, .35);
+
+        box-shadow:
+            0 2px 10px rgba(0, 0, 0, .15);
+
+    }
+
+
+    /* =====================================
+       DROPDOWN
+    ===================================== */
+    .dropdown-user .dropdown-menu {
+
+        border: none;
+
+        border-radius: 14px;
+
+        overflow: hidden;
+
+        box-shadow:
+            0 8px 25px rgba(0, 0, 0, .12);
+
+    }
+
+
+    /* =====================================
+       RESPONSIVE
+    ===================================== */
+    @media(max-width:768px) {
+
+        .navbar-title {
+
+            font-size: 20px;
+
+        }
+
+    }
+</style>
+
+
+{{-- =====================================
+     NAVBAR
+===================================== --}}
+
 @if (isset($navbarDetached) && $navbarDetached == 'navbar-detached')
-    <nav class="layout-navbar {{ $containerNav }} navbar navbar-expand-xl {{ $navbarDetached }} align-items-center bg-navbar-theme"
+    <nav class="layout-navbar {{ $containerNav }} navbar navbar-expand-xl {{ $navbarDetached }} align-items-center"
         id="layout-navbar">
 @endif
+
+
 @if (isset($navbarDetached) && $navbarDetached == '')
-    <nav class="layout-navbar navbar navbar-expand-xl align-items-center bg-navbar-theme" id="layout-navbar">
+    <nav class="layout-navbar navbar navbar-expand-xl align-items-center" id="layout-navbar">
+
         <div class="{{ $containerNav }}">
 @endif
 
-<!--  Brand demo (display only for navbar-full and hide on below xl) -->
-{{-- @if (isset($navbarFull))
-      <div class="navbar-brand app-brand demo d-none d-xl-flex py-0 me-4">
-        <a href="{{url('/')}}" class="app-brand-link gap-2">
-          <span class="app-brand-logo demo">@include('_partials.macros',["width"=>25,"withbg"=>'var(--bs-primary)'])</span>
-          <span class="app-brand-text demo menu-text fw-bold">{{config('variables.templateName')}}</span>
-        </a>
-      </div>
-      @endif --}}
 
-<!-- ! Not required for layout-without-menu -->
+{{-- =====================================
+     SIDEBAR TOGGLE
+===================================== --}}
 @if (!isset($navbarHideToggle))
     <div
-        class="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0{{ isset($menuHorizontal) ? ' d-xl-none ' : '' }} {{ isset($contentNavbar) ? ' d-xl-none ' : '' }}">
+        class="layout-menu-toggle navbar-nav align-items-xl-center me-3 me-xl-0
+        {{ isset($menuHorizontal) ? ' d-xl-none ' : '' }}
+        {{ isset($contentNavbar) ? ' d-xl-none ' : '' }}">
+
         <a class="nav-item nav-link px-0 me-xl-4" href="javascript:void(0)" id="sidebarToggle">
+
             <i class="bx bx-menu bx-sm"></i>
+
         </a>
+
     </div>
 @endif
 
-<div class="navbar-nav-right d-flex align-items-center" id="navbar-collapse">
-    <!-- Search -->
+
+{{-- =====================================
+     NAVBAR CONTENT
+===================================== --}}
+<div class="navbar-nav-right d-flex align-items-center w-100" id="navbar-collapse">
+
+
+    {{-- =====================================
+         COMPANY TITLE
+    ===================================== --}}
     <div class="navbar-nav align-items-center">
+
         <div class="nav-item d-flex align-items-center">
-            <i class="bx bx-search fs-4 lh-0" style="display: none;"></i> <!-- Hide the search icon if not needed -->
-            <span class="fs-4 lh-0 ps-1 ps-sm-2">Monitoring Aset Sembilan</span> <!-- Add the static text here -->
+
+            <span class="navbar-title">
+
+                {{ $companyName }}
+
+            </span>
+
         </div>
+
     </div>
 
-    <!-- /Search -->
+
+    {{-- =====================================
+         RIGHT MENU
+    ===================================== --}}
     <ul class="navbar-nav flex-row align-items-center ms-auto">
-    
-        
-        <!-- Place this tag where you want the button to render. -->
-        {{-- <li class="nav-item lh-1 me-3">
-            <a class="github-button" href="https://github.com/themeselection/sneat-html-laravel-admin-template-free" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star themeselection/sneat-html-laravel-admin-template-free on GitHub">Star</a>
-          </li> --}}
+
 
         {{-- DARK MODE --}}
         <li class="nav-item me-3">
+
             <button id="darkModeToggle" class="dark-toggle-btn" type="button">
+
                 <i id="darkIcon" class="bx bx-moon"></i>
+
             </button>
+
         </li>
-        <!-- User -->
+
+
+        {{-- =====================================
+             USER
+        ===================================== --}}
         <li class="nav-item navbar-dropdown dropdown-user dropdown">
+
             <a class="nav-link dropdown-toggle hide-arrow" href="javascript:void(0);" data-bs-toggle="dropdown">
+
                 <div class="avatar avatar-online">
-                    <img src="{{ asset('assets/img/person.png') }}" alt class="w-px-40 h-auto rounded-circle">
+
+                    <img src="{{ asset('assets/img/person.png') }}" alt="User" class="navbar-user-avatar">
+
                 </div>
+
             </a>
+
+
+            {{-- DROPDOWN --}}
             <ul class="dropdown-menu dropdown-menu-end">
+
                 <li>
+
                     <a class="dropdown-item" href="javascript:void(0);">
+
                         <div class="d-flex">
+
                             <div class="flex-shrink-0 me-3">
+
                                 <div class="avatar avatar-online">
-                                    <img src="{{ asset('assets/img/person.png') }}" alt
-                                        class="w-px-40 h-auto rounded-circle">
+
+                                    <img src="{{ asset('assets/img/person.png') }}" alt="User"
+                                        class="navbar-user-avatar">
+
                                 </div>
+
                             </div>
+
                             <div class="flex-grow-1">
-                                <span class="fw-medium d-block">{{ auth()->user()->name }}</span>
-                                {{-- <small class="text-muted">Admin</small> --}}
+
+                                <span class="fw-semibold d-block">
+
+                                    {{ auth()->user()->name }}
+
+                                </span>
+
+                                <small class="text-muted text-uppercase">
+
+                                    {{ auth()->user()->role }}
+
+                                </small>
+
                             </div>
+
                         </div>
+
                     </a>
-                </li>
-                <li>
-                    <div class="dropdown-divider"></div>
-                </li>
-                {{-- <li>
-                <a class="dropdown-item" href="javascript:void(0);">
-                  <i class="bx bx-user me-2"></i>
-                  <span class="align-middle">My Profile</span>
-                </a>
-              </li>
-              <li>
-                <a class="dropdown-item" href="javascript:void(0);">
-                  <i class='bx bx-cog me-2'></i>
-                  <span class="align-middle">Settings</span>
-                </a>
-              </li> --}}
-                {{-- <li>
-                <a class="dropdown-item" href="javascript:void(0);">
-                  <span class="d-flex align-items-center align-middle">
-                    <i class="flex-shrink-0 bx bx-credit-card me-2 pe-1"></i>
-                    <span class="flex-grow-1 align-middle">Billing</span>
-                    <span class="flex-shrink-0 badge badge-center rounded-pill bg-danger w-px-20 h-px-20">4</span>
-                  </span>
-                </a>
-              </li> --}}
-                <li>
-                    @auth
-                        <div class="dropdown-divider"></div>
-                    </li>
-                    <li>
-                        <a class="dropdown-item" href="/"
-                            onclick="event.preventDefault(); document.getElementById('logout').submit();">
-                            <i class='bx bx-power-off me-2'></i>
-                            <span class="align-middle">Log Out</span>
-                        </a>
-                        <form id="logout" action="{{ route('logout') }}" method="POST" style="display: none;">
-                            @csrf
-                        </form>
-                    @endauth
 
                 </li>
+
+
+                <li>
+
+                    <div class="dropdown-divider"></div>
+
+                </li>
+
+
+                {{-- LOGOUT --}}
+                @auth
+
+                    <li>
+
+                        <a class="dropdown-item" href="/"
+                            onclick="event.preventDefault(); document.getElementById('logout').submit();">
+
+                            <i class='bx bx-power-off me-2'></i>
+
+                            <span class="align-middle">
+
+                                Log Out
+
+                            </span>
+
+                        </a>
+
+                        <form id="logout" action="{{ route('logout') }}" method="POST" style="display:none;">
+
+                            @csrf
+
+                        </form>
+
+                    </li>
+
+                @endauth
+
             </ul>
+
         </li>
-        <!--/ User -->
+
     </ul>
+
 </div>
+
 
 @if (!isset($navbarDetached))
     </div>
 @endif
+
 </nav>
-<!-- / Navbar -->

@@ -10,7 +10,13 @@
     {{-- HEADER --}}
     {{-- ========================================= --}}
     <div class="card-header border-0 text-white py-4"
-        style="background: linear-gradient(90deg,#0d3b66,#7b8dff); border-radius:12px 12px 0 0;">
+       style="
+                    background: linear-gradient(
+                    90deg,
+                    var(--theme-primary),
+                    var(--theme-secondary)
+                    );
+                    ">
 
         {{-- TITLE --}}
         <div class="mb-3">
@@ -125,7 +131,8 @@
     {{-- ========================================= --}}
     {{-- BODY --}}
     {{-- ========================================= --}}
-    <div class="card-body">
+   <div class="card-body p-4">
+
 
         {{-- TABLE --}}
         <div class="table-responsive">
@@ -373,7 +380,12 @@
         <div class="modal-content">
 
             <div class="modal-header text-white"
-                style="background: linear-gradient(90deg,#0d3b66,#7b8dff);">
+                style="background: linear-gradient(
+                    90deg,
+                    var(--theme-primary),
+                    var(--theme-secondary)
+                    );
+                    ">
 
                 <h5 class="mb-0 text-white">
 

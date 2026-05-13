@@ -155,14 +155,27 @@
                     </div>
 
                     <div class="modal-body">
-
+                         <div class="mb-3">
+                            <label class="form-label">UID Karyawan</label>
                         <input type="text" name="kode_karyawan" class="form-control mb-3" placeholder="Kode">
+                        </div>
 
+                         <div class="mb-3">
+                            <label class="form-label">Nama Karyawan</label>
                         <input type="text" name="nama_karyawan" class="form-control mb-3" placeholder="Nama">
+                        </div>
+
+                         <div class="mb-3">
+                            <label class="form-label">Jabatan</label>
 
                         <input type="text" name="jabatan" class="form-control mb-3" placeholder="Jabatan">
+                        </div>
+
+                         <div class="mb-3">
+                            <label class="form-label">Divisi</label>
 
                         <input type="text" name="divisi" class="form-control mb-3" placeholder="Divisi">
+                        </div>
 
                         @if (auth()->user()->role === 'super_admin')
                             <select name="id_perusahaan" class="form-select">
@@ -186,7 +199,7 @@
         </div>
     </div>
 
-    {{-- ================= MODAL EDIT ================= --}}
+  
     {{-- ================= MODAL EDIT ================= --}}
     <div class="modal fade" id="modalEditKaryawan">
         <div class="modal-dialog modal-lg">

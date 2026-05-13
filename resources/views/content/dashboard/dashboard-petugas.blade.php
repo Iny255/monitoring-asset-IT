@@ -2,49 +2,99 @@
 
 @section('title', 'Dashboard Monitoring Aset')
 
+{{-- ================= THEME ================= --}}
+@php
+
+    $primaryColor = $theme['primary_color'] ?? '#0b2f57';
+
+    $secondaryColor = $theme['secondary_color'] ?? '#154b87';
+
+@endphp
+
+
 {{-- ================= STYLE ================= --}}
 @section('vendor-style')
+
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/apex-charts/apex-charts.css') }}">
 
     <style>
+        :root {
+
+            --primary-theme: {{ $primaryColor }};
+            --secondary-theme: {{ $secondaryColor }};
+
+        }
+
+        /* =====================================
+                       CARD
+                    ===================================== */
         .card-stat {
+
             border-radius: 15px;
+
             border: none;
+
             overflow: hidden;
+
             position: relative;
+
             transition: .3s;
+
             background: #fff;
+
             height: 100%;
+
         }
 
         .card-stat:hover {
+
             transform: translateY(-5px);
+
             box-shadow: 0 10px 20px rgba(0, 0, 0, .08);
+
         }
 
+        /* =====================================
+                       WAVE
+                    ===================================== */
         .wave-box {
+
             position: absolute;
+
             top: 0;
             left: 0;
+
             width: 100%;
             height: 100%;
+
             z-index: 0;
-            opacity: .12;
+
+            opacity: .10;
+
             pointer-events: none;
+
         }
 
         .wave {
+
             position: absolute;
+
             bottom: -50%;
             left: -25%;
+
             width: 150%;
             height: 150%;
+
             background: currentColor;
+
             border-radius: 38%;
+
             animation: waveMove 10s infinite linear;
+
         }
 
         @keyframes waveMove {
+
             from {
                 transform: rotate(0deg)
             }
@@ -52,69 +102,113 @@
             to {
                 transform: rotate(360deg)
             }
+
         }
 
+        /* =====================================
+                       TEXT
+                    ===================================== */
         .stat-label {
+
             font-weight: 700;
+
             text-transform: uppercase;
+
             letter-spacing: .8px;
+
             font-size: .72rem;
+
             color: #32475c;
+
         }
 
+        /* =====================================
+                       ICON
+                    ===================================== */
         .icon-box {
-            width: 48px;
-            height: 48px;
+
+            width: 50px;
+
+            height: 50px;
+
             display: flex;
+
             align-items: center;
+
             justify-content: center;
-            border-radius: 12px;
-            font-size: 22px;
+
+            border-radius: 14px;
+
+            font-size: 24px;
+
         }
 
-        .bg-soft-primary {
-            background: #e7f1ff;
-            color: #696cff
-        }
+        .theme-icon-box {
 
-        .bg-soft-success {
-            background: #e8f8f0;
-            color: #28c76f
-        }
+            background:
+                linear-gradient(135deg,
+                    var(--primary-theme),
+                    var(--secondary-theme));
 
-        .bg-soft-warning {
-            background: #fff4e5;
-            color: #ff9f43
-        }
-
-        .bg-soft-info {
-            background: #e6f7ff;
-            color: #03c3ec
-        }
-
-        .dashboard-bg {
-            background: linear-gradient(135deg, #0d3b66, #1d5fa3);
             color: white;
+
+            box-shadow:
+                0 4px 12px rgba(0, 0, 0, .12);
+
         }
 
+        /* =====================================
+                       DASHBOARD HEADER
+                    ===================================== */
+        .dashboard-bg {
+
+            background:
+                linear-gradient(135deg,
+                    var(--primary-theme),
+                    var(--secondary-theme));
+
+            color: white;
+
+            border-radius: 18px;
+
+        }
+
+        /* =====================================
+                       ANIMATION
+                    ===================================== */
         .fade-up {
+
             opacity: 0;
+
             transform: translateY(20px);
+
             transition: .5s;
+
         }
 
         .fade-up.show {
+
             opacity: 1;
+
             transform: translateY(0);
+
         }
 
+        /* =====================================
+                       CHART
+                    ===================================== */
         #chartTransaksiAset,
         #chartDonutAset {
+
             width: 100% !important;
+
             min-height: 320px;
+
         }
     </style>
+
 @endsection
+
 
 
 {{-- ================= CONTENT ================= --}}
@@ -122,7 +216,10 @@
 
     <div class="container-xxl flex-grow-1 container-p-y">
 
-        {{-- WELCOME --}}
+
+        {{-- =====================================
+         WELCOME
+    ===================================== --}}
         <div class="row mb-4">
 
             <div class="col-12 fade-up">
@@ -132,55 +229,64 @@
                     <div class="card-body d-flex align-items-center justify-content-between">
 
                         <div>
+
                             <h4 class="text-white mb-1">
-                                Selamat Datang, {{ Str::upper(auth()->user()->name) }}! 👋
+
+                                Selamat Datang,
+                                {{ Str::upper(auth()->user()->name) }} 👋
+
                             </h4>
 
                             <p class="mb-0 opacity-75">
-                                Sistem Monitoring Aset IT - PT Sembilan Matahari Sakti
+
+                                Monitoring Aset Divisi IT
+
                             </p>
+
                         </div>
 
                         <img src="{{ asset('assets/img/illustrations/man-with-laptop-light.png') }}" height="120">
 
                     </div>
+
                 </div>
+
             </div>
+
         </div>
 
 
-        {{-- SUMMARY CARDS --}}
+        {{-- =====================================
+         SUMMARY
+    ===================================== --}}
         @php
+
             $summary = [
                 [
                     'title' => 'Total Aset',
                     'count' => $totalAset ?? 0,
                     'icon' => 'bx-box',
-                    'color' => '#696cff',
-                    'bg' => 'bg-soft-primary',
                 ],
+
                 [
                     'title' => 'Dipinjam',
                     'count' => $dipinjam ?? 0,
                     'icon' => 'bx-transfer',
-                    'color' => '#ff9f43',
-                    'bg' => 'bg-soft-warning',
                 ],
+
                 [
                     'title' => 'Kembali',
                     'count' => $dikembalikan ?? 0,
                     'icon' => 'bx-check-circle',
-                    'color' => '#28c76f',
-                    'bg' => 'bg-soft-success',
                 ],
+
                 [
                     'title' => 'Total Mutasi',
                     'count' => $totalMutasi ?? 0,
                     'icon' => 'bx-git-compare',
-                    'color' => '#03c3ec',
-                    'bg' => 'bg-soft-info',
                 ],
             ];
+
         @endphp
 
 
@@ -189,7 +295,7 @@
             @foreach ($summary as $item)
                 <div class="col-xl-3 col-md-6 fade-up">
 
-                    <div class="card card-stat shadow-sm border-0" style="color:{{ $item['color'] }}">
+                    <div class="card card-stat shadow-sm border-0">
 
                         <div class="wave-box">
                             <div class="wave"></div>
@@ -197,13 +303,26 @@
 
                         <div class="card-body d-flex align-items-center">
 
-                            <div class="icon-box {{ $item['bg'] }} me-3">
+                            <div class="icon-box me-3 theme-icon-box">
+
                                 <i class="bx {{ $item['icon'] }}"></i>
+
                             </div>
 
                             <div>
-                                <span class="stat-label">{{ $item['title'] }}</span>
-                                <h4>{{ number_format($item['count'], 0, ',', '.') }}</h4>
+
+                                <span class="stat-label">
+
+                                    {{ $item['title'] }}
+
+                                </span>
+
+                                <h4>
+
+                                    {{ number_format($item['count'], 0, ',', '.') }}
+
+                                </h4>
+
                             </div>
 
                         </div>
@@ -216,8 +335,11 @@
         </div>
 
 
-        {{-- CHARTS --}}
+        {{-- =====================================
+         CHART
+    ===================================== --}}
         <div class="row g-4">
+
 
             {{-- AREA CHART --}}
             <div class="col-lg-8 fade-up">
@@ -225,11 +347,19 @@
                 <div class="card shadow-sm border-0" style="border-radius:15px">
 
                     <div class="card-header">
-                        <h5 class="mb-0">Grafik Transaksi Aset</h5>
+
+                        <h5 class="mb-0">
+
+                            Grafik Transaksi Aset
+
+                        </h5>
+
                     </div>
 
                     <div class="card-body">
+
                         <div id="chartTransaksiAset"></div>
+
                     </div>
 
                 </div>
@@ -243,7 +373,13 @@
                 <div class="card shadow-sm border-0" style="border-radius:15px">
 
                     <div class="card-header">
-                        <h5 class="mb-0">Stok Aset</h5>
+
+                        <h5 class="mb-0">
+
+                            Stok Aset
+
+                        </h5>
+
                     </div>
 
                     <div class="card-body d-flex align-items-center justify-content-center">
@@ -263,10 +399,14 @@
 @endsection
 
 
-{{-- ================= SCRIPTS ================= --}}
+
+{{-- ================= SCRIPT ================= --}}
 @section('vendor-script')
+
     <script src="{{ asset('assets/vendor/libs/apex-charts/apexcharts.js') }}"></script>
+
 @endsection
+
 
 
 @section('page-script')
@@ -275,143 +415,238 @@
         document.addEventListener("DOMContentLoaded", function() {
 
             const isDark = document.documentElement.classList.contains("dark-style")
+
             const labelColor = isDark ? "#cbcbe2" : "#566a7f"
 
 
-            /* AREA CHART */
+            /* =====================================
+               AREA CHART
+            ===================================== */
 
             new ApexCharts(document.querySelector("#chartTransaksiAset"), {
 
                 chart: {
+
                     height: 350,
+
                     type: 'area',
+
                     toolbar: {
                         show: false
                     },
+
                     fontFamily: 'Public Sans'
+
                 },
 
-                series: [{
+                series: [
+
+                    {
                         name: 'Masuk',
                         data: @json($dataMasuk ?? [])
                     },
+
                     {
                         name: 'Keluar',
                         data: @json($dataKeluar ?? [])
                     }
+
                 ],
 
                 xaxis: {
+
                     categories: @json($bulanLabel ?? []),
+
                     labels: {
                         style: {
                             colors: labelColor
                         }
                     }
+
                 },
 
                 yaxis: {
+
                     labels: {
                         style: {
                             colors: labelColor
                         }
                     }
+
                 },
 
                 legend: {
+
                     labels: {
                         colors: labelColor
                     },
+
                     position: 'top',
+
                     horizontalAlign: 'right'
+
                 },
 
-                colors: ['#696cff', '#8592a3'],
+                colors: [
+                    '{{ $primaryColor }}',
+                    '{{ $secondaryColor }}'
+                ],
 
                 stroke: {
+
                     curve: 'smooth',
+
                     width: 3
+
                 },
 
                 fill: {
+
                     type: 'gradient',
+
                     gradient: {
+
                         opacityFrom: 0.6,
+
                         opacityTo: 0.1
+
                     }
+
                 }
 
             }).render()
 
 
 
-            /* DONUT */
+            /* =====================================
+       DONUT
+    ===================================== */
 
             new ApexCharts(document.querySelector("#chartDonutAset"), {
 
                 chart: {
+
                     type: 'donut',
+
                     height: 350
+
                 },
 
-                series: [
-                    {{ (int) ($totalLaptop ?? 0) }},
-                    {{ (int) ($totalPrinter ?? 0) }},
-                    {{ (int) ($totalHp ?? 0) }}
+                series: @json($komposisiAset->pluck('total')),
+
+                labels: @json($komposisiAset->pluck('nama_barang')),
+
+                colors: [
+
+                    '{{ $primaryColor }}',
+                    '{{ $secondaryColor }}',
+                    '#28c76f',
+                    '#ff9f43',
+                    '#03c3ec',
+                    '#ea5455',
+                    '#8e44ad',
+                    '#20c997'
+
                 ],
 
-                labels: ['Laptop', 'Printer', 'HP/Tablet'],
-
-                colors: ['#696cff', '#ff9f43', '#28c76f'],
-
                 plotOptions: {
+
                     pie: {
+
                         donut: {
+
                             size: '75%',
+
                             labels: {
+
                                 show: true,
+
                                 name: {
+
                                     show: true,
+
                                     color: labelColor,
+
                                     offsetY: -10
+
                                 },
+
                                 value: {
+
                                     show: true,
+
                                     color: labelColor,
+
                                     offsetY: 10,
-                                    fontWeight: 700
+
+                                    fontWeight: 700,
+
+                                    formatter: function(val) {
+
+                                        return Number(val);
+
+                                    }
+
                                 },
+
                                 total: {
+
                                     show: true,
+
                                     label: 'Total Stok',
-                                    color: labelColor
+
+                                    color: labelColor,
+
+                                    formatter: function(w) {
+
+                                        return Number(
+                                            w.globals.seriesTotals.reduce((a, b) => a + b, 0)
+                                        );
+
+                                    }
+
                                 }
+
                             }
+
                         }
+
                     }
+
                 },
 
                 legend: {
+
                     position: 'bottom',
+
                     labels: {
                         colors: labelColor
                     }
+
                 },
 
                 dataLabels: {
+
                     enabled: false
+
                 }
 
             }).render()
 
 
 
-            /* ANIMATION */
+            /* =====================================
+               ANIMATION
+            ===================================== */
 
             document.querySelectorAll(".fade-up").forEach((el, i) => {
+
                 setTimeout(() => {
+
                     el.classList.add("show")
+
                 }, 150 * i)
+
             })
 
         })

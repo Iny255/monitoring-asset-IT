@@ -11,25 +11,22 @@ return new class extends Migration
      */
     public function up(): void
     {
-         Schema::table('kategoris', function (Blueprint $table) {
+        Schema::table('kategoris', function (Blueprint $table) {
 
-            // ❌ drop unique lama (sesuai database kamu)
-            $table->dropUnique('kode_perusahaan_unique');
+            // =====================================
+            // TAMBAH UNIQUE BARU
+            // =====================================
 
-            // (opsional aman kalau foreign key ada dan ingin dirapikan)
-            // $table->dropForeign('kategoris_perusahaan_id_foreign');
-
-            // ✅ unique baru: per perusahaan untuk kode_barang
             $table->unique(
                 ['perusahaan_id', 'kode_barang'],
                 'kategoris_perusahaan_kode_barang_unique'
             );
 
-            // ✅ unique baru: per perusahaan untuk nama_barang
             $table->unique(
                 ['perusahaan_id', 'nama_barang'],
                 'kategoris_perusahaan_nama_barang_unique'
             );
+
         });
     }
 
@@ -38,17 +35,20 @@ return new class extends Migration
      */
     public function down(): void
     {
-         Schema::table('kategoris', function (Blueprint $table) {
+        Schema::table('kategoris', function (Blueprint $table) {
 
-            // ❌ drop unique baru
-            $table->dropUnique('kategoris_perusahaan_kode_barang_unique');
-            $table->dropUnique('kategoris_perusahaan_nama_barang_unique');
+            // =====================================
+            // DROP UNIQUE
+            // =====================================
 
-            // 🔁 balikin seperti semula
-            $table->unique(
-                ['kode_barang', 'perusahaan_id'],
-                'kode_perusahaan_unique'
+            $table->dropUnique(
+                'kategoris_perusahaan_kode_barang_unique'
             );
+
+            $table->dropUnique(
+                'kategoris_perusahaan_nama_barang_unique'
+            );
+
         });
     }
 };

@@ -316,6 +316,9 @@
                                 <button class="btn btn-primary px-4">
                                     Update
                                 </button>
+                                <a href="{{ route('peminjaman.index') }}" class="btn btn-secondary">
+                                    Kembali
+                                </a>
 
                             </div>
 

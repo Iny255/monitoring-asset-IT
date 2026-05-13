@@ -15,7 +15,13 @@
                 <div class="card shadow-sm border-0">
 
                     {{-- HEADER --}}
-                    <div class="card-header text-white py-3" style="background: linear-gradient(90deg,#0d3b66,#7b8dff);">
+                    <div class="card-header text-white py-3"
+                        style="background: linear-gradient(
+                    90deg,
+                    var(--theme-primary),
+                    var(--theme-secondary)
+                    );
+                    ">
 
                         <h4 class="mb-0 text-white fw-bold">
                             Pengajuan Peminjaman
@@ -269,6 +275,9 @@
                                     Simpan
 
                                 </button>
+                                <a href="{{ route('peminjaman.index') }}" class="btn btn-secondary">
+                                    Kembali
+                                </a>
 
                             </div>
 
@@ -477,7 +486,7 @@
 
                     fetch(
                             `/dashboard/peminjaman/search-karyawan?q=${keyword}&perusahaan_id=${perusahaanId}`
-                            )
+                        )
 
                         .then(res => res.json())
 
