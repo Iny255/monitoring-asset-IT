@@ -1,4 +1,4 @@
-<div>
+<div style="min-height: 85vh;">
 
     @php
         $lastDate = null;
@@ -28,9 +28,9 @@
         {{-- ========================================= --}}
         {{-- CARD --}}
         {{-- ========================================= --}}
-        <div class="card mb-3 shadow-sm border-0 border-start border-4 border-primary">
+        <div class="card mb-3 shadow-sm border-0 border-start border-4 border-primary h-100">
 
-            <div class="card-body py-3">
+            <div class="card-body p-4">
 
                 {{-- ========================================= --}}
                 {{-- HEADER CARD --}}

@@ -284,7 +284,7 @@
 
                 </div>
 
-                <div class="modal-body" id="historyContent" style="max-height:75vh; overflow-y:auto;">
+               <div class="modal-body" id="historyContent" style="overflow-y:auto;">
 
                     <div class="text-center py-4">
 

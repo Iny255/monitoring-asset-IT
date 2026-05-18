@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Models\Keluar;
 use App\Models\Masuk;
 use App\Models\Karyawan;
+use App\Models\Perusahaan;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -177,11 +178,11 @@ class KeluarController extends Controller
 
       // ✅ SIMPAN
       Keluar::create([
-        'kode_keluar' => $request->kode_keluar,
+        'kode_keluar' => strtoupper($request->kode_keluar),
 
         'id_masuk' => $request->id_masuk,
 
-        'kode_barang' => $request->kode_barang,
+        'kode_barang' => strtoupper($request->kode_barang),
 
         'jumlah' => $request->jumlah,
 
@@ -189,21 +190,30 @@ class KeluarController extends Controller
 
         'id_perusahaan' => $perusahaanId,
 
-        // 🔥 PERORANGAN
+        // =====================================
+        // PERORANGAN
+        // =====================================
+
         'id_karyawan' => $request->jenis_penerima == 'Perorangan' ? $request->id_karyawan : null,
 
-        // 🔥 PERDIVISI
-        'divisi_klr' => $request->jenis_penerima == 'Perdivisi' ? $request->divisi_klr : null,
+        // =====================================
+        // PERDIVISI
+        // =====================================
 
-        'perusahaan_klr' => $request->jenis_penerima == 'Perdivisi' ? $namaPerusahaan : null,
+        'divisi_klr' => $request->jenis_penerima == 'Perdivisi' ? strtoupper($request->divisi_klr) : null,
 
-        'keterangan' => $request->keterangan,
+        'perusahaan_klr' => $request->jenis_penerima == 'Perdivisi' ? strtoupper($namaPerusahaan) : null,
 
-        'warna' => $request->warna,
+        // =====================================
+        // DETAIL
+        // =====================================
 
-        'no_inventaris' => $request->no_inventaris,
+        'keterangan' => strtoupper($request->keterangan),
+
+        'warna' => strtoupper($request->warna),
+
+        'no_inventaris' => strtoupper($request->no_inventaris),
       ]);
-
       // ➖ KURANGI STOK
       $masuk->decrement('jumlah', $request->jumlah);
 
@@ -272,102 +282,174 @@ class KeluarController extends Controller
   {
     $user = auth()->user();
 
-    // 🔥 TENTUKAN PERUSAHAAN
+    // =====================================
+    // TENTUKAN PERUSAHAAN
+    // =====================================
+
     $perusahaanId = $user->role === 'super_admin' ? $request->perusahaan_id : $user->id_perusahaan;
 
-    // 🔒 VALIDASI
+    // =====================================
+    // NORMALISASI TEXT
+    // =====================================
+
+    $request->merge([
+      'kode_barang' => strtoupper($request->kode_barang),
+
+      'keterangan' => strtoupper($request->keterangan),
+
+      'warna' => strtoupper($request->warna),
+
+      'no_inventaris' => strtoupper($request->no_inventaris),
+
+      'divisi_klr' => strtoupper($request->divisi_klr),
+    ]);
+
+    // =====================================
+    // VALIDASI
+    // =====================================
+
     $request->validate([
       'perusahaan_id' => $user->role === 'super_admin' ? 'required|exists:perusahaans,id' : 'nullable',
 
       'id_masuk' => [
         'required',
+
         Rule::exists('masuks', 'id')->where(fn($q) => $q->where('perusahaan_id', $perusahaanId)),
       ],
 
       'kode_barang' => [
         'required',
+
         Rule::unique('keluars')
           ->where(fn($q) => $q->where('id_perusahaan', $perusahaanId))
           ->ignore($id),
       ],
 
       'jumlah' => 'required|integer|min:1',
-      'keterangan' => 'required|max:100',
-      'warna' => 'required|max:50',
-      'no_inventaris' => 'required|max:50',
+
+      'keterangan' => 'required|string|max:100',
+
+      'warna' => 'required|string|max:50',
+
+      'no_inventaris' => 'required|string|max:50',
+
       'jenis_penerima' => 'required|in:Perorangan,Perdivisi',
     ]);
 
-    // 🔥 VALIDASI PERORANGAN
+    // =====================================
+    // VALIDASI PERORANGAN
+    // =====================================
+
     if ($request->jenis_penerima == 'Perorangan') {
       $request->validate([
         'id_karyawan' => [
           'required',
+
           Rule::exists('karyawans', 'id')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
         ],
       ]);
     }
 
-    // 🔥 VALIDASI PERDIVISI
+    // =====================================
+    // VALIDASI PERDIVISI
+    // =====================================
+
     if ($request->jenis_penerima == 'Perdivisi') {
       $request->validate([
-        'divisi_klr' => 'required',
+        'divisi_klr' => 'required|string|max:50',
       ]);
     }
 
     DB::beginTransaction();
 
     try {
-      // 🔥 AMBIL DATA KELUAR
+      // =====================================
+      // AMBIL DATA KELUAR
+      // =====================================
+
       $keluar = Keluar::where('id', $id)
         ->where('id_perusahaan', $perusahaanId)
         ->firstOrFail();
 
-      // 🔄 KEMBALIKAN STOK LAMA
+      // =====================================
+      // KEMBALIKAN STOK LAMA
+      // =====================================
+
       $masukLama = Masuk::lockForUpdate()->findOrFail($keluar->id_masuk);
 
       $masukLama->increment('jumlah', $keluar->jumlah);
 
-      // 🔒 AMBIL DATA MASUK BARU
+      // =====================================
+      // AMBIL DATA MASUK BARU
+      // =====================================
+
       $masukBaru = Masuk::where('id', $request->id_masuk)
         ->where('perusahaan_id', $perusahaanId)
         ->lockForUpdate()
         ->firstOrFail();
 
-      // ❌ VALIDASI STOK
+      // =====================================
+      // VALIDASI STOK
+      // =====================================
+
       if ($request->jumlah > $masukBaru->jumlah) {
         DB::rollBack();
 
         return back()
           ->withInput()
-          ->with('error', 'Jumlah keluar melebihi stok!');
+          ->with('error', 'Jumlah keluar melebihi stok tersedia!');
       }
 
-      // 🔥 NAMA PERUSAHAAN
-      $namaPerusahaan = \App\Models\Perusahaan::find($perusahaanId)?->nama_perusahaan;
+      // =====================================
+      // AMBIL NAMA PERUSAHAAN
+      // =====================================
 
-      // ✅ UPDATE DATA
+      $namaPerusahaan = Perusahaan::find($perusahaanId)?->nama_perusahaan;
+
+      // =====================================
+      // UPDATE
+      // =====================================
+
       $keluar->update([
         'id_masuk' => $request->id_masuk,
+
         'kode_barang' => $request->kode_barang,
+
         'jumlah' => $request->jumlah,
+
         'jenis_penerima' => $request->jenis_penerima,
+
         'id_perusahaan' => $perusahaanId,
 
+        // =========================
         // PERORANGAN
+        // =========================
+
         'id_karyawan' => $request->jenis_penerima == 'Perorangan' ? $request->id_karyawan : null,
 
+        // =========================
         // PERDIVISI
+        // =========================
+
         'divisi_klr' => $request->jenis_penerima == 'Perdivisi' ? $request->divisi_klr : null,
 
-        'perusahaan_klr' => $request->jenis_penerima == 'Perdivisi' ? $namaPerusahaan : null,
+        'perusahaan_klr' => $request->jenis_penerima == 'Perdivisi' ? strtoupper($namaPerusahaan) : null,
+
+        // =========================
+        // DETAIL
+        // =========================
 
         'keterangan' => $request->keterangan,
+
         'warna' => $request->warna,
+
         'no_inventaris' => $request->no_inventaris,
       ]);
 
-      // ➖ KURANGI STOK BARU
+      // =====================================
+      // KURANGI STOK BARU
+      // =====================================
+
       $masukBaru->decrement('jumlah', $request->jumlah);
 
       DB::commit();

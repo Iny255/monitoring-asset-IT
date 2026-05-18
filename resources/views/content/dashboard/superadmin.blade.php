@@ -521,11 +521,16 @@
             new ApexCharts(document.querySelector("#chartDonutAset"), {
 
                 chart: {
+
                     type: 'donut',
-                    height: 350
+
+                    height: 350,
+
+                    width: '100%'
+
                 },
 
-                series: @json($komposisiAset->pluck('total')),
+                series: @json($komposisiAset->pluck('total')->map(fn($v) => (int) $v)->values()),
 
                 labels: @json($komposisiAset->pluck('nama_barang')),
 
@@ -569,9 +574,11 @@
 
                                     formatter: function(w) {
 
-                                        return Number(
-                                            w.globals.seriesTotals.reduce((a, b) => a + b, 0)
-                                        );
+                                        return w.globals.seriesTotals.reduce(function(a, b) {
+
+                                            return parseInt(a) + parseInt(b);
+
+                                        }, 0);
 
                                     }
                                 }

@@ -105,7 +105,7 @@
                                 <td>{{ $maping->keluar->karyawan->nama_karyawan ?? '-' }}</td>
                                 <td>{{ $maping->lokasi->nama_lokasi ?? '-' }}</td>
                                 <td>{{ $maping->perusahaan->nama_perusahaan ?? '-' }}</td>
-                                <td>{{ $maping->processor }}</td>
+                                <td>{{ $m->processor ?? '-' }}</td>
                                 <td>{{ $maping->ram }} GB</td>
                                 <td class="text-center">
 
@@ -194,7 +194,7 @@
 
                 <div class="modal-content">
 
-                   <div class="modal-header text-white modal-theme-header">
+                    <div class="modal-header text-white modal-theme-header">
                         <h5 class="mb-0" style="color:white;">Form Pencabutan Inventaris</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
@@ -230,13 +230,47 @@
                                 </select>
                             </div>
 
+                            {{-- ALASAN --}}
                             <div class="col-md-12 mb-3">
-                                <label>Alasan Pencabutan</label>
 
-                                <textarea name="alasan" class="form-control" rows="3"
-                                    placeholder="Contoh: perangkat rusak / karyawan resign"></textarea>
+                                <label>
+                                    Alasan Pencabutan
+                                </label>
+
+                                <select name="alasan" id="alasan_select" class="form-control" required>
+
+                                    <option value="">
+                                        -- Pilih Alasan --
+                                    </option>
+
+                                    <option value="RESIGN">
+                                        RESIGN
+                                    </option>
+
+                                    <option value="MUTASI KARYAWAN">
+                                        MUTASI KARYAWAN
+                                    </option>
+
+                                    <option value="LAIN-LAIN">
+                                        LAIN-LAIN
+                                    </option>
+
+                                </select>
+
                             </div>
 
+                            {{-- INPUT LAIN-LAIN --}}
+                            <div class="col-md-12 mb-3 d-none" id="lainnya_wrapper">
+
+                                <label>
+                                    Tulis Alasan Lainnya
+                                </label>
+
+                                <textarea name="alasan_lainnya" id="alasan_lainnya" class="form-control" rows="3"
+                                    placeholder="Tuliskan alasan pencabutan..."></textarea>
+
+
+                            </div>
                         </div>
 
                     </div>
@@ -568,6 +602,40 @@
                     });
 
             }
+
+        });
+    </script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+
+            const alasanSelect =
+                document.getElementById('alasan_select');
+
+            const lainnyaWrapper =
+                document.getElementById('lainnya_wrapper');
+
+            const alasanLainnya =
+                document.getElementById('alasan_lainnya');
+
+            alasanSelect.addEventListener('change', function() {
+
+                if (this.value === 'LAIN-LAIN') {
+
+                    lainnyaWrapper.classList.remove('d-none');
+
+                    alasanLainnya.setAttribute('required', true);
+
+                } else {
+
+                    lainnyaWrapper.classList.add('d-none');
+
+                    alasanLainnya.removeAttribute('required');
+
+                    alasanLainnya.value = '';
+
+                }
+
+            });
 
         });
     </script>

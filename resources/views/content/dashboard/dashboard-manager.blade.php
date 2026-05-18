@@ -26,8 +26,8 @@
         }
 
         /* =====================================
-                           CARD
-                        ===================================== */
+                               CARD
+                            ===================================== */
         .card-stat {
 
             border-radius: 15px;
@@ -55,8 +55,8 @@
         }
 
         /* =====================================
-                           WAVE
-                        ===================================== */
+                               WAVE
+                            ===================================== */
         .wave-box {
 
             position: absolute;
@@ -106,8 +106,8 @@
         }
 
         /* =====================================
-                           TEXT
-                        ===================================== */
+                               TEXT
+                            ===================================== */
         .stat-label {
 
             font-weight: 700;
@@ -123,8 +123,8 @@
         }
 
         /* =====================================
-                           ICON
-                        ===================================== */
+                               ICON
+                            ===================================== */
         .icon-box {
 
             width: 50px;
@@ -158,8 +158,8 @@
         }
 
         /* =====================================
-                           DASHBOARD HEADER
-                        ===================================== */
+                               DASHBOARD HEADER
+                            ===================================== */
         .dashboard-bg {
 
             background:
@@ -174,8 +174,8 @@
         }
 
         /* =====================================
-                           ANIMATION
-                        ===================================== */
+                               ANIMATION
+                            ===================================== */
         .fade-up {
 
             opacity: 0;
@@ -195,8 +195,8 @@
         }
 
         /* =====================================
-                           CHART
-                        ===================================== */
+                               CHART
+                            ===================================== */
         #chartTransaksiAset,
         #chartDonutAset {
 
@@ -414,276 +414,228 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
 
-            const isDark =
-                document.documentElement.classList.contains("dark-style");
+            const isDark = document.documentElement.classList.contains("dark-style")
 
-            const labelColor =
-                isDark ? "#cbcbe2" : "#566a7f";
+            const labelColor = isDark ? "#cbcbe2" : "#566a7f"
 
 
             /* =====================================
                AREA CHART
             ===================================== */
 
-            new ApexCharts(
-                document.querySelector("#chartTransaksiAset"), {
+            new ApexCharts(document.querySelector("#chartTransaksiAset"), {
 
-                    chart: {
+                chart: {
 
-                        height: 350,
+                    height: 350,
 
-                        type: 'area',
+                    type: 'area',
 
-                        toolbar: {
-                            show: false
-                        },
-
-                        fontFamily: 'Public Sans'
-
+                    toolbar: {
+                        show: false
                     },
 
-                    series: [
+                    fontFamily: 'Public Sans'
 
-                        {
-                            name: 'Masuk',
-                            data: @json($dataMasuk ?? [])
-                        },
+                },
 
-                        {
-                            name: 'Keluar',
-                            data: @json($dataKeluar ?? [])
-                        }
+                series: [
 
-                    ],
-
-                    xaxis: {
-
-                        categories: @json($bulanLabel ?? []),
-
-                        labels: {
-                            style: {
-                                colors: labelColor
-                            }
-                        }
-
+                    {
+                        name: 'Masuk',
+                        data: @json($dataMasuk ?? [])
                     },
 
-                    yaxis: {
+                    {
+                        name: 'Keluar',
+                        data: @json($dataKeluar ?? [])
+                    }
 
-                        labels: {
-                            style: {
-                                colors: labelColor
-                            }
-                        }
+                ],
 
-                    },
+                xaxis: {
 
-                    legend: {
+                    categories: @json($bulanLabel ?? []),
 
-                        position: 'top',
-
-                        horizontalAlign: 'right',
-
-                        labels: {
+                    labels: {
+                        style: {
                             colors: labelColor
                         }
+                    }
 
+                },
+
+                yaxis: {
+
+                    labels: {
+                        style: {
+                            colors: labelColor
+                        }
+                    }
+
+                },
+
+                legend: {
+
+                    labels: {
+                        colors: labelColor
                     },
 
-                    colors: [
-                        '{{ $primaryColor }}',
-                        '{{ $secondaryColor }}'
-                    ],
+                    position: 'top',
 
-                    stroke: {
+                    horizontalAlign: 'right'
 
-                        curve: 'smooth',
+                },
 
-                        width: 3
+                colors: [
+                    '{{ $primaryColor }}',
+                    '{{ $secondaryColor }}'
+                ],
 
-                    },
+                stroke: {
 
-                    fill: {
+                    curve: 'smooth',
 
-                        type: 'gradient',
+                    width: 3
 
-                        gradient: {
+                },
 
-                            opacityFrom: 0.6,
+                fill: {
 
-                            opacityTo: 0.1
+                    type: 'gradient',
+
+                    gradient: {
+
+                        opacityFrom: 0.6,
+
+                        opacityTo: 0.1
+
+                    }
+
+                }
+
+            }).render()
+
+
+
+            /* =====================================
+               DONUT
+            ===================================== */
+
+            new ApexCharts(document.querySelector("#chartDonutAset"), {
+
+                chart: {
+
+                    type: 'donut',
+
+                    height: 350,
+
+                    width: '100%'
+
+                },
+
+                series: @json($komposisiAset->pluck('total')->map(fn($v) => (int) $v)->values()),
+
+                labels: @json($komposisiAset->pluck('nama_barang')),
+
+                colors: [
+
+                    '{{ $primaryColor }}',
+                    '{{ $secondaryColor }}',
+                    '#28c76f',
+                    '#ff9f43',
+                    '#03c3ec',
+                    '#ea5455',
+                    '#8e44ad',
+                    '#20c997'
+
+                ],
+
+                plotOptions: {
+
+                    pie: {
+
+                        donut: {
+
+                            size: '75%',
+
+                            labels: {
+
+                                show: true,
+
+                                name: {
+
+                                    show: true,
+
+                                    color: labelColor,
+
+                                    offsetY: -10
+
+                                },
+
+                                value: {
+
+                                    show: true,
+
+                                    color: labelColor,
+
+                                    offsetY: 10,
+
+                                    fontWeight: 700,
+
+                                    formatter: function(val) {
+
+                                        return Number(val);
+
+                                    }
+
+                                },
+
+                                total: {
+
+                                    show: true,
+
+                                    label: 'Total Stok',
+
+                                    color: labelColor,
+
+                                    formatter: function(w) {
+
+                                        return w.globals.seriesTotals.reduce(function(a, b) {
+
+                                            return parseInt(a) + parseInt(b);
+
+                                        }, 0);
+
+                                    }
+
+                                }
+
+                            }
 
                         }
 
                     }
 
-                }).render();
+                },
 
+                legend: {
 
+                    position: 'bottom',
 
-            /* =====================================
-               DONUT CHART
-            ===================================== */
+                    labels: {
+                        colors: labelColor
+                    }
 
-            const donutSeries =
-                @json($komposisiAset->pluck('total'));
+                },
 
-            const donutLabels =
-                @json($komposisiAset->pluck('nama_barang'));
+                dataLabels: {
 
+                    enabled: false
 
-            if (donutSeries.length > 0) {
+                }
 
-                new ApexCharts(
-                    document.querySelector("#chartDonutAset"), {
-
-                        chart: {
-
-                            type: 'donut',
-
-                            height: 350
-
-                        },
-
-                        series: donutSeries,
-
-                        labels: donutLabels,
-
-                        colors: [
-
-                            '#696cff',
-                            '#ff9f43',
-                            '#28c76f',
-                            '#03c3ec',
-                            '#ea5455',
-                            '#7367f0',
-                            '#00cfe8',
-                            '#ff6b6b',
-                            '#1dd1a1',
-                            '#f368e0'
-
-                        ],
-
-                        stroke: {
-
-                            width: 2
-
-                        },
-
-                        plotOptions: {
-
-                            pie: {
-
-                                donut: {
-
-                                    size: '75%',
-
-                                    labels: {
-
-                                        show: true,
-
-                                        name: {
-
-                                            show: true,
-
-                                            offsetY: -10,
-
-                                            color: labelColor
-
-                                        },
-
-                                        value: {
-
-                                            show: true,
-
-                                            offsetY: 10,
-
-                                            color: labelColor,
-
-                                            fontWeight: 700,
-
-                                            formatter: function(val) {
-
-                                                return parseInt(val);
-
-                                            }
-
-                                        },
-
-                                        total: {
-
-                                            show: true,
-
-                                            label: 'Total Stok',
-
-                                            color: labelColor,
-
-                                            formatter: function(w) {
-
-                                                return w.globals.seriesTotals
-                                                    .reduce((a, b) => a + b, 0);
-
-                                            }
-
-                                        }
-
-                                    }
-
-                                }
-
-                            }
-
-                        },
-
-                        legend: {
-
-                            position: 'bottom',
-
-                            labels: {
-                                colors: labelColor
-                            }
-
-                        },
-
-                        dataLabels: {
-
-                            enabled: false
-
-                        },
-
-                        responsive: [
-
-                            {
-
-                                breakpoint: 480,
-
-                                options: {
-
-                                    chart: {
-                                        height: 300
-                                    },
-
-                                    legend: {
-                                        position: 'bottom'
-                                    }
-
-                                }
-
-                            }
-
-                        ]
-
-                    }).render();
-
-            } else {
-
-                document.querySelector("#chartDonutAset").innerHTML = `
-            <div class="d-flex align-items-center justify-content-center h-100 text-muted">
-                Tidak ada data aset
-            </div>
-        `;
-
-            }
+            }).render()
 
 
 
@@ -691,18 +643,17 @@
                ANIMATION
             ===================================== */
 
-            document.querySelectorAll(".fade-up")
-                .forEach((el, i) => {
+            document.querySelectorAll(".fade-up").forEach((el, i) => {
 
-                    setTimeout(() => {
+                setTimeout(() => {
 
-                        el.classList.add("show");
+                    el.classList.add("show")
 
-                    }, 150 * i);
+                }, 150 * i)
 
-                });
+            })
 
-        });
+        })
     </script>
 
 @endsection

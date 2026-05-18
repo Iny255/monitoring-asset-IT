@@ -20,7 +20,7 @@ class PerusahaanSeeder extends Seeder
             [
                 'kode_perusahaan' => 'PT0001',
 
-                'nama_perusahaan' => 'PT Sembilan Matahari Sakti',
+                'nama_perusahaan' => 'PT SEMBILAN MATAHARI SAKTI',
 
                 // Tema biru
                 'primary_color' => '#0d3b66',
@@ -38,7 +38,7 @@ class PerusahaanSeeder extends Seeder
             [
                 'kode_perusahaan' => 'PT0002',
 
-                'nama_perusahaan' => 'PT Padma Jarka Abadi',
+                'nama_perusahaan' => 'PT PADMA JARKA ABADI',
 
                 // Tema merah maroon + gold
                 'primary_color' => '#8B0000',
@@ -56,7 +56,7 @@ class PerusahaanSeeder extends Seeder
             [
                 'kode_perusahaan' => 'PT0003',
 
-                'nama_perusahaan' => 'PT Semesta Mataram Sakti',
+                'nama_perusahaan' => 'PT SEMESTA MATARAM SAKTI',
 
                 // Tema merah modern
                 'primary_color' => '#C1121F',
@@ -74,7 +74,7 @@ class PerusahaanSeeder extends Seeder
             [
                 'kode_perusahaan' => 'PT0004',
 
-                'nama_perusahaan' => 'PT Sumber Santoso Abadi',
+                'nama_perusahaan' => 'PT SUMBER SANTOSO ABADI',
 
                 // Tema abu + merah
                 'primary_color' => '#5A5A5A',

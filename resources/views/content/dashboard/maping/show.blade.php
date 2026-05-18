@@ -44,7 +44,7 @@
                             </tr>
                              <tr>
                                 <th>Garansi</th>
-                                <td>{{ $maping->keluar->masuk->garansi?? '-' }} Bulan</td>
+                                <td>{{ $maping->keluar->masuk->garansi?? '-' }} BULAN</td>
                             </tr>
                              <tr>
                                 <th>No Inventaris</th>
@@ -69,43 +69,43 @@
                             </tr>
                             <tr>
                                 <th>Processor</th>
-                                <td>{{ $maping->processor ?? '-' }}</td>
+                               <td>{{ $maping->processor ?: '-' }}</td>
                             </tr>
                              <tr>
                                 <th>Device ID</th>
-                                <td>{{ $maping->device_id ?? '-' }}</td>
+                                <td>{{ $maping->device_id ?: '-' }}</td>
                             </tr>
                              <tr>
                                 <th>Produk ID</th>
-                                <td>{{ $maping->produk_id ?? '-' }}</td>
+                                <td>{{ $maping->produk_id ?: '-' }}</td>
                             </tr>
                             <tr>
                                 <th>RAM</th>
-                                <td>{{ $maping->ram ?? '-' }} GB</td>
+                                <td>{{ $maping->ram ?: '-' }} GB</td>
                             </tr>
                              <tr>
                                 <th>System</th>
-                                <td>{{ $maping->system ?? '-' }}</td>
+                                <td>{{ $maping->system ?: '-' }}</td>
                             </tr>
                              <tr>
                                 <th>version</th>
-                                <td>{{ $maping->version ?? '-' }}</td>
+                                <td>{{ $maping->version ?: '-' }}</td>
                             </tr>
                              <tr>
                                 <th>Instal On</th>
-                                <td>{{ $maping->instal_on ?? '-' }}</td>
+                                <td>{{ $maping->instal_on ?: '-' }}</td>
                             </tr>
                              <tr>
                                 <th>Aplikasi</th>
-                                <td>{{ $maping->aplikasi ?? '-' }}</td>
+                                <td>{{ $maping->aplikasi ?: '-' }}</td>
                             </tr>
                              <tr>
                                 <th>Hak Akses Data PPN</th>
-                                <td>{{ $maping->data_p ?? '-' }}</td>
+                                <td>{{ $maping->data_p ?: '-' }}</td>
                             </tr>
                              <tr>
                                 <th>Hak Akses Data Non PPN</th>
-                                <td>{{ $maping->data_n ?? '-' }}</td>
+                                <td>{{ $maping->data_n ?: '-' }}</td>
                             </tr>
                         </table>
                     </div>

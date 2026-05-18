@@ -67,6 +67,10 @@ class DashboardUserController extends Controller
       'id_perusahaan' => 'nullable|exists:perusahaans,id',
     ]);
 
+    $validatedData['name'] = strtoupper($validatedData['name']);
+
+    $validatedData['email'] = strtolower($validatedData['email']);
+
     // 🔥 kalau super_admin → perusahaan null
     if ($request->role === 'super_admin') {
       $validatedData['id_perusahaan'] = null;
@@ -127,8 +131,9 @@ class DashboardUserController extends Controller
     $user = User::findOrFail($id);
 
     $user->username = $request->username;
-    $user->name = $request->name;
-    $user->email = $request->email;
+    $user->name = strtoupper($request->name);
+
+    $user->email = strtolower($request->email);
 
     if ($request->filled('password')) {
       $user->password = bcrypt($request->password);

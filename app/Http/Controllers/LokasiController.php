@@ -75,7 +75,7 @@ class LokasiController extends Controller
       'nama_lokasi' => 'required|string|max:50',
       'id_perusahaan' => $user->role === 'super_admin' ? 'required' : 'nullable',
     ]);
-
+     $validated['nama_lokasi'] = strtoupper($validated['nama_lokasi']);
     try {
       $validated['id_perusahaan'] = $perusahaanId;
 
@@ -125,6 +125,7 @@ class LokasiController extends Controller
       'nama_lokasi' => 'required|string|max:50',
     ]);
 
+    $validated['nama_lokasi'] = strtoupper($validated['nama_lokasi']);
     $validated['id_perusahaan'] = $perusahaanId;
 
     $lokasi->update($validated);

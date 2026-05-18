@@ -73,7 +73,7 @@
             <tr>
                 <td class="center">{{ $i + 1 }}</td>
 
-                <td>{{ $m->keluar->kode_barang ?? '-' }}</td>
+                <td>{{ $m->keluar->kode_barang ?: '-' }}</td>
                 <td>
                     {{ $m->keluar->karyawan->nama_karyawan ?? '-' }}
                 </td>
@@ -87,9 +87,9 @@
                 <td>{{ $m->keluar->masuk->garansi?? '-' }} Bulan</td>
                 <td>{{ $m->keluar->no_inventaris?? '-' }}</td>
                 <td>{{ $m->keluar->masuk->tgl_beli?? '-' }}</td>
-                <td>{{ $m->aplikasi ?? '-' }}</td>
-                <td>{{ $m->data_p ?? '-' }}</td>
-                <td>{{ $m->data_n ?? '-' }}</td>
+                <td>{{ $m->aplikasi ?: '-' }}</td>
+                <td>{{ $m->data_p ?: '-' }}</td>
+                <td>{{ $m->data_n ?: '-' }}</td>
             </tr>
             @empty
             <tr>

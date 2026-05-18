@@ -36,7 +36,7 @@
                             @csrf
 
                             {{-- TIPE --}}
-                            <input type="hidden" name="jenis_perusahaan" id="jenis_perusahaan_input" value="internal">
+                            <input type="hidden" name="tipe_peminjam" id="jenis_perusahaan_input" value="internal">
 
                             <div class="row">
 

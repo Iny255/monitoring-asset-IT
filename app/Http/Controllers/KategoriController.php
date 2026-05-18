@@ -83,6 +83,7 @@ class KategoriController extends Controller
       'kode_barang' => 'required|string|max:10',
       'nama_barang' => 'required|string|max:50',
     ]);
+    $validatedData['nama_barang'] = strtoupper($validatedData['nama_barang']);
 
     try {
       // 🔥 SET PERUSAHAAN
@@ -112,6 +113,7 @@ class KategoriController extends Controller
     ]);
 
     try {
+      $validated['nama_barang'] = strtoupper($validated['nama_barang']);
       $kategori->update($validated);
 
       return redirect()

@@ -133,9 +133,9 @@ class MapingController extends Controller
 
       $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
     } else {
-     $lokasis = Lokasi::where('id_perusahaan', $user->id_perusahaan)
-    ->orderBy('nama_lokasi')
-    ->get();
+      $lokasis = Lokasi::where('id_perusahaan', $user->id_perusahaan)
+        ->orderBy('nama_lokasi')
+        ->get();
 
       $perusahaans = collect();
     }
@@ -220,66 +220,108 @@ class MapingController extends Controller
   {
     $user = auth()->user();
 
+    // =====================================
+    // PERUSAHAAN
+    // =====================================
+
     $perusahaanId = $user->role === 'super_admin' ? $request->id_perusahaan : $user->id_perusahaan;
-    $request->validate([
+
+    // =====================================
+    // VALIDASI
+    // =====================================
+
+    $validated = $request->validate([
       'id_keluar' => [
         'required',
+
         'exists:keluars,id',
+
         function ($attribute, $value, $fail) {
           $exists = \App\Models\Maping::where('id_keluar', $value)->exists();
+
           if ($exists) {
             $fail('Kode barang ini sudah digunakan dan tidak bisa dipakai lagi.');
           }
         },
       ],
+
       'id_lokasi' => 'required|exists:lokasis,id',
+
       'id_perusahaan' => $user->role === 'super_admin' ? 'required|exists:perusahaans,id' : 'nullable',
+
       'processor' => 'nullable|string|max:100',
+
       'device_id' => [
         'nullable',
+
         'string',
+
         'max:50',
-        Rule::unique('mapings')->where(function ($q) use ($request) {
-          return $q->where('id_perusahaan', $request->id_perusahaan);
-        }),
+
+        Rule::unique('mapings')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
       ],
 
       'produk_id' => [
         'nullable',
+
         'string',
+
         'max:50',
-        Rule::unique('mapings')->where(function ($q) use ($request) {
-          return $q->where('id_perusahaan', $request->id_perusahaan);
-        }),
+
+        Rule::unique('mapings')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
       ],
+
       'ram' => 'nullable|integer|min:1',
+
       'system' => 'nullable|string|max:50',
-      'version' => 'nullable|string|max:5',
-      'instal_on' => 'nullable|string|max:50',
+
+      'version' => 'nullable|string|max:20',
+
+      'instal_on' => 'nullable|date',
+
       'aplikasi' => 'nullable|string|max:100',
+
       'data_p' => 'nullable|string|max:100',
+
       'data_n' => 'nullable|string|max:100',
     ]);
 
     DB::beginTransaction();
 
     try {
-      Maping::create([
-        'id_keluar' => $request->id_keluar,
-        'id_lokasi' => $request->id_lokasi,
-        'id_perusahaan' => $perusahaanId,
-        'processor' => $request->processor,
-        'device_id' => $request->device_id,
-        'produk_id' => $request->produk_id,
-        'ram' => $request->ram,
-        'system' => $request->system,
-        'version' => $request->version,
-        'instal_on' => $request->instal_on,
-        'aplikasi' => $request->aplikasi,
-        'data_p' => $request->data_p,
-        'data_n' => $request->data_n,
-        'status' => 'aktif',
-      ]);
+      // =====================================
+      // UPPERCASE
+      // =====================================
+
+      $validated['processor'] = strtoupper($validated['processor'] ?? '');
+
+      $validated['device_id'] = strtoupper($validated['device_id'] ?? '');
+
+      $validated['produk_id'] = strtoupper($validated['produk_id'] ?? '');
+
+      $validated['system'] = strtoupper($validated['system'] ?? '');
+
+      $validated['version'] = strtoupper($validated['version'] ?? '');
+
+      $validated['aplikasi'] = strtoupper($validated['aplikasi'] ?? '');
+
+      $validated['data_p'] = strtoupper($validated['data_p'] ?? '');
+
+      $validated['data_n'] = strtoupper($validated['data_n'] ?? '');
+
+      // =====================================
+      // DEFAULT
+      // =====================================
+
+      $validated['id_perusahaan'] = $perusahaanId;
+
+      $validated['status'] = 'aktif';
+
+      // =====================================
+      // SIMPAN
+      // =====================================
+
+      Maping::create($validated);
 
       DB::commit();
 
@@ -343,13 +385,27 @@ class MapingController extends Controller
    */
   public function update(Request $request, Maping $maping)
   {
-    $request->validate([
+    $user = auth()->user();
+
+    // =====================================
+    // PERUSAHAAN
+    // =====================================
+
+    $perusahaanId = $user->role === 'super_admin' ? $request->id_perusahaan : $user->id_perusahaan;
+
+    // =====================================
+    // VALIDASI
+    // =====================================
+
+    $validated = $request->validate([
       'id_keluar' => [
         'required',
+
         'exists:keluars,id',
+
         function ($attribute, $value, $fail) use ($maping) {
           $exists = Maping::where('id_keluar', $value)
-            ->where('id', '!=', $maping->id) // selain record ini
+            ->where('id', '!=', $maping->id)
             ->exists();
 
           if ($exists) {
@@ -359,57 +415,94 @@ class MapingController extends Controller
       ],
 
       'id_lokasi' => 'nullable|exists:lokasis,id',
-      'id_perusahaan' => 'nullable|exists:perusahaans,id',
 
-      // spesifikasi nullable
+      'id_perusahaan' => $user->role === 'super_admin' ? 'required|exists:perusahaans,id' : 'nullable',
+
+      // =====================================
+      // SPESIFIKASI
+      // =====================================
+
       'processor' => 'nullable|string|max:100',
+
       'device_id' => [
         'nullable',
+
         'string',
+
         'max:50',
+
         Rule::unique('mapings')
-          ->where(fn($q) => $q->where('id_perusahaan', $request->id_perusahaan))
+          ->where(fn($q) => $q->where('id_perusahaan', $perusahaanId))
           ->ignore($maping->id),
       ],
 
       'produk_id' => [
         'nullable',
+
         'string',
+
         'max:50',
+
         Rule::unique('mapings')
-          ->where(fn($q) => $q->where('id_perusahaan', $request->id_perusahaan))
+          ->where(fn($q) => $q->where('id_perusahaan', $perusahaanId))
           ->ignore($maping->id),
       ],
 
       'ram' => 'nullable|integer|min:1',
+
       'system' => 'nullable|string|max:50',
+
       'version' => 'nullable|string|max:10',
+
       'instal_on' => 'nullable|date',
+
       'aplikasi' => 'nullable|string|max:100',
+
       'data_p' => 'nullable|string|max:255',
+
       'data_n' => 'nullable|string|max:255',
+
       'status' => 'required|in:aktif,dicabut',
     ]);
 
     DB::beginTransaction();
 
     try {
-      $maping->update([
-        'id_keluar' => $request->id_keluar,
-        'id_lokasi' => $request->id_lokasi,
-        'id_perusahaan' => $request->id_perusahaan,
-        'processor' => $request->processor,
-        'device_id' => $request->device_id,
-        'produk_id' => $request->produk_id,
-        'ram' => $request->ram,
-        'system' => $request->system,
-        'version' => $request->version,
-        'instal_on' => $request->instal_on,
-        'aplikasi' => $request->aplikasi,
-        'data_p' => $request->data_p,
-        'data_n' => $request->data_n,
-        'status' => $request->status,
-      ]);
+      // =====================================
+      // UPPERCASE
+      // =====================================
+
+      $validated['processor'] = strtoupper($validated['processor'] ?? '');
+
+      $validated['device_id'] = strtoupper($validated['device_id'] ?? '');
+
+      $validated['produk_id'] = strtoupper($validated['produk_id'] ?? '');
+
+      $validated['system'] = strtoupper($validated['system'] ?? '');
+
+      $validated['version'] = strtoupper($validated['version'] ?? '');
+
+      $validated['instal_on'] = strtoupper($validated['instal_on'] ?? '');
+
+      $validated['aplikasi'] = strtoupper($validated['aplikasi'] ?? '');
+
+      $validated['data_p'] = strtoupper($validated['data_p'] ?? '');
+
+      $validated['data_n'] = strtoupper($validated['data_n'] ?? '');
+
+      $validated['status'] = strtoupper($validated['status']);
+
+      // =====================================
+      // PERUSAHAAN
+      // =====================================
+
+      $validated['id_perusahaan'] = $perusahaanId;
+
+      // =====================================
+      // UPDATE
+      // =====================================
+
+      $maping->update($validated);
 
       DB::commit();
 
@@ -588,6 +681,15 @@ class MapingController extends Controller
     DB::beginTransaction();
 
     try {
+      $validated['ke_aplikasi'] = strtoupper($validated['ke_aplikasi'] ?? '');
+
+      $validated['ke_data_ppn'] = strtoupper($validated['ke_data_ppn'] ?? '');
+
+      $validated['ke_data_non_ppn'] = strtoupper($validated['ke_data_non_ppn'] ?? '');
+
+      $validated['ke_no_inventaris'] = strtoupper($validated['ke_no_inventaris'] ?? '');
+
+      $validated['keterangan'] = strtoupper($validated['keterangan'] ?? '');
       // =====================================
       // SIMPAN HISTORY MUTASI
       // =====================================
@@ -750,42 +852,74 @@ class MapingController extends Controller
   public function destroyMutasi($id)
   {
     try {
+      $mutasi = MutasiMaping::findOrFail($id);
 
-        $mutasi = MutasiMaping::findOrFail($id);
+      $mutasi->delete();
 
-        $mutasi->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'History mutasi berhasil dihapus'
-        ]);
-
+      return response()->json([
+        'success' => true,
+        'message' => 'History mutasi berhasil dihapus',
+      ]);
     } catch (\Exception $e) {
-
-        return response()->json([
-            'success' => false,
-            'message' => $e->getMessage()
-        ], 500);
-
+      return response()->json(
+        [
+          'success' => false,
+          'message' => $e->getMessage(),
+        ],
+        500
+      );
     }
   }
   public function cabut(Request $request, $id)
   {
+    $validated = $request->validate([
+      'tanggal_cabut' => 'required|date',
+      'kondisi' => 'required|in:Baik,Rusak',
+      'alasan' => 'required|string',
+      'alasan_lainnya' => 'nullable|string|max:255',
+    ]);
+
     $maping = Maping::with(['keluar.karyawan'])->findOrFail($id);
 
     DB::beginTransaction();
 
     try {
+      // =====================================
+      // ALASAN
+      // =====================================
+
+      $alasan = strtoupper($validated['alasan']);
+
+      // jika pilih lain-lain
+      if ($validated['alasan'] === 'LAIN-LAIN') {
+        $alasan = strtoupper($request->alasan_lainnya);
+      }
+
+      // =====================================
+      // SIMPAN PENCABUTAN
+      // =====================================
+
       Pencabutan::create([
         'id_maping' => $maping->id,
+
         'id_keluar' => $maping->id_keluar,
+
         'id_lokasi' => $maping->id_lokasi,
+
         'id_perusahaan' => $maping->id_perusahaan,
+
         'id_karyawan' => optional($maping->keluar)->id_karyawan,
-        'tanggal_cabut' => $request->tanggal_cabut,
-        'kondisi' => $request->kondisi,
-        'alasan' => $request->alasan,
+
+        'tanggal_cabut' => $validated['tanggal_cabut'],
+
+        'kondisi' => strtoupper($validated['kondisi']),
+
+        'alasan' => $alasan,
       ]);
+
+      // =====================================
+      // UPDATE STATUS MAPING
+      // =====================================
 
       $maping->update([
         'status' => 'dicabut',
@@ -799,7 +933,9 @@ class MapingController extends Controller
     } catch (\Exception $e) {
       DB::rollBack();
 
-      return back()->with('error', $e->getMessage());
+      return back()
+        ->withInput()
+        ->with('error', $e->getMessage());
     }
   }
   public function historyCabut(Request $request)
@@ -878,7 +1014,7 @@ class MapingController extends Controller
       });
     }
 
-    $histories = $query->get();
+    $histories = $query->orderBy('tanggal_mutasi', 'desc')->get();
 
     return view('content.dashboard.maping.history_user', compact('histories'));
   }

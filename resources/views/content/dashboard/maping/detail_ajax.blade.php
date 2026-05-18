@@ -61,56 +61,56 @@
 
             <tr>
                 <th class="detail-label">Processor</th>
-                <td>{{ $maping->processor ?? '-' }}</td>
+                <td>{{ $maping->processor ?: '-' }}</td>
             </tr>
 
             <tr>
                 <th class="detail-label">Device ID</th>
                 <td style="word-break: break-all;">
-                    {{ $maping->device_id ?? '-' }}
+                    {{ $maping->device_id ?: '-' }}
                 </td>
             </tr>
 
             <tr>
                 <th class="detail-label">Produk ID</th>
                 <td style="word-break: break-all;">
-                    {{ $maping->produk_id ?? '-' }}
+                    {{ $maping->produk_id ?: '-' }}
                 </td>
             </tr>
 
             <tr>
                 <th class="detail-label">RAM</th>
-                <td>{{ $maping->ram ?? '-' }} GB</td>
+                <td>{{ $maping->ram ?: '-' }} GB</td>
             </tr>
 
             <tr>
                 <th class="detail-label">System</th>
-                <td>{{ $maping->system ?? '-' }}</td>
+                <td>{{ $maping->system ?: '-' }}</td>
             </tr>
 
             <tr>
                 <th class="detail-label">Version</th>
-                <td>{{ $maping->version ?? '-' }}</td>
+                <td>{{ $maping->version ?: '-' }}</td>
             </tr>
 
             <tr>
                 <th class="detail-label">Install On</th>
-                <td>{{ $maping->instal_on ?? '-' }}</td>
+                <td>{{ $maping->instal_on ?: '-' }}</td>
             </tr>
 
             <tr>
                 <th class="detail-label">Aplikasi</th>
-                <td>{{ $maping->aplikasi ?? '-' }}</td>
+                <td>{{ $maping->aplikasi ?: '-' }}</td>
             </tr>
 
             <tr>
                 <th class="detail-label">Hak Akses Data PPN</th>
-                <td>{{ $maping->data_p ?? '-' }}</td>
+                <td>{{ $maping->data_p ?: '-' }}</td>
             </tr>
 
             <tr>
                 <th class="detail-label">Hak Akses Data Non PPN</th>
-                <td>{{ $maping->data_n ?? '-' }}</td>
+                <td>{{ $maping->data_n ?: '-' }}</td>
             </tr>
 
         </tbody>

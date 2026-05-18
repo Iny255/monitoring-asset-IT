@@ -36,7 +36,7 @@
                             @method('PUT')
 
                             {{-- TIPE --}}
-                            <input type="hidden" name="jenis_perusahaan" id="jenis_perusahaan_input"
+                            <input type="hidden" name="tipe_peminjam" id="jenis_perusahaan_input"
                                 value="{{ $peminjaman->tipe_peminjam ?? 'internal' }}">
 
                             <div class="row">
@@ -80,7 +80,7 @@
                                             Jenis Peminjam
                                         </label>
 
-                                        <select id="jenis_perusahaan" class="form-select">
+                                        <select id="tipe_peminjam" class="form-select">
 
                                             <option value="internal"
                                                 {{ $peminjaman->tipe_peminjam == 'internal' ? 'selected' : '' }}>

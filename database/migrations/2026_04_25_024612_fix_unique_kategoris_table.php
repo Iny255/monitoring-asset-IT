@@ -11,10 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('kategoris', function (Blueprint $table) {
+          Schema::table('kategoris', function (Blueprint $table) {
 
             // =====================================
-            // TAMBAH UNIQUE BARU
+            // HAPUS UNIQUE GLOBAL LAMA
+            // =====================================
+
+            $table->dropUnique('kategoris_kode_barang_unique');
+
+            // =====================================
+            // UNIQUE PER PERUSAHAAN
             // =====================================
 
             $table->unique(
@@ -38,7 +44,7 @@ return new class extends Migration
         Schema::table('kategoris', function (Blueprint $table) {
 
             // =====================================
-            // DROP UNIQUE
+            // DROP UNIQUE BARU
             // =====================================
 
             $table->dropUnique(
@@ -48,6 +54,12 @@ return new class extends Migration
             $table->dropUnique(
                 'kategoris_perusahaan_nama_barang_unique'
             );
+
+            // =====================================
+            // BALIKKAN UNIQUE LAMA
+            // =====================================
+
+            $table->unique('kode_barang');
 
         });
     }

@@ -105,6 +105,14 @@ class MasukController extends Controller
     ]);
 
     try {
+      $validated['kode_masuk'] = strtoupper($validated['kode_masuk']);
+
+      $validated['type'] = strtoupper($validated['type']);
+
+      $validated['merek'] = strtoupper($validated['merek']);
+
+      $validated['supplier'] = strtoupper($validated['supplier']);
+
       // 🔥 upload gambar
       if ($request->hasFile('gambar')) {
         $validated['gambar'] = $request->file('gambar')->store('masuk', 'public');
@@ -182,6 +190,18 @@ class MasukController extends Controller
     }
 
     try {
+      $validated['type'] = strtoupper($validated['type']);
+
+      $validated['merek'] = strtoupper($validated['merek']);
+
+      $validated['supplier'] = strtoupper($validated['supplier']);
+
+      // =====================================
+      // FORMAT HARGA
+      // =====================================
+
+      $validated['harga'] = str_replace('.', '', $validated['harga']);
+
       $masuk->update($validated);
 
       return redirect()

@@ -11,22 +11,35 @@ return new class extends Migration {
   public function up(): void
   {
     Schema::table('keluars', function (Blueprint $table) {
-      // ❌ JANGAN drop apapun (karena tidak ada unique)
+      // HAPUS UNIQUE LAMA
+      $table->dropUnique('keluars_kode_keluar_unique');
 
-      // ✅ langsung buat composite unique
-      $table->unique(['kode_keluar', 'id_perusahaan']);
-      $table->unique(['kode_barang', 'id_perusahaan']);
+      // OPTIONAL:
+      // kalau kode_barang juga sebelumnya unique
+      // hapus juga bila ada
+      // $table->dropUnique('keluars_kode_barang_unique');
+
+      // BUAT UNIQUE PER PERUSAHAAN
+      $table->unique(['id_perusahaan', 'kode_keluar'], 'keluars_perusahaan_kode_keluar_unique');
+
+      // OPTIONAL
+      $table->unique(['id_perusahaan', 'kode_barang'], 'keluars_perusahaan_kode_barang_unique');
     });
   }
 
-  /**
-   * Reverse the migrations.
-   */
   public function down(): void
   {
     Schema::table('keluars', function (Blueprint $table) {
-      $table->dropUnique(['kode_keluar', 'id_perusahaan']);
-      $table->dropUnique(['kode_barang', 'id_perusahaan']);
+      // DROP COMPOSITE UNIQUE
+      $table->dropUnique('keluars_perusahaan_kode_keluar_unique');
+
+      $table->dropUnique('keluars_perusahaan_kode_barang_unique');
+
+      // KEMBALIKAN UNIQUE LAMA
+      $table->unique('kode_keluar');
+
+      // OPTIONAL
+      // $table->unique('kode_barang');
     });
   }
 };

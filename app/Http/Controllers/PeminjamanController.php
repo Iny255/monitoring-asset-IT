@@ -28,20 +28,22 @@ class PeminjamanController extends Controller
       $search = $request->search;
 
       $query->where(function ($q) use ($search) {
-        // kode barang
         $q->whereHas('keluar', function ($k) use ($search) {
           $k->where('kode_barang', 'like', "%{$search}%");
         })
 
-          // nama barang
           ->orWhereHas('keluar.masuk.kategori', function ($k) use ($search) {
             $k->where('nama_barang', 'like', "%{$search}%");
           })
 
-          // nama karyawan
           ->orWhereHas('karyawan', function ($k) use ($search) {
             $k->where('nama_karyawan', 'like', "%{$search}%");
-          });
+          })
+
+          // TAMBAHAN
+          ->orWhere('nama_eksternal', 'like', "%{$search}%")
+
+          ->orWhere('perusahaan_eksternal', 'like', "%{$search}%");
       });
     }
 
@@ -112,7 +114,7 @@ class PeminjamanController extends Controller
     $data = $request->all();
 
     // 🔥 mapping tipe
-    $data['tipe_peminjam'] = $request->jenis_perusahaan;
+    $data['tipe_peminjam'] = $request->tipe_peminjam;
 
     // ================= AMBIL KATEGORI =================
     $keluar = Keluar::with('masuk.kategori')->find($request->keluar_id);
@@ -124,10 +126,19 @@ class PeminjamanController extends Controller
     $data['kategori_id'] = $keluar->masuk->kategori->id;
 
     // ================= TIPE =================
-    if ($request->jenis_perusahaan == 'external') {
+    if ($request->tipe_peminjam == 'external') {
       $data['karyawan_id'] = null;
-      $data['perusahaan_id'] = null;
+
+      // WAJIB
+      $data['perusahaan_id'] = auth()->user()->id_perusahaan;
+
       $data['lokasi_id'] = null;
+
+      $data['nama_eksternal'] = $request->nama_eksternal;
+
+      $data['perusahaan_eksternal'] = $request->perusahaan_eksternal;
+
+      $data['lokasi_manual'] = $request->lokasi_manual;
     } else {
       $data['karyawan_id'] = $request->karyawan_id;
 
@@ -135,11 +146,22 @@ class PeminjamanController extends Controller
 
       $data['lokasi_id'] = $request->lokasi_id;
 
-      // kosongkan external
       $data['nama_eksternal'] = null;
+
       $data['perusahaan_eksternal'] = null;
+
       $data['lokasi_manual'] = null;
     }
+    // 🔥 UPPERCASE
+    $data['keperluan'] = strtoupper($request->keperluan ?? '');
+
+    $data['catatan'] = strtoupper($request->catatan ?? '');
+
+    $data['nama_eksternal'] = strtoupper($request->nama_eksternal ?? '');
+
+    $data['perusahaan_eksternal'] = strtoupper($request->perusahaan_eksternal ?? '');
+
+    $data['lokasi_manual'] = strtoupper($request->lokasi_manual ?? '');
 
     Peminjaman::create($data);
 
@@ -179,7 +201,7 @@ class PeminjamanController extends Controller
     $peminjaman = Peminjaman::findOrFail($id);
 
     // 🔥 mapping tipe
-    $tipe = $request->jenis_perusahaan;
+    $tipe = $request->tipe_peminjam;
 
     // ================= VALIDASI DINAMIS =================
     if ($tipe == 'external') {
@@ -227,7 +249,7 @@ class PeminjamanController extends Controller
     // ================= TIPE =================
     if ($tipe == 'external') {
       $dataUpdate['karyawan_id'] = null;
-      $dataUpdate['perusahaan_id'] = null;
+      $dataUpdate['perusahaan_id'] = auth()->user()->id_perusahaan;
       $dataUpdate['lokasi_id'] = null;
 
       $dataUpdate['nama_eksternal'] = $request->nama_eksternal;
@@ -250,6 +272,16 @@ class PeminjamanController extends Controller
     } else {
       $dataUpdate['tanggal_kembali'] = null;
     }
+    // 🔥 UPPERCASE
+    $dataUpdate['keperluan'] = strtoupper($request->keperluan ?? '');
+
+    $dataUpdate['catatan'] = strtoupper($request->catatan ?? '');
+
+    $dataUpdate['nama_eksternal'] = strtoupper($request->nama_eksternal ?? '');
+
+    $dataUpdate['perusahaan_eksternal'] = strtoupper($request->perusahaan_eksternal ?? '');
+
+    $dataUpdate['lokasi_manual'] = strtoupper($request->lokasi_manual ?? '');
 
     // ================= UPDATE =================
     $peminjaman->update($dataUpdate);

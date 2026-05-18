@@ -163,10 +163,26 @@
                                 <td class="text-center">
                                     <div class="d-flex justify-content-center gap-1">
 
-                                        <a href="{{ route('transaksi-masuk.show', $masuk->id) }}"
-                                            class="btn btn-info btn-sm">
-                                            <i class="bx bx-show"></i>
-                                        </a>
+                                        {{-- SHOW --}}
+                                        @auth
+
+                                            @if (auth()->user()->role === 'manager')
+                                                <a href="{{ route('manager.laporan.masuk.show', $masuk->id) }}"
+                                                    class="btn btn-info btn-sm">
+
+                                                    <i class="bx bx-show"></i>
+
+                                                </a>
+                                            @else
+                                                <a href="{{ route('transaksi-masuk.show', $masuk->id) }}"
+                                                    class="btn btn-info btn-sm">
+
+                                                    <i class="bx bx-show"></i>
+
+                                                </a>
+                                            @endif
+
+                                        @endauth
 
                                         @if (in_array(auth()->user()->role, ['petugas', 'super_admin']))
                                             <a href="{{ route('transaksi-masuk.edit', $masuk->id) }}"

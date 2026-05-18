@@ -49,30 +49,57 @@ class PerusahaanController extends Controller
 
   public function store(Request $request)
   {
-    $request->validate([
+    // =====================================
+    // VALIDASI
+    // =====================================
+
+    $validated = $request->validate([
       'nama_perusahaan' => 'required|string|max:50',
     ]);
 
     try {
-      // 🔥 AMBIL DATA TERAKHIR
-      $last = Perusahaan::orderBy('id', 'desc')->first();
+      // =====================================
+      // UPPERCASE
+      // =====================================
 
-      // 🔥 AMBIL ANGKA TERAKHIR
+      $validated['nama_perusahaan'] = strtoupper($validated['nama_perusahaan']);
+
+      // =====================================
+      // AMBIL DATA TERAKHIR
+      // =====================================
+
+      $last = Perusahaan::latest('id')->first();
+
+      // =====================================
+      // GENERATE KODE
+      // =====================================
+
       if ($last && $last->kode_perusahaan) {
         $number = (int) substr($last->kode_perusahaan, 2) + 1;
       } else {
         $number = 1;
       }
 
-      // 🔥 FORMAT KODE
+      // =====================================
+      // FORMAT KODE
+      // =====================================
+
       $kode = 'PT' . str_pad($number, 4, '0', STR_PAD_LEFT);
 
-      // 🔥 SIMPAN
+      // =====================================
+      // SIMPAN
+      // =====================================
+
       Perusahaan::create([
-        'kode_perusahaan' => $kode,
-        'nama_perusahaan' => $request->nama_perusahaan,
+        'kode_perusahaan' => strtoupper($kode),
+
+        'nama_perusahaan' => $validated['nama_perusahaan'],
+
+        // DEFAULT
         'logo' => null,
+
         'primary_color' => '#007bff',
+
         'secondary_color' => '#6c757d',
       ]);
 
@@ -82,7 +109,9 @@ class PerusahaanController extends Controller
     } catch (\Exception $e) {
       Log::error($e->getMessage());
 
-      return back()->with('error', 'Gagal menyimpan data perusahaan.');
+      return back()
+        ->withInput()
+        ->with('error', 'Gagal menyimpan data perusahaan.');
     }
   }
 
@@ -93,15 +122,33 @@ class PerusahaanController extends Controller
 
   public function update(Request $request, Perusahaan $perusahaan)
   {
-    $request->validate([
+    // =====================================
+    // VALIDASI
+    // =====================================
+
+    $validated = $request->validate([
       'nama_perusahaan' => 'required|string|max:50',
     ]);
 
     try {
+      // =====================================
+      // UPPERCASE
+      // =====================================
+
+      $validated['nama_perusahaan'] = strtoupper($validated['nama_perusahaan']);
+
+      // =====================================
+      // UPDATE
+      // =====================================
+
       $perusahaan->update([
-        'nama_perusahaan' => $request->nama_perusahaan,
+        'nama_perusahaan' => $validated['nama_perusahaan'],
+
+        // PERTAHANKAN DATA LAMA
         'logo' => $perusahaan->logo,
+
         'primary_color' => $perusahaan->primary_color,
+
         'secondary_color' => $perusahaan->secondary_color,
       ]);
 
@@ -109,7 +156,11 @@ class PerusahaanController extends Controller
         ->route('perusahaan.index')
         ->with('success', 'Data berhasil diperbarui');
     } catch (\Exception $e) {
-      return back()->with('error', 'Gagal update data');
+      Log::error($e->getMessage());
+
+      return back()
+        ->withInput()
+        ->with('error', 'Gagal update data');
     }
   }
 

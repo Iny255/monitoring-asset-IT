@@ -66,10 +66,14 @@ class KaryawanController extends Controller
         'divisi' => 'required|string|max:50',
         'id_perusahaan' => $user->role === 'super_admin' ? 'required' : 'nullable',
       ],
+
       [
         'kode_karyawan.unique' => 'Kode karyawan sudah ada di perusahaan ini.',
       ]
     );
+    $validated['nama_karyawan'] = strtoupper($validated['nama_karyawan']);
+    $validated['jabatan'] = strtoupper($validated['jabatan']);
+    $validated['divisi'] = strtoupper($validated['divisi']);
 
     $validated['id_perusahaan'] = $perusahaanId;
 
@@ -108,6 +112,13 @@ class KaryawanController extends Controller
     ]);
 
     try {
+      $validated['kode_karyawan'] = strtoupper($validated['kode_karyawan']);
+
+      $validated['nama_karyawan'] = strtoupper($validated['nama_karyawan']);
+
+      $validated['jabatan'] = strtoupper($validated['jabatan']);
+
+      $validated['divisi'] = strtoupper($validated['divisi']);
       $validated['id_perusahaan'] = $perusahaanId;
 
       $karyawan->update($validated);
