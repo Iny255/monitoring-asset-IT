@@ -65,6 +65,10 @@
                                     <td>{{ $keluar->jumlah }}</td>
                                 </tr>
                                 <tr>
+                                    <th>Tanggal Keluar</th>
+                                    <td>{{ $keluar->tgl_keluar ? \Carbon\Carbon::parse($keluar->tgl_keluar)->format('d-m-Y') : '-' }}</td>
+                                </tr>
+                                <tr>
                                     <th>Keterangan</th>
                                     <td>{{ $keluar->keterangan }}</td>
                                 </tr>

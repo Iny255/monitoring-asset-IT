@@ -173,7 +173,7 @@ class PeminjamanController extends Controller
   /**
    * Display the specified resource.
    */
-  public function show($id)
+  public function show(int $id)
   {
     $peminjaman = Peminjaman::with(['keluar.masuk.kategori', 'karyawan', 'perusahaan', 'lokasi'])->findOrFail($id);
 
@@ -183,7 +183,7 @@ class PeminjamanController extends Controller
   /**
    * Show the form for editing the specified resource.
    */
-  public function edit($id)
+  public function edit(int $id)
   {
     $peminjaman = Peminjaman::with(['keluar.masuk.kategori', 'karyawan', 'perusahaan', 'lokasi'])->findOrFail($id);
 
@@ -196,7 +196,7 @@ class PeminjamanController extends Controller
   /**
    * Update the specified resource in storage.
    */
-  public function update(Request $request, $id)
+  public function update(Request $request, int $id)
   {
     $peminjaman = Peminjaman::findOrFail($id);
 
@@ -294,7 +294,7 @@ class PeminjamanController extends Controller
   /**
    * Remove the specified resource from storage.
    */
-  public function destroy($id)
+  public function destroy(int $id)
   {
     $peminjaman = Peminjaman::findOrFail($id);
     $peminjaman->delete();
@@ -304,7 +304,7 @@ class PeminjamanController extends Controller
       ->with('success', 'Data peminjaman berhasil dihapus');
   }
 
-  public function getNamaBarang($kode)
+  public function getNamaBarang(string $kode)
   {
     $data = Keluar::with('masuk.kategori')
       ->where('kode_barang', $kode)
@@ -343,7 +343,7 @@ class PeminjamanController extends Controller
 
     return response()->json($data);
   }
-  public function cekStatus($kode)
+  public function cekStatus(string $kode)
   {
     // Cari barang dari tabel keluar
     $keluar = Keluar::where('kode_barang', $kode)->first();
@@ -363,7 +363,7 @@ class PeminjamanController extends Controller
       'dipinjam' => $dipinjam,
     ]);
   }
-  public function lokasiByPerusahaan($id)
+  public function lokasiByPerusahaan(int $id)
   {
     $lokasis = Lokasi::where('id_perusahaan', $id)
       ->orderBy('nama_lokasi')

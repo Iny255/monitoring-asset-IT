@@ -35,6 +35,14 @@
                             <th>Merek</th>
                             <td>{{ $masuk->merek }}</td>
                         </tr>
+                         <tr>
+                            <th>Merek</th>
+                            <td>{{ $masuk->merek }}</td>
+                        </tr>
+                         <tr>
+                            <th>Kondisi</th>
+                            <td>{{ $masuk->kondisi }}</td>
+                        </tr>
                         <tr>
                             <th>Jumlah</th>
                             <td>{{ $masuk->jumlah }}</td>

@@ -64,7 +64,7 @@ class KeluarController extends Controller
       ->appends($request->query());
 
     // 🔥 TAMBAHAN (untuk filter dropdown)
-    $perusahaans = $user->role === 'super_admin' ? \App\Models\Perusahaan::all() : collect();
+    $perusahaans = $user->role === 'super_admin' ? Perusahaan::all() : collect();
 
     return view('content.dashboard.transaksi-keluar.index', compact('keluars', 'perusahaans'));
   }
@@ -98,7 +98,7 @@ class KeluarController extends Controller
     $kodeKeluar = $this->generateKodeKeluar();
     $karyawans = Karyawan::orderBy('nama_karyawan')->get();
 
-    $perusahaans = $user->role === 'super_admin' ? \App\Models\Perusahaan::all() : collect();
+    $perusahaans = $user->role === 'super_admin' ? Perusahaan::all() : collect();
 
     return view('content.dashboard.transaksi-keluar.create', compact('kodeKeluar', 'karyawans', 'perusahaans'));
   }
@@ -108,7 +108,6 @@ class KeluarController extends Controller
    */
   public function store(Request $request)
   {
-    // dd($request->all());
     $user = auth()->user();
 
     // 🔥 TENTUKAN PERUSAHAAN
@@ -130,6 +129,8 @@ class KeluarController extends Controller
 
       'jumlah' => 'required|integer|min:1',
 
+      'tgl_keluar' => 'required|date',
+
       'keterangan' => 'required|string|max:100',
 
       'warna' => 'required|string|max:50',
@@ -138,7 +139,6 @@ class KeluarController extends Controller
 
       'jenis_penerima' => 'required|in:Perorangan,Perdivisi',
 
-      // 🔥 SUPER ADMIN
       'perusahaan_id' => $user->role === 'super_admin' ? 'required|exists:perusahaans,id' : 'nullable',
     ]);
 
@@ -159,13 +159,27 @@ class KeluarController extends Controller
     DB::beginTransaction();
 
     try {
-      // 🔒 AMBIL DATA MASUK
-      $masuk = Masuk::where('id', $request->id_masuk)
-        ->lockForUpdate()
-        ->firstOrFail();
+      // =====================================
+      // AMBIL DATA MASUK
+      // =====================================
 
-      // ❌ VALIDASI STOK
-      if ($request->jumlah > $masuk->jumlah) {
+      $masuk = Masuk::with('keluars')
+        ->lockForUpdate()
+        ->findOrFail($request->id_masuk);
+
+      // =====================================
+      // HITUNG SISA STOK
+      // =====================================
+
+      $totalKeluar = $masuk->keluars->sum('jumlah');
+
+      $sisaStok = $masuk->jumlah - $totalKeluar;
+
+      // =====================================
+      // VALIDASI STOK
+      // =====================================
+
+      if ($request->jumlah > $sisaStok) {
         DB::rollBack();
 
         return back()
@@ -173,10 +187,16 @@ class KeluarController extends Controller
           ->with('error', 'Jumlah keluar melebihi stok tersedia!');
       }
 
-      // 🔥 AMBIL NAMA PERUSAHAAN
-      $namaPerusahaan = \App\Models\Perusahaan::find($perusahaanId)?->nama_perusahaan;
+      // =====================================
+      // AMBIL NAMA PERUSAHAAN
+      // =====================================
 
-      // ✅ SIMPAN
+      $namaPerusahaan = Perusahaan::find($perusahaanId)?->nama_perusahaan;
+
+      // =====================================
+      // SIMPAN
+      // =====================================
+
       Keluar::create([
         'kode_keluar' => strtoupper($request->kode_keluar),
 
@@ -186,27 +206,29 @@ class KeluarController extends Controller
 
         'jumlah' => $request->jumlah,
 
+        'tgl_keluar' => $request->tgl_keluar,
+
         'jenis_penerima' => $request->jenis_penerima,
 
         'id_perusahaan' => $perusahaanId,
 
-        // =====================================
+        // =========================
         // PERORANGAN
-        // =====================================
+        // =========================
 
         'id_karyawan' => $request->jenis_penerima == 'Perorangan' ? $request->id_karyawan : null,
 
-        // =====================================
+        // =========================
         // PERDIVISI
-        // =====================================
+        // =========================
 
         'divisi_klr' => $request->jenis_penerima == 'Perdivisi' ? strtoupper($request->divisi_klr) : null,
 
         'perusahaan_klr' => $request->jenis_penerima == 'Perdivisi' ? strtoupper($namaPerusahaan) : null,
 
-        // =====================================
+        // =========================
         // DETAIL
-        // =====================================
+        // =========================
 
         'keterangan' => strtoupper($request->keterangan),
 
@@ -214,8 +236,6 @@ class KeluarController extends Controller
 
         'no_inventaris' => strtoupper($request->no_inventaris),
       ]);
-      // ➖ KURANGI STOK
-      $masuk->decrement('jumlah', $request->jumlah);
 
       DB::commit();
 
@@ -224,9 +244,6 @@ class KeluarController extends Controller
         ->with('success', 'Transaksi keluar berhasil disimpan');
     } catch (\Exception $e) {
       DB::rollBack();
-
-      // 🔥 DEBUG
-      dd($e->getMessage());
 
       Log::error($e->getMessage());
 
@@ -239,7 +256,7 @@ class KeluarController extends Controller
   /**
    * Display the specified resource.
    */
-  public function show($id)
+  public function show(int $id)
   {
     $query = Keluar::with(['masuk.kategori', 'karyawan', 'perusahaan']);
 
@@ -256,7 +273,7 @@ class KeluarController extends Controller
   /**
    * Show the form for editing the specified resource.
    */
-  public function edit($id)
+  public function edit(int $id)
   {
     $user = auth()->user();
 
@@ -270,7 +287,7 @@ class KeluarController extends Controller
     $keluar = $query->findOrFail($id);
 
     // 🔥 TAMBAHAN INI
-    $perusahaans = $user->role === 'super_admin' ? \App\Models\Perusahaan::all() : collect();
+    $perusahaans = $user->role === 'super_admin' ? Perusahaan::all() : collect();
 
     return view('content.dashboard.transaksi-keluar.edit', compact('keluar', 'perusahaans'));
   }
@@ -278,7 +295,7 @@ class KeluarController extends Controller
   /**
    * Update the specified resource in storage.
    */
-  public function update(Request $request, $id)
+  public function update(Request $request, int $id)
   {
     $user = auth()->user();
 
@@ -326,6 +343,7 @@ class KeluarController extends Controller
       ],
 
       'jumlah' => 'required|integer|min:1',
+      'tgl_keluar' => 'required|date',
 
       'keterangan' => 'required|string|max:100',
 
@@ -377,8 +395,6 @@ class KeluarController extends Controller
 
       $masukLama = Masuk::lockForUpdate()->findOrFail($keluar->id_masuk);
 
-      $masukLama->increment('jumlah', $keluar->jumlah);
-
       // =====================================
       // AMBIL DATA MASUK BARU
       // =====================================
@@ -416,6 +432,7 @@ class KeluarController extends Controller
         'kode_barang' => $request->kode_barang,
 
         'jumlah' => $request->jumlah,
+        'tgl_keluar' => $request->tgl_keluar,
 
         'jenis_penerima' => $request->jenis_penerima,
 
@@ -446,12 +463,6 @@ class KeluarController extends Controller
         'no_inventaris' => $request->no_inventaris,
       ]);
 
-      // =====================================
-      // KURANGI STOK BARU
-      // =====================================
-
-      $masukBaru->decrement('jumlah', $request->jumlah);
-
       DB::commit();
 
       return redirect()
@@ -471,12 +482,10 @@ class KeluarController extends Controller
   /**
    * Remove the specified resource from storage.
    */
-  public function destroy($id)
+  public function destroy(int $id)
   {
-    DB::beginTransaction();
-
     try {
-      $query = Keluar::with('masuk');
+      $query = Keluar::query();
 
       if (auth()->user()->role !== 'super_admin') {
         $query->where('id_perusahaan', auth()->user()->id_perusahaan);
@@ -484,25 +493,14 @@ class KeluarController extends Controller
 
       $keluar = $query->findOrFail($id);
 
-      $masuk = Masuk::where('id', $keluar->id_masuk)
-        ->lockForUpdate()
-        ->first();
-
-      if ($masuk) {
-        $masuk->increment('jumlah', $keluar->jumlah);
-      }
-
       $keluar->delete();
-
-      DB::commit();
 
       return back()->with('success', 'Data berhasil dihapus');
     } catch (\Exception $e) {
-      DB::rollBack();
       return back()->with('error', 'Gagal hapus data');
     }
   }
-  public function getMasukByKode($kode)
+  public function getMasukByKode(string $kode)
   {
     $masuk = Masuk::with('kategori')
       ->where('kode_masuk', $kode)
@@ -594,7 +592,7 @@ class KeluarController extends Controller
       ],
     ]);
   }
-  public function getKodeKeluar($id)
+  public function getKodeKeluar(int $id)
   {
     $tahun = now()->year;
 

@@ -17,6 +17,7 @@ class Masuk extends Model
     'id_kategori',
     'type',
     'merek',
+    'kondisi',
     'jumlah',
     'tgl_beli',
     'supplier',
@@ -37,10 +38,10 @@ class Masuk extends Model
     return $this->belongsTo(Kategori::class, 'id_kategori');
   }
 
-  public function keluar()
-  {
+  public function keluars()
+{
     return $this->hasMany(Keluar::class, 'id_masuk');
-  }
+}
 
   public function perusahaan()
   {

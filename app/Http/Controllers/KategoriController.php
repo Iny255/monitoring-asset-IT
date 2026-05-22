@@ -20,14 +20,14 @@ class KategoriController extends Controller
 
     // 🔥 QUERY UTAMA + RELASI
     if ($user->role === 'super_admin') {
-      $query = \App\Models\Kategori::with('perusahaan');
+      $query = Kategori::with('perusahaan');
 
       // filter perusahaan (optional)
       if ($perusahaanId) {
         $query->where('perusahaan_id', $perusahaanId);
       }
     } else {
-      $query = \App\Models\Kategori::with('perusahaan')->where('perusahaan_id', $user->id_perusahaan);
+      $query = Kategori::with('perusahaan')->where('perusahaan_id', $user->id_perusahaan);
     }
 
     // 🔍 SEARCH
@@ -67,7 +67,7 @@ class KategoriController extends Controller
     }
 
     // 🔥 AMBIL SEMUA PERUSAHAAN (UNTUK DROPDOWN)
-    $perusahaans = \App\Models\Perusahaan::all();
+    $perusahaans = Perusahaan::all();
 
     return view('content.dashboard.kategori.index', compact('kategoris', 'kodeBarang', 'perusahaans'));
   }
@@ -127,14 +127,14 @@ class KategoriController extends Controller
   /**
    * Remove the specified resource from storage.
    */
-  public function destroy($id)
+  public function destroy(int $id)
   {
     $kategori = Kategori::findOrFail($id);
     $kategori->delete();
 
     return back()->with('success', 'Data berhasil dihapus.');
   }
-  public function getKode($id)
+  public function getKode(int $id)
   {
     $perusahaan = Perusahaan::findOrFail($id);
 

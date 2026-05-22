@@ -23,7 +23,7 @@ class MasukController extends Controller
     $perusahaanId = $request->perusahaan_id;
 
     // 🔥 FIX: wajib ada ini
-    $perusahaans = $user->role === 'super_admin' ? \App\Models\Perusahaan::all() : collect();
+    $perusahaans = $user->role === 'super_admin' ? Perusahaan::all() : collect();
 
     $masuks = Masuk::with(['kategori', 'perusahaan']);
 
@@ -132,7 +132,7 @@ class MasukController extends Controller
     }
   }
 
-  public function show($id)
+  public function show(int $id)
   {
     $query = Masuk::with('kategori');
 
@@ -174,6 +174,7 @@ class MasukController extends Controller
       'type' => 'required|string|max:100',
       'merek' => 'required|string|max:100',
       'jumlah' => 'required|integer',
+      'kondisi' => 'required|in:Baru,Bekas',
       'tgl_beli' => 'required|date',
       'supplier' => 'required|string|max:100',
       'garansi' => 'required|integer',
@@ -244,56 +245,82 @@ class MasukController extends Controller
   {
     $user = auth()->user();
 
-    $search = $request->search;
+    $query = Masuk::with(['kategori', 'perusahaan', 'keluars']);
 
-    $query = Masuk::with(['kategori', 'perusahaan'])->where('jumlah', '>', 0);
+    // 🔥 DATA PERUSAHAAN
+    $perusahaans = $user->role === 'super_admin' ? Perusahaan::all() : collect();
 
-    // 🔥 ROLE
+    // ROLE
     if ($user->role !== 'super_admin') {
       $query->where('perusahaan_id', $user->id_perusahaan);
     } else {
-      // FILTER PERUSAHAAN
+      // 🔥 FILTER PERUSAHAAN
       if ($request->perusahaan_id) {
         $query->where('perusahaan_id', $request->perusahaan_id);
       }
     }
 
-    // 🔍 SEARCH
-    if ($search) {
+    // SEARCH
+    if ($request->search) {
+      $search = $request->search;
+
       $query->where(function ($q) use ($search) {
-        $q->where('type', 'like', "%{$search}%")
-          ->orWhere('merek', 'like', "%{$search}%")
+        $q->where('type', 'like', "%$search%")
+          ->orWhere('merek', 'like', "%$search%")
           ->orWhereHas('kategori', function ($k) use ($search) {
-            $k->where('nama_barang', 'like', "%{$search}%");
+            $k->where('nama_barang', 'like', "%$search%");
           });
       });
     }
 
-    $stoks = $query->latest()->get();
-
-    // 🔥 FILTER DROPDOWN
-    $perusahaans =
-      $user->role === 'super_admin' ? \App\Models\Perusahaan::orderBy('nama_perusahaan')->get() : collect();
+    $stoks = $query
+      ->with(['kategori', 'perusahaan', 'keluars.karyawan'])
+      ->latest()
+      ->get()
+      ->groupBy(function ($item) {
+        return $item->id_kategori . '-' . $item->type . '-' . $item->merek;
+      });
 
     return view('content.dashboard.transaksi-masuk.stok', compact('stoks', 'perusahaans'));
   }
-  public function getKode($id)
+  public function history(int $id)
   {
-    $last = Masuk::where('perusahaan_id', $id)
-      ->orderBy('id', 'desc')
-      ->first();
+    $user = auth()->user();
 
-    $number = $last ? (int) substr($last->kode_masuk, 4) + 1 : 1;
+    // DATA UTAMA
+    $first = Masuk::findOrFail($id);
 
-    $kode = 'MSK-' . str_pad($number, 5, '0', STR_PAD_LEFT);
+    // QUERY GROUP
+    $query = Masuk::with(['kategori', 'perusahaan', 'keluars.karyawan'])
+      ->where('id_kategori', $first->id_kategori)
+      ->where('type', $first->type)
+      ->where('merek', $first->merek);
 
-    return response()->json([
-      'kode' => $kode,
-    ]);
+    // FILTER PERUSAHAAN
+    if ($user->role !== 'super_admin') {
+      $query->where('perusahaan_id', $user->id_perusahaan);
+    }
+
+    // AMBIL SEMUA GROUP
+    $stokGroup = $query->get();
+
+    // SUMMARY
+    $stokAwal = $stokGroup->sum('jumlah');
+
+    $totalKeluar = $stokGroup->sum(function ($item) {
+      return $item->keluars->sum('jumlah');
+    });
+
+    $sisa = $stokAwal - $totalKeluar;
+
+    return view(
+      'content.dashboard.transaksi-masuk.history-stok',
+      compact('stokGroup', 'stokAwal', 'totalKeluar', 'sisa')
+    );
   }
-  public function getKategori($id)
+  public function getKategori(int $id)
   {
-    $kategoris = \App\Models\Kategori::where('perusahaan_id', $id)->get();
+    $kategoris = Kategori::where('perusahaan_id', $id)->get();
 
     return response()->json($kategoris);
   }

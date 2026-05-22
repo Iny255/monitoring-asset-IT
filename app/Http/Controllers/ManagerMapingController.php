@@ -60,7 +60,7 @@ class ManagerMapingController extends Controller
     return view('content.dashboard.maping.index', compact('mapings', 'lokasis', 'perusahaans', 'barangs'));
   }
 
-  public function showmaping($id)
+  public function showmaping(int $id)
   {
     $maping = Maping::with(['lokasi', 'perusahaan', 'keluar.masuk.kategori', 'keluar.karyawan'])->findOrFail($id);
 

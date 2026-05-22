@@ -149,12 +149,34 @@
 
         font-weight: 600;
 
+        font-size: 28px;
+        /* 🔥 TAMBAH */
+
+        padding-top: 16px;
+        /* 🔥 TAMBAH */
+
+        padding-bottom: 16px;
+        /* 🔥 TAMBAH */
+
     }
 
 
     .layout-menu .menu-link i {
 
         color: #697a8d !important;
+        font-size: 30px;
+        /* 🔥 TAMBAH */
+
+        margin-right: 20px;
+        /* 🔥 TAMBAH */
+
+    }
+
+    .layout-menu .menu-sub .menu-link i {
+
+        margin-right: 14px !important;
+
+        font-size: 20px !important;
 
     }
 

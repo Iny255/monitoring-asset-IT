@@ -29,6 +29,7 @@ Route::get('/login', [LoginController::class, 'index'])
 Route::post('/login', [LoginController::class, 'authenticate']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::get('/get-kode-kategori/{id}', [KategoriController::class, 'getKode']);
+Route::get('/maping/{id}', [MapingController::class, 'publicShow'])->name('maping.public_show');
 
 Route::middleware(['auth'])->group(function () {
   /*
@@ -66,6 +67,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('/dashboard/karyawan', KaryawanController::class)->except(['show']);
     Route::resource('/dashboard/lokasi', LokasiController::class);
     Route::get('/dashboard/transaksi-masuk/stok', [MasukController::class, 'stok'])->name('transaksi-masuk.stok');
+    Route::get('/stok/history/{id}', [MasukController::class, 'history'])->name('stok.history');
     Route::resource('/dashboard/transaksi-masuk', MasukController::class)->parameters([
       'transaksi-masuk' => 'masuk',
     ]);
@@ -107,6 +109,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/manager', [DashboardManagerController::class, 'index'])->name('dashboard.manager');
 
     Route::get('/manager/laporan/stok', [LaporanController::class, 'stok'])->name('manager.laporan.stok');
+    Route::get('/manager/stok/history/{id}', [LaporanController::class, 'historyStok'])->name('manager.stok.history');
 
     Route::get('/manager/laporan/masuk', [LaporanController::class, 'laporanMasuk'])->name('manager.laporan.masuk');
     Route::get('/manager/laporan/masuk/{id}', [LaporanController::class, 'show'])->name('manager.laporan.masuk.show');

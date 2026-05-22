@@ -28,7 +28,7 @@
 
             @auth
                 @if (auth()->user()->role === 'petugas' || auth()->user()->role === 'super_admin')
-                    <a href="{{ route('transaksi-masuk.create') }}" class="btn btn-primary btn-sm">
+                    <a href="{{ route('transaksi-masuk.create') }}"class="btn btn-primary px-4 py-2 fw-semibold">
                         <i class="bx bx-plus"></i> Tambah Data
                     </a>
                 @endif

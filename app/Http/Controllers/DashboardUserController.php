@@ -38,7 +38,7 @@ class DashboardUserController extends Controller
     return view('content.dashboard.user.index', compact('users', 'perusahaans'));
   }
 
-  public function hapususer($id)
+  public function hapususer(int $id)
   {
     $result = Main::Hapus('users', ['id' => $id]);
     if ($result == 1) {

@@ -237,7 +237,7 @@ class MapingController extends Controller
         'exists:keluars,id',
 
         function ($attribute, $value, $fail) {
-          $exists = \App\Models\Maping::where('id_keluar', $value)->exists();
+          $exists = Maping::where('id_keluar', $value)->exists();
 
           if ($exists) {
             $fail('Kode barang ini sudah digunakan dan tidak bisa dipakai lagi.');
@@ -344,7 +344,7 @@ class MapingController extends Controller
   /**
    * Display the specified resource.
    */
-  public function show($id)
+  public function show(int $id)
   {
     $query = Maping::with(['lokasi', 'perusahaan', 'keluar.masuk.kategori', 'keluar.karyawan']);
 
@@ -360,7 +360,7 @@ class MapingController extends Controller
   /**
    * Show the form for editing the specified resource.
    */
-  public function edit($id)
+  public function edit(int $id)
   {
     $user = auth()->user();
 
@@ -525,7 +525,7 @@ class MapingController extends Controller
   /**
    * Remove the specified resource from storage.
    */
-  public function destroy($id)
+  public function destroy(int $id)
   {
     $maping = Maping::findOrFail($id);
     $maping->delete();
@@ -642,15 +642,15 @@ class MapingController extends Controller
     return view('content.dashboard.maping.print', compact('mapings', 'namaPerusahaan'));
   }
 
-  public function getLokasiByPerusahaan($id)
+  public function getLokasiByPerusahaan(int $id)
   {
-    $lokasis = \App\Models\Lokasi::where('id_perusahaan', $id)
+    $lokasis = Lokasi::where('id_perusahaan', $id)
       ->orderBy('nama_lokasi')
       ->get();
 
     return response()->json($lokasis);
   }
-  public function mutasiForm($id)
+  public function mutasiForm(int $id)
   {
     $maping = Maping::findOrFail($id);
     $lokasi = Lokasi::all();
@@ -668,7 +668,7 @@ class MapingController extends Controller
     return view('content.dashboard.maping.mutasi', compact('maping', 'lokasi', 'perusahaan', 'modePerusahaan'));
   }
 
-  public function mutasiStore(Request $request, $id)
+  public function mutasiStore(Request $request, int $id)
   {
     $request->validate([
       'ke_lokasi' => 'required|exists:lokasis,id',
@@ -784,7 +784,7 @@ class MapingController extends Controller
     $q = $request->q;
     $perusahaanId = $request->perusahaan_id;
 
-    $karyawan = \App\Models\Karyawan::query()
+    $karyawan = Karyawan::query()
 
       ->when($perusahaanId, function ($query) use ($perusahaanId) {
         $query->where('id_perusahaan', $perusahaanId);
@@ -849,7 +849,7 @@ class MapingController extends Controller
     return view('content.dashboard.maping.history_global', compact('mapings', 'perusahaans'));
   }
 
-  public function destroyMutasi($id)
+  public function destroyMutasi(int $id)
   {
     try {
       $mutasi = MutasiMaping::findOrFail($id);
@@ -870,7 +870,7 @@ class MapingController extends Controller
       );
     }
   }
-  public function cabut(Request $request, $id)
+  public function cabut(Request $request,int  $id)
   {
     $validated = $request->validate([
       'tanggal_cabut' => 'required|date',
@@ -986,7 +986,7 @@ class MapingController extends Controller
 
     return view('content.dashboard.maping.history_cabut', compact('pencabutans', 'perusahaans'));
   }
-  public function hapusCabut($id)
+  public function hapusCabut(int $id)
   {
     $pencabutan = Pencabutan::findOrFail($id);
 
@@ -994,7 +994,7 @@ class MapingController extends Controller
 
     return back()->with('success', 'History pencabutan berhasil dihapus');
   }
-  public function historyUser($id)
+  public function historyUser(int $id)
   {
     // dd(auth()->user()->role);
     $query = MutasiMaping::with([
@@ -1018,7 +1018,7 @@ class MapingController extends Controller
 
     return view('content.dashboard.maping.history_user', compact('histories'));
   }
-  public function detailAjax($id)
+  public function detailAjax(int $id)
   {
     $query = Maping::with(['lokasi', 'perusahaan', 'keluar.masuk.kategori', 'keluar.karyawan']);
 
@@ -1029,5 +1029,11 @@ class MapingController extends Controller
     $maping = $query->findOrFail($id);
 
     return view('content.dashboard.maping.detail_ajax', compact('maping'));
+  }
+  public function publicShow(int $id)
+  {
+    $maping = Maping::with(['keluar.masuk.kategori', 'keluar.karyawan', 'lokasi', 'perusahaan'])->findOrFail($id);
+
+    return view('content.dashboard.maping.public_show', compact('maping'));
   }
 }

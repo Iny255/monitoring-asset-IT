@@ -138,7 +138,7 @@ class LokasiController extends Controller
   /**
    * Remove the specified resource from storage.
    */
-  public function destroy($id)
+  public function destroy(int $id)
   {
     $lokasi = Lokasi::findOrFail($id);
     $user = auth()->user();
@@ -152,7 +152,7 @@ class LokasiController extends Controller
 
     return back()->with('success', 'Lokasi berhasil dihapus');
   }
-  public function getKode($id)
+  public function getKode(int $id)
   {
     $last = Lokasi::where('id_perusahaan', $id)
       ->orderBy('id', 'desc')

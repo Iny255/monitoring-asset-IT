@@ -12,35 +12,92 @@ class LaporanController extends Controller
 {
   public function stok(Request $request)
   {
-    $query = \App\Models\Masuk::with('kategori');
+    $query = Masuk::with(['kategori', 'perusahaan', 'keluars.karyawan']);
 
-    // 🔥 FILTER PERUSAHAAN
+    // FILTER ROLE
     if (auth()->user()->role !== 'super_admin') {
       $query->where('perusahaan_id', auth()->user()->id_perusahaan);
     }
 
+    // FILTER PERUSAHAAN SUPER ADMIN
+    if (auth()->user()->role == 'super_admin' && $request->perusahaan_id) {
+      $query->where('perusahaan_id', $request->perusahaan_id);
+    }
+
+    // SEARCH
     if ($request->search) {
-      $query->whereHas('kategori', function ($q) use ($request) {
-        $q->where('nama_barang', 'like', '%' . $request->search . '%');
+      $search = $request->search;
+
+      $query->where(function ($q) use ($search) {
+        $q->where('type', 'like', "%$search%")
+          ->orWhere('merek', 'like', "%$search%")
+          ->orWhereHas('kategori', function ($k) use ($search) {
+            $k->where('nama_barang', 'like', "%$search%");
+          });
       });
     }
 
+    // GROUPING
     $stoks = $query
+      ->latest()
       ->get()
       ->groupBy(function ($item) {
-        return $item->kategori->nama_barang . '|' . $item->type . '|' . $item->merek;
-      })
-      ->map(function ($items) {
-        return (object) [
-          'kategori' => $items->first()->kategori,
-          'type' => $items->first()->type,
-          'merek' => $items->first()->merek,
-          'jumlah' => $items->sum('jumlah'), // 🔥 biar konsisten
-        ];
-      })
-      ->values();
+        return $item->id_kategori . '-' . $item->type . '-' . $item->merek;
+      });
 
-    return view('content.dashboard.transaksi-masuk.stok', compact('stoks'));
+    // SUPER ADMIN
+    $perusahaans = auth()->user()->role == 'super_admin' ? \App\Models\Perusahaan::all() : collect();
+
+    return view('content.dashboard.transaksi-masuk.stok', compact('stoks', 'perusahaans'));
+  }
+  public function historyStok(int $id)
+  {
+   $user = auth()->user();
+
+    // DATA UTAMA
+    $first = Masuk::findOrFail($id);
+
+    // QUERY GROUP
+    $query = Masuk::with([
+        'kategori',
+        'perusahaan',
+        'keluars.karyawan'
+    ])
+        ->where('id_kategori', $first->id_kategori)
+        ->where('type', $first->type)
+        ->where('merek', $first->merek);
+
+    // FILTER PERUSAHAAN
+    if ($user->role !== 'super_admin') {
+
+        $query->where(
+            'perusahaan_id',
+            $user->id_perusahaan
+        );
+    }
+
+    // AMBIL GROUP
+    $stokGroup = $query->get();
+
+    // SUMMARY
+    $stokAwal = $stokGroup->sum('jumlah');
+
+    $totalKeluar = $stokGroup->sum(function ($item) {
+
+        return $item->keluars->sum('jumlah');
+    });
+
+    $sisa = $stokAwal - $totalKeluar;
+
+    return view(
+        'content.dashboard.transaksi-masuk.history-stok',
+        compact(
+            'stokGroup',
+            'stokAwal',
+            'totalKeluar',
+            'sisa'
+        )
+    );
   }
   public function cetakStok(Request $request)
   {
@@ -58,7 +115,7 @@ class LaporanController extends Controller
       ->orderBy('stok', 'desc')
       ->get();
 
-    return view('content.manager.laporan.cetak-stok', compact('stoks'));
+  
   }
 
   public function laporanMasuk(Request $request)
@@ -75,7 +132,7 @@ class LaporanController extends Controller
     return view('content.dashboard.transaksi-masuk.index', compact('masuks'));
   }
 
-  public function show($id)
+  public function show(int $id)
   {
     $query = Masuk::with('kategori');
 
@@ -133,7 +190,7 @@ class LaporanController extends Controller
     return view('content.dashboard.transaksi-keluar.index', compact('keluars'));
   }
 
-  public function showKeluar($id)
+  public function showKeluar(int $id)
   {
     $query = Keluar::with(['masuk.kategori', 'karyawan']);
 
@@ -187,7 +244,7 @@ class LaporanController extends Controller
     return view('content.dashboard.peminjaman.index', compact('peminjamans'));
   }
 
-  public function showPeminjaman($id)
+  public function showPeminjaman(int $id)
   {
     $query = Peminjaman::with(['karyawan', 'kategori', 'keluar.masuk.kategori', 'perusahaan', 'lokasi']);
 

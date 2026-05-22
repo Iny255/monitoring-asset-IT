@@ -84,6 +84,32 @@
                                     <input type="text" name="merek" class="form-control" value="{{ $masuk->merek }}"
                                         required>
                                 </div>
+                                {{-- KONDISI --}}
+                                <div class="col-md-6 mb-3">
+
+                                    <label class="form-label fw-medium">
+                                        Kondisi Asset
+                                    </label>
+
+                                    <select name="kondisi" class="form-select" required>
+
+                                        <option value="">
+                                            -- Pilih Kondisi --
+                                        </option>
+
+                                        <option value="Baru"
+                                            {{ old('kondisi', $masuk->kondisi) == 'Baru' ? 'selected' : '' }}>
+                                            Baru
+                                        </option>
+
+                                        <option value="Bekas"
+                                            {{ old('kondisi', $masuk->kondisi) == 'Bekas' ? 'selected' : '' }}>
+                                            Bekas
+                                        </option>
+
+                                    </select>
+
+                                </div>
 
                                 {{-- JUMLAH --}}
                                 <div class="col-md-6 mb-3">

@@ -6,8 +6,8 @@
 
     <style>
         /* =========================
-                                       DARK MODE ONLY
-                                    ========================= */
+                                           DARK MODE ONLY
+                                        ========================= */
 
         .dark-style .card-dark {
             background: #1f2a3c;
@@ -173,7 +173,25 @@
                                     @enderror
 
                                 </div>
+                                <div class="col-md-6 mb-3">
 
+                                    <label class="form-label">
+                                        Kondisi Asset
+                                    </label>
+
+                                    <select name="kondisi" class="form-select">
+
+                                        <option value="Baru">
+                                            Baru
+                                        </option>
+
+                                        <option value="Bekas">
+                                            Bekas
+                                        </option>
+
+                                    </select>
+
+                                </div>
 
                                 {{-- JUMLAH --}}
                                 <div class="col-md-6 mb-3">

@@ -3,6 +3,9 @@
 @section('title', 'Login')
 
 @section('content')
+    <link rel="icon" type="image/png" href="{{ asset('assets/img/favicon-monitoring.png?v=' . time()) }}">
+
+    <link rel="shortcut icon" href="{{ asset('assets/img/favicon-monitoring.png?v=' . time()) }}">
 
     <style>
         body {
@@ -18,7 +21,7 @@
         }
 
         /* =========================
-               LEFT (IMAGE)
+                    LEFT (IMAGE)
             ========================= */
         .login-left {
             flex: 1.3;
@@ -42,7 +45,7 @@
         }
 
         /* =========================
-               RIGHT (FORM)
+                    RIGHT (FORM)
             ========================= */
         .login-right {
             flex: 1;
@@ -65,26 +68,28 @@
         /* LOGO */
         .logo {
             text-align: center;
-            margin-bottom: 20px;
+            margin-bottom: 10px;
         }
 
         .logo img {
-            width: 120px;
+            width: 170px;
+            display: inline-block;
         }
 
         /* TEXT */
         .title {
-            font-size: 26px;
-            font-weight: 600;
+            font-size: 24px;
+            font-weight: 700;
             text-align: center;
             color: #1e293b;
+            margin-bottom: 2px;
         }
 
         .subtitle {
             text-align: center;
             font-size: 14px;
             color: #64748b;
-            margin-bottom: 30px;
+            margin-bottom: 24px;
         }
 
         /* FORM */
@@ -121,9 +126,126 @@
             margin-top: 20px;
         }
 
+        .captcha-title {
+
+            font-size: 14px;
+
+            font-weight: 700;
+
+            color: #334155;
+
+            margin-bottom: 10px;
+
+            display: block;
+
+        }
+
+        .captcha-box {
+
+            height: 72px;
+
+            border-radius: 14px;
+
+            background:
+                repeating-linear-gradient(-45deg,
+                    #f8fafc,
+                    #f8fafc 10px,
+                    #eef2f7 10px,
+                    #eef2f7 20px);
+
+            border: 1px solid #dbe2ea;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: space-between;
+
+            padding: 0 18px;
+
+            overflow: hidden;
+
+        }
+
+        .captcha-text {
+
+            font-size: 16px;
+
+            font-weight: 800;
+
+            letter-spacing: 2px;
+
+            color: #0f172a;
+
+            transform: rotate(-2deg);
+
+            user-select: none;
+
+        }
+
+        .captcha-text span {
+
+            color: #2563eb;
+
+            margin: 0 8px;
+
+        }
+
+        .captcha-refresh {
+
+            width: 42px;
+
+            height: 42px;
+
+            border-radius: 10px;
+
+            background: #ffffff;
+
+            border: 1px solid #dbe2ea;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            color: #334155;
+
+            text-decoration: none;
+
+            transition: .25s ease;
+
+        }
+
+        .captcha-refresh:hover {
+
+            background: #2563eb;
+
+            color: #ffffff;
+
+            transform: rotate(90deg);
+
+        }
+
+        .captcha-refresh i {
+
+            font-size: 20px;
+
+        }
+
+        .captcha-input {
+
+            height: 50px;
+
+            border-radius: 12px;
+
+            font-size: 15px;
+
+        }
+
         /* =========================
-               MOBILE
-            ========================= */
+                    MOBILE
+                 ========================= */
         @media(max-width: 992px) {
 
             .login-wrapper {
@@ -164,6 +286,30 @@
                 height: 45px;
                 font-size: 14px;
             }
+
+            /* CAPTCHA */
+            .captcha-label {
+                font-size: 11px;
+                font-weight: 500;
+                color: #0f172a;
+                margin-bottom: 8px;
+                display: block;
+                letter-spacing: .5px;
+            }
+
+            .captcha-question {
+                font-size: 28px;
+                font-weight: 800;
+                color: #0f172a;
+                margin-bottom: 14px;
+                line-height: 1.2;
+            }
+
+            .captcha-input {
+                height: 50px;
+                border-radius: 10px;
+                font-size: 16px;
+            }
         }
     </style>
 
@@ -171,7 +317,7 @@
 
         <!-- LEFT IMAGE -->
         <div class="login-left">
-            <img src="{{ asset('assets/img/login.jpeg') }}" alt="Login Image">
+            <img src="{{ asset('assets/img/background_aset.png') }}" alt="Login Image">
         </div>
 
         <!-- RIGHT FORM -->
@@ -181,7 +327,7 @@
 
                 <!-- LOGO -->
                 <div class="logo">
-                    <img src="{{ asset('assets/img/logo9.png') }}">
+                    <img src="{{ asset('assets/img/logo_aset.png') }}" alt="Logo">
                 </div>
 
                 <div class="title">Monitoring Asset</div>
@@ -217,6 +363,43 @@
                                 <i class="bx bx-hide"></i>
                             </span>
                         </div>
+                    </div>
+
+                    {{-- CAPTCHA --}}
+                    <div class="mb-4">
+
+                        <label class="captcha-title">
+
+                            Verifikasi Keamanan
+
+                        </label>
+
+                        {{-- BOX CAPTCHA --}}
+                        <div class="captcha-box">
+
+                            <div class="captcha-text">
+
+                                {{ $captcha1 }}
+
+                                <span>{{ $operator }}</span>
+
+                                {{ $captcha2 }}
+
+                            </div>
+
+                            {{-- REFRESH --}}
+                            <a href="{{ url('/login') }}" class="captcha-refresh">
+
+                                <i class="bx bx-refresh"></i>
+
+                            </a>
+
+                        </div>
+
+                        {{-- INPUT CAPTCHA --}}
+                        <input type="text" name="captcha" class="form-control captcha-input mt-3"
+                            placeholder="Masukkan hasil captcha" autocomplete="off" required>
+
                     </div>
 
                     <button class="btn btn-login w-100">

@@ -22,7 +22,10 @@ minimum-scale=1.0, maximum-scale=1.0" />
     <link rel="canonical" href="{{ config('variables.productPage') ?? '' }}">
 
     <!-- Favicon -->
-    <link rel="icon" type="image/x-icon" href="{{ asset('assets/img/logo-bulat.png') }}" />
+    <link rel="icon" type="image/png" sizes="32x32"
+        href="{{ asset('assets/img/favicon-monitoring.png?v=' . time()) }}">
+
+    <link rel="shortcut icon" href="{{ asset('assets/img/favicon-monitoring.png?v=' . time()) }}">
 
     <!-- Styles Template -->
     @include('layouts/sections/styles')
@@ -65,6 +68,34 @@ minimum-scale=1.0, maximum-scale=1.0" />
 
         .swal2-container {
             z-index: 9999 !important;
+        }
+
+        .app-footer {
+            width: 100%;
+            background: #fff;
+            border-top: 1px solid #e5e7eb;
+            padding: 12px 24px;
+            position: relative;
+            z-index: 99;
+        }
+
+        .footer-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            /* AGAR TIDAK KETUTUP SIDEBAR */
+            margin-left: 260px;
+        }
+
+        .footer-left,
+        .footer-right {
+            font-size: 14px;
+            color: #64748b;
+        }
+
+        .layout-page {
+            padding-bottom: 70px;
         }
     </style>
 

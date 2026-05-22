@@ -31,17 +31,17 @@
             <div class="d-flex gap-2">
 
                 @if (auth()->user()->role === 'petugas' || auth()->user()->role === 'super_admin')
-                    <a href="{{ route('transaksi-keluar.create') }}" class="btn btn-primary btn-sm px-3">
+                    <a href="{{ route('transaksi-keluar.create') }}" class="btn btn-primary px-4 py-2 fw-semibold">
                         <i class="bx bx-plus"></i> Tambah Data
                     </a>
                 @endif
 
                 @if (auth()->user()->role == 'manager')
-                    <a href="{{ route('manager.laporan.stok') }}" class="btn btn-info btn-sm px-3">
+                    <a href="{{ route('manager.laporan.stok') }}" class="btn btn-primary px-4 py-2 fw-semibold">
                         Cek Stok
                     </a>
                 @else
-                    <a href="{{ url('/dashboard/transaksi-masuk/stok') }}" class="btn btn-info btn-sm px-3">
+                    <a href="{{ url('/dashboard/transaksi-masuk/stok') }}" class="btn btn-primary px-4 py-2 fw-semibold">
                         Cek Stok
                     </a>
                 @endif

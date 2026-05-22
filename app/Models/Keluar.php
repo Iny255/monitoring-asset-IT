@@ -26,6 +26,7 @@ class Keluar extends Model
     'jenis_penerima',
     'divisi_klr',
     'perusahaan_klr',
+    'tgl_keluar',
   ];
 
   // ================= RELASI =================

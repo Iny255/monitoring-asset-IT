@@ -90,6 +90,7 @@
                             <th>Perusahaan</th>
                             <th>Processor</th>
                             <th>RAM</th>
+                            <th>QR</th>
                             <th>Status</th>
                             <th width="15%">Aksi</th>
                         </tr>
@@ -105,8 +106,13 @@
                                 <td>{{ $maping->keluar->karyawan->nama_karyawan ?? '-' }}</td>
                                 <td>{{ $maping->lokasi->nama_lokasi ?? '-' }}</td>
                                 <td>{{ $maping->perusahaan->nama_perusahaan ?? '-' }}</td>
-                                <td>{{ $m->processor ?? '-' }}</td>
+                                <td>{{ $maping->processor ?? '-' }}</td>
                                 <td>{{ $maping->ram }} GB</td>
+                                <td class="text-center">
+
+                                    {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(60)->generate(route('maping.public_show', $maping->id)) !!}
+
+                                </td>
                                 <td class="text-center">
 
                                     @if ($maping->status == 'aktif')
@@ -171,7 +177,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="text-center text-muted">
+                                <td colspan="10" class="text-center text-muted">
                                     Data belum tersedia
                                 </td>
                             </tr>

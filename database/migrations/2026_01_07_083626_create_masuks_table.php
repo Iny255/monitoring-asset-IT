@@ -4,45 +4,48 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
-    {
-        Schema::create('masuks', function (Blueprint $table) {
-            $table->id();
-            $table->unsignedBigInteger('id_kategori');
-            $table->string('kode_masuk', 20)->unique();
-            $table->string('type', 50);
-            $table->string('merek', 50);
-            $table->integer('jumlah');
-            $table->integer('garansi');
-            $table->date('tgl_beli');
-            $table->string('supplier', 50);
-            $table->string('harga', 50);
-            $table->string('gambar')->nullable(); // path gambar nota
+return new class extends Migration {
+  /**
+   * Run the migrations.
+   */
+  public function up(): void
+  {
+    Schema::create('masuks', function (Blueprint $table) {
+      $table->id();
+      $table->unsignedBigInteger('id_kategori');
+      $table->string('kode_masuk', 20)->unique();
+      $table->string('type', 50);
+      $table->string('merek', 50);
+      $table->enum('kondisi', ['Baru', 'Bekas'])->default('Baru');
+      $table->integer('jumlah');
+      $table->integer('garansi');
+      $table->date('tgl_beli');
+      $table->string('supplier', 50);
+      $table->string('harga', 50);
 
-            $table->timestamps();
+      $table->string('gambar')->nullable(); // path gambar nota
 
-            // Foreign key
-            $table->foreign('id_kategori')
-                ->references('id')
-                ->on('kategoris')
-                ->onDelete('cascade');
-                
-            $table->foreignId('perusahaan_id')
-                ->constrained()
-                ->cascadeOnDelete();
-        });
-    }
+      $table->timestamps();
 
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
-        Schema::dropIfExists('masuks');
-    }
+      // Foreign key
+      $table
+        ->foreign('id_kategori')
+        ->references('id')
+        ->on('kategoris')
+        ->onDelete('cascade');
+
+      $table
+        ->foreignId('perusahaan_id')
+        ->constrained()
+        ->cascadeOnDelete();
+    });
+  }
+
+  /**
+   * Reverse the migrations.
+   */
+  public function down(): void
+  {
+    Schema::dropIfExists('masuks');
+  }
 };

@@ -146,143 +146,150 @@
                 </div>
 
 
-                <div class="row">
+                <div class="col-md-4 mb-3">
 
-                    <div class="col-md-4 mb-3">
+                    <label class="form-label">Jumlah Keluar</label>
 
-                        <label class="form-label">Jumlah Keluar</label>
-
-                        <input type="number" name="jumlah" class="form-control" value="{{ $keluar->jumlah }}"
-                            min="1">
-
-                    </div>
-
-
-                    <div class="col-md-4 mb-3">
-
-                        <label class="form-label">Jenis Penerima</label>
-
-                        <select name="jenis_penerima" id="jenis_penerima" class="form-select">
-
-                            <option value="Perorangan" {{ $keluar->jenis_penerima == 'Perorangan' ? 'selected' : '' }}>
-
-                                Perorangan
-
-                            </option>
-
-                            <option value="Perdivisi" {{ $keluar->jenis_penerima == 'Perdivisi' ? 'selected' : '' }}>
-
-                                Perdivisi
-
-                            </option>
-
-                        </select>
-
-                    </div>
+                    <input type="number" name="jumlah" class="form-control" value="{{ old('jumlah', $keluar->jumlah) }}"
+                        min="1">
 
                 </div>
 
+                {{-- TANGGAL KELUAR --}}
+                <div class="col-md-4 mb-3">
 
-                {{-- PERORANGAN --}}
-                <div id="group_karyawan">
+                    <label class="form-label">Tanggal Keluar</label>
 
-                    <div class="row">
-
-                        <div class="col-md-4 mb-3">
-
-                            <label class="form-label">Nama Karyawan</label>
-
-                            <input type="text" id="nama_karyawan" class="form-control"
-                                value="{{ optional($keluar->karyawan)->nama_karyawan }}">
-
-                            <input type="hidden" name="id_karyawan" id="id_karyawan"
-                                value="{{ $keluar->id_karyawan }}">
-
-                        </div>
-
-
-                        <div class="col-md-4 mb-3">
-
-                            <label class="form-label">Divisi</label>
-
-                            <input type="text" id="divisi" class="form-control"
-                                value="{{ optional($keluar->karyawan)->divisi }}" readonly>
-
-                        </div>
-
-
-                        <div class="col-md-4 mb-3">
-
-                            <label class="form-label">Perusahaan</label>
-
-                            <input type="text" id="perusahaan" class="form-control"
-                                value="{{ $keluar->karyawan?->perusahaan?->nama_perusahaan }}" readonly>
-
-                        </div>
-
-                    </div>
+                    <input type="date" name="tgl_keluar" class="form-control"
+                        value="{{ old('tgl_keluar', $keluar->tgl_keluar ? \Carbon\Carbon::parse($keluar->tgl_keluar)->format('Y-m-d') : '') }}"
+                        required>
 
                 </div>
 
+                <div class="col-md-4 mb-3">
 
-                {{-- PERDIVISI --}}
-                <div id="group_divisi">
+                    <label class="form-label">Jenis Penerima</label>
 
-                    <div class="row">
+                    <select name="jenis_penerima" id="jenis_penerima" class="form-select">
 
-                        <div class="col-md-6 mb-3">
+                        <option value="Perorangan" {{ $keluar->jenis_penerima == 'Perorangan' ? 'selected' : '' }}>
 
-                            <label class="form-label">Divisi</label>
+                            Perorangan
 
-                            <input type="text" name="divisi_klr" id="divisi_klr" class="form-control"
-                                value="{{ $keluar->divisi_klr }}">
+                        </option>
 
-                        </div>
+                        <option value="Perdivisi" {{ $keluar->jenis_penerima == 'Perdivisi' ? 'selected' : '' }}>
 
+                            Perdivisi
 
-                        <div class="col-md-6 mb-3">
+                        </option>
 
-                            <label class="form-label">Perusahaan</label>
-
-                            <input type="text" class="form-control" value="{{ $keluar->perusahaan_klr }}" readonly>
-
-                        </div>
-
-                    </div>
+                    </select>
 
                 </div>
-
-
-                {{-- KETERANGAN --}}
-                <div class="mb-3">
-
-                    <label class="form-label">Keterangan</label>
-
-                    <textarea name="keterangan" class="form-control" rows="2">{{ $keluar->keterangan }}</textarea>
-
-                </div>
-
-
-                {{-- BUTTON --}}
-                <div class="d-flex justify-content-end gap-2 mt-3">
-
-                    <a href="{{ route('transaksi-keluar.index') }}" class="btn btn-secondary">
-
-                        Kembali
-
-                    </a>
-
-                    <button class="btn btn-primary">
-
-                        Update
-
-                    </button>
-
-                </div>
-
-            </form>
 
         </div>
+
+
+        {{-- PERORANGAN --}}
+        <div id="group_karyawan">
+
+            <div class="row">
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="form-label">Nama Karyawan</label>
+
+                    <input type="text" id="nama_karyawan" class="form-control"
+                        value="{{ optional($keluar->karyawan)->nama_karyawan }}">
+
+                    <input type="hidden" name="id_karyawan" id="id_karyawan" value="{{ $keluar->id_karyawan }}">
+
+                </div>
+
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="form-label">Divisi</label>
+
+                    <input type="text" id="divisi" class="form-control"
+                        value="{{ optional($keluar->karyawan)->divisi }}" readonly>
+
+                </div>
+
+
+                <div class="col-md-4 mb-3">
+
+                    <label class="form-label">Perusahaan</label>
+
+                    <input type="text" id="perusahaan" class="form-control"
+                        value="{{ $keluar->karyawan?->perusahaan?->nama_perusahaan }}" readonly>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        {{-- PERDIVISI --}}
+        <div id="group_divisi">
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="form-label">Divisi</label>
+
+                    <input type="text" name="divisi_klr" id="divisi_klr" class="form-control"
+                        value="{{ $keluar->divisi_klr }}">
+
+                </div>
+
+
+                <div class="col-md-6 mb-3">
+
+                    <label class="form-label">Perusahaan</label>
+
+                    <input type="text" class="form-control" value="{{ $keluar->perusahaan_klr }}" readonly>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        {{-- KETERANGAN --}}
+        <div class="mb-3">
+
+            <label class="form-label">Keterangan</label>
+
+            <textarea name="keterangan" class="form-control" rows="2">{{ $keluar->keterangan }}</textarea>
+
+        </div>
+
+
+        {{-- BUTTON --}}
+        <div class="d-flex justify-content-end gap-2 mt-3">
+
+            <a href="{{ route('transaksi-keluar.index') }}" class="btn btn-secondary">
+
+                Kembali
+
+            </a>
+
+            <button class="btn btn-primary">
+
+                Update
+
+            </button>
+
+        </div>
+
+        </form>
+
+    </div>
 
     </div>
 
@@ -404,8 +411,7 @@
                             kode_masuk: kode,
 
                             perusahaan_id: perusahaanSelect ?
-                                perusahaanSelect.value :
-                                null
+                                perusahaanSelect.value : null
 
                         })
 
@@ -468,8 +474,7 @@
                                 nama_karyawan: nama,
 
                                 perusahaan_id: perusahaanSelect ?
-                                    perusahaanSelect.value :
-                                    null
+                                    perusahaanSelect.value : null
 
                             })
 
