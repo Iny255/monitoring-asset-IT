@@ -4,297 +4,488 @@
 
 @section('content')
 
-    <div class="card shadow-sm">
+    <div class="card shadow-sm border-0">
 
-        <div class="card-header">
-            <h5 class="text-primary mb-0">Edit Transaksi Keluar</h5>
+        {{-- HEADER --}}
+        <div class="card-header bg-white border-bottom">
+            <h4 class="mb-0 text-primary fw-bold">
+                Edit Transaksi Keluar
+            </h4>
         </div>
 
         <div class="card-body">
 
+            {{-- ALERT --}}
             @if (session('error'))
                 <div class="alert alert-danger alert-dismissible fade show">
+
                     {{ session('error') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+
+                    <button type="button" class="btn-close" data-bs-dismiss="alert">
+                    </button>
+
                 </div>
             @endif
 
-            <form action="{{ route('transaksi-keluar.update', $keluar->id) }}" method="POST">
+            <form action="{{ route('transaksi-keluar.update', $keluar->id) }}" method="POST" enctype="multipart/form-data">
 
                 @csrf
                 @method('PUT')
 
-                <div class="row">
+                {{-- ========================================= --}}
+                {{-- SUPER ADMIN --}}
+                {{-- ========================================= --}}
 
-                    {{-- SUPER ADMIN --}}
-                    @if (auth()->user()->role === 'super_admin')
+                @if (auth()->user()->role === 'super_admin')
 
-                        <div class="col-md-6 mb-3">
+                    <div class="card border-0 shadow-sm mb-4">
 
-                            <label class="form-label">Perusahaan</label>
+                        <div class="card-header bg-light fw-semibold">
+                            Data Perusahaan
+                        </div>
 
-                            <select name="perusahaan_id" id="perusahaan_select" class="form-select" required>
+                        <div class="card-body">
 
-                                <option value="">-- Pilih Perusahaan --</option>
+                            <div class="row">
 
-                                @foreach ($perusahaans as $p)
-                                    <option value="{{ $p->id }}"
-                                        {{ $keluar->id_perusahaan == $p->id ? 'selected' : '' }}>
+                                <div class="col-md-6">
 
-                                        {{ $p->nama_perusahaan }}
+                                    <label class="form-label">
+                                        Perusahaan
+                                    </label>
 
-                                    </option>
-                                @endforeach
+                                    <select name="perusahaan_id" id="perusahaan_select" class="form-select" required>
 
-                            </select>
+                                        <option value="">
+                                            -- Pilih Perusahaan --
+                                        </option>
+
+                                        @foreach ($perusahaans as $p)
+                                            <option value="{{ $p->id }}"
+                                                {{ $keluar->id_perusahaan == $p->id ? 'selected' : '' }}>
+
+                                                {{ $p->nama_perusahaan }}
+
+                                            </option>
+                                        @endforeach
+
+                                    </select>
+
+                                </div>
+
+                            </div>
 
                         </div>
 
-                    @endif
-
-
-                    {{-- KODE KELUAR --}}
-                    <div class="col-md-6 mb-3">
-
-                        <label class="form-label">Kode Keluar</label>
-
-                        <input type="text" name="kode_keluar" id="kode_keluar" class="form-control"
-                            value="{{ $keluar->kode_keluar }}" readonly>
-
                     </div>
 
+                @endif
 
-                    {{-- KODE MASUK --}}
-                    <div class="col-md-6 mb-3">
 
-                        <label class="form-label">Kode Masuk</label>
+                {{-- ========================================= --}}
+                {{-- INFORMASI BARANG --}}
+                {{-- ========================================= --}}
 
-                        <input type="text" id="kode_masuk" class="form-control"
-                            value="{{ $keluar->masuk->kode_masuk ?? '' }}">
+                <div class="card border-0 shadow-sm mb-4">
 
-                        <input type="hidden" name="id_masuk" id="id_masuk" value="{{ $keluar->id_masuk }}">
+                    <div class="card-header bg-light fw-semibold">
+                        Informasi Barang
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row">
+
+                            {{-- KODE KELUAR --}}
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Kode Keluar
+                                </label>
+
+                                <input type="text" name="kode_keluar" id="kode_keluar" class="form-control"
+                                    value="{{ $keluar->kode_keluar }}" readonly>
+
+                            </div>
+
+                            {{-- KODE MASUK --}}
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Kode Masuk
+                                </label>
+
+                                <input type="text" id="kode_masuk" class="form-control"
+                                    value="{{ $keluar->masuk->kode_masuk ?? '' }}">
+
+                                <input type="hidden" name="id_masuk" id="id_masuk" value="{{ $keluar->id_masuk }}">
+
+                            </div>
+
+                            {{-- NAMA BARANG --}}
+                            <div class="col-md-3 mb-3">
+
+                                <label class="form-label">
+                                    Nama Barang
+                                </label>
+
+                                <input type="text" id="nama_barang" class="form-control"
+                                    value="{{ optional(optional($keluar->masuk)->kategori)->nama_barang }}" readonly>
+
+                            </div>
+
+                            {{-- TYPE --}}
+                            <div class="col-md-3 mb-3">
+
+                                <label class="form-label">
+                                    Type
+                                </label>
+
+                                <input type="text" id="type" class="form-control"
+                                    value="{{ $keluar->masuk->type ?? '' }}" readonly>
+
+                            </div>
+
+                            {{-- MEREK --}}
+                            <div class="col-md-3 mb-3">
+
+                                <label class="form-label">
+                                    Merek
+                                </label>
+
+                                <input type="text" id="merek" class="form-control"
+                                    value="{{ $keluar->masuk->merek ?? '' }}" readonly>
+
+                            </div>
+
+                            {{-- TANGGAL BELI --}}
+                            <div class="col-md-3 mb-3">
+
+                                <label class="form-label">
+                                    Tanggal Beli
+                                </label>
+
+                                <input type="text" id="tgl_beli" class="form-control"
+                                    value="{{ $keluar->masuk->tgl_beli ?? '' }}" readonly>
+
+                            </div>
+
+                        </div>
 
                     </div>
 
                 </div>
 
 
-                {{-- DATA BARANG --}}
-                <div class="row">
+                {{-- ========================================= --}}
+                {{-- DETAIL TRANSAKSI --}}
+                {{-- ========================================= --}}
 
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Nama Barang</label>
+                <div class="card border-0 shadow-sm mb-4">
 
-                        <input type="text" id="nama_barang" class="form-control"
-                            value="{{ optional(optional($keluar->masuk)->kategori)->nama_barang }}" readonly>
+                    <div class="card-header bg-light fw-semibold">
+                        Detail Transaksi Keluar
                     </div>
 
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Type</label>
+                    <div class="card-body">
 
-                        <input type="text" id="type" class="form-control" value="{{ $keluar->masuk->type ?? '' }}"
-                            readonly>
-                    </div>
+                        <div class="row">
 
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Merek</label>
+                            {{-- KODE BARANG --}}
+                            <div class="col-md-4 mb-3">
 
-                        <input type="text" id="merek" class="form-control" value="{{ $keluar->masuk->merek ?? '' }}"
-                            readonly>
-                    </div>
+                                <label class="form-label">
+                                    Kode Barang
+                                </label>
 
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Tanggal Beli</label>
+                                <input type="text" name="kode_barang" class="form-control"
+                                    value="{{ old('kode_barang', $keluar->kode_barang) }}">
 
-                        <input type="text" id="tgl_beli" class="form-control"
-                            value="{{ $keluar->masuk->tgl_beli ?? '' }}" readonly>
+                            </div>
+
+                            {{-- WARNA --}}
+                            <div class="col-md-4 mb-3">
+
+                                <label class="form-label">
+                                    Warna
+                                </label>
+
+                                <input type="text" name="warna" class="form-control"
+                                    value="{{ old('warna', $keluar->warna) }}">
+
+                            </div>
+
+                            {{-- NO INVENTARIS --}}
+                            <div class="col-md-4 mb-3">
+
+                                <label class="form-label">
+                                    No Inventaris
+                                </label>
+
+                                <input type="text" name="no_inventaris" class="form-control"
+                                    value="{{ old('no_inventaris', $keluar->no_inventaris) }}">
+
+                            </div>
+
+                            {{-- JUMLAH --}}
+                            <div class="col-md-4 mb-3">
+
+                                <label class="form-label">
+                                    Jumlah Keluar
+                                </label>
+
+                                <input type="number" name="jumlah" class="form-control"
+                                    value="{{ old('jumlah', $keluar->jumlah) }}" min="1">
+
+                            </div>
+
+                            {{-- TANGGAL --}}
+                            <div class="col-md-4 mb-3">
+
+                                <label class="form-label">
+                                    Tanggal Keluar
+                                </label>
+
+                                <input type="date" name="tgl_keluar" class="form-control"
+                                    value="{{ old('tgl_keluar', $keluar->tgl_keluar ? \Carbon\Carbon::parse($keluar->tgl_keluar)->format('Y-m-d') : '') }}"
+                                    required>
+
+                            </div>
+
+                            {{-- JENIS --}}
+                            <div class="col-md-4 mb-3">
+
+                                <label class="form-label">
+                                    Jenis Penerima
+                                </label>
+
+                                <select name="jenis_penerima" id="jenis_penerima" class="form-select">
+
+                                    <option value="Perorangan"
+                                        {{ $keluar->jenis_penerima == 'Perorangan' ? 'selected' : '' }}>
+
+                                        Perorangan
+
+                                    </option>
+
+                                    <option value="Perdivisi"
+                                        {{ $keluar->jenis_penerima == 'Perdivisi' ? 'selected' : '' }}>
+
+                                        Perdivisi
+
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
                     </div>
 
                 </div>
 
 
-                {{-- DATA KELUAR --}}
-                <div class="row">
+                {{-- ========================================= --}}
+                {{-- PERORANGAN --}}
+                {{-- ========================================= --}}
 
-                    <div class="col-md-4 mb-3">
+                <div id="group_karyawan" class="card border-0 shadow-sm mb-4">
 
-                        <label class="form-label">Kode Barang</label>
+                    <div class="card-header bg-light fw-semibold">
+                        Informasi Penerima
+                    </div>
 
-                        <input type="text" name="kode_barang" class="form-control"
-                            value="{{ old('kode_barang', $keluar->kode_barang) }}">
+                    <div class="card-body">
+
+                        <div class="row">
+
+                            {{-- NAMA --}}
+                            <div class="col-md-4 mb-3">
+
+                                <label class="form-label">
+                                    Nama Karyawan
+                                </label>
+
+                                <input type="text" id="nama_karyawan" class="form-control"
+                                    value="{{ optional($keluar->karyawan)->nama_karyawan }}">
+
+                                <input type="hidden" name="id_karyawan" id="id_karyawan"
+                                    value="{{ $keluar->id_karyawan }}">
+
+                            </div>
+
+                            {{-- DIVISI --}}
+                            <div class="col-md-4 mb-3">
+
+                                <label class="form-label">
+                                    Divisi
+                                </label>
+
+                                <input type="text" id="divisi" class="form-control"
+                                    value="{{ optional($keluar->karyawan)->divisi }}" readonly>
+
+                            </div>
+
+                            {{-- PERUSAHAAN --}}
+                            <div class="col-md-4 mb-3">
+
+                                <label class="form-label">
+                                    Perusahaan
+                                </label>
+
+                                <input type="text" id="perusahaan" class="form-control"
+                                    value="{{ $keluar->karyawan?->perusahaan?->nama_perusahaan }}" readonly>
+
+                            </div>
+
+                        </div>
 
                     </div>
 
-                    <div class="col-md-4 mb-3">
+                </div>
 
-                        <label class="form-label">Warna</label>
 
-                        <input type="text" name="warna" class="form-control"
-                            value="{{ old('warna', $keluar->warna) }}">
+                {{-- ========================================= --}}
+                {{-- PERDIVISI --}}
+                {{-- ========================================= --}}
+
+                <div id="group_divisi" class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-header bg-light fw-semibold">
+                        Informasi Divisi
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row">
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Divisi
+                                </label>
+
+                                <input type="text" name="divisi_klr" id="divisi_klr" class="form-control"
+                                    value="{{ $keluar->divisi_klr }}">
+
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+
+                                <label class="form-label">
+                                    Perusahaan
+                                </label>
+
+                                <input type="text" class="form-control" value="{{ $keluar->perusahaan_klr }}"
+                                    readonly>
+
+                            </div>
+
+                        </div>
 
                     </div>
 
-                    <div class="col-md-4 mb-3">
+                </div>
 
-                        <label class="form-label">No Inventaris</label>
 
-                        <input type="text" name="no_inventaris" class="form-control"
-                            value="{{ old('no_inventaris', $keluar->no_inventaris) }}">
+                {{-- ========================================= --}}
+                {{-- UPLOAD GAMBAR --}}
+                {{-- ========================================= --}}
+
+                <div class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-header bg-light fw-semibold">
+                        Upload Gambar
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row align-items-center">
+
+                            <div class="col-md-6 mb-3">
+
+                                <input type="file" name="gambar" class="form-control" accept=".jpg,.jpeg,.png">
+
+                                <small class="text-muted">
+                                    Format JPG, JPEG, PNG • Maksimal 2 MB
+                                </small>
+
+                            </div>
+
+                            <div class="col-md-6 text-center">
+
+                                @if ($keluar->gambar)
+                                    <img src="{{ asset('storage/' . $keluar->gambar) }}"
+                                        class="img-fluid rounded shadow border"
+                                        style="max-height:250px; object-fit:cover;">
+                                @else
+                                    <div class="text-muted py-4">
+
+                                        <i class="bx bx-image-alt display-5"></i>
+
+                                        <p class="mb-0 mt-2">
+                                            Gambar tidak tersedia
+                                        </p>
+
+                                    </div>
+                                @endif
+
+                            </div>
+
+                        </div>
 
                     </div>
 
                 </div>
 
 
-                <div class="col-md-4 mb-3">
+                {{-- ========================================= --}}
+                {{-- KETERANGAN --}}
+                {{-- ========================================= --}}
 
-                    <label class="form-label">Jumlah Keluar</label>
+                <div class="card border-0 shadow-sm mb-4">
 
-                    <input type="number" name="jumlah" class="form-control" value="{{ old('jumlah', $keluar->jumlah) }}"
-                        min="1">
+                    <div class="card-header bg-light fw-semibold">
+                        Keterangan
+                    </div>
 
-                </div>
+                    <div class="card-body">
 
-                {{-- TANGGAL KELUAR --}}
-                <div class="col-md-4 mb-3">
+                        <textarea name="keterangan" class="form-control" rows="3">{{ $keluar->keterangan }}</textarea>
 
-                    <label class="form-label">Tanggal Keluar</label>
-
-                    <input type="date" name="tgl_keluar" class="form-control"
-                        value="{{ old('tgl_keluar', $keluar->tgl_keluar ? \Carbon\Carbon::parse($keluar->tgl_keluar)->format('Y-m-d') : '') }}"
-                        required>
+                    </div>
 
                 </div>
 
-                <div class="col-md-4 mb-3">
 
-                    <label class="form-label">Jenis Penerima</label>
+                {{-- ========================================= --}}
+                {{-- BUTTON --}}
+                {{-- ========================================= --}}
 
-                    <select name="jenis_penerima" id="jenis_penerima" class="form-select">
+                <div class="d-flex justify-content-end gap-2 border-top pt-4">
 
-                        <option value="Perorangan" {{ $keluar->jenis_penerima == 'Perorangan' ? 'selected' : '' }}>
+                    <a href="{{ route('transaksi-keluar.index') }}" class="btn btn-secondary px-4">
 
-                            Perorangan
+                        Kembali
 
-                        </option>
+                    </a>
 
-                        <option value="Perdivisi" {{ $keluar->jenis_penerima == 'Perdivisi' ? 'selected' : '' }}>
+                    <button type="submit" class="btn btn-primary px-4">
 
-                            Perdivisi
+                        Update
 
-                        </option>
-
-                    </select>
+                    </button>
 
                 </div>
+
+            </form>
 
         </div>
-
-
-        {{-- PERORANGAN --}}
-        <div id="group_karyawan">
-
-            <div class="row">
-
-                <div class="col-md-4 mb-3">
-
-                    <label class="form-label">Nama Karyawan</label>
-
-                    <input type="text" id="nama_karyawan" class="form-control"
-                        value="{{ optional($keluar->karyawan)->nama_karyawan }}">
-
-                    <input type="hidden" name="id_karyawan" id="id_karyawan" value="{{ $keluar->id_karyawan }}">
-
-                </div>
-
-
-                <div class="col-md-4 mb-3">
-
-                    <label class="form-label">Divisi</label>
-
-                    <input type="text" id="divisi" class="form-control"
-                        value="{{ optional($keluar->karyawan)->divisi }}" readonly>
-
-                </div>
-
-
-                <div class="col-md-4 mb-3">
-
-                    <label class="form-label">Perusahaan</label>
-
-                    <input type="text" id="perusahaan" class="form-control"
-                        value="{{ $keluar->karyawan?->perusahaan?->nama_perusahaan }}" readonly>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        {{-- PERDIVISI --}}
-        <div id="group_divisi">
-
-            <div class="row">
-
-                <div class="col-md-6 mb-3">
-
-                    <label class="form-label">Divisi</label>
-
-                    <input type="text" name="divisi_klr" id="divisi_klr" class="form-control"
-                        value="{{ $keluar->divisi_klr }}">
-
-                </div>
-
-
-                <div class="col-md-6 mb-3">
-
-                    <label class="form-label">Perusahaan</label>
-
-                    <input type="text" class="form-control" value="{{ $keluar->perusahaan_klr }}" readonly>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        {{-- KETERANGAN --}}
-        <div class="mb-3">
-
-            <label class="form-label">Keterangan</label>
-
-            <textarea name="keterangan" class="form-control" rows="2">{{ $keluar->keterangan }}</textarea>
-
-        </div>
-
-
-        {{-- BUTTON --}}
-        <div class="d-flex justify-content-end gap-2 mt-3">
-
-            <a href="{{ route('transaksi-keluar.index') }}" class="btn btn-secondary">
-
-                Kembali
-
-            </a>
-
-            <button class="btn btn-primary">
-
-                Update
-
-            </button>
-
-        </div>
-
-        </form>
-
-    </div>
 
     </div>
 
 @endsection
-
 
 @section('scripts')
 

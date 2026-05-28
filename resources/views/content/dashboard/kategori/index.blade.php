@@ -68,20 +68,28 @@
                     <table class="table table-bordered">
                         <thead class="table-primary text-center">
                             <tr>
+
+                                <th width="60">NO</th>
+
                                 <th>KODE</th>
+
                                 <th>NAMA BARANG</th>
 
                                 @if (auth()->user()->role === 'super_admin')
                                     <th>PERUSAHAAN</th>
                                 @endif
 
-                                <th>ACTION</th>
+                                <th width="150">ACTION</th>
+
                             </tr>
                         </thead>
 
                         <tbody>
-                            @forelse ($kategoris as $kategori)
+                            @forelse ($kategoris as $index => $kategori)
                                 <tr>
+                                    <td class="text-center">
+                                        {{ $kategoris->firstItem() + $index }}
+                                    </td>
                                     <td>{{ $kategori->kode_barang }}</td>
                                     <td>{{ $kategori->nama_barang }}</td>
 
@@ -112,7 +120,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="text-center">
+                                    <td colspan="5" class="text-center">
                                         Data tidak ditemukan
                                     </td>
                                 </tr>
@@ -203,7 +211,8 @@
 
                         <div class="mb-3">
                             <label class="form-label">Nama Barang</label>
-                            <input type="text" name="nama_barang" id="edit_nama_barang" class="form-control" required>
+                            <input type="text" name="nama_barang" id="edit_nama_barang" class="form-control"
+                                required>
                         </div>
 
                     </div>

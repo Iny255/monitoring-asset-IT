@@ -146,20 +146,7 @@
                                         required>
                                 </div>
 
-                                {{-- GAMBAR --}}
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-medium">Upload Gambar</label>
-                                    <input type="file" name="gambar" class="form-control">
-
-                                    @if ($masuk->gambar)
-                                        <div class="mt-2">
-                                            <img src="{{ asset('storage/' . $masuk->gambar) }}" width="100"
-                                                class="img-thumbnail">
-                                        </div>
-                                    @endif
-                                </div>
-
-                            </div>
+                              
 
                             <div class="d-flex justify-content-end gap-2 mt-3">
                                 <a href="{{ route('transaksi-masuk.index') }}" class="btn btn-secondary px-4">

@@ -6,8 +6,8 @@
 
     <style>
         /* =========================
-                                           DARK MODE ONLY
-                                        ========================= */
+                                                   DARK MODE ONLY
+                                                ========================= */
 
         .dark-style .card-dark {
             background: #1f2a3c;
@@ -57,18 +57,91 @@
             background: #0f172a;
             color: #cfd3ec;
         }
+
+        /* =========================
+           CARD
+        ========================= */
+
+        .card-dark {
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        /* =========================
+           INPUT
+        ========================= */
+
+        .form-control,
+        .form-select {
+            height: 48px;
+            border-radius: 12px;
+            border: 1px solid #dbe2ea;
+            transition: .2s ease;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: var(--bs-primary);
+            box-shadow: 0 0 0 .15rem rgba(13, 110, 253, .15);
+        }
+
+        /* =========================
+           LABEL
+        ========================= */
+
+        .form-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: #5b6475;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+        }
+
+        /* =========================
+           BUTTON
+        ========================= */
+
+        .btn {
+            border-radius: 12px;
+            height: 45px;
+            min-width: 110px;
+            font-weight: 600;
+        }
+
+        /* =========================
+           SECTION TITLE
+        ========================= */
+
+        .form-section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: #696cff;
+            margin-bottom: 18px;
+            text-transform: uppercase;
+            letter-spacing: .5px;
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================= */
+
+        @media (max-width: 768px) {
+            .card-body {
+                padding: 20px !important;
+            }
+        }
     </style>
 
 
-    <div class="container-fluid px-3">
+    <div class="container-fluid px-4">
 
-        <div class="row">
+        <div class="row justify-content-center">
 
-            <div class="col-12">
+            <div class="col-12 col-xl-10">
 
-                <div class="card card-dark shadow-sm">
+                <div class="card card-dark shadow border-0">
 
-                    <div class="card-header px-4 pt-4">
+                    <div class="card-header border-0 px-4 pt-4 pb-2">
 
                         <h5 class="text-primary mb-0">Tambah Transaksi Masuk</h5>
                         <small class="text-muted">Silakan isi data barang masuk</small>
@@ -76,10 +149,14 @@
                     </div>
 
 
-                    <div class="card-body px-4 pb-4">
+                    <div class="card-body px-4 pb-4 pt-3">
 
                         <form action="{{ route('transaksi-masuk.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
+
+                            <div class="form-section-title">
+                                Informasi Asset
+                            </div>
 
                             <div class="row">
                                 {{-- PERUSAHAAN (HANYA SUPER ADMIN) --}}
@@ -273,39 +350,19 @@
                                 </div>
 
 
-                                {{-- GAMBAR --}}
-                                <div class="col-md-6 mb-3">
-
-                                    <label class="form-label fw-medium">Upload Gambar (Max 2MB)</label>
-
-                                    <input type="file" name="gambar"
-                                        class="form-control @error('gambar') is-invalid @enderror"
-                                        accept="image/jpeg,image/png" onchange="validateFileSize(this)">
-
-                                    <small class="text-muted">
-                                        Format: JPG, JPEG, PNG. Maksimal 2MB
-                                    </small>
-
-                                    @error('gambar')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
 
                                 </div>
+                                <div class="d-flex justify-content-end gap-2 mt-3">
 
-                            </div>
+                                    <a href="{{ route('transaksi-masuk.index') }}" class="btn btn-secondary px-4">
+                                        Batal
+                                    </a>
 
+                                    <button type="submit" class="btn btn-primary px-4">
+                                        Simpan
+                                    </button>
 
-                            <div class="d-flex justify-content-end gap-2 mt-3">
-
-                                <a href="{{ route('transaksi-masuk.index') }}" class="btn btn-secondary px-4">
-                                    Batal
-                                </a>
-
-                                <button type="submit" class="btn btn-primary px-4">
-                                    Simpan
-                                </button>
-
-                            </div>
+                                </div>
 
                         </form>
 
@@ -333,21 +390,7 @@
             const kategoriSelect = document.getElementById('kategori');
             const kodeInput = document.getElementById('kode_masuk');
 
-            // =========================
-            // VALIDATE FILE SIZE
-            // =========================
-            window.validateFileSize = function(input) {
-                const file = input.files[0];
 
-                if (file) {
-                    const maxSize = 2 * 1024 * 1024;
-
-                    if (file.size > maxSize) {
-                        alert("Ukuran gambar maksimal 2MB!");
-                        input.value = "";
-                    }
-                }
-            };
 
             // =========================
             // DEFAULT STATE (SUPER ADMIN)

@@ -18,38 +18,54 @@ class DashboardManagerController extends Controller
     $user = auth()->user();
     $now = Carbon::now('Asia/Jakarta');
 
-    /* ================= TOTAL STOK ================= */
-    $totalStok = Masuk::when($user->role !== 'super_admin', function ($q) use ($user) {
+    /* ================= TOTAL ================= */
+
+    // TOTAL MASUK
+    $totalMasuk = Masuk::when($user->role !== 'super_admin', function ($q) use ($user) {
       $q->where('perusahaan_id', $user->id_perusahaan);
     })->sum('jumlah');
 
-    /* ================= TOTAL KELUAR ================= */
+    // TOTAL KELUAR
     $totalKeluar = Keluar::when($user->role !== 'super_admin', function ($q) use ($user) {
       $q->where('id_perusahaan', $user->id_perusahaan);
-    })->count();
+    })->sum('jumlah');
 
-    /* ================= TOTAL ASET ================= */
-    $totalAset = $totalStok + $totalKeluar;
+    // STOK REAL
+    $totalStok = $totalMasuk - $totalKeluar;
 
-    /* ================= KOMPOSISI ASET DINAMIS ================= */
+    // TOTAL ASET
+    $totalAset = $totalMasuk;
 
-    $komposisiAset = DB::table('masuks')
+    /* ================= KOMPOSISI STOK REAL ================= */
 
-      ->join('kategoris', 'masuks.id_kategori', '=', 'kategoris.id')
+    $komposisiAset = Masuk::with(['kategori', 'keluars'])
 
-      ->select('kategoris.nama_barang', DB::raw('SUM(masuks.jumlah) as total'));
+      ->when($user->role !== 'super_admin', function ($q) use ($user) {
+        $q->where('perusahaan_id', $user->id_perusahaan);
+      })
 
-    if ($user->role !== 'super_admin') {
-      $komposisiAset->where('masuks.perusahaan_id', $user->id_perusahaan);
-    }
+      ->get()
 
-    $komposisiAset = $komposisiAset
+      ->groupBy(function ($item) {
+        return $item->kategori->nama_barang ?? 'LAINNYA';
+      })
 
-      ->groupBy('kategoris.nama_barang')
+      ->map(function ($items, $namaBarang) {
+        $stokMasuk = $items->sum('jumlah');
 
-      ->orderByDesc('total')
+        $stokKeluar = $items->sum(function ($item) {
+          return $item->keluars->sum('jumlah');
+        });
 
-      ->get();
+        return [
+          'nama_barang' => $namaBarang,
+          'total' => max(0, $stokMasuk - $stokKeluar),
+        ];
+      })
+
+      ->sortByDesc('total')
+
+      ->values();
 
     /* ================= PEMINJAMAN ================= */
     $dipinjam = Peminjaman::when($user->role !== 'super_admin', function ($q) use ($user) {

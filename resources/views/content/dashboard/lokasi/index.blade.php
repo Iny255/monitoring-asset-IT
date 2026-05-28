@@ -76,6 +76,9 @@
                     <table class="table table-bordered align-middle">
                         <thead class="table-primary text-center">
                             <tr>
+
+                                <th width="60">NO</th>
+
                                 <th>KODE</th>
                                 <th>NAMA LOKASI</th>
 
@@ -84,12 +87,16 @@
                                 @endif
 
                                 <th width="120">ACTION</th>
+
                             </tr>
                         </thead>
 
                         <tbody>
-                            @forelse ($lokasis as $lokasi)
+                            @forelse ($lokasis as $index => $lokasi)
                                 <tr>
+                                    <td class="text-center">
+                                        {{ $lokasis->firstItem() + $index }}
+                                    </td>
                                     <td>{{ $lokasi->kode_lokasi }}</td>
                                     <td>{{ $lokasi->nama_lokasi }}</td>
 
@@ -125,7 +132,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="4" class="text-center">Data tidak ditemukan</td>
+                                    <td colspan="5" class="text-center">Data tidak ditemukan</td>
                                 </tr>
                             @endforelse
                         </tbody>

@@ -23,6 +23,7 @@ class Keluar extends Model
     'keterangan',
     'warna',
     'no_inventaris',
+    'gambar',
     'jenis_penerima',
     'divisi_klr',
     'perusahaan_klr',

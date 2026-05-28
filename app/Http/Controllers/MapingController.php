@@ -675,21 +675,23 @@ class MapingController extends Controller
       'ke_perusahaan' => 'required|exists:perusahaans,id',
       'tanggal_mutasi' => 'required|date',
     ]);
+    $request->merge([
+      'ke_aplikasi' => strtoupper($request->ke_aplikasi ?? ''),
+
+      'ke_data_ppn' => strtoupper($request->ke_data_ppn ?? ''),
+
+      'ke_data_non_ppn' => strtoupper($request->ke_data_non_ppn ?? ''),
+
+      'ke_no_inventaris' => strtoupper($request->ke_no_inventaris ?? ''),
+
+      'keterangan' => strtoupper($request->keterangan ?? ''),
+    ]);
 
     $maping = Maping::with('keluar')->findOrFail($id);
 
     DB::beginTransaction();
 
     try {
-      $validated['ke_aplikasi'] = strtoupper($validated['ke_aplikasi'] ?? '');
-
-      $validated['ke_data_ppn'] = strtoupper($validated['ke_data_ppn'] ?? '');
-
-      $validated['ke_data_non_ppn'] = strtoupper($validated['ke_data_non_ppn'] ?? '');
-
-      $validated['ke_no_inventaris'] = strtoupper($validated['ke_no_inventaris'] ?? '');
-
-      $validated['keterangan'] = strtoupper($validated['keterangan'] ?? '');
       // =====================================
       // SIMPAN HISTORY MUTASI
       // =====================================
@@ -870,7 +872,7 @@ class MapingController extends Controller
       );
     }
   }
-  public function cabut(Request $request,int  $id)
+  public function cabut(Request $request, int $id)
   {
     $validated = $request->validate([
       'tanggal_cabut' => 'required|date',

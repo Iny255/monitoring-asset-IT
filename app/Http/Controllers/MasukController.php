@@ -100,7 +100,6 @@ class MasukController extends Controller
       'garansi' => 'required|integer',
       'supplier' => 'required|string|max:100',
       'harga' => 'required',
-      'gambar' => 'nullable|image|max:2048',
       'id_perusahaan' => $user->role === 'super_admin' ? 'required' : 'nullable',
     ]);
 
@@ -113,11 +112,7 @@ class MasukController extends Controller
 
       $validated['supplier'] = strtoupper($validated['supplier']);
 
-      // 🔥 upload gambar
-      if ($request->hasFile('gambar')) {
-        $validated['gambar'] = $request->file('gambar')->store('masuk', 'public');
-      }
-
+     
       $validated['perusahaan_id'] = $perusahaanId;
 
       Masuk::create($validated);
@@ -179,16 +174,9 @@ class MasukController extends Controller
       'supplier' => 'required|string|max:100',
       'garansi' => 'required|integer',
       'harga' => 'required|numeric',
-      'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+     
     ]);
 
-    if ($request->hasFile('gambar')) {
-      if ($masuk->gambar) {
-        Storage::delete('public/' . $masuk->gambar);
-      }
-
-      $validated['gambar'] = $request->file('gambar')->store('masuk', 'public');
-    }
 
     try {
       $validated['type'] = strtoupper($validated['type']);

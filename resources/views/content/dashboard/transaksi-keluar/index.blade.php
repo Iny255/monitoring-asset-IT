@@ -103,6 +103,8 @@
 
                         <tr>
 
+                            <th width="60">NO</th>
+
                             <th>KODE KELUAR</th>
 
                             {{-- TAMBAHAN --}}
@@ -113,6 +115,7 @@
                             <th>NAMA KARYAWAN</th>
                             <th>DIVISI</th>
                             <th>JUMLAH</th>
+                            <th>GAMBAR</th>
                             <th width="120">AKSI</th>
 
                         </tr>
@@ -121,8 +124,12 @@
 
                     <tbody>
 
-                        @forelse ($keluars as $keluar)
+                        @forelse ($keluars as $index => $keluar)
                             <tr>
+
+                                <td class="text-center">
+                                    {{ $keluars->firstItem() + $index }}
+                                </td>
 
                                 <td class="text-center">
 
@@ -174,6 +181,18 @@
                                 {{-- JUMLAH --}}
                                 <td class="text-center">
                                     {{ $keluar->jumlah }}
+                                </td>
+                                <td class="text-center">
+
+                                    @if ($keluar->gambar)
+                                        <img src="{{ asset('storage/' . $keluar->gambar) }}" width="70"
+                                            class="rounded border">
+                                    @else
+                                        <span class="text-muted">
+                                            Tidak ada
+                                        </span>
+                                    @endif
+
                                 </td>
 
                                 {{-- AKSI --}}
@@ -228,7 +247,7 @@
 
                             <tr>
 
-                                <td colspan="8" class="text-center text-muted">
+                                <td colspan="10" class="text-center text-muted">
 
                                     Data barang keluar belum ada.
 

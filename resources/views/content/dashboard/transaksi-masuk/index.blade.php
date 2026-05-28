@@ -91,7 +91,7 @@
                             <th>JUMLAH</th>
                             <th>TANGGAL BELI</th>
                             <th>SUPPLIER</th>
-                            <th>GAMBAR</th>
+                          
 
                             @auth
                                 @if (in_array(auth()->user()->role, ['petugas', 'manager', 'super_admin']))
@@ -149,15 +149,6 @@
                                 {{-- SUPPLIER --}}
                                 <td>{{ $masuk->supplier }}</td>
 
-                                {{-- GAMBAR --}}
-                                <td class="text-center">
-                                    @if ($masuk->gambar)
-                                        <img src="{{ asset('storage/' . $masuk->gambar) }}" width="60"
-                                            class="img-thumbnail">
-                                    @else
-                                        <span class="text-muted">-</span>
-                                    @endif
-                                </td>
 
                                 {{-- AKSI --}}
                                 <td class="text-center">
@@ -193,13 +184,6 @@
                                             <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $masuk->id }}">
                                                 <i class="bx bx-trash"></i>
                                             </button>
-                                        @endif
-
-                                        @if ($masuk->gambar)
-                                            <a href="{{ route('transaksi-masuk.download', $masuk->id) }}"
-                                                class="btn btn-success btn-sm">
-                                                <i class="bx bx-download"></i>
-                                            </a>
                                         @endif
 
                                     </div>

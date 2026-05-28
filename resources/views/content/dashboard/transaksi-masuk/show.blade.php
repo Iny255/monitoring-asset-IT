@@ -63,18 +63,7 @@
                             <th>Harga/Satuan</th>
                             <td>Rp. {{ number_format($masuk->harga, 0, ',', '.') }}</td>
                         </tr>
-                        <tr>
-                            <th>Gambar</th>
-                            <td>
-                                @if ($masuk->gambar)
-                                    <img src="{{ asset('storage/' . $masuk->gambar) }}"
-                                         width="160"
-                                         class="img-thumbnail shadow-sm">
-                                @else
-                                    <span class="text-muted">Tidak ada gambar</span>
-                                @endif
-                            </td>
-                        </tr>
+                        
                     </table>
 
                     {{-- GARIS PEMISAH --}}

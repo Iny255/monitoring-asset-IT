@@ -326,6 +326,10 @@
                                 </th>
 
                                 <th>
+                                    Stok Tersedia
+                                </th>
+
+                                <th>
                                     Digunakan
                                 </th>
 
@@ -374,6 +378,17 @@
 
                                     </td>
 
+                                    {{-- STOK TERSEDIA --}}
+                                    <td class="text-center">
+
+                                        <span class="badge bg-success px-3 py-2">
+
+                                            {{ number_format($p->stok_tersedia) }}
+
+                                        </span>
+
+                                    </td>
+
                                     <td class="text-center">
 
                                         <span class="badge bg-info px-3 py-2">
@@ -400,7 +415,7 @@
 
                                 <tr>
 
-                                    <td colspan="6" class="text-center py-4 text-muted">
+                                    <td colspan="7" class="text-center py-4 text-muted">
 
                                         Belum ada data perusahaan
 

@@ -26,31 +26,52 @@ class DashboardPetugasController extends Controller
 
     /* ================= TOTAL ================= */
 
-    $totalStok = Masuk::when($user->role !== 'super_admin', function ($q) use ($user) {
+    // TOTAL BARANG MASUK
+    $totalMasuk = Masuk::when($user->role !== 'super_admin', function ($q) use ($user) {
       $q->where('perusahaan_id', $user->id_perusahaan);
     })->sum('jumlah');
 
+    // TOTAL BARANG KELUAR
     $totalKeluar = Keluar::when($user->role !== 'super_admin', function ($q) use ($user) {
       $q->where('id_perusahaan', $user->id_perusahaan);
-    })->count();
+    })->sum('jumlah');
 
-    $totalAset = $totalStok + $totalKeluar;
+    // STOK TERSEDIA
+    $totalStok = $totalMasuk - $totalKeluar;
 
-    /* ================= KOMPOSISI ASET DINAMIS ================= */
+    // TOTAL ASET
+    $totalAset = $totalMasuk;
 
-    $komposisiAset = DB::table('masuks')
-      ->join('kategoris', 'masuks.id_kategori', '=', 'kategoris.id')
+    /* ================= KOMPOSISI STOK REAL ================= */
 
-      ->select('kategoris.nama_barang', DB::raw('SUM(masuks.jumlah) as total'));
+    $komposisiAset = Masuk::with(['kategori', 'keluars'])
 
-    if ($user->role !== 'super_admin') {
-      $komposisiAset->where('masuks.perusahaan_id', $user->id_perusahaan);
-    }
+      ->when($user->role !== 'super_admin', function ($q) use ($user) {
+        $q->where('perusahaan_id', $user->id_perusahaan);
+      })
 
-    $komposisiAset = $komposisiAset
-      ->groupBy('kategoris.nama_barang')
-      ->orderByDesc('total')
-      ->get();
+      ->get()
+
+      ->groupBy(function ($item) {
+        return $item->kategori->nama_barang ?? 'LAINNYA';
+      })
+
+      ->map(function ($items, $namaBarang) {
+        $stokMasuk = $items->sum('jumlah');
+
+        $stokKeluar = $items->sum(function ($item) {
+          return $item->keluars->sum('jumlah');
+        });
+
+        return [
+          'nama_barang' => $namaBarang,
+          'total' => max(0, $stokMasuk - $stokKeluar),
+        ];
+      })
+
+      ->sortByDesc('total')
+
+      ->values();
     /* ================= PEMINJAMAN ================= */
 
     $dipinjam = Peminjaman::where('status', 'Dipinjam')->count(); // sudah aman karena pakai global scope
@@ -99,6 +120,8 @@ class DashboardPetugasController extends Controller
       compact(
         'now',
         'totalAset',
+        'totalStok',
+        'totalKeluar',
         'komposisiAset',
         'dipinjam',
         'dikembalikan',

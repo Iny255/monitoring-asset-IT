@@ -151,10 +151,13 @@
 
                         <tr>
 
+                            <th width="60">
+                                NO
+                            </th>
+
                             <th>
                                 KODE BARANG
                             </th>
-
                             <th>
                                 BARANG
                             </th>
@@ -192,8 +195,11 @@
 
                     <tbody>
 
-                        @forelse ($peminjamans as $p)
+                        @forelse ($peminjamans as $index => $p)
                             <tr>
+                                <td class="text-center">
+                                    {{ $peminjamans->firstItem() + $index }}
+                                </td>
 
                                 {{-- KODE --}}
                                 <td>
@@ -339,7 +345,7 @@
 
                             <tr>
 
-                                <td colspan="{{ auth()->user()->role === 'super_admin' ? 8 : 7 }}"
+                                <td colspan="{{ auth()->user()->role === 'super_admin' ? 9 : 8 }}"
                                     class="text-center text-muted py-5">
 
                                     Belum ada data peminjaman

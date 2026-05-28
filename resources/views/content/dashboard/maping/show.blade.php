@@ -267,9 +267,12 @@
                                     <th>Aplikasi</th>
                                     <td>{{ $maping->aplikasi ?: '-' }}</td>
 
-                                    <th>Hak Akses</th>
+                                    <th>Hak Akses Data PPN</th>
                                     <td>{{ $maping->data_p ?: '-' }}</td>
                                 </tr>
+                                 <tr>
+                                    <th>Hak Akses Data Non PPN</th>
+                                    <td>{{ $maping->data_n ?: '-' }}</td>
 
                             </table>
 

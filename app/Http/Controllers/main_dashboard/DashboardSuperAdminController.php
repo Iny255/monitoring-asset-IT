@@ -21,26 +21,52 @@ class DashboardSuperAdminController extends Controller
     $now = Carbon::now('Asia/Jakarta');
 
     /* =====================================
-        | TOTAL
-        ===================================== */
-
-    $totalStok = Masuk::sum('jumlah');
-
-    $totalKeluar = Keluar::count();
-
-    $totalDigunakan = Maping::count();
-
-    $totalAset = $totalStok + $totalKeluar;
-
-    /* =====================================
-    | KOMPOSISI ASET DINAMIS
+| TOTAL
 ===================================== */
 
-    $komposisiAset = Masuk::select('kategoris.nama_barang', DB::raw('SUM(masuks.jumlah) as total'))
-      ->join('kategoris', 'masuks.id_kategori', '=', 'kategoris.id')
-      ->groupBy('kategoris.nama_barang')
-      ->orderByDesc('total')
-      ->get();
+    // TOTAL MASUK
+    $totalMasuk = Masuk::sum('jumlah');
+
+    // TOTAL KELUAR
+    $totalKeluar = Keluar::sum('jumlah');
+
+    // STOK REAL
+    $totalStok = $totalMasuk - $totalKeluar;
+
+    // TOTAL DIGUNAKAN
+    $totalDigunakan = Maping::count();
+
+    // TOTAL ASET
+    $totalAset = $totalMasuk;
+
+    /* =====================================
+| KOMPOSISI STOK REAL
+===================================== */
+
+    $komposisiAset = Masuk::with(['kategori', 'keluars'])
+
+      ->get()
+
+      ->groupBy(function ($item) {
+        return $item->kategori->nama_barang ?? 'LAINNYA';
+      })
+
+      ->map(function ($items, $namaBarang) {
+        $stokMasuk = $items->sum('jumlah');
+
+        $stokKeluar = $items->sum(function ($item) {
+          return $item->keluars->sum('jumlah');
+        });
+
+        return [
+          'nama_barang' => $namaBarang,
+          'total' => max(0, $stokMasuk - $stokKeluar),
+        ];
+      })
+
+      ->sortByDesc('total')
+
+      ->values();
 
     /* =====================================
         | PEMINJAMAN
@@ -97,29 +123,43 @@ class DashboardSuperAdminController extends Controller
     }
 
     /* =====================================
-        | LIST PERUSAHAAN
-        ===================================== */
+| LIST PERUSAHAAN
+===================================== */
 
     $perusahaanList = Perusahaan::with(['masuk', 'keluar', 'maping'])
+
       ->get()
+
       ->map(function ($p) {
+        // TOTAL BARANG MASUK
         $asetMasuk = $p->masuk->sum('jumlah');
 
-        $asetKeluar = $p->keluar->count();
+        // TOTAL BARANG KELUAR
+        $asetKeluar = $p->keluar->sum('jumlah');
 
+        // STOK TERSEDIA
+        $stokTersedia = $asetMasuk - $asetKeluar;
+
+        // TOTAL DIGUNAKAN
         $asetDigunakan = $p->maping->count();
 
         return (object) [
           'nama_perusahaan' => $p->nama_perusahaan,
 
+          // TOTAL MASUK
           'aset_masuk' => $asetMasuk,
 
+          // TOTAL KELUAR
           'aset_keluar' => $asetKeluar,
 
+          // STOK TERSEDIA
+          'stok_tersedia' => $stokTersedia,
+
+          // TOTAL DIGUNAKAN
           'aset_digunakan' => $asetDigunakan,
 
           // TOTAL ASET
-          'total_aset' => $asetMasuk + $asetKeluar,
+          'total_aset' => $asetMasuk,
         ];
       });
 

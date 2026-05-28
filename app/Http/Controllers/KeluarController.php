@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 class KeluarController extends Controller
 {
@@ -114,34 +115,43 @@ class KeluarController extends Controller
     $perusahaanId = $user->role === 'super_admin' ? $request->perusahaan_id : $user->id_perusahaan;
 
     // 🔒 VALIDASI
-    $request->validate([
-      'kode_keluar' => [
-        'required',
-        Rule::unique('keluars')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
+    $request->validate(
+      [
+        'kode_keluar' => [
+          'required',
+          Rule::unique('keluars')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
+        ],
+
+        'id_masuk' => ['required', 'exists:masuks,id'],
+
+        'kode_barang' => [
+          'required',
+          Rule::unique('keluars')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
+        ],
+
+        'jumlah' => 'required|integer|min:1',
+
+        'tgl_keluar' => 'required|date',
+
+        'keterangan' => 'required|string|max:100',
+
+        'warna' => 'required|string|max:50',
+
+        'no_inventaris' => 'required|string|max:50',
+
+        'jenis_penerima' => 'required|in:Perorangan,Perdivisi',
+
+        // VALIDASI GAMBAR
+        'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+
+        'perusahaan_id' => $user->role === 'super_admin' ? 'required|exists:perusahaans,id' : 'nullable',
       ],
-
-      'id_masuk' => ['required', 'exists:masuks,id'],
-
-      'kode_barang' => [
-        'required',
-        Rule::unique('keluars')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
-      ],
-
-      'jumlah' => 'required|integer|min:1',
-
-      'tgl_keluar' => 'required|date',
-
-      'keterangan' => 'required|string|max:100',
-
-      'warna' => 'required|string|max:50',
-
-      'no_inventaris' => 'required|string|max:50',
-
-      'jenis_penerima' => 'required|in:Perorangan,Perdivisi',
-
-      'perusahaan_id' => $user->role === 'super_admin' ? 'required|exists:perusahaans,id' : 'nullable',
-    ]);
-
+      [
+        'gambar.image' => 'File harus berupa gambar.',
+        'gambar.mimes' => 'Format gambar harus JPG, JPEG, atau PNG.',
+        'gambar.max' => 'Ukuran gambar maksimal 2 MB.',
+      ]
+    );
     // 🔥 VALIDASI PERORANGAN
     if ($request->jenis_penerima == 'Perorangan') {
       $request->validate([
@@ -192,6 +202,11 @@ class KeluarController extends Controller
       // =====================================
 
       $namaPerusahaan = Perusahaan::find($perusahaanId)?->nama_perusahaan;
+      $gambar = null;
+
+      if ($request->hasFile('gambar')) {
+        $gambar = $request->file('gambar')->store('keluar', 'public');
+      }
 
       // =====================================
       // SIMPAN
@@ -225,6 +240,7 @@ class KeluarController extends Controller
         'divisi_klr' => $request->jenis_penerima == 'Perdivisi' ? strtoupper($request->divisi_klr) : null,
 
         'perusahaan_klr' => $request->jenis_penerima == 'Perdivisi' ? strtoupper($namaPerusahaan) : null,
+        'gambar' => $gambar,
 
         // =========================
         // DETAIL
@@ -325,34 +341,43 @@ class KeluarController extends Controller
     // VALIDASI
     // =====================================
 
-    $request->validate([
-      'perusahaan_id' => $user->role === 'super_admin' ? 'required|exists:perusahaans,id' : 'nullable',
+    $request->validate(
+      [
+        'perusahaan_id' => $user->role === 'super_admin' ? 'required|exists:perusahaans,id' : 'nullable',
 
-      'id_masuk' => [
-        'required',
+        'id_masuk' => [
+          'required',
 
-        Rule::exists('masuks', 'id')->where(fn($q) => $q->where('perusahaan_id', $perusahaanId)),
+          Rule::exists('masuks', 'id')->where(fn($q) => $q->where('perusahaan_id', $perusahaanId)),
+        ],
+
+        'kode_barang' => [
+          'required',
+
+          Rule::unique('keluars')
+            ->where(fn($q) => $q->where('id_perusahaan', $perusahaanId))
+            ->ignore($id),
+        ],
+
+        'jumlah' => 'required|integer|min:1',
+        'tgl_keluar' => 'required|date',
+    
+        'keterangan' => 'required|string|max:100',
+
+        'warna' => 'required|string|max:50',
+
+        'no_inventaris' => 'required|string|max:50',
+
+        'jenis_penerima' => 'required|in:Perorangan,Perdivisi',
+
+        'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
       ],
-
-      'kode_barang' => [
-        'required',
-
-        Rule::unique('keluars')
-          ->where(fn($q) => $q->where('id_perusahaan', $perusahaanId))
-          ->ignore($id),
-      ],
-
-      'jumlah' => 'required|integer|min:1',
-      'tgl_keluar' => 'required|date',
-
-      'keterangan' => 'required|string|max:100',
-
-      'warna' => 'required|string|max:50',
-
-      'no_inventaris' => 'required|string|max:50',
-
-      'jenis_penerima' => 'required|in:Perorangan,Perdivisi',
-    ]);
+      [
+        'gambar.image' => 'File harus berupa gambar.',
+        'gambar.mimes' => 'Format gambar harus JPG, JPEG, atau PNG.',
+        'gambar.max' => 'Ukuran gambar maksimal 2 MB.',
+      ]
+    );
 
     // =====================================
     // VALIDASI PERORANGAN
@@ -421,6 +446,15 @@ class KeluarController extends Controller
       // =====================================
 
       $namaPerusahaan = Perusahaan::find($perusahaanId)?->nama_perusahaan;
+      if ($request->hasFile('gambar')) {
+        if ($keluar->gambar) {
+          Storage::delete('public/' . $keluar->gambar);
+        }
+
+        $gambar = $request->file('gambar')->store('keluar', 'public');
+      } else {
+        $gambar = $keluar->gambar;
+      }
 
       // =====================================
       // UPDATE
@@ -451,6 +485,7 @@ class KeluarController extends Controller
         'divisi_klr' => $request->jenis_penerima == 'Perdivisi' ? $request->divisi_klr : null,
 
         'perusahaan_klr' => $request->jenis_penerima == 'Perdivisi' ? strtoupper($namaPerusahaan) : null,
+        'gambar' => $gambar,
 
         // =========================
         // DETAIL

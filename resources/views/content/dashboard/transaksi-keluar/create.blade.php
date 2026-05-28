@@ -117,7 +117,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('transaksi-keluar.store') }}" method="POST">
+            <form action="{{ route('transaksi-keluar.store') }}" method="POST" enctype="multipart/form-data">
 
                 @csrf
 
@@ -391,6 +391,19 @@
 
                     </div>
 
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">
+                        Upload Gambar
+                    </label>
+
+                    <input type="file" name="gambar" class="form-control" accept="image/*">
+
+                    @error('gambar')
+                        <small class="text-danger">
+                            {{ $message }}
+                        </small>
+                    @enderror
                 </div>
 
                 {{-- KETERANGAN --}}

@@ -76,18 +76,26 @@
                     <table class="table table-bordered align-middle">
                         <thead class="table-primary text-center">
                             <tr>
+
+                                <th width="60">NO</th>
+
                                 <th>KODE</th>
                                 <th>NAMA</th>
                                 <th>JABATAN</th>
                                 <th>DIVISI</th>
                                 <th>PERUSAHAAN</th>
+
                                 <th width="120">ACTION</th>
+
                             </tr>
                         </thead>
 
                         <tbody>
-                            @forelse ($karyawans as $karyawan)
+                            @forelse ($karyawans as $index => $karyawan)
                                 <tr>
+                                    <td class="text-center">
+                                        {{ $karyawans->firstItem() + $index }}
+                                    </td>
                                     <td>{{ $karyawan->kode_karyawan }}</td>
                                     <td>{{ $karyawan->nama_karyawan }}</td>
                                     <td>{{ $karyawan->jabatan }}</td>
@@ -124,7 +132,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="text-center">Data tidak ditemukan</td>
+                                    <td colspan="7" class="text-center">Data tidak ditemukan</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -155,26 +163,26 @@
                     </div>
 
                     <div class="modal-body">
-                         <div class="mb-3">
+                        <div class="mb-3">
                             <label class="form-label">UID Karyawan</label>
-                        <input type="text" name="kode_karyawan" class="form-control mb-3" placeholder="Kode">
+                            <input type="text" name="kode_karyawan" class="form-control mb-3" placeholder="Kode">
                         </div>
 
-                         <div class="mb-3">
+                        <div class="mb-3">
                             <label class="form-label">Nama Karyawan</label>
-                        <input type="text" name="nama_karyawan" class="form-control mb-3" placeholder="Nama">
+                            <input type="text" name="nama_karyawan" class="form-control mb-3" placeholder="Nama">
                         </div>
 
-                         <div class="mb-3">
+                        <div class="mb-3">
                             <label class="form-label">Jabatan</label>
 
-                        <input type="text" name="jabatan" class="form-control mb-3" placeholder="Jabatan">
+                            <input type="text" name="jabatan" class="form-control mb-3" placeholder="Jabatan">
                         </div>
 
-                         <div class="mb-3">
+                        <div class="mb-3">
                             <label class="form-label">Divisi</label>
 
-                        <input type="text" name="divisi" class="form-control mb-3" placeholder="Divisi">
+                            <input type="text" name="divisi" class="form-control mb-3" placeholder="Divisi">
                         </div>
 
                         @if (auth()->user()->role === 'super_admin')
@@ -199,7 +207,7 @@
         </div>
     </div>
 
-  
+
     {{-- ================= MODAL EDIT ================= --}}
     <div class="modal fade" id="modalEditKaryawan">
         <div class="modal-dialog modal-lg">

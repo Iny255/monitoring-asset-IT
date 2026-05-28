@@ -21,7 +21,6 @@ class Masuk extends Model
     'jumlah',
     'tgl_beli',
     'supplier',
-    'gambar',
     'garansi',
     'harga',
     'perusahaan_id', // ✅ TAMBAHAN
