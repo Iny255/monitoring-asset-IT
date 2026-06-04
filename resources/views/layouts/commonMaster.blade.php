@@ -79,23 +79,27 @@ minimum-scale=1.0, maximum-scale=1.0" />
             z-index: 99;
         }
 
+        .layout-page {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .content-wrapper {
+            flex: 1;
+        }
+
+        .app-footer {
+            width: 100%;
+            background: #fff;
+            border-top: 1px solid #e5e7eb;
+            padding: 12px 24px;
+        }
+
         .footer-container {
             display: flex;
             justify-content: space-between;
             align-items: center;
-
-            /* AGAR TIDAK KETUTUP SIDEBAR */
-            margin-left: 260px;
-        }
-
-        .footer-left,
-        .footer-right {
-            font-size: 14px;
-            color: #64748b;
-        }
-
-        .layout-page {
-            padding-bottom: 70px;
         }
     </style>
 
@@ -106,17 +110,8 @@ minimum-scale=1.0, maximum-scale=1.0" />
     <!-- Layout Content -->
     @yield('layoutContent')
     <!-- /Layout Content -->
-    <!-- FOOTER -->
-    <footer class="app-footer">
-        <div class="footer-container">
-            <div class="footer-left">
-                © {{ date('Y') }} IT Developer Sembilan Group
-            </div>
-            <div class="footer-right">
-                Monitoring Asset System
-            </div>
-        </div>
-    </footer>
+
+
 
     <!-- Scripts Template -->
     @include('layouts/sections/scripts')
