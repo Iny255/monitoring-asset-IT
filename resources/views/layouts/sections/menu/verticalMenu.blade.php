@@ -214,21 +214,50 @@
 
     }
 
+    /* =====================================
+   LEVEL 1 (Kategori)
+===================================== */
 
-    /* ACTIVE SUBMENU */
-    .layout-menu .menu-sub .menu-item.active>.menu-link {
+    .layout-menu>.menu-inner>.menu-item>.menu-sub>.menu-item.active>.menu-link {
 
         background:
             linear-gradient(135deg,
                 {{ $menuPrimary }},
                 {{ $menuSecondary }}) !important;
 
-        color: #ffffff !important;
+        color: #fff !important;
 
         border-radius: 12px !important;
 
-        box-shadow:
-            0 4px 12px rgba(0, 0, 0, .10);
+        font-weight: 700;
+    }
+
+
+    /* =====================================
+   LEVEL 2 (Aset, Lokasi, User Aset)
+===================================== */
+
+    .layout-menu .menu-sub .menu-sub .menu-item.active>.menu-link {
+
+        background:
+            color-mix(in srgb,
+                var(--menu-primary) 75%,
+                white 25%) !important;
+
+        color: #fff !important;
+
+        border-left: 4px solid var(--menu-primary);
+
+        margin-left: 8px;
+    }
+
+    /* =====================================
+   INDENT SUB SUBMENU
+===================================== */
+
+    .layout-menu .menu-sub .menu-sub {
+
+        padding-left: 18px;
 
     }
 
@@ -326,20 +355,18 @@
                     // =====================================
                     if (isset($menu->submenu)) {
                         foreach ($menu->submenu as $submenu) {
-                            if (
-                                !empty($submenu->slug) &&
-                                $currentRoute &&
-                                str_starts_with($currentRoute, $submenu->slug)
-                            ) {
+                            if (isset($submenu->url) && str_starts_with($currentUrl, trim($submenu->url, '/'))) {
                                 $isMenuActive = true;
-
                                 break;
                             }
 
-                            if (isset($submenu->url) && str_starts_with($currentUrl, trim($submenu->url, '/'))) {
-                                $isMenuActive = true;
-
-                                break;
+                            if (isset($submenu->submenu)) {
+                                foreach ($submenu->submenu as $child) {
+                                    if (isset($child->url) && str_starts_with($currentUrl, trim($child->url, '/'))) {
+                                        $isMenuActive = true;
+                                        break 2;
+                                    }
+                                }
                             }
                         }
                     }

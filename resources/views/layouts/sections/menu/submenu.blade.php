@@ -9,33 +9,59 @@
             @if (!isset($submenu->roles) || in_array(Auth::user()->role, $submenu->roles))
                 @php
 
-                    $currentRoute = request()->route() ? request()->route()->getName() : null;
-
+                    $currentRoute = request()->route()?->getName();
                     $currentUrl = request()->path();
 
                     $isActive = false;
 
-                    // =====================================
-                    // ACTIVE ROUTE
-                    // =====================================
-                    if (!empty($submenu->slug) && $currentRoute && str_starts_with($currentRoute, $submenu->slug)) {
+                    /*
+|--------------------------------------------------------------------------
+| ACTIVE URL SENDIRI
+|--------------------------------------------------------------------------
+*/
+                    if (isset($submenu->url) && str_starts_with($currentUrl, trim($submenu->url, '/'))) {
                         $isActive = true;
                     }
 
-                    // =====================================
-                    // ACTIVE URL
-                    // =====================================
-                    elseif (isset($submenu->url) && str_starts_with($currentUrl, trim($submenu->url, '/'))) {
+                    /*
+|--------------------------------------------------------------------------
+| ACTIVE SLUG SENDIRI
+|--------------------------------------------------------------------------
+*/
+                    if (
+                        !$isActive &&
+                        !empty($submenu->slug) &&
+                        $currentRoute &&
+                        str_starts_with($currentRoute, $submenu->slug)
+                    ) {
                         $isActive = true;
+                    }
+
+                    /*
+|--------------------------------------------------------------------------
+| CEK CHILD SUBMENU (RECURSIVE)
+|--------------------------------------------------------------------------
+*/
+                    if (!$isActive && isset($submenu->submenu)) {
+                        foreach ($submenu->submenu as $child) {
+                            if (isset($child->url) && str_starts_with($currentUrl, trim($child->url, '/'))) {
+                                $isActive = true;
+                                break;
+                            }
+
+                            if (!empty($child->slug) && $currentRoute && str_starts_with($currentRoute, $child->slug)) {
+                                $isActive = true;
+                                break;
+                            }
+                        }
                     }
 
                 @endphp
 
-
                 {{-- =====================================
                      SUBMENU ITEM
                 ===================================== --}}
-                <li class="menu-item {{ $isActive ? 'active' : '' }}">
+             <li class="menu-item {{ $isActive ? 'active open' : '' }}">
 
                     <a href="{{ isset($submenu->url) ? url($submenu->url) : 'javascript:void(0)' }}"
                         class="{{ isset($submenu->submenu) ? 'menu-link menu-toggle' : 'menu-link' }}

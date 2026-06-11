@@ -20,7 +20,7 @@ class User extends Authenticatable
    */
 
   const ROLE_PETUGAS = 'petugas';
-  const ROLE_MANAGER = 'manager';
+
 
   protected $fillable = ['username', 'name', 'email', 'password', 'role', 'id_perusahaan'];
 
@@ -43,17 +43,17 @@ class User extends Authenticatable
 
   public function scopePetugasOrParticipant(Builder $query)
   {
-    return $query->whereIn('role', ['petugas', 'manager']);
+    return $query->whereIn('role', ['petugas']);
   }
 
   public function getDashboardUrl()
   {
     return match ($this->role) {
-      'manager' => '/dashboard/manager',
       'petugas' => '/dashboard/petugas',
       default => '/login',
     };
   }
+
   public function perusahaan()
   {
     return $this->belongsTo(Perusahaan::class, 'id_perusahaan');

@@ -10,13 +10,7 @@ return new class extends Migration {
    */
   public function up(): void
   {
-    Schema::table('lokasis', function (Blueprint $table) {
-      // ❌ hapus unique global
-      $table->dropUnique(['kode_lokasi']);
-
-      // ✅ tambah unique per perusahaan
-      $table->unique(['kode_lokasi', 'id_perusahaan']);
-    });
+   
   }
 
   /**
@@ -24,10 +18,6 @@ return new class extends Migration {
    */
   public function down(): void
   {
-    Schema::table('lokasis', function (Blueprint $table) {
-      $table->dropUnique(['kode_lokasi', 'id_perusahaan']);
-
-      $table->unique('kode_lokasi');
-    });
+    
   }
 };

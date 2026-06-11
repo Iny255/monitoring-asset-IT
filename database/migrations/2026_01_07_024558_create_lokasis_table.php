@@ -14,7 +14,6 @@ return new class extends Migration
         Schema::create('lokasis', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('id_perusahaan');
-            $table->string('kode_lokasi', 20)->unique();
             $table->string('nama_lokasi', 100);
             $table->timestamps();
 

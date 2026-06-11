@@ -25,7 +25,7 @@
 
             {{-- HEADER --}}
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="text-primary mb-0">Data Lokasi Barang</h5>
+                <h5 class="text-primary mb-0">Data Lokasi Aset</h5>
 
                 <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahLokasi">
                     Tambah Data Lokasi
@@ -37,6 +37,7 @@
 
                 {{-- FILTER + SEARCH --}}
                 <form method="GET" class="row g-3 align-items-end mb-4">
+
 
                     @if (auth()->user()->role === 'super_admin')
                         <div class="col-md-4">
@@ -63,7 +64,6 @@
                         <button class="btn btn-primary w-100">
                             <i class="bx bx-search"></i> Cari
                         </button>
-
                         <a href="{{ route('lokasi.index') }}" class="btn btn-secondary w-100">
                             Reset
                         </a>
@@ -76,10 +76,8 @@
                     <table class="table table-bordered align-middle">
                         <thead class="table-primary text-center">
                             <tr>
-
                                 <th width="60">NO</th>
 
-                                <th>KODE</th>
                                 <th>NAMA LOKASI</th>
 
                                 @if (auth()->user()->role === 'super_admin')
@@ -87,7 +85,6 @@
                                 @endif
 
                                 <th width="120">ACTION</th>
-
                             </tr>
                         </thead>
 
@@ -97,11 +94,12 @@
                                     <td class="text-center">
                                         {{ $lokasis->firstItem() + $index }}
                                     </td>
-                                    <td>{{ $lokasi->kode_lokasi }}</td>
                                     <td>{{ $lokasi->nama_lokasi }}</td>
 
                                     @if (auth()->user()->role === 'super_admin')
-                                        <td>{{ $lokasi->perusahaan->nama_perusahaan ?? '-' }}</td>
+                                        <td>
+                                            {{ $lokasi->perusahaan->nama_perusahaan ?? '-' }}
+                                        </td>
                                     @endif
 
                                     <td class="text-center">
@@ -116,6 +114,7 @@
                                             </button>
 
                                             {{-- DELETE --}}
+
                                             <form id="delete-form-{{ $lokasi->id }}"
                                                 action="{{ route('lokasi.destroy', $lokasi->id) }}" method="POST"
                                                 style="display:none;">
@@ -132,7 +131,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="text-center">Data tidak ditemukan</td>
+                                    <td colspan="3" class="text-center">Data tidak ditemukan</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -166,11 +165,7 @@
                                         </div>
                                     @endif
 
-                                    <div class="mb-3">
-                                        <label>Kode Lokasi</label>
-                                        <input type="text" id="kodeLokasi" name="kode_lokasi" class="form-control"
-                                            readonly>
-                                    </div>
+
 
                                     <div class="mb-3">
                                         <label>Nama Lokasi</label>
@@ -218,11 +213,7 @@
                                         </div>
                                     @endif
 
-                                    <div class="mb-3">
-                                        <label>Kode Lokasi</label>
-                                        <input type="text" id="edit_kode" name="kode_lokasi" class="form-control"
-                                            readonly>
-                                    </div>
+
 
                                     <div class="mb-3">
                                         <label>Nama Lokasi</label>
@@ -287,8 +278,8 @@
 
                 let id = this.dataset.id;
 
-                document.getElementById('edit_kode').value = this.dataset.kode;
                 document.getElementById('edit_nama').value = this.dataset.nama;
+
 
                 @if (auth()->user()->role === 'super_admin')
                     document.getElementById('edit_perusahaan').value = this.dataset.perusahaan_id;
@@ -300,68 +291,5 @@
                 new bootstrap.Modal(document.getElementById('modalEditLokasi')).show();
             }
         });
-
-
-        // AUTO KODE
-        const kodeLokasi = document.getElementById('kodeLokasi');
-
-        @if (auth()->user()->role === 'super_admin')
-
-            // SUPER ADMIN
-            const perusahaanSelect =
-                document.getElementById('perusahaanSelect');
-
-            perusahaanSelect.addEventListener('change', function() {
-
-                let perusahaanId = this.value;
-
-                if (!perusahaanId) {
-                    kodeLokasi.value = '';
-                    return;
-                }
-
-                fetch(`/dashboard/get-kode-lokasi/${perusahaanId}`)
-
-                    .then(res => res.json())
-
-                    .then(data => {
-                        kodeLokasi.value = data.kode;
-                    });
-
-            });
-        @else
-
-            // PETUGAS
-            fetch(`/dashboard/get-kode-lokasi/{{ auth()->user()->id_perusahaan }}`)
-
-                .then(res => res.json())
-
-                .then(data => {
-                    kodeLokasi.value = data.kode;
-                });
-        @endif
-
-        //auto kode edit
-        const editPerusahaan = document.getElementById('edit_perusahaan');
-        const editKode = document.getElementById('edit_kode');
-
-        if (editPerusahaan) {
-            editPerusahaan.addEventListener('change', function() {
-
-                let perusahaanId = this.value;
-
-                if (!perusahaanId) {
-                    editKode.value = '';
-                    return;
-                }
-
-                fetch(`/dashboard/get-kode-lokasi/${perusahaanId}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        editKode.value = data.kode;
-                    });
-
-            });
-        }
     </script>
 @endsection

@@ -7,44 +7,7 @@
       "slug": "dashboard-superadmin",
       "roles": ["super_admin"]
     },
-    {
-      "url": "dashboard/manager",
-      "name": "Dashboard",
-      "icon": "menu-icon tf-icons bi bi-house-door",
-      "slug": "dashboard-manager",
-      "roles": ["manager"]
-    },
-    {
-      "name": "Laporan",
-      "icon": "menu-icon tf-icons bi bi-file-earmark-text",
-      "slug": "laporan-manager",
-      "roles": ["manager"],
-      "submenu": [
-        {
-          "url": "manager/laporan/stok",
-          "name": "Laporan Stok",
-          "icon": "menu-icon tf-icons bi bi-box-seam"
-        },
-        {
-          "url": "manager/laporan/masuk",
-          "name": "Aset Masuk",
-          "icon": "menu-icon tf-icons bi bi-box-arrow-in-down"
-        },
-        {
-          "url": "manager/laporan/keluar",
-          "name": "Aset Keluar",
-          "icon": "menu-icon tf-icons bi bi-box-arrow-up"
-        }
-       
-      ]
-    },
-    {
-      "url": "manager/maping",
-      "name": "Maping",
-      "icon": "menu-icon tf-icons bi bi-diagram-3",
-      "slug": "manager-maping",
-      "roles": ["manager"]
-    },
+
     {
       "url": "dashboard/petugas",
       "name": "Dashboard",
@@ -66,25 +29,41 @@
       "roles": ["petugas", "super_admin"],
       "submenu": [
         {
-          "url": "dashboard/kategori",
-          "name": "Kategori Barang",
-          "icon": "menu-icon tf-icons bi bi-tags"
+          "name": "Kategori",
+          "icon": "menu-icon tf-icons bx bx-category",
+          "submenu": [
+            {
+              "url": "dashboard/aset",
+              "name": "Aset",
+              "icon": "menu-icon tf-icons bi bi-tags"
+            },
+            {
+              "url": "dashboard/lokasi",
+              "name": "Lokasi",
+              "icon": "menu-icon tf-icons bi bi-geo-alt"
+            },
+            {
+              "url": "dashboard/useraset",
+              "name": "User Aset",
+              "icon": "menu-icon tf-icons bi bi-people"
+            },
+            {
+              "url": "dashboard/supplier",
+              "name": "Supplier",
+              "icon": "menu-icon tf-icons bi bi-truck"
+            },
+            {
+              "url": "dashboard/perusahaan",
+              "name": "Perusahaan",
+              "icon": "menu-icon tf-icons bi bi-building",
+              "roles": ["super_admin"]
+            }
+          ]
         },
         {
-          "url": "dashboard/karyawan",
-          "name": "Karyawan",
-          "icon": "menu-icon tf-icons bi bi-people"
-        },
-        {
-          "url": "dashboard/perusahaan",
-          "name": "Perusahaan",
-          "icon": "menu-icon tf-icons bi bi-building",
-          "roles": ["super_admin"]
-        },
-        {
-          "url": "dashboard/lokasi",
-          "name": "Lokasi Barang",
-          "icon": "menu-icon tf-icons bi bi-geo-alt"
+          "url": "dashboard/data-aset",
+          "name": "Data Aset",
+          "icon": "menu-icon tf-icons bx bx-package"
         }
       ]
     },

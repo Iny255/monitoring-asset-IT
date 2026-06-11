@@ -41,7 +41,7 @@ class KaryawanController extends Controller
 
     $karyawans = $karyawans->latest()->paginate(5);
 
-    return view('content.dashboard.karyawan.index', compact('karyawans', 'perusahaans'));
+    return view('content.dashboard.useraset.index', compact('karyawans', 'perusahaans'));
   }
 
   /**
@@ -80,15 +80,17 @@ class KaryawanController extends Controller
     Karyawan::create($validated);
 
     return redirect()
-      ->route('karyawan.index')
+      ->route('useraset.index')
       ->with('success', 'Data berhasil disimpan.');
   }
 
   /**
    * Update the specified resource.
    */
-  public function update(Request $request, Karyawan $karyawan)
+  public function update(Request $request, $id)
   {
+    $karyawan = Karyawan::findOrFail($id);
+
     $user = auth()->user();
 
     $perusahaanId = $user->role === 'super_admin' ? $request->id_perusahaan : $user->id_perusahaan;
@@ -98,59 +100,41 @@ class KaryawanController extends Controller
     }
 
     $validated = $request->validate([
-      'kode_karyawan' => [
-        'required',
-        'string',
-        'max:20',
-        Rule::unique('karyawans')
-          ->where(fn($q) => $q->where('id_perusahaan', $perusahaanId))
-          ->ignore($karyawan->id),
-      ],
-      'nama_karyawan' => 'required|string|max:100',
-      'jabatan' => 'required|string|max:50',
-      'divisi' => 'required|string|max:50',
+      'kode_karyawan' => 'required',
+      'nama_karyawan' => 'required',
+      'jabatan' => 'required',
+      'divisi' => 'required',
     ]);
 
-    try {
-      $validated['kode_karyawan'] = strtoupper($validated['kode_karyawan']);
+    $validated['kode_karyawan'] = strtoupper($validated['kode_karyawan']);
+    $validated['nama_karyawan'] = strtoupper($validated['nama_karyawan']);
+    $validated['jabatan'] = strtoupper($validated['jabatan']);
+    $validated['divisi'] = strtoupper($validated['divisi']);
+    $validated['id_perusahaan'] = $perusahaanId;
 
-      $validated['nama_karyawan'] = strtoupper($validated['nama_karyawan']);
+    $karyawan->update($validated);
 
-      $validated['jabatan'] = strtoupper($validated['jabatan']);
-
-      $validated['divisi'] = strtoupper($validated['divisi']);
-      $validated['id_perusahaan'] = $perusahaanId;
-
-      $karyawan->update($validated);
-
-      return redirect()
-        ->route('karyawan.index')
-        ->with('success', 'Data berhasil diperbarui.');
-    } catch (\Exception $e) {
-      Log::error($e->getMessage());
-      return back()->with('error', $e->getMessage());
-    }
+    return redirect()
+      ->route('useraset.index')
+      ->with('success', 'Data berhasil diperbarui.');
   }
   /**
    * Remove the specified resource from storage.
    */
-  public function destroy(Karyawan $karyawan)
+  public function destroy(int $id)
   {
+    $karyawan = Karyawan::findOrFail($id);
+
     $user = auth()->user();
 
     if ($user->role !== 'super_admin' && $karyawan->id_perusahaan != $user->id_perusahaan) {
       abort(403);
     }
 
-    try {
-      $karyawan->delete();
+    $karyawan->delete();
 
-      return redirect()
-        ->route('karyawan.index')
-        ->with('success', 'Karyawan berhasil dihapus.');
-    } catch (\Exception $e) {
-      Log::error($e->getMessage());
-      return back()->with('error', $e->getMessage());
-    }
+    return redirect()
+      ->route('useraset.index')
+      ->with('success', 'Data berhasil dihapus.');
   }
 }

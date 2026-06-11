@@ -14,9 +14,8 @@ use App\Http\Controllers\MasukController;
 use App\Http\Controllers\KeluarController;
 use App\Http\Controllers\MapingController;
 use App\Http\Controllers\PeminjamanController;
-use App\Http\Controllers\main_dashboard\DashboardManagerController;
+use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\main_dashboard\DashboardPetugasController;
-use App\Http\Controllers\ManagerMapingController;
 
 Route::get('/', function () {
   return redirect('/login');
@@ -28,7 +27,6 @@ Route::get('/login', [LoginController::class, 'index'])
 
 Route::post('/login', [LoginController::class, 'authenticate']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-Route::get('/get-kode-kategori/{id}', [KategoriController::class, 'getKode']);
 Route::get('/maping/{id}', [MapingController::class, 'publicShow'])->name('maping.public_show');
 
 Route::middleware(['auth'])->group(function () {
@@ -63,9 +61,18 @@ Route::middleware(['auth'])->group(function () {
   Route::middleware(['role:petugas,super_admin'])->group(function () {
     Route::get('/dashboard/petugas', [DashboardPetugasController::class, 'petugas'])->name('dashboard.petugas');
 
-    Route::resource('/dashboard/kategori', KategoriController::class);
-    Route::resource('/dashboard/karyawan', KaryawanController::class)->except(['show']);
+    Route::resource('/dashboard/aset', KategoriController::class)->names([
+      'index' => 'aset.index',
+      'create' => 'aset.create',
+      'store' => 'aset.store',
+      'show' => 'aset.show',
+      'edit' => 'aset.edit',
+      'update' => 'aset.update',
+      'destroy' => 'aset.destroy',
+    ]);
+    Route::resource('/dashboard/useraset', KaryawanController::class)->except(['show']);
     Route::resource('/dashboard/lokasi', LokasiController::class);
+    Route::resource('/dashboard/supplier', SupplierController::class);
     Route::get('/dashboard/transaksi-masuk/stok', [MasukController::class, 'stok'])->name('transaksi-masuk.stok');
     Route::get('/stok/history/{id}', [MasukController::class, 'history'])->name('stok.history');
     Route::resource('/dashboard/transaksi-masuk', MasukController::class)->parameters([
@@ -102,46 +109,13 @@ Route::middleware(['auth'])->group(function () {
 
   /*
     |--------------------------------------------------------------------------
-    | MANAGER (SUPERADMIN JUGA BISA)
-    |--------------------------------------------------------------------------
-    */
-  Route::middleware(['role:manager,super_admin'])->group(function () {
-    Route::get('/dashboard/manager', [DashboardManagerController::class, 'index'])->name('dashboard.manager');
-
-    Route::get('/manager/laporan/stok', [LaporanController::class, 'stok'])->name('manager.laporan.stok');
-    Route::get('/manager/stok/history/{id}', [LaporanController::class, 'historyStok'])->name('manager.stok.history');
-
-    Route::get('/manager/laporan/masuk', [LaporanController::class, 'laporanMasuk'])->name('manager.laporan.masuk');
-    Route::get('/manager/laporan/masuk/{id}', [LaporanController::class, 'show'])->name('manager.laporan.masuk.show');
-
-    Route::get('/manager/laporan/keluar', [LaporanController::class, 'laporanKeluar'])->name('manager.laporan.keluar');
-    Route::get('/manager/laporan/keluar/{id}', [LaporanController::class, 'showKeluar'])->name(
-      'manager.laporan.keluar.show'
-    );
-
-    Route::get('/manager/laporan/peminjaman', [LaporanController::class, 'laporanPeminjaman'])->name(
-      'manager.laporan.peminjaman'
-    );
-
-    Route::get('/manager/laporan/peminjaman/{id}', [LaporanController::class, 'showPeminjaman'])->name(
-      'manager.laporan.peminjaman.show'
-    );
-
-    Route::get('/manager/maping', [ManagerMapingController::class, 'maping'])->name('manager.maping.index');
-
-    Route::get('/manager/maping/print', [ManagerMapingController::class, 'cetakmaping'])->name('manager.maping.cetak');
-    Route::get('/manager/maping/{id}', [ManagerMapingController::class, 'showmaping'])->name('manager.maping.show');
-  });
-
-  /*
-    |--------------------------------------------------------------------------
     | SHARED (SEMUA ROLE)
     |--------------------------------------------------------------------------
     */
   Route::get('/dashboard/peminjaman/search-karyawan', [PeminjamanController::class, 'searchKaryawan'])->name(
     'peminjaman.search'
   );
-  Route::middleware(['role:manager,petugas,super_admin'])->group(function () {
+  Route::middleware(['role:petugas,super_admin'])->group(function () {
     Route::resource('/dashboard/peminjaman', PeminjamanController::class);
     Route::get('/dashboard/peminjaman/get-nama-barang/{kode}', [PeminjamanController::class, 'getNamaBarang']);
     Route::get('/peminjaman/cek-status/{kode}', [PeminjamanController::class, 'cekStatus']);

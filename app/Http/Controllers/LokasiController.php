@@ -68,14 +68,11 @@ class LokasiController extends Controller
     $perusahaanId = $user->role === 'super_admin' ? $request->id_perusahaan : $user->id_perusahaan;
 
     $validated = $request->validate([
-      'kode_lokasi' => [
-        'required',
-        Rule::unique('lokasis')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
-      ],
       'nama_lokasi' => 'required|string|max:50',
       'id_perusahaan' => $user->role === 'super_admin' ? 'required' : 'nullable',
     ]);
-     $validated['nama_lokasi'] = strtoupper($validated['nama_lokasi']);
+
+    $validated['nama_lokasi'] = strtoupper($validated['nama_lokasi']);
     try {
       $validated['id_perusahaan'] = $perusahaanId;
 
@@ -152,22 +149,5 @@ class LokasiController extends Controller
 
     return back()->with('success', 'Lokasi berhasil dihapus');
   }
-  public function getKode(int $id)
-  {
-    $last = Lokasi::where('id_perusahaan', $id)
-      ->orderBy('id', 'desc')
-      ->first();
 
-    if ($last && $last->kode_lokasi) {
-      $number = (int) substr($last->kode_lokasi, 2) + 1;
-    } else {
-      $number = 1;
-    }
-
-    $kode = 'LK' . str_pad($number, 4, '0', STR_PAD_LEFT);
-
-    return response()->json([
-      'kode' => $kode,
-    ]);
-  }
 }
