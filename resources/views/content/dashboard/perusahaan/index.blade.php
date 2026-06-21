@@ -49,37 +49,126 @@
             <div class="table-responsive text-nowrap">
                 <table class="table table-bordered">
                     <thead class="table-primary">
-                        <tr class="center">
-                            <th width=>KODE PERUSAHAAN</th>
-                            <th>NAMA PERUSAHAAN</th>
-                            <th width=>Actions</th>
+                        <tr>
+
+                            <th width="120">
+                                KODE
+                            </th>
+
+                            <th>
+                                NAMA PERUSAHAAN
+                            </th>
+
+                            <th width="150">
+                                TEMA
+                            </th>
+
+                            <th width="120">
+                                ACTION
+                            </th>
+
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($perusahaans as $perusahaan)
+
+                        @forelse ($perusahaans as $perusahaan)
                             <tr>
-                                <td>{{ $perusahaan->kode_perusahaan }}</td>
-                                <td>{{ $perusahaan->nama_perusahaan }}</td>
 
+                                {{-- KODE --}}
                                 <td>
-                                    <button class="btn btn-warning btn-sm btn-edit" data-id="{{ $perusahaan->id }}"
-                                        data-kode="{{ $perusahaan->kode_perusahaan }}"
-                                        data-nama="{{ $perusahaan->nama_perusahaan }}">
-                                        <i class="bx bx-edit-alt"></i>
-                                    </button>
-                                    <form id="delete-form-{{ $perusahaan->id }}"
-                                        action="{{ route('perusahaan.destroy', $perusahaan->id) }}" method="POST"
-                                        style="display:none;">
-                                        @csrf
-                                        @method('DELETE')
-                                    </form>
+                                    <span class="badge bg-primary">
+                                        {{ $perusahaan->kode_perusahaan }}
+                                    </span>
+                                </td>
 
-                                    <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $perusahaan->id }}">
-                                        <i class="bx bx-trash"></i>
-                                    </button>
+                                {{-- NAMA --}}
+                                <td>
+                                    {{ $perusahaan->nama_perusahaan }}
+                                </td>
+
+                                {{-- TEMA WARNA --}}
+                                <td>
+
+                                    <div class="d-flex align-items-center gap-2">
+
+                                        <span
+                                            style="
+                            width:25px;
+                            height:25px;
+                            border-radius:50%;
+                            display:inline-block;
+                            border:1px solid #ddd;
+                            background:{{ $perusahaan->primary_color }};
+                        ">
+                                        </span>
+
+                                        <span
+                                            style="
+                            width:25px;
+                            height:25px;
+                            border-radius:50%;
+                            display:inline-block;
+                            border:1px solid #ddd;
+                            background:{{ $perusahaan->secondary_color }};
+                        ">
+                                        </span>
+
+                                    </div>
 
                                 </td>
-                        @endforeach
+
+                                {{-- ACTION --}}
+                                <td>
+
+                                    <div class="d-flex gap-2">
+
+                                        {{-- EDIT --}}
+                                        <button class="btn btn-warning btn-sm btn-edit" data-id="{{ $perusahaan->id }}"
+                                            data-kode="{{ $perusahaan->kode_perusahaan }}"
+                                            data-nama="{{ $perusahaan->nama_perusahaan }}"
+                                            data-primary="{{ $perusahaan->primary_color }}"
+                                            data-secondary="{{ $perusahaan->secondary_color }}">
+
+                                            <i class="bx bx-edit-alt"></i>
+
+                                        </button>
+
+                                        {{-- FORM DELETE --}}
+                                        <form id="delete-form-{{ $perusahaan->id }}"
+                                            action="{{ route('perusahaan.destroy', $perusahaan->id) }}" method="POST"
+                                            style="display:none;">
+
+                                            @csrf
+                                            @method('DELETE')
+
+                                        </form>
+
+                                        {{-- DELETE --}}
+                                        <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $perusahaan->id }}">
+
+                                            <i class="bx bx-trash"></i>
+
+                                        </button>
+
+                                    </div>
+
+                                </td>
+
+                            </tr>
+
+                        @empty
+
+                            <tr>
+
+                                <td colspan="4" class="text-center">
+
+                                    Data perusahaan tidak ditemukan
+
+                                </td>
+
+                            </tr>
+                        @endforelse
+
                     </tbody>
                 </table>
                 <div class="mt-4">
@@ -93,7 +182,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
 
-                <form action="{{ route('perusahaan.store') }}" method="POST">
+                <form action="{{ route('perusahaan.store') }}" method="POST" enctype="multipart/form-data">
                     @csrf
 
                     <div class="modal-header">
@@ -103,25 +192,47 @@
 
                     <div class="modal-body">
 
-                        <!-- KODE PERUSAHAAN -->
                         <div class="mb-3">
-                            <label class="form-label">Kode Perusahaan</label>
-                            <input type="text"  class="form-control" value="{{ $kodePerusahaan }}"
+                            <label class="form-label">
+                                Kode Perusahaan
+                            </label>
+
+                            <input type="text" name="kode_perusahaan" class="form-control" value="{{ $kodePerusahaan }}"
                                 readonly>
                         </div>
 
-                        <!-- NAMA PERUSAHAAN -->
                         <div class="mb-3">
-                            <label class="form-label">Nama Perusahaan</label>
-                            <input type="text" name="nama_perusahaan"
-                                class="form-control @error('nama_perusahaan') is-invalid @enderror"
-                                value="{{ old('nama_perusahaan') }}" required>
+                            <label class="form-label">
+                                Nama Perusahaan
+                            </label>
 
-                            @error('nama_perusahaan')
-                                <div class="invalid-feedback">
-                                    {{ $message }}
-                                </div>
-                            @enderror
+                            <input type="text" name="nama_perusahaan" class="form-control" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Primary Color
+                            </label>
+
+                            <input type="color" name="primary_color" class="form-control form-control-color"
+                                value="#0d6efd">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Secondary Color
+                            </label>
+
+                            <input type="color" name="secondary_color" class="form-control form-control-color"
+                                value="#6c757d">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">
+                                Logo
+                            </label>
+
+                            <input type="file" name="logo" class="form-control">
                         </div>
 
                     </div>
@@ -146,7 +257,7 @@
         <div class="modal-dialog">
             <div class="modal-content">
 
-                <form id="formEditPerusahaan" method="POST">
+                <form id="formEditPerusahaan" method="POST" enctype="multipart/form-data">
                     @csrf
                     @method('PUT')
 
@@ -154,106 +265,134 @@
                         <h5 class="modal-title">Edit Data Perusahaan</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Kode Perusahaan
+                        </label>
 
-                    <div class="modal-body">
-
-                        <!-- KODE -->
-                        <div class="mb-3">
-                            <label class="form-label">Kode Perusahaan</label>
-                            <input type="text" id="edit_kode_perusahaan" class="form-control" readonly>
-                        </div>
-
-                        <!-- NAMA -->
-                        <div class="mb-3">
-                            <label class="form-label">Nama Perusahaan</label>
-                            <input type="text" name="nama_perusahaan" id="edit_nama_perusahaan" class="form-control"
-                                required>
-                        </div>
-
+                        <input type="text" name="kode_perusahaan" class="form-control" maxlength="2"
+                            placeholder="Contoh : 05" required>
                     </div>
 
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            Batal
-                        </button>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Nama Perusahaan
+                        </label>
 
-                        <button type="submit" class="btn btn-primary">
-                            Update
-                        </button>
+                        <input type="text" id="edit_nama_perusahaan" name="nama_perusahaan" class="form-control"
+                            required>
                     </div>
 
-                </form>
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Primary Color
+                        </label>
+
+                        <input type="color" id="edit_primary_color" name="primary_color"
+                            class="form-control form-control-color">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Secondary Color
+                        </label>
+
+                        <input type="color" id="edit_secondary_color" name="secondary_color"
+                            class="form-control form-control-color">
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            Logo
+                        </label>
+
+                        <input type="file" name="logo" class="form-control">
+                    </div>
 
             </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    Batal
+                </button>
+
+                <button type="submit" class="btn btn-primary">
+                    Update
+                </button>
+            </div>
+
+            </form>
+
         </div>
+    </div>
     </div>
 @endsection
 <!--/ Striped Rows -->
 @section('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
 
-    // ===============================
-    // DELETE
-    // ===============================
-    document.querySelectorAll('.btn-delete').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const id = this.dataset.id;
+            // ===============================
+            // DELETE
+            // ===============================
+            document.querySelectorAll('.btn-delete').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const id = this.dataset.id;
 
-            Swal.fire({
-                title: 'Apakah kamu yakin?',
-                text: "Data perusahaan ini akan dihapus!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'Ya, hapus!',
-                cancelButtonText: 'Batal'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById(`delete-form-${id}`).submit();
-                }
+                    Swal.fire({
+                        title: 'Apakah kamu yakin?',
+                        text: "Data perusahaan ini akan dihapus!",
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, hapus!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            document.getElementById(`delete-form-${id}`).submit();
+                        }
+                    });
+                });
             });
+
+
+            // ===============================
+            // EDIT POPUP
+            // ===============================
+            document.querySelectorAll('.btn-edit').forEach(btn => {
+                btn.addEventListener('click', function() {
+
+                    const id = this.dataset.id;
+                    const kode = this.dataset.kode;
+                    const nama = this.dataset.nama;
+
+                    // isi form modal
+                    document.getElementById('edit_kode_perusahaan').value = kode;
+                    document.getElementById('edit_nama_perusahaan').value = nama;
+
+                    // set action form
+                    document.getElementById('formEditPerusahaan').action =
+                        `/dashboard/perusahaan/${id}`;
+
+                    // tampilkan modal
+                    var editModal = new bootstrap.Modal(
+                        document.getElementById('modalEditPerusahaan')
+                    );
+                    editModal.show();
+                });
+            });
+
         });
-    });
+    </script>
 
-
-    // ===============================
-    // EDIT POPUP
-    // ===============================
-    document.querySelectorAll('.btn-edit').forEach(btn => {
-        btn.addEventListener('click', function() {
-
-            const id = this.dataset.id;
-            const kode = this.dataset.kode;
-            const nama = this.dataset.nama;
-
-            // isi form modal
-            document.getElementById('edit_kode_perusahaan').value = kode;
-            document.getElementById('edit_nama_perusahaan').value = nama;
-
-            // set action form
-            document.getElementById('formEditPerusahaan').action =
-                `/dashboard/perusahaan/${id}`;
-
-            // tampilkan modal
-            var editModal = new bootstrap.Modal(
-                document.getElementById('modalEditPerusahaan')
-            );
-            editModal.show();
-        });
-    });
-
-});
-</script>
-
-{{-- Buka modal tambah jika ada error --}}
-@if ($errors->any())
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    var myModal = new bootstrap.Modal(
-        document.getElementById('modalTambahPerusahaan')
-    );
-    myModal.show();
-});
-</script>
-@endif
+    {{-- Buka modal tambah jika ada error --}}
+    @if ($errors->any())
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var myModal = new bootstrap.Modal(
+                    document.getElementById('modalTambahPerusahaan')
+                );
+                myModal.show();
+            });
+        </script>
+    @endif
 @endsection

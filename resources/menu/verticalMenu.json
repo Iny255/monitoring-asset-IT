@@ -68,19 +68,19 @@
       ]
     },
     {
-      "name": "Transaksi",
+      "name": "Transaksi Aset",
       "icon": "menu-icon tf-icons bi bi-arrow-left-right",
       "slug": "transaksi",
       "roles": ["petugas", "super_admin"],
       "submenu": [
         {
           "url": "dashboard/transaksi-masuk",
-          "name": "Aset Masuk",
+          "name": "Penerimaan Aset",
           "icon": "menu-icon tf-icons bi bi-box-arrow-in-down"
         },
         {
           "url": "dashboard/transaksi-keluar",
-          "name": "Aset Keluar",
+          "name": "Pemakaian Aset",
           "icon": "menu-icon tf-icons bi bi-box-arrow-up"
         }
       ]

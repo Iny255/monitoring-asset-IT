@@ -13,8 +13,8 @@ return new class extends Migration
     {
         DB::statement("
             ALTER TABLE users 
-            MODIFY role ENUM('super_admin','manager','petugas') 
-            DEFAULT 'manager'
+            MODIFY role ENUM('super_admin','petugas') 
+            DEFAULT 'petugas'
         ");
     }
 

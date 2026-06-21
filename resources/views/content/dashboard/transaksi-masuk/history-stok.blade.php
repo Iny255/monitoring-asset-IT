@@ -1,6 +1,6 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'History Stok Asset')
+@section('title', 'Riwayat Stok Asset')
 
 @section('content')
 
@@ -138,24 +138,60 @@
                 transform: translateY(0);
             }
         }
+
+        /* ====================================
+           TABLE
+        ==================================== */
+
+        .table-wrapper {
+            padding: 0;
+        }
+
+        .table-history {
+            margin-bottom: 0;
+        }
+
+        .table-history th,
+        .table-history td {
+            vertical-align: middle;
+        }
+
+        .table-history th {
+            white-space: nowrap;
+        }
+
+        /* ====================================
+           FOOTER
+        ==================================== */
+
+        .action-footer {
+            padding: 15px 25px;
+            border-top: 1px solid #e5e7eb;
+            background: #fff;
+        }
+
+        .btn-back {
+            min-width: 140px;
+            height: 45px;
+            border-radius: 12px;
+            font-weight: 600;
+        }
     </style>
     @php
-$first = $stokGroup->first();
 
-    $allKeluars = collect();
+        $first = $inventaris->first();
 
-    foreach ($stokGroup as $item) {
+        $totalAset = $inventaris->count();
 
-        foreach ($item->keluars as $keluar) {
+        $tersedia = $inventaris->where('status', 'TERSEDIA')->count();
 
-            $allKeluars->push($keluar);
-        }
-    }
+        $dipakai = $inventaris->where('status', 'DIPAKAI')->count();
 
-    $allKeluars = $allKeluars->sortByDesc('tgl_keluar');
+        $dipinjam = $inventaris->where('status', 'DIPINJAM')->count();
+
+        $rusak = $inventaris->where('status', 'RUSAK')->count();
 
     @endphp
-
 
     <div class="card history-card">
 
@@ -170,16 +206,16 @@ $first = $stokGroup->first();
                     ">
 
             <div class="history-title">
-                History Stok Asset
+                Riwayat Stok Aset
             </div>
 
             <div class="history-subtitle">
 
-                {{ $first->kategori->nama_barang ?? '-' }}
+                {{ $first->dataAset->kategori->nama_barang ?? '-' }}
                 -
-                {{ $first->merek }}
+                {{ $first->dataAset->merek ?? '-' }}
                 -
-                {{ $first->type }}
+                {{ $first->dataAset->type ?? '-' }}
 
             </div>
 
@@ -218,57 +254,38 @@ $first = $stokGroup->first();
                     <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0"
                         style="min-width:280px; border-radius:16px;">
 
-                        {{-- AKTIVITAS --}}
                         <div class="mb-3">
 
                             <label class="form-label fw-semibold">
-                                Aktivitas
+                                Status Asset
                             </label>
 
-                            <select id="filterAktivitas" class="form-select">
+                            <select id="filterStatus" class="form-select">
 
                                 <option value="">
-                                    Semua
+                                    Semua Status
                                 </option>
 
-                                <option value="ASSET MASUK">
-                                    Asset Masuk
+                                <option value="TERSEDIA">
+                                    Tersedia
                                 </option>
 
-                                <option value="ASSET KELUAR">
-                                    Asset Keluar
+                                <option value="DIPAKAI">
+                                    Dipakai
+                                </option>
+
+                                <option value="DIPINJAM">
+                                    Dipinjam
+                                </option>
+
+                                <option value="RUSAK">
+                                    Rusak
                                 </option>
 
                             </select>
 
                         </div>
 
-                        {{-- KONDISI --}}
-                        <div class="mb-3">
-
-                            <label class="form-label fw-semibold">
-                                Kondisi
-                            </label>
-
-                            <select id="filterKondisi" class="form-select">
-
-                                <option value="">
-                                    Semua
-                                </option>
-
-                                <option value="BARU">
-                                    Baru
-                                </option>
-
-                                <option value="BEKAS">
-                                    Bekas
-                                </option>
-
-                            </select>
-
-                        </div>
-
-                        {{-- RESET --}}
                         <button type="button" id="resetFilter" class="btn btn-secondary w-100">
 
                             Reset Filter
@@ -278,84 +295,141 @@ $first = $stokGroup->first();
                     </div>
 
                 </div>
-
             </div>
             {{-- SUMMARY --}}
-            <div class="row justify-content-center g-4 mb-4">
+            <div class="row g-3 mb-4">
 
-                {{-- STOK AWAL --}}
-                <div class="col-lg-4 col-md-4 col-sm-6">
+                <div class="col-lg col-md-6">
 
                     <div class="summary-box">
 
                         <div class="summary-label">
-                            Stok Awal
+                            TOTAL ASSET
                         </div>
 
                         <div class="summary-value text-primary">
-                            {{ $stokAwal }}
+
+                            {{ $totalAset }}
+
                         </div>
 
                     </div>
 
                 </div>
 
-                {{-- TOTAL KELUAR --}}
-                <div class="col-lg-4 col-md-4 col-sm-6">
+                <div class="col-lg col-md-6">
 
                     <div class="summary-box">
 
                         <div class="summary-label">
-                            Total Keluar
-                        </div>
-
-                        <div class="summary-value text-danger">
-                            {{ $totalKeluar }}
-                        </div>
-
-                    </div>
-
-                </div>
-
-                {{-- SISA STOK --}}
-                <div class="col-lg-4 col-md-4 col-sm-6">
-
-                    <div class="summary-box">
-
-                        <div class="summary-label">
-                            Sisa Stok
+                            TERSEDIA
                         </div>
 
                         <div class="summary-value text-success">
-                            {{ $sisa }}
+
+                            {{ $tersedia }}
+
                         </div>
 
                     </div>
 
                 </div>
+
+                <div class="col-lg col-md-6">
+
+                    <div class="summary-box">
+
+                        <div class="summary-label">
+                            DIPAKAI
+                        </div>
+
+                        <div class="summary-value text-info">
+
+                            {{ $dipakai }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-lg col-md-6">
+
+                    <div class="summary-box">
+
+                        <div class="summary-label">
+                            DIPINJAM
+                        </div>
+
+                        <div class="summary-value text-warning">
+
+                            {{ $dipinjam }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-lg col-md-6">
+
+                    <div class="summary-box">
+
+                        <div class="summary-label">
+                            RUSAK
+                        </div>
+
+                        <div class="summary-value text-danger">
+
+                            {{ $rusak }}
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            {{-- ALERT --}}
+            <div class="alert alert-primary mb-4">
+
+                <i class="bx bx-info-circle me-1"></i>
+
+                Saat ini terdapat
+
+                <strong>{{ $dipakai }}</strong> asset digunakan,
+
+                <strong>{{ $tersedia }}</strong> asset tersedia,
+
+                <strong>{{ $dipinjam }}</strong> asset dipinjam,
+
+                dan
+
+                <strong>{{ $rusak }}</strong> asset rusak.
 
             </div>
 
             {{-- TABLE --}}
-            <div class="table-responsive">
+            <div class="table-responsive mb-4">
 
-                <table class="table table-bordered table-hover table-history">
+                <table class="table table-bordered table-hover table-history mb-0">
 
                     <thead>
 
                         <tr>
 
-                            <th width="5%">No</th>
+                            <th width="6%">NO</th>
 
-                            <th>Tanggal</th>
+                            <th width="18%">KODE ASSET</th>
 
-                            <th>Aktivitas</th>
-                            <th>Kondisi</th>
-                            <th>Qty</th>
+                            <th width="20%">NO INVENTARIS</th>
 
-                            <th>User / Divisi</th>
+                            <th width="15%">STATUS</th>
 
-                            <th>Keterangan</th>
+                            <th width="25%">PEMAKAI</th>
+
+                            <th width="16%">TANGGAL KELUAR</th>
 
                         </tr>
 
@@ -363,41 +437,72 @@ $first = $stokGroup->first();
 
                     <tbody id="historyTable">
 
-                        {{-- HISTORY MASUK --}}
-                        @foreach ($stokGroup as $index => $masuk)
+                        @forelse($inventaris as $index => $item)
+
                             <tr>
 
                                 <td class="text-center">
-
                                     {{ $index + 1 }}
-
                                 </td>
 
                                 <td>
-
-                                    {{ \Carbon\Carbon::parse($masuk->tgl_beli)->format('d M Y') }}
-
+                                    {{ $item->kode_aset }}
                                 </td>
 
                                 <td>
+                                    {{ $item->no_inventaris }}
+                                </td>
 
-                                    <span class="badge bg-success">
+                                <td class="text-center">
 
-                                        Asset Masuk
+                                    @switch($item->status)
+                                        @case('TERSEDIA')
+                                            <span class="badge bg-success">
+                                                TERSEDIA
+                                            </span>
+                                        @break
 
-                                    </span>
+                                        @case('DIPAKAI')
+                                            <span class="badge bg-primary">
+                                                DIPAKAI
+                                            </span>
+                                        @break
+
+                                        @case('DIPINJAM')
+                                            <span class="badge bg-warning">
+                                                DIPINJAM
+                                            </span>
+                                        @break
+
+                                        @default
+                                            <span class="badge bg-danger">
+                                                RUSAK
+                                            </span>
+                                    @endswitch
 
                                 </td>
 
                                 <td class="text-center">
 
-                                    @if ($masuk->kondisi == 'Baru')
-                                        <span class="badge bg-primary">
-                                            Baru
-                                        </span>
+                                    @if ($item->keluar)
+                                        @if ($item->keluar->jenis_penerima == 'Perorangan')
+                                            <span class="badge bg-label-primary px-3 py-2">
+
+                                                {{ $item->keluar->karyawan->nama_karyawan ?? '-' }}
+
+                                            </span>
+                                        @else
+                                            <span class="badge bg-label-info px-3 py-2">
+
+                                                {{ $item->keluar->divisi_klr ?? '-' }}
+
+                                            </span>
+                                        @endif
                                     @else
-                                        <span class="badge bg-warning text-dark">
-                                            Bekas
+                                        <span class="badge bg-label-success px-3 py-2">
+
+                                            Belum Dipakai
+
                                         </span>
                                     @endif
 
@@ -405,203 +510,118 @@ $first = $stokGroup->first();
 
                                 <td class="text-center">
 
-                                    <span class="badge-qty-masuk">
-
-                                        +{{ $masuk->jumlah }}
-
-                                    </span>
-
-                                </td>
-
-                                <td class="text-center">
-
-                                    Gudang
-
-                                </td>
-
-                                <td>
-
-                                    Supplier:
-                                    <b>{{ $masuk->supplier }}</b>
+                                    @if ($item->keluar)
+                                        {{ \Carbon\Carbon::parse($item->keluar->tgl_keluar)->format('d-m-Y') }}
+                                    @else
+                                        -
+                                    @endif
 
                                 </td>
 
                             </tr>
-                        @endforeach
 
-                        {{-- HISTORY KELUAR --}}
-                        @foreach ($allKeluars as $index => $keluar)
-                            <tr>
+                            @empty
 
-                                <td class="text-center">
+                                <tr>
 
-                                    {{ $stokGroup->count() + $index + 1 }}
+                                    <td colspan="6" class="text-center py-4 text-muted">
 
-                                </td>
+                                        Tidak ada data inventaris
 
-                                <td>
+                                    </td>
 
-                                    {{ \Carbon\Carbon::parse($keluar->tgl_keluar)->format('d M Y') }}
+                                </tr>
 
-                                </td>
+                            @endforelse
 
-                                <td>
+                        </tbody>
 
-                                    <span class="badge bg-danger">
+                    </table>
 
-                                        Asset Keluar
+                </div>
 
-                                    </span>
+                {{-- FOOTER --}}
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 border-top pt-3">
 
-                                </td>
+                    <div class="text-muted">
 
-                                <td class="text-center">
+                        Menampilkan
+                        <strong>{{ $totalAset }}</strong>
+                        unit asset inventaris
 
-                                    @if ($keluar->masuk->kondisi == 'Baru')
-                                        <span class="badge bg-primary">
-                                            Baru
-                                        </span>
-                                    @else
-                                        <span class="badge bg-warning text-dark">
-                                            Bekas
-                                        </span>
-                                    @endif
+                    </div>
 
-                                </td>
+                    <a href="{{ route('transaksi-masuk.stok') }}" class="btn btn-secondary btn-back">
 
-                                <td class="text-center">
+                        <i class="bx bx-arrow-back me-1"></i>
 
-                                    <span class="badge-qty-keluar">
-
-                                        -{{ $keluar->jumlah }}
-
-                                    </span>
-
-                                </td>
-
-                                <td class="text-center">
-
-                                    @if ($keluar->jenis_penerima == 'Perorangan')
-                                        {{ $keluar->karyawan->nama_karyawan ?? '-' }}
-                                    @else
-                                        {{ $keluar->divisi_klr ?? '-' }}
-                                    @endif
-
-                                </td>
-
-                                <td>
-
-                                    {{ $keluar->keterangan ?? '-' }}
-
-                                </td>
-
-                            </tr>
-                        @endforeach
-
-                    </tbody>
-
-                </table>
-
-            </div>
-
-            {{-- BUTTON --}}
-            <div class="mt-4">
-
-                {{-- BUTTON --}}
-                <div class="mt-4">
-
-                    <a href="
-        {{ auth()->user()->role == 'manager' ? route('manager.laporan.stok') : route('transaksi-masuk.stok') }}
-    "
-                        class="btn btn-secondary btn-back">
-
-                        ← Kembali
+                        Kembali
 
                     </a>
 
                 </div>
-            </div>
 
-
+            </div> {{-- tutup card-body --}}
         </div>
 
+    @endsection
+    @section('scripts')
 
-    </div>
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
 
-    </div>
+                const searchInput = document.getElementById('searchInput');
+                const filterStatus = document.getElementById('filterStatus');
+                const resetFilter = document.getElementById('resetFilter');
 
-@endsection
-@section('scripts')
+                function filterTable() {
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
+                    const keyword = searchInput.value.toLowerCase();
+                    const status = filterStatus.value.toLowerCase();
 
-            const searchInput = document.getElementById('searchInput');
+                    document.querySelectorAll('#historyTable tr').forEach(function(row) {
 
-            const filterAktivitas = document.getElementById('filterAktivitas');
+                        const text = row.innerText.toLowerCase();
 
-            const filterKondisi = document.getElementById('filterKondisi');
+                        const matchKeyword =
+                            text.includes(keyword);
 
-            const resetFilter = document.getElementById('resetFilter');
+                        const matchStatus =
+                            status === '' ||
+                            text.includes(status);
 
-            const rows = document.querySelectorAll('#historyTable tr');
+                        row.style.display =
+                            (matchKeyword && matchStatus) ?
+                            '' :
+                            'none';
 
-            function filterTable() {
+                    });
 
-                const search = searchInput.value.toLowerCase();
+                }
 
-                const aktivitas = filterAktivitas.value.toLowerCase();
+                searchInput.addEventListener(
+                    'keyup',
+                    filterTable
+                );
 
-                const kondisi = filterKondisi.value.toLowerCase();
+                filterStatus.addEventListener(
+                    'change',
+                    filterTable
+                );
 
-                rows.forEach(row => {
+                resetFilter.addEventListener(
+                    'click',
+                    function() {
 
-                    const text = row.innerText.toLowerCase();
+                        searchInput.value = '';
+                        filterStatus.value = '';
 
-                    const matchSearch = text.includes(search);
-
-                    const matchAktivitas =
-                        aktivitas === '' || text.includes(aktivitas);
-
-                    const matchKondisi =
-                        kondisi === '' || text.includes(kondisi);
-
-                    if (matchSearch && matchAktivitas && matchKondisi) {
-
-                        row.style.display = '';
-
-                    } else {
-
-                        row.style.display = 'none';
+                        filterTable();
 
                     }
-
-                });
-
-            }
-
-            // SEARCH
-            searchInput.addEventListener('keyup', filterTable);
-
-            // FILTER
-            filterAktivitas.addEventListener('change', filterTable);
-
-            filterKondisi.addEventListener('change', filterTable);
-
-            // RESET
-            resetFilter.addEventListener('click', function() {
-
-                searchInput.value = '';
-
-                filterAktivitas.value = '';
-
-                filterKondisi.value = '';
-
-                filterTable();
+                );
 
             });
+        </script>
 
-        });
-    </script>
-
-@endsection
+    @endsection

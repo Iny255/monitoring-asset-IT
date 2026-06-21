@@ -21,98 +21,48 @@ class PerusahaanController extends Controller
 
   public function index(Request $request)
   {
-    $search = $request->input('search');
+    $search = $request->search;
 
-    $perusahaans = Perusahaan::query();
+    $query = Perusahaan::query();
 
     if ($search) {
-      $perusahaans->where(function ($query) use ($search) {
-        $query
-          ->where('nama_perusahaan', 'like', '%' . $search . '%')
-          ->orWhere('kode_perusahaan', 'like', '%' . $search . '%');
+      $query->where(function ($q) use ($search) {
+        $q->where('nama_perusahaan', 'like', "%{$search}%");
       });
     }
 
-    $perusahaans = $perusahaans->latest()->paginate(5);
+    $perusahaans = $query->latest()->paginate(10);
 
-    // 🔥 Generate next kode for modal
-    $last = Perusahaan::orderBy('id', 'desc')->first();
-    if ($last && $last->kode_perusahaan) {
-      $number = (int) substr($last->kode_perusahaan, 2) + 1;
+    $last = Perusahaan::latest('id')->first();
+
+    if ($last) {
+      $kodePerusahaan = str_pad(((int) $last->kode_perusahaan) + 1, 2, '0', STR_PAD_LEFT);
     } else {
-      $number = 1;
+      $kodePerusahaan = '01';
     }
-    $kodePerusahaan = 'PT' . str_pad($number, 4, '0', STR_PAD_LEFT);
 
     return view('content.dashboard.perusahaan.index', compact('perusahaans', 'kodePerusahaan'));
   }
 
   public function store(Request $request)
   {
-    // =====================================
-    // VALIDASI
-    // =====================================
-
     $validated = $request->validate([
-      'nama_perusahaan' => 'required|string|max:50',
+      'kode_perusahaan' => 'required|max:2|unique:perusahaans,kode_perusahaan',
+      'nama_perusahaan' => 'required|max:100',
+      'primary_color' => 'required',
+      'secondary_color' => 'required',
+      'logo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
     ]);
 
-    try {
-      // =====================================
-      // UPPERCASE
-      // =====================================
+    Perusahaan::create([
+      'kode_perusahaan' => $validated['kode_perusahaan'],
+      'nama_perusahaan' => strtoupper($validated['nama_perusahaan']),
+      'primary_color' => $validated['primary_color'],
+      'secondary_color' => $validated['secondary_color'],
+      'logo' => $logoPath ?? null,
+    ]);
 
-      $validated['nama_perusahaan'] = strtoupper($validated['nama_perusahaan']);
-
-      // =====================================
-      // AMBIL DATA TERAKHIR
-      // =====================================
-
-      $last = Perusahaan::latest('id')->first();
-
-      // =====================================
-      // GENERATE KODE
-      // =====================================
-
-      if ($last && $last->kode_perusahaan) {
-        $number = (int) substr($last->kode_perusahaan, 2) + 1;
-      } else {
-        $number = 1;
-      }
-
-      // =====================================
-      // FORMAT KODE
-      // =====================================
-
-      $kode = 'PT' . str_pad($number, 4, '0', STR_PAD_LEFT);
-
-      // =====================================
-      // SIMPAN
-      // =====================================
-
-      Perusahaan::create([
-        'kode_perusahaan' => strtoupper($kode),
-
-        'nama_perusahaan' => $validated['nama_perusahaan'],
-
-        // DEFAULT
-        'logo' => null,
-
-        'primary_color' => '#007bff',
-
-        'secondary_color' => '#6c757d',
-      ]);
-
-      return redirect()
-        ->route('perusahaan.index')
-        ->with('success', 'Data perusahaan berhasil disimpan.');
-    } catch (\Exception $e) {
-      Log::error($e->getMessage());
-
-      return back()
-        ->withInput()
-        ->with('error', 'Gagal menyimpan data perusahaan.');
-    }
+    return back()->with('success', 'Perusahaan berhasil ditambahkan');
   }
 
   public function edit(Perusahaan $perusahaan)
@@ -122,52 +72,33 @@ class PerusahaanController extends Controller
 
   public function update(Request $request, Perusahaan $perusahaan)
   {
-    // =====================================
-    // VALIDASI
-    // =====================================
-
     $validated = $request->validate([
-      'nama_perusahaan' => 'required|string|max:50',
+      'nama_perusahaan' => 'required|max:100',
+
+      'primary_color' => 'required',
+
+      'secondary_color' => 'required',
     ]);
 
-    try {
-      // =====================================
-      // UPPERCASE
-      // =====================================
+    $perusahaan->update([
+      'nama_perusahaan' => strtoupper($validated['nama_perusahaan']),
 
-      $validated['nama_perusahaan'] = strtoupper($validated['nama_perusahaan']);
+      'primary_color' => $validated['primary_color'],
 
-      // =====================================
-      // UPDATE
-      // =====================================
+      'secondary_color' => $validated['secondary_color'],
+    ]);
 
-      $perusahaan->update([
-        'nama_perusahaan' => $validated['nama_perusahaan'],
-
-        // PERTAHANKAN DATA LAMA
-        'logo' => $perusahaan->logo,
-
-        'primary_color' => $perusahaan->primary_color,
-
-        'secondary_color' => $perusahaan->secondary_color,
-      ]);
-
-      return redirect()
-        ->route('perusahaan.index')
-        ->with('success', 'Data berhasil diperbarui');
-    } catch (\Exception $e) {
-      Log::error($e->getMessage());
-
-      return back()
-        ->withInput()
-        ->with('error', 'Gagal update data');
-    }
+    return back()->with('success', 'Data berhasil diperbarui');
   }
 
   public function destroy(int $id)
   {
-    Perusahaan::findOrFail($id)->delete();
+    $perusahaan = Perusahaan::findOrFail($id);
 
-    return back()->with('success', 'Perusahaan berhasil dihapus');
+    $perusahaan->update([
+      'is_active' => false,
+    ]);
+
+    return back()->with('success', 'Perusahaan dinonaktifkan');
   }
 }

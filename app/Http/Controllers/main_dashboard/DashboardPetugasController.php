@@ -9,6 +9,7 @@ use App\Models\Masuk;
 use App\Models\Keluar;
 use App\Models\Peminjaman;
 use App\Models\MutasiMaping;
+use App\Models\Inventaris;
 
 class DashboardPetugasController extends Controller
 {
@@ -26,25 +27,25 @@ class DashboardPetugasController extends Controller
 
     /* ================= TOTAL ================= */
 
-    // TOTAL BARANG MASUK
-    $totalMasuk = Masuk::when($user->role !== 'super_admin', function ($q) use ($user) {
+    $totalAset = Inventaris::when($user->role !== 'super_admin', function ($q) use ($user) {
       $q->where('perusahaan_id', $user->id_perusahaan);
-    })->sum('jumlah');
+    })->count();
 
-    // TOTAL BARANG KELUAR
-    $totalKeluar = Keluar::when($user->role !== 'super_admin', function ($q) use ($user) {
-      $q->where('id_perusahaan', $user->id_perusahaan);
-    })->sum('jumlah');
+    $totalStok = Inventaris::when($user->role !== 'super_admin', function ($q) use ($user) {
+      $q->where('perusahaan_id', $user->id_perusahaan);
+    })
+      ->where('status', 'TERSEDIA')
+      ->count();
 
-    // STOK TERSEDIA
-    $totalStok = $totalMasuk - $totalKeluar;
-
-    // TOTAL ASET
-    $totalAset = $totalMasuk;
+    $totalKeluar = Inventaris::when($user->role !== 'super_admin', function ($q) use ($user) {
+      $q->where('perusahaan_id', $user->id_perusahaan);
+    })
+      ->where('status', 'DIPAKAI')
+      ->count();
 
     /* ================= KOMPOSISI STOK REAL ================= */
 
-    $komposisiAset = Masuk::with(['kategori', 'keluars'])
+    $komposisiAset = Inventaris::with('dataAset.kategori')
 
       ->when($user->role !== 'super_admin', function ($q) use ($user) {
         $q->where('perusahaan_id', $user->id_perusahaan);
@@ -53,19 +54,13 @@ class DashboardPetugasController extends Controller
       ->get()
 
       ->groupBy(function ($item) {
-        return $item->kategori->nama_barang ?? 'LAINNYA';
+        return $item->dataAset->kategori->nama_barang ?? 'LAINNYA';
       })
 
       ->map(function ($items, $namaBarang) {
-        $stokMasuk = $items->sum('jumlah');
-
-        $stokKeluar = $items->sum(function ($item) {
-          return $item->keluars->sum('jumlah');
-        });
-
         return [
           'nama_barang' => $namaBarang,
-          'total' => max(0, $stokMasuk - $stokKeluar),
+          'total' => $items->where('status', 'TERSEDIA')->count(),
         ];
       })
 
@@ -87,16 +82,8 @@ class DashboardPetugasController extends Controller
 
     /* ================= GRAFIK ================= */
 
-    $mutasiMasuk = Masuk::when($user->role !== 'super_admin', function ($q) use ($user) {
-      $q->where('perusahaan_id', $user->id_perusahaan);
-    })
-      ->selectRaw('MONTH(created_at) bulan, COUNT(*) total')
-      ->groupBy('bulan')
-      ->pluck('total', 'bulan')
-      ->toArray();
-
     $mutasiKeluar = Keluar::when($user->role !== 'super_admin', function ($q) use ($user) {
-      $q->where('id_perusahaan', $user->id_perusahaan);
+      $q->where('perusahaan_id', $user->id_perusahaan);
     })
       ->selectRaw('MONTH(created_at) bulan, COUNT(*) total')
       ->groupBy('bulan')

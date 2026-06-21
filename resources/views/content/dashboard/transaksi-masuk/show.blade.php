@@ -1,94 +1,228 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Detail Transaksi Masuk')
+@section('title', 'Detail Penerimaan Aset')
 
 @section('content')
 
-<div class="container-fluid px-3">
-    <div class="row">
-        <div class="col-12">
+    <div class="container-fluid px-3">
 
-            <div class="card shadow-sm rounded-4 border-0">
-                
-                {{-- HEADER --}}
-                <div class="card-header bg-white border-0 py-3">
-                    <h5 class="fw-semibold mb-0">Detail Transaksi Masuk</h5>
-                </div>
+        <div class="card shadow-sm border-0">
 
-                {{-- BODY --}}
-                <div class="card-body px-4 py-3">
+            <div class="card-header">
+                <h5 class="mb-0 text-primary">
+                    Detail Penerimaan Aset
+                </h5>
+            </div>
 
-                    <table class="table table-bordered align-middle">
-                        <tr>
-                            <th width="220">Kode Masuk</th>
-                            <td>{{ $masuk->kode_masuk }}</td>
-                        </tr>
-                        <tr>
-                            <th>Nama Barang</th>
-                            <td>{{ $masuk->kategori->nama_barang ?? '-' }}</td>
-                        </tr>
-                        <tr>
-                            <th>Type</th>
-                            <td>{{ $masuk->type }}</td>
-                        </tr>
-                        <tr>
-                            <th>Merek</th>
-                            <td>{{ $masuk->merek }}</td>
-                        </tr>
-                         <tr>
-                            <th>Merek</th>
-                            <td>{{ $masuk->merek }}</td>
-                        </tr>
-                         <tr>
-                            <th>Kondisi</th>
-                            <td>{{ $masuk->kondisi }}</td>
-                        </tr>
-                        <tr>
-                            <th>Jumlah</th>
-                            <td>{{ $masuk->jumlah }}</td>
-                        </tr>
-                        <tr>
-                            <th>Tanggal Beli</th>
-                            <td>{{ \Carbon\Carbon::parse($masuk->tgl_beli)->format('d-m-Y') }}</td>
-                        </tr>
-                        <tr>
-                            <th>Garansi</th>
-                            <td>{{ $masuk->garansi }} Bulan</td>
-                        </tr>
-                        <tr>
-                            <th>Supplier</th>
-                            <td>{{ $masuk->supplier }}</td>
-                        </tr>
-                        <tr>
-                            <th>Harga/Satuan</th>
-                            <td>Rp. {{ number_format($masuk->harga, 0, ',', '.') }}</td>
-                        </tr>
-                        
-                    </table>
+            <div class="card-body">
 
-                    {{-- GARIS PEMISAH --}}
-                    <hr class="my-4">
+                {{-- INFORMASI PENERIMAAN --}}
+                <table class="table table-bordered">
 
-                    {{-- FOOTER BUTTON --}}
-                    <div class="d-flex justify-content-start">
-                        @auth
-                            @if (auth()->user()->role === 'manager')
-                                <a href="{{ route('manager.laporan.masuk') }}" class="btn btn-secondary px-4">
-                                    ← Kembali
-                                </a>
+                    @if (auth()->user()->role == 'super_admin')
+                        <tr>
+                            <th width="250">Perusahaan</th>
+                            <td>
+                                {{ $masuk->perusahaan->nama_perusahaan ?? '-' }}
+                            </td>
+                        </tr>
+                    @endif
+
+                    <tr>
+                        <th>Supplier</th>
+                        <td>
+                            {{ $masuk->supplier->nama_supplier ?? '-' }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Kategori Aset</th>
+                        <td>
+                            {{ $masuk->dataAset->kategori->nama_barang ?? '-' }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Merek</th>
+                        <td>
+                            {{ $masuk->dataAset->merek ?? '-' }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Type</th>
+                        <td>
+                            {{ $masuk->dataAset->type ?? '-' }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <th>Tanggal Pembelian</th>
+                        <td>
+                            {{ \Carbon\Carbon::parse($masuk->tanggal_pembelian)->format('d-m-Y') }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Jumlah Diterima</th>
+                        <td>
+                            {{ number_format($masuk->jumlah) }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Harga Satuan</th>
+                        <td>
+                            Rp {{ number_format($masuk->harga_satuan, 0, ',', '.') }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Total Harga</th>
+                        <td>
+                            Rp {{ number_format($masuk->jumlah * $masuk->harga_satuan, 0, ',', '.') }}
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Garansi</th>
+                        <td>
+                            {{ $masuk->garansi }} Bulan
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Keterangan Penerimaan</th>
+                        <td>
+
+                            @if ($masuk->ket_penerimaan == 'BAIK')
+                                <span class="badge bg-success">
+                                    BAIK
+                                </span>
                             @else
-                                <a href="{{ route('transaksi-masuk.index') }}" class="btn btn-secondary px-4">
-                                    ← Kembali
-                                </a>
+                                <span class="badge bg-danger">
+                                    RUSAK
+                                </span>
                             @endif
-                        @endauth
+
+                        </td>
+                    </tr>
+
+                    <tr>
+                        <th>Tanggal Input</th>
+                        <td>
+                            {{ $masuk->created_at->format('d-m-Y H:i') }}
+                        </td>
+                    </tr>
+
+                </table>
+
+                {{-- INVENTARIS GENERATED --}}
+                <div class="mt-4">
+
+                    <h5 class="text-primary">
+                        Daftar Nomor Inventaris Aset
+                    </h5>
+
+                    <div class="table-responsive">
+
+                        <table class="table table-bordered">
+
+                            <thead class="table-primary">
+                                <tr>
+                                    <th width="60">No</th>
+                                    <th>No Inventaris</th>
+                                    <th>Kode Aset</th>
+                                    <th>Status Aset</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                @forelse($masuk->inventaris as $inventaris)
+                                    <tr>
+
+                                        <td>
+                                            {{ $loop->iteration }}
+                                        </td>
+
+                                        <td>
+                                            <span class="badge bg-label-info">
+                                                {{ $inventaris->no_inventaris }}
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            <span class="badge bg-label-primary">
+                                                {{ $inventaris->kode_aset }}
+                                            </span>
+                                        </td>
+
+                                        <td>
+
+                                            @switch($inventaris->status)
+                                                @case('TERSEDIA')
+                                                    <span class="badge bg-success">
+                                                        TERSEDIA
+                                                    </span>
+                                                @break
+
+                                                @case('DIPAKAI')
+                                                    <span class="badge bg-primary">
+                                                        DIPAKAI
+                                                    </span>
+                                                @break
+
+                                                @case('DIPINJAM')
+                                                    <span class="badge bg-warning">
+                                                        DIPINJAM
+                                                    </span>
+                                                @break
+
+                                                @case('RUSAK')
+                                                    <span class="badge bg-danger">
+                                                        RUSAK
+                                                    </span>
+                                                @break
+
+                                                @default
+                                                    <span class="badge bg-secondary">
+                                                        -
+                                                    </span>
+                                            @endswitch
+
+                                        </td>
+
+                                    </tr>
+
+                                    @empty
+
+                                        <tr>
+                                            <td colspan="4" class="text-center">
+                                                Data inventaris belum tersedia
+                                            </td>
+                                        </tr>
+                                    @endforelse
+
+                                </tbody>
+                            </table>
+
+                        </div>
+
                     </div>
 
+                    <hr>
+
+                    <a href="{{ route('transaksi-masuk.index') }}" class="btn btn-secondary">
+
+                        <i class="bx bx-arrow-back"></i>
+                        Kembali
+
+                    </a>
+
                 </div>
+
             </div>
 
         </div>
-    </div>
-</div>
 
-@endsection
+    @endsection

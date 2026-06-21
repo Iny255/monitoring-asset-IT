@@ -36,7 +36,7 @@ class KategoriController extends Controller
     }
 
     // PAGINATION
-    $kategoris = $query->latest()->paginate(5);
+    $kategoris = $query->latest()->paginate(10);
 
     // 🔥 AMBIL SEMUA PERUSAHAAN (UNTUK DROPDOWN)
     $perusahaans = Perusahaan::all();

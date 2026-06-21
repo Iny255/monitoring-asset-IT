@@ -1,6 +1,6 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Transaksi Masuk')
+@section('title', 'Penerimaan Aset')
 
 @section('content')
 
@@ -24,7 +24,7 @@
 
         {{-- HEADER --}}
         <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="text-primary mb-0">Data Barang Masuk</h5>
+            <h5 class="text-primary mb-0">Data Penerimaan Aset</h5>
 
             @auth
                 @if (auth()->user()->role === 'petugas' || auth()->user()->role === 'super_admin')
@@ -39,40 +39,136 @@
         <div class="card-body">
 
             {{-- SEARCH --}}
-            <form method="GET" class="row g-3 mb-4">
+            {{-- FILTER LAPORAN --}}
+            <div class="card border mb-4">
 
-                {{-- 🔍 SEARCH --}}
-                <div class="col-md-5 d-flex">
-                    <input type="text" name="search" class="form-control me-2" placeholder="Cari kode / nama barang"
-                        value="{{ request('search') }}">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0 fw-bold">
+                        Filter Data Penerimaan Aset
+                    </h6>
                 </div>
 
-                {{-- 🏢 FILTER PERUSAHAAN (SUPER ADMIN ONLY) --}}
-                @if (auth()->user()->role === 'super_admin')
-                    <div class="col-md-4">
-                        <select name="perusahaan_id" class="form-select">
-                            <option value="">-- Semua Perusahaan --</option>
-                            @foreach ($perusahaans as $p)
-                                <option value="{{ $p->id }}"
-                                    {{ request('perusahaan_id') == $p->id ? 'selected' : '' }}>
-                                    {{ $p->nama_perusahaan }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                @endif
+                <div class="card-body">
 
-                {{-- 🔘 BUTTON --}}
-                <div class="col-md-3 d-flex gap-2">
-                    <button type="submit" class="btn btn-primary">Cari</button>
+                    <form method="GET" action="{{ route('transaksi-masuk.index') }}">
 
-                    {{-- 🔄 RESET --}}
-                    <a href="{{ route('transaksi-masuk.index') }}" class="btn btn-secondary">
-                        Reset
-                    </a>
+                        <div class="row g-3">
+
+                            @if (auth()->user()->role === 'super_admin')
+                                <div class="col-md-3">
+
+                                    <label class="form-label">
+                                        Perusahaan
+                                    </label>
+
+                                    <select name="perusahaan_id" class="form-select">
+
+                                        <option value="">
+                                            Semua Perusahaan
+                                        </option>
+
+                                        @foreach ($perusahaans as $p)
+                                            <option value="{{ $p->id }}"
+                                                {{ request('perusahaan_id') == $p->id ? 'selected' : '' }}>
+                                                {{ $p->nama_perusahaan }}
+                                            </option>
+                                        @endforeach
+
+                                    </select>
+
+                                </div>
+                            @endif
+
+                            <div class="col-md-3">
+
+                                <label class="form-label">
+                                    Tanggal Awal
+                                </label>
+
+                                <input type="date" name="tanggal_awal" class="form-control"
+                                    value="{{ request('tanggal_awal') }}">
+
+                            </div>
+
+                            <div class="col-md-3">
+
+                                <label class="form-label">
+                                    Tanggal Akhir
+                                </label>
+
+                                <input type="date" name="tanggal_akhir" class="form-control"
+                                    value="{{ request('tanggal_akhir') }}">
+
+                            </div>
+                            <div class="col-md-3">
+
+                                <label class="form-label">
+                                    Supplier
+                                </label>
+
+                                <select name="supplier_id" class="form-select">
+
+                                    <option value="">
+                                        Semua Supplier
+                                    </option>
+
+                                    @foreach ($suppliers as $supplier)
+                                        <option value="{{ $supplier->id }}"
+                                            {{ request('supplier_id') == $supplier->id ? 'selected' : '' }}>
+
+                                            {{ $supplier->nama_supplier }}
+
+                                        </option>
+                                    @endforeach
+
+                                </select>
+
+                            </div>
+
+                            <div class="col-md-3">
+
+                                <label class="form-label">
+                                    Pencarian
+                                </label>
+
+                                <input type="text" name="search" class="form-control"
+                                    placeholder="Nama barang / merek / type" value="{{ request('search') }}">
+
+                            </div>
+
+                        </div>
+
+                        <div class="mt-3 d-flex gap-2">
+
+                            <button type="submit" class="btn btn-primary">
+
+                                <i class="bx bx-search"></i>
+                                Tampilkan
+
+                            </button>
+
+                            <a href="{{ route('transaksi-masuk.index') }}" class="btn btn-secondary">
+
+                                <i class="bx bx-refresh"></i>
+                                Reset
+
+                            </a>
+
+                            <a href="{{ route('transaksi-masuk.cetak', request()->query()) }}" target="_blank"
+                                class="btn btn-danger">
+
+                                <i class="bx bx-printer"></i>
+                                Cetak PDF
+
+                            </a>
+
+                        </div>
+
+                    </form>
+
                 </div>
 
-            </form>
+            </div>
 
 
             <div class="table-responsive">
@@ -80,29 +176,25 @@
 
                     <thead class="table-primary text-center">
                         <tr>
-                            <th>No</th>
-                            <th>KODE MASUK</th>
+
+                            <th width="60">NO</th>
                             @if (auth()->user()->role === 'super_admin')
                                 <th>PERUSAHAAN</th>
                             @endif
-                            <th>NAMA BARANG</th>
-                            <th>TYPE</th>
-                            <th>MEREK</th>
-                            <th>JUMLAH</th>
-                            <th>TANGGAL BELI</th>
+                            <th>DATA ASET</th>
                             <th>SUPPLIER</th>
-                          
+                            <th>TGL PEMBELIAN</th>
+                            <th>JUMLAH</th>
+                            <th>HARGA SATUAN</th>
+                            <th>GARANSI</th>
+                            <th>KET. PENERIMAAN</th>
+                            <th width="150">AKSI</th>
 
-                            @auth
-                                @if (in_array(auth()->user()->role, ['petugas', 'manager', 'super_admin']))
-                                    <th>AKSI</th>
-                                @endif
-                            @endauth
                         </tr>
                     </thead>
 
-
                     <tbody>
+
                         @forelse ($masuks as $index => $masuk)
                             <tr>
 
@@ -111,78 +203,104 @@
                                     {{ $masuks->firstItem() + $index }}
                                 </td>
 
-                                {{-- KODE --}}
-                                <td class="text-center">
-                                    <span class="badge bg-label-primary">
-                                        {{ $masuk->kode_masuk }}
-                                    </span>
-                                </td>
-
-                                {{-- PERUSAHAAN (HANYA SUPER ADMIN) --}}
+                                {{-- PERUSAHAAN --}}
                                 @if (auth()->user()->role === 'super_admin')
-                                    <td class="text-center">
-                                        <span class="badge bg-label-info">
-                                            {{ optional($masuk->perusahaan)->nama_perusahaan ?? '-' }}
-                                        </span>
+                                    <td>
+
+                                        {{ $masuk->perusahaan->nama_perusahaan ?? '-' }}
+
                                     </td>
                                 @endif
 
-                                {{-- NAMA BARANG --}}
+                                {{-- DATA ASET --}}
                                 <td>
-                                    {{ $masuk->kategori->nama_barang ?? '-' }}
-                                </td>
 
-                                {{-- TYPE --}}
-                                <td>{{ $masuk->type }}</td>
+                                    {{ $masuk->dataAset->kategori->nama_barang ?? '-' }}
+                                    <br>
 
-                                {{-- MEREK --}}
-                                <td>{{ $masuk->merek }}</td>
+                                    <small class="text-muted">
 
-                                {{-- JUMLAH --}}
-                                <td class="text-center">{{ $masuk->jumlah }}</td>
+                                        {{ $masuk->dataAset->merek ?? '-' }}
+                                        -
+                                        {{ $masuk->dataAset->type ?? '-' }}
 
-                                {{-- TANGGAL --}}
-                                <td class="text-center">
-                                    {{ \Carbon\Carbon::parse($masuk->tgl_beli)->format('d-m-Y') }}
+                                    </small>
+
                                 </td>
 
                                 {{-- SUPPLIER --}}
-                                <td>{{ $masuk->supplier }}</td>
+                                <td>
 
+                                    {{ $masuk->supplier->nama_supplier ?? '-' }}
+
+                                </td>
+                                <td class="text-center">
+                                    {{ \Carbon\Carbon::parse($masuk->tanggal_pembelian)->format('d-m-Y') }}
+                                </td>
+
+                                {{-- JUMLAH --}}
+                                <td class="text-center">
+
+                                    {{ number_format($masuk->jumlah) }}
+
+                                </td>
+
+                                {{-- HARGA --}}
+                                <td class="text-end">
+
+                                    Rp {{ number_format($masuk->harga_satuan, 0, ',', '.') }}
+
+                                </td>
+
+                                {{-- GARANSI --}}
+                                <td class="text-center">
+
+                                    {{ $masuk->garansi }} Bulan
+
+                                </td>
+
+                                {{-- KETERANGAN --}}
+                                <td class="text-center">
+
+                                    @if ($masuk->ket_penerimaan == 'BAIK')
+                                        <span class="badge bg-success">
+
+                                            BAIK
+
+                                        </span>
+                                    @else
+                                        <span class="badge bg-danger">
+
+                                            RUSAK
+
+                                        </span>
+                                    @endif
+
+                                </td>
 
                                 {{-- AKSI --}}
                                 <td class="text-center">
+
                                     <div class="d-flex justify-content-center gap-1">
 
-                                        {{-- SHOW --}}
-                                        @auth
+                                        <a href="{{ route('transaksi-masuk.show', $masuk->id) }}"
+                                            class="btn btn-info btn-sm">
 
-                                            @if (auth()->user()->role === 'manager')
-                                                <a href="{{ route('manager.laporan.masuk.show', $masuk->id) }}"
-                                                    class="btn btn-info btn-sm">
+                                            <i class="bx bx-show"></i>
 
-                                                    <i class="bx bx-show"></i>
-
-                                                </a>
-                                            @else
-                                                <a href="{{ route('transaksi-masuk.show', $masuk->id) }}"
-                                                    class="btn btn-info btn-sm">
-
-                                                    <i class="bx bx-show"></i>
-
-                                                </a>
-                                            @endif
-
-                                        @endauth
+                                        </a>
 
                                         @if (in_array(auth()->user()->role, ['petugas', 'super_admin']))
-                                            <a href="{{ route('transaksi-masuk.edit', $masuk->id) }}"
-                                                class="btn btn-warning btn-sm">
-                                                <i class="bx bx-edit-alt"></i>
-                                            </a>
+                                            <button type="button" class="btn btn-warning btn-sm btn-edit"
+                                                data-url="{{ route('transaksi-masuk.edit', $masuk->id) }}">
 
+                                                <i class="bx bx-edit-alt"></i>
+
+                                            </button>
                                             <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $masuk->id }}">
+
                                                 <i class="bx bx-trash"></i>
+
                                             </button>
                                         @endif
 
@@ -191,23 +309,29 @@
                                     <form id="delete-form-{{ $masuk->id }}"
                                         action="{{ route('transaksi-masuk.destroy', $masuk->id) }}" method="POST"
                                         style="display:none;">
+
                                         @csrf
                                         @method('DELETE')
+
                                     </form>
+
                                 </td>
 
                             </tr>
-                        @empty
-                            <tr>
-                                @php
-                                    $colspan = auth()->user()->role === 'super_admin' ? 11 : 10;
-                                @endphp
 
-                                <td colspan="{{ $colspan }}" class="text-center text-muted">
-                                    Data barang masuk belum ada.
+                        @empty
+
+                            <tr>
+
+                                <td colspan="{{ auth()->user()->role === 'super_admin' ? 10 : 9 }}" class="text-center">
+
+                                    Data penerimaan aset belum ada
+
                                 </td>
+
                             </tr>
                         @endforelse
+
                     </tbody>
 
                 </table>
@@ -249,6 +373,40 @@
                             });
 
                         });
+                    });
+
+                });
+                //edit
+                document.querySelectorAll('.btn-edit').forEach(btn => {
+
+                    btn.addEventListener('click', function() {
+
+                        let url = this.dataset.url;
+
+                        Swal.fire({
+
+                            title: 'Edit Data?',
+                            text: 'Anda akan masuk ke halaman edit data.',
+                            icon: 'question',
+
+                            showCancelButton: true,
+
+                            confirmButtonColor: '#696cff',
+                            cancelButtonColor: '#8592a3',
+
+                            confirmButtonText: 'Ya, Edit',
+                            cancelButtonText: 'Batal'
+
+                        }).then((result) => {
+
+                            if (result.isConfirmed) {
+
+                                window.location.href = url;
+
+                            }
+
+                        });
+
                     });
 
                 });

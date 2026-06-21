@@ -10,32 +10,23 @@ return new class extends Migration {
    */
   public function up(): void
   {
-    Schema::create('masuks', function (Blueprint $table) {
+    Schema::create('data_asets', function (Blueprint $table) {
       $table->id();
-
       $table
         ->foreignId('perusahaan_id')
         ->constrained('perusahaans')
         ->cascadeOnDelete();
 
       $table
-        ->foreignId('supplier_id')
-        ->constrained('suppliers')
+        ->foreignId('kategori_id')
+        ->constrained('kategoris')
         ->cascadeOnDelete();
 
-      $table
-        ->foreignId('data_aset_id')
-        ->constrained('data_asets')
-        ->cascadeOnDelete();
-      $table->date('tanggal_pembelian');
+      $table->string('merek');
 
-      $table->integer('jumlah');
+      $table->string('type');
 
-      $table->decimal('harga_satuan', 15, 2);
-
-      $table->integer('garansi')->nullable();
-
-      $table->enum('ket_penerimaan', ['BAIK', 'RUSAK']);
+      $table->string('warna')->nullable();
 
       $table->timestamps();
     });
@@ -46,6 +37,6 @@ return new class extends Migration {
    */
   public function down(): void
   {
-    Schema::dropIfExists('masuks');
+    Schema::dropIfExists('data_asets');
   }
 };

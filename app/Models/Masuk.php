@@ -13,17 +13,14 @@ class Masuk extends Model
   use HasFactory;
 
   protected $fillable = [
-    'kode_masuk',
-    'id_kategori',
-    'type',
-    'merek',
-    'kondisi',
+    'perusahaan_id',
+    'supplier_id',
+    'data_aset_id',
+    'tanggal_pembelian',
     'jumlah',
-    'tgl_beli',
-    'supplier',
+    'harga_satuan',
     'garansi',
-    'harga',
-    'perusahaan_id', // ✅ TAMBAHAN
+    'ket_penerimaan',
   ];
 
   /*
@@ -32,57 +29,61 @@ class Masuk extends Model
     |--------------------------------------------------------------------------
     */
 
-  public function kategori()
+  public function perusahaan()
   {
-    return $this->belongsTo(Kategori::class, 'id_kategori');
+    return $this->belongsTo(Perusahaan::class);
+  }
+   public function kategori()
+  {
+    return $this->belongsTo(Kategori::class);
   }
 
+  public function supplier()
+  {
+    return $this->belongsTo(Supplier::class);
+  }
+
+  public function dataAset()
+  {
+    return $this->belongsTo(DataAset::class);
+  }
+
+  public function inventaris()
+  {
+    return $this->hasMany(Inventaris::class);
+  }
   public function keluars()
 {
     return $this->hasMany(Keluar::class, 'id_masuk');
 }
 
-  public function perusahaan()
-  {
-    return $this->belongsTo(Perusahaan::class, 'perusahaan_id');
-  }
-
   /*
     |--------------------------------------------------------------------------
-    | AUTO SET + GLOBAL SCOPE
+    | MULTI COMPANY
     |--------------------------------------------------------------------------
     */
 
   protected static function booted()
   {
-    // 🔥 AUTO SET PERUSAHAAN
+    // Auto isi perusahaan
     static::creating(function ($model) {
-      $user = auth()->user();
-
-      if (!$user) {
+      if (!auth()->check()) {
         return;
       }
 
-      if ($user->role !== 'super_admin') {
-        $model->perusahaan_id = $user->id_perusahaan;
+      if (auth()->user()->role != 'super_admin') {
+        $model->perusahaan_id = auth()->user()->id_perusahaan;
       }
     });
 
-    // 🔥 GLOBAL SCOPE (FIX FINAL)
+    // Filter perusahaan
     static::addGlobalScope('perusahaan', function ($query) {
-      // 🔥 INI KUNCI UTAMA
-      if (app()->runningInConsole()) {
+      if (!auth()->check()) {
         return;
       }
 
-      $user = auth()->user();
-
-      if (!$user) {
-        return;
-      }
-
-      if ($user->role !== 'super_admin') {
-        $query->where('perusahaan_id', $user->id_perusahaan);
+      if (auth()->user()->role != 'super_admin') {
+        $query->where('perusahaan_id', auth()->user()->id_perusahaan);
       }
     });
   }

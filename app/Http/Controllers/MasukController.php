@@ -6,137 +6,362 @@ use App\Models\Masuk;
 use App\Models\Kategori;
 use App\Models\Perusahaan;
 use Illuminate\Http\Request;
+use App\Models\Inventaris;
+use App\Models\DataAset;
+use App\Models\Supplier;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 class MasukController extends Controller
 {
   public function index(Request $request)
   {
     $user = auth()->user();
 
-    if (!$user) {
-      abort(403);
+    $query = Masuk::with(['dataAset.kategori', 'supplier', 'perusahaan']);
+
+    // FILTER PERUSAHAAN
+    if ($user->role != 'super_admin') {
+      $query->where('perusahaan_id', $user->id_perusahaan);
+    } elseif ($request->perusahaan_id) {
+      $query->where('perusahaan_id', $request->perusahaan_id);
     }
 
-    $search = $request->search;
-    $perusahaanId = $request->perusahaan_id;
-
-    // 🔥 FIX: wajib ada ini
-    $perusahaans = $user->role === 'super_admin' ? Perusahaan::all() : collect();
-
-    $masuks = Masuk::with(['kategori', 'perusahaan']);
-
-    // 🔥 FILTER ROLE
-    if ($user->role !== 'super_admin') {
-      $masuks->where('perusahaan_id', $user->id_perusahaan);
-    } else {
-      if ($perusahaanId) {
-        $masuks->where('perusahaan_id', $perusahaanId);
-      }
+    // FILTER TANGGAL
+    if ($request->filled('tanggal_awal')) {
+      $query->whereDate('tanggal_pembelian', '>=', $request->tanggal_awal);
     }
 
-    // 🔍 SEARCH
-    if ($search) {
-      $masuks->where(function ($query) use ($search) {
-        $query->where('kode_masuk', 'like', "%{$search}%")->orWhereHas('kategori', function ($q) use ($search) {
-          $q->where('nama_barang', 'like', "%{$search}%");
+    if ($request->filled('tanggal_akhir')) {
+      $query->whereDate('tanggal_pembelian', '<=', $request->tanggal_akhir);
+    }
+
+    // FILTER SUPPLIER
+    if ($request->supplier_id) {
+      $query->where('supplier_id', $request->supplier_id);
+    }
+
+    // SEARCH
+    if ($request->search) {
+      $search = $request->search;
+
+      $query->where(function ($q) use ($search) {
+        $q->whereHas('dataAset.kategori', function ($sub) use ($search) {
+          $sub->where('nama_barang', 'like', "%{$search}%");
+        })->orWhereHas('dataAset', function ($sub) use ($search) {
+          $sub->where('merek', 'like', "%{$search}%")->orWhere('type', 'like', "%{$search}%");
         });
       });
     }
 
-    $masuks = $masuks
+    $masuks = $query
       ->latest()
-      ->paginate(5)
+      ->paginate(10)
       ->appends($request->query());
 
-    // 🔥 FIX: kirim ke view
-    return view('content.dashboard.transaksi-masuk.index', compact('masuks', 'perusahaans'));
+    $perusahaans = Perusahaan::all();
+    $suppliers = Supplier::orderBy('nama_supplier')->get();
+
+    return view('content.dashboard.transaksi-masuk.index', compact('masuks', 'perusahaans', 'suppliers'));
+  }
+  public function cetak(Request $request)
+  {
+    $user = auth()->user();
+
+    $query = Masuk::with(['dataAset.kategori', 'supplier', 'perusahaan']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER PERUSAHAAN
+    |--------------------------------------------------------------------------
+    */
+
+    if ($user->role != 'super_admin') {
+      $query->where('perusahaan_id', $user->id_perusahaan);
+    } elseif ($request->filled('perusahaan_id')) {
+      $query->where('perusahaan_id', $request->perusahaan_id);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER TANGGAL
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('tanggal_awal')) {
+      $query->whereDate('tanggal_pembelian', '>=', $request->tanggal_awal);
+    }
+
+    if ($request->filled('tanggal_akhir')) {
+      $query->whereDate('tanggal_pembelian', '<=', $request->tanggal_akhir);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER SUPPLIER
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('supplier_id')) {
+      $query->where('supplier_id', $request->supplier_id);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('search')) {
+      $search = $request->search;
+
+      $query->where(function ($q) use ($search) {
+        $q->whereHas('dataAset.kategori', function ($sub) use ($search) {
+          $sub->where('nama_barang', 'like', "%{$search}%");
+        })
+        ->orWhereHas('dataAset', function ($sub) use ($search) {
+          $sub
+            ->where('merek', 'like', "%{$search}%")
+
+            ->orWhere('type', 'like', "%{$search}%");
+        });
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | AMBIL DATA
+    |--------------------------------------------------------------------------
+    */
+
+    $masuks = $query->orderBy('tanggal_pembelian')->get();
+
+    /*
+    |--------------------------------------------------------------------------
+    | GABUNGKAN DATA YANG SAMA
+    |--------------------------------------------------------------------------
+    */
+
+    $laporan = $masuks
+      ->groupBy(function ($item) {
+        return ($item->perusahaan_id ?? '') .
+          '|' .
+          ($item->dataAset->kategori->nama_barang ?? '') .
+          '|' .
+          ($item->dataAset->merek ?? '') .
+          '|' .
+          ($item->dataAset->type ?? '') .
+          '|' .
+          ($item->supplier_id ?? '');
+      })
+
+      ->map(function ($items) {
+        $first = $items->first();
+
+        return (object) [
+          'tanggal_pembelian' => $first->tanggal_pembelian,
+
+          'perusahaan' => $first->perusahaan,
+
+          'kategori' => $first->dataAset->kategori->nama_barang ?? '-',
+
+          'merek' => $first->dataAset->merek ?? '-',
+
+          'type' => $first->dataAset->type ?? '-',
+
+          'supplier' => $first->supplier->nama_supplier ?? '-',
+
+          'qty' => $items->sum('jumlah'),
+
+          'harga_satuan' => $first->harga_satuan,
+
+          'total' => $items->sum(function ($row) {
+            return $row->jumlah * $row->harga_satuan;
+          }),
+        ];
+      })
+
+      ->values();
+
+    /*
+    |--------------------------------------------------------------------------
+    | REKAP KATEGORI
+    |--------------------------------------------------------------------------
+    */
+
+    $rekapKategori = $masuks
+      ->groupBy(function ($item) {
+        return $item->dataAset->kategori->nama_barang ?? 'LAINNYA';
+      })
+
+      ->map(function ($items) {
+        return $items->sum('jumlah');
+      });
+
+    /*
+    |--------------------------------------------------------------------------
+    | TOTAL UNIT
+    |--------------------------------------------------------------------------
+    */
+
+    $totalUnit = $masuks->sum('jumlah');
+
+    /*
+    |--------------------------------------------------------------------------
+    | GRAND TOTAL
+    |--------------------------------------------------------------------------
+    */
+
+    $grandTotal = $masuks->sum(function ($item) {
+      return $item->jumlah * $item->harga_satuan;
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | NAMA PERUSAHAAN
+    |--------------------------------------------------------------------------
+    */
+
+    $namaPerusahaan = 'SEMBILAN GROUP';
+
+    if ($user->role == 'super_admin') {
+      if ($request->filled('perusahaan_id')) {
+        $perusahaan = Perusahaan::find($request->perusahaan_id);
+
+        $namaPerusahaan = $perusahaan?->nama_perusahaan ?? 'SEMBILAN GROUP';
+      }
+    } else {
+      $namaPerusahaan = Perusahaan::find($user->id_perusahaan)?->nama_perusahaan;
+    }
+
+    return view(
+      'content.dashboard.transaksi-masuk.cetak',
+      compact('laporan', 'rekapKategori', 'totalUnit', 'grandTotal', 'namaPerusahaan')
+    );
   }
 
   public function create()
   {
     $user = auth()->user();
 
-    if ($user->role === 'super_admin') {
-      // 🔥 ambil semua perusahaan
-      $perusahaans = Perusahaan::all();
+    $perusahaans = $user->role == 'super_admin' ? Perusahaan::all() : collect();
 
-      $kategoris = collect(); // kosong dulu
-      $kodeMasuk = null;
+    if ($user->role == 'super_admin') {
+      $suppliers = collect();
+
+      $dataAsets = collect();
     } else {
-      $perusahaanId = $user->id_perusahaan;
+      $suppliers = Supplier::where('perusahaan_id', $user->id_perusahaan)->get();
 
-      $perusahaans = [];
-
-      $kategoris = Kategori::where('perusahaan_id', $perusahaanId)->get();
-
-      $last = Masuk::where('perusahaan_id', $perusahaanId)
-        ->orderBy('id', 'desc')
-        ->first();
-
-      $number = $last ? (int) substr($last->kode_masuk, 4) + 1 : 1;
-
-      $kodeMasuk = 'MSK-' . str_pad($number, 5, '0', STR_PAD_LEFT);
+      $dataAsets = DataAset::with('kategori')
+        ->where('perusahaan_id', $user->id_perusahaan)
+        ->get();
     }
-
-    return view('content.dashboard.transaksi-masuk.create', compact('kategoris', 'kodeMasuk', 'perusahaans'));
+    return view('content.dashboard.transaksi-masuk.create', compact('perusahaans', 'suppliers', 'dataAsets'));
   }
 
   public function store(Request $request)
   {
     $user = auth()->user();
 
-    // 🔥 tentukan perusahaan
-    $perusahaanId = $user->role === 'super_admin' ? $request->id_perusahaan : $user->id_perusahaan;
+    $request->validate([
+      'data_aset_id' => 'required|exists:data_asets,id',
 
-    $validated = $request->validate([
-      'kode_masuk' => ['required', Rule::unique('masuks')->where(fn($q) => $q->where('perusahaan_id', $perusahaanId))],
-      'id_kategori' => 'required',
-      'type' => 'required|string|max:100',
-      'merek' => 'required|string|max:100',
+      'supplier_id' => 'required|exists:suppliers,id',
+      'tanggal_pembelian' => 'required|date',
+
       'jumlah' => 'required|integer|min:1',
-      'tgl_beli' => 'required|date',
-      'garansi' => 'required|integer',
-      'supplier' => 'required|string|max:100',
-      'harga' => 'required',
-      'id_perusahaan' => $user->role === 'super_admin' ? 'required' : 'nullable',
+
+      'harga_satuan' => 'required|numeric|min:0',
+
+      'garansi' => 'nullable|integer|min:0',
+
+      'ket_penerimaan' => 'required|in:BAIK,RUSAK',
     ]);
 
+    DB::beginTransaction();
+
     try {
-      $validated['kode_masuk'] = strtoupper($validated['kode_masuk']);
+      $perusahaanId = $user->role == 'super_admin' ? $request->perusahaan_id : $user->id_perusahaan;
 
-      $validated['type'] = strtoupper($validated['type']);
+      $masuk = Masuk::create([
+        'perusahaan_id' => $perusahaanId,
 
-      $validated['merek'] = strtoupper($validated['merek']);
+        'supplier_id' => $request->supplier_id,
 
-      $validated['supplier'] = strtoupper($validated['supplier']);
+        'data_aset_id' => $request->data_aset_id,
 
-     
-      $validated['perusahaan_id'] = $perusahaanId;
+        'tanggal_pembelian' => $request->tanggal_pembelian,
 
-      Masuk::create($validated);
+        'jumlah' => $request->jumlah,
+
+        'harga_satuan' => $request->harga_satuan,
+
+        'garansi' => $request->garansi,
+
+        'ket_penerimaan' => $request->ket_penerimaan,
+      ]);
+
+      $dataAset = DataAset::with('kategori')->findOrFail($request->data_aset_id);
+
+      $perusahaan = Perusahaan::findOrFail($perusahaanId);
+
+      for ($i = 1; $i <= $request->jumlah; $i++) {
+        // NO INVENTARIS
+
+        $lastInventaris = Inventaris::where('perusahaan_id', $perusahaanId)
+          ->latest('id')
+          ->first();
+
+        $urutInv = $lastInventaris ? (int) str_replace('INV-', '', $lastInventaris->no_inventaris) + 1 : 1;
+
+        $noInventaris = 'INV-' . str_pad($urutInv, 3, '0', STR_PAD_LEFT);
+
+        // KODE ASET
+
+        $lastKode = Inventaris::where('perusahaan_id', $perusahaanId)
+          ->where('data_aset_id', $dataAset->id)
+          ->latest('id')
+          ->first();
+        $urutKode = $lastKode ? (int) substr($lastKode->kode_aset, -3) + 1 : 1;
+
+        $kodeAset =
+          strtoupper($dataAset->kategori->kode_barang) .
+          '.' .
+          $perusahaan->kode_perusahaan .
+          '-' .
+          str_pad($urutKode, 3, '0', STR_PAD_LEFT);
+
+        Inventaris::create([
+          'masuk_id' => $masuk->id,
+          'perusahaan_id' => $perusahaanId,
+          'data_aset_id' => $dataAset->id,
+          'kode_aset' => $kodeAset,
+          'no_inventaris' => $noInventaris,
+          'status' => 'TERSEDIA',
+        ]);
+      }
+
+      DB::commit();
 
       return redirect()
         ->route('transaksi-masuk.index')
-        ->with('success', 'Data berhasil disimpan.');
+        ->with('success', 'Penerimaan aset berhasil disimpan.');
     } catch (\Exception $e) {
-      Log::error($e->getMessage());
+      DB::rollBack();
 
-      return back()->with('error', 'Gagal menyimpan data.');
+      dd($e->getMessage());
+
+      return back()
+        ->withInput()
+        ->with('error', 'Gagal menyimpan data penerimaan aset.');
     }
   }
 
   public function show(int $id)
   {
-    $query = Masuk::with('kategori');
-
-    // 🔥 FILTER PERUSAHAAN
-    if (auth()->user()->role !== 'super_admin') {
-      $query->where('perusahaan_id', auth()->user()->id_perusahaan);
-    }
-
-    $masuk = $query->findOrFail($id);
+    $masuk = Masuk::with(['perusahaan', 'supplier', 'dataAset.kategori', 'inventaris'])->findOrFail($id);
 
     return view('content.dashboard.transaksi-masuk.show', compact('masuk'));
   }
@@ -145,78 +370,63 @@ class MasukController extends Controller
   {
     $user = auth()->user();
 
-    // 🔥 SUPER ADMIN
-    if ($user->role === 'super_admin') {
-      // ambil kategori berdasarkan perusahaan data yg diedit
-      $kategoris = Kategori::where('perusahaan_id', $masuk->perusahaan_id)->get();
+    $perusahaans = $user->role == 'super_admin' ? Perusahaan::all() : collect();
 
-      // ambil semua perusahaan untuk dropdown
-      $perusahaans = Perusahaan::all();
-    } else {
-      // 🔥 USER BIASA
-      $kategoris = Kategori::where('perusahaan_id', $user->id_perusahaan)->get();
+    $suppliers =
+      $user->role == 'super_admin' ? Supplier::all() : Supplier::where('perusahaan_id', $user->id_perusahaan)->get();
 
-      $perusahaans = [];
-    }
+    $dataAsets = DataAset::with('kategori')
+      ->where('perusahaan_id', $masuk->perusahaan_id)
+      ->get();
 
-    return view('content.dashboard.transaksi-masuk.edit', compact('masuk', 'kategoris', 'perusahaans'));
+    $suppliers = Supplier::where('perusahaan_id', $masuk->perusahaan_id)->get();
+
+    return view('content.dashboard.transaksi-masuk.edit', compact('masuk', 'perusahaans', 'dataAsets', 'suppliers'));
   }
 
   public function update(Request $request, Masuk $masuk)
   {
-    $validated = $request->validate([
-      'id_kategori' => 'required|exists:kategoris,id',
-      'type' => 'required|string|max:100',
-      'merek' => 'required|string|max:100',
-      'jumlah' => 'required|integer',
-      'kondisi' => 'required|in:Baru,Bekas',
-      'tgl_beli' => 'required|date',
-      'supplier' => 'required|string|max:100',
-      'garansi' => 'required|integer',
-      'harga' => 'required|numeric',
-     
+    $request->validate([
+      'supplier_id' => 'required|exists:suppliers,id',
+      'tanggal_pembelian' => 'required|date',
+      'harga_satuan' => 'required|numeric|min:0',
+      'garansi' => 'nullable|integer|min:0',
+      'ket_penerimaan' => 'required|in:BAIK,RUSAK',
     ]);
 
-
     try {
-      $validated['type'] = strtoupper($validated['type']);
-
-      $validated['merek'] = strtoupper($validated['merek']);
-
-      $validated['supplier'] = strtoupper($validated['supplier']);
-
-      // =====================================
-      // FORMAT HARGA
-      // =====================================
-
-      $validated['harga'] = str_replace('.', '', $validated['harga']);
-
-      $masuk->update($validated);
+      $masuk->update([
+        'supplier_id' => $request->supplier_id,
+        'tanggal_pembelian' => $request->tanggal_pembelian,
+        'harga_satuan' => $request->harga_satuan,
+        'garansi' => $request->garansi,
+        'ket_penerimaan' => $request->ket_penerimaan,
+      ]);
 
       return redirect()
         ->route('transaksi-masuk.index')
-        ->with('success', 'Data berhasil diupdate');
+        ->with('success', 'Data penerimaan aset berhasil diperbarui.');
     } catch (\Exception $e) {
       Log::error($e->getMessage());
-      return back()->with('error', 'Gagal update data');
+
+      return back()
+        ->withInput()
+        ->with('error', 'Gagal memperbarui data.');
     }
   }
 
   public function destroy(Masuk $masuk)
   {
     try {
-      if ($masuk->gambar) {
-        Storage::delete('public/' . $masuk->gambar);
-      }
-
       $masuk->delete();
 
       return redirect()
         ->route('transaksi-masuk.index')
-        ->with('success', 'Data berhasil dihapus');
+        ->with('success', 'Data berhasil dihapus.');
     } catch (\Exception $e) {
       Log::error($e->getMessage());
-      return back()->with('error', 'Gagal hapus data');
+
+      return back()->with('error', 'Gagal menghapus data.');
     }
   }
 
@@ -233,83 +443,79 @@ class MasukController extends Controller
   {
     $user = auth()->user();
 
-    $query = Masuk::with(['kategori', 'perusahaan', 'keluars']);
+    $query = Inventaris::with(['dataAset.kategori', 'perusahaan', 'keluar.karyawan']);
 
-    // 🔥 DATA PERUSAHAAN
-    $perusahaans = $user->role === 'super_admin' ? Perusahaan::all() : collect();
-
-    // ROLE
-    if ($user->role !== 'super_admin') {
+    if ($user->role != 'super_admin') {
       $query->where('perusahaan_id', $user->id_perusahaan);
-    } else {
-      // 🔥 FILTER PERUSAHAAN
-      if ($request->perusahaan_id) {
-        $query->where('perusahaan_id', $request->perusahaan_id);
-      }
+    } elseif ($request->perusahaan_id) {
+      $query->where('perusahaan_id', $request->perusahaan_id);
     }
 
-    // SEARCH
-    if ($request->search) {
-      $search = $request->search;
+    $inventaris = $query->get();
 
-      $query->where(function ($q) use ($search) {
-        $q->where('type', 'like', "%$search%")
-          ->orWhere('merek', 'like', "%$search%")
-          ->orWhereHas('kategori', function ($k) use ($search) {
-            $k->where('nama_barang', 'like', "%$search%");
-          });
-      });
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | GROUP PER DATA ASET
+    |--------------------------------------------------------------------------
+    */
 
-    $stoks = $query
-      ->with(['kategori', 'perusahaan', 'keluars.karyawan'])
-      ->latest()
-      ->get()
-      ->groupBy(function ($item) {
-        return $item->id_kategori . '-' . $item->type . '-' . $item->merek;
-      });
+    $stoks = $inventaris
+      ->groupBy('data_aset_id')
+      ->map(function ($items) {
+        $first = $items->first();
+
+        return (object) [
+          'data_aset_id' => $first->data_aset_id,
+
+          'perusahaan' => $first->perusahaan,
+
+          'kategori' => $first->dataAset->kategori,
+
+          'merek' => $first->dataAset->merek,
+
+          'type' => $first->dataAset->type,
+
+          'total_aset' => $items->count(),
+
+          'tersedia' => $items->where('status', 'TERSEDIA')->count(),
+
+          'dipakai' => $items->where('status', 'DIPAKAI')->count(),
+
+          'dipinjam' => $items->where('status', 'DIPINJAM')->count(),
+
+          'rusak' => $items->where('status', 'RUSAK')->count(),
+
+          'inventaris' => $items,
+        ];
+      })
+      ->values();
+
+    $perusahaans = Perusahaan::all();
 
     return view('content.dashboard.transaksi-masuk.stok', compact('stoks', 'perusahaans'));
   }
-  public function history(int $id)
+  public function getSupplier(string $id)
   {
-    $user = auth()->user();
+    $suppliers = Supplier::where('perusahaan_id', $id)
+      ->orderBy('nama_supplier')
+      ->get();
 
-    // DATA UTAMA
-    $first = Masuk::findOrFail($id);
-
-    // QUERY GROUP
-    $query = Masuk::with(['kategori', 'perusahaan', 'keluars.karyawan'])
-      ->where('id_kategori', $first->id_kategori)
-      ->where('type', $first->type)
-      ->where('merek', $first->merek);
-
-    // FILTER PERUSAHAAN
-    if ($user->role !== 'super_admin') {
-      $query->where('perusahaan_id', $user->id_perusahaan);
-    }
-
-    // AMBIL SEMUA GROUP
-    $stokGroup = $query->get();
-
-    // SUMMARY
-    $stokAwal = $stokGroup->sum('jumlah');
-
-    $totalKeluar = $stokGroup->sum(function ($item) {
-      return $item->keluars->sum('jumlah');
-    });
-
-    $sisa = $stokAwal - $totalKeluar;
-
-    return view(
-      'content.dashboard.transaksi-masuk.history-stok',
-      compact('stokGroup', 'stokAwal', 'totalKeluar', 'sisa')
-    );
+    return response()->json($suppliers);
   }
-  public function getKategori(int $id)
+  public function getDataAset(string $id)
   {
-    $kategoris = Kategori::where('perusahaan_id', $id)->get();
+    $dataAsets = DataAset::with('kategori')
+      ->where('perusahaan_id', $id)
+      ->get();
 
-    return response()->json($kategoris);
+    return response()->json($dataAsets);
+  }
+  public function historyStok($dataAsetId)
+  {
+    $inventaris = Inventaris::with(['keluar.karyawan', 'dataAset.kategori', 'perusahaan'])
+      ->where('data_aset_id', $dataAsetId)
+      ->get();
+
+    return view('content.dashboard.transaksi-masuk.history-stok', compact('inventaris'));
   }
 }

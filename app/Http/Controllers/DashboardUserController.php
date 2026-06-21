@@ -30,7 +30,7 @@ class DashboardUserController extends Controller
     }
 
     // 🔥 pagination
-    $users = $users->latest()->paginate(5);
+    $users = $users->latest()->paginate(10);
 
     // 🔥 ambil semua perusahaan (untuk dropdown create & edit)
     $perusahaans = Perusahaan::all();
@@ -61,7 +61,7 @@ class DashboardUserController extends Controller
       'name' => ['required', 'min:3', 'max:100'],
       'email' => 'required|email|unique:users',
       'password' => 'required|min:5|max:100',
-      'role' => 'required|in:petugas,manager,super_admin',
+      'role' => 'required|in:petugas,super_admin',
 
       // 🔥 kalau bukan super_admin wajib perusahaan
       'id_perusahaan' => 'nullable|exists:perusahaans,id',
@@ -124,7 +124,7 @@ class DashboardUserController extends Controller
       'name' => 'required|string|max:100',
       'email' => 'required|email|max:100',
       'password' => 'nullable|string|min:8',
-      'role' => 'required|in:petugas,manager,super_admin',
+      'role' => 'required|in:petugas,super_admin',
       'id_perusahaan' => 'nullable|exists:perusahaans,id',
     ]);
 

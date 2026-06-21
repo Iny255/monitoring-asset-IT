@@ -1,13 +1,13 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Tambah Transaksi Masuk')
+@section('title', 'Tambah Penerimaan Aset')
 
 @section('content')
 
     <style>
         /* =========================
-                                                   DARK MODE ONLY
-                                                ========================= */
+                                                        DARK MODE ONLY
+                                                     ========================= */
 
         .dark-style .card-dark {
             background: #1f2a3c;
@@ -59,8 +59,8 @@
         }
 
         /* =========================
-           CARD
-        ========================= */
+                                                   CARD
+                                                ========================= */
 
         .card-dark {
             border-radius: 20px;
@@ -68,8 +68,8 @@
         }
 
         /* =========================
-           INPUT
-        ========================= */
+                                                   INPUT
+                                                ========================= */
 
         .form-control,
         .form-select {
@@ -86,8 +86,8 @@
         }
 
         /* =========================
-           LABEL
-        ========================= */
+                                                   LABEL
+                                                ========================= */
 
         .form-label {
             font-size: 13px;
@@ -98,8 +98,8 @@
         }
 
         /* =========================
-           BUTTON
-        ========================= */
+                                                   BUTTON
+                                                ========================= */
 
         .btn {
             border-radius: 12px;
@@ -109,8 +109,8 @@
         }
 
         /* =========================
-           SECTION TITLE
-        ========================= */
+                                                   SECTION TITLE
+                                                ========================= */
 
         .form-section-title {
             font-size: 14px;
@@ -122,8 +122,8 @@
         }
 
         /* =========================
-           RESPONSIVE
-        ========================= */
+                                                   RESPONSIVE
+                                                ========================= */
 
         @media (max-width: 768px) {
             .card-body {
@@ -143,8 +143,8 @@
 
                     <div class="card-header border-0 px-4 pt-4 pb-2">
 
-                        <h5 class="text-primary mb-0">Tambah Transaksi Masuk</h5>
-                        <small class="text-muted">Silakan isi data barang masuk</small>
+                        <h5 class="text-primary mb-0">Tambah Penerimaan Aset</h5>
+                        <small class="text-muted">Silakan isi data penerimaan aset</small>
 
                     </div>
 
@@ -159,199 +159,253 @@
                             </div>
 
                             <div class="row">
-                                {{-- PERUSAHAAN (HANYA SUPER ADMIN) --}}
-                                @if (auth()->user()->role === 'super_admin')
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-medium">Perusahaan</label>
 
-                                        <select name="id_perusahaan"
-                                            class="form-select @error('id_perusahaan') is-invalid @enderror" required>
 
-                                            <option value="">-- Pilih Perusahaan --</option>
+                                <div class="row">
 
-                                            @foreach ($perusahaans as $p)
-                                                <option value="{{ $p->id }}"
-                                                    {{ old('id_perusahaan') == $p->id ? 'selected' : '' }}>
-                                                    {{ $p->nama_perusahaan }}
+
+                                    {{-- PERUSAHAAN --}}
+                                    @if (auth()->user()->role === 'super_admin')
+                                        <div class="col-md-6 mb-3">
+                                            <label class="form-label fw-medium">
+                                                Perusahaan
+                                            </label>
+
+                                            <select name="perusahaan_id" id="perusahaan"
+                                                class="form-select @error('perusahaan_id') is-invalid @enderror" required>
+
+                                                <option value="">
+                                                    -- Pilih Perusahaan --
                                                 </option>
-                                            @endforeach
+
+                                                @foreach ($perusahaans as $p)
+                                                    <option value="{{ $p->id }}"
+                                                        {{ old('perusahaan_id') == $p->id ? 'selected' : '' }}>
+
+                                                        {{ $p->nama_perusahaan }}
+
+                                                    </option>
+                                                @endforeach
+
+                                            </select>
+
+                                            @error('perusahaan_id')
+                                                <div class="invalid-feedback">
+                                                    {{ $message }}
+                                                </div>
+                                            @enderror
+
+                                        </div>
+                                    @endif
+
+
+                                    {{-- SUPPLIER --}}
+                                    <div class="col-md-6 mb-3">
+
+                                        <label class="form-label fw-medium">
+                                            Supplier
+                                        </label>
+
+                                        <select name="supplier_id" id="supplier"
+                                            class="form-select @error('supplier_id') is-invalid @enderror" required>
+
+                                            <option value="">
+                                                -- Pilih Supplier --
+                                            </option>
+
+                                            @if (auth()->user()->role !== 'super_admin')
+
+                                                @foreach ($suppliers as $supplier)
+                                                    <option value="{{ $supplier->id }}">
+                                                        {{ $supplier->nama_supplier }}
+                                                    </option>
+                                                @endforeach
+
+                                            @endif
 
                                         </select>
 
-                                        @error('id_perusahaan')
-                                            <div class="invalid-feedback">{{ $message }}</div>
+                                        @error('supplier_id')
+                                            <div class="invalid-feedback">
+                                                {{ $message }}
+                                            </div>
                                         @enderror
+
                                     </div>
-                                @endif
 
-                                {{-- KODE MASUK --}}
-                                <div class="col-md-6 mb-3">
 
-                                    <label class="form-label fw-medium">Kode Masuk</label>
+                                    {{-- DATA ASET --}}
+                                    <div class="col-md-6 mb-3">
 
-                                    <input type="text" id="kode_masuk" name="kode_masuk" class="form-control"
-                                        value="{{ $kodeMasuk }}" readonly>
+                                        <label class="form-label fw-medium">
+                                            Data Aset
+                                        </label>
 
-                                </div>
+                                        <select name="data_aset_id" id="data_aset"
+                                            class="form-select @error('data_aset_id') is-invalid @enderror" required>
 
-                                {{-- NAMA BARANG --}}
-                                <div class="col-md-6 mb-3">
-
-                                    <label class="form-label fw-medium">Nama Barang</label>
-
-                                    <select name="id_kategori" id="kategori"
-                                        class="form-select @error('id_kategori') is-invalid @enderror" required>
-
-                                        <option value="">-- Pilih Barang --</option>
-
-                                        @foreach ($kategoris as $kategori)
-                                            <option value="{{ $kategori->id }}"
-                                                {{ old('id_kategori') == $kategori->id ? 'selected' : '' }}>
-                                                {{ $kategori->nama_barang }}
+                                            <option value="">
+                                                -- Pilih Data Aset --
                                             </option>
-                                        @endforeach
 
-                                    </select>
+                                            @if (auth()->user()->role !== 'super_admin')
 
-                                    @error('id_kategori')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
+                                                @foreach ($dataAsets as $aset)
+                                                    <option value="{{ $aset->id }}">
+                                                        {{ $aset->kategori->nama_barang }}
+                                                        -
+                                                        {{ $aset->merek }}
+                                                        -
+                                                        {{ $aset->type }}
+                                                    </option>
+                                                @endforeach
+
+                                            @endif
+
+                                        </select>
+
+                                        @error('data_aset_id')
+                                            <div class="invalid-feedback">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+
+                                        <label class="form-label fw-medium">
+                                            Tanggal Pembelian
+                                        </label>
+
+                                        <input type="date" name="tanggal_pembelian"
+                                            class="form-control @error('tanggal_pembelian') is-invalid @enderror"
+                                            value="{{ old('tanggal_pembelian', date('Y-m-d')) }}" required>
+
+                                        @error('tanggal_pembelian')
+                                            <div class="invalid-feedback">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+
+                                    </div>
+
+
+                                    {{-- JUMLAH --}}
+                                    <div class="col-md-6 mb-3">
+
+                                        <label class="form-label fw-medium">
+                                            Jumlah
+                                        </label>
+
+                                        <input type="number" name="jumlah" min="1"
+                                            class="form-control @error('jumlah') is-invalid @enderror"
+                                            value="{{ old('jumlah') }}" required>
+
+                                        @error('jumlah')
+                                            <div class="invalid-feedback">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+
+                                    </div>
+
+
+                                    {{-- HARGA SATUAN --}}
+                                    <div class="col-md-6 mb-3">
+
+                                        <label class="form-label fw-medium">
+                                            Harga Satuan
+                                        </label>
+
+                                        <input type="number" name="harga_satuan" min="0"
+                                            class="form-control @error('harga_satuan') is-invalid @enderror"
+                                            value="{{ old('harga_satuan') }}" required>
+
+                                        @error('harga_satuan')
+                                            <div class="invalid-feedback">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+
+                                    </div>
+
+
+                                    {{-- GARANSI --}}
+                                    <div class="col-md-6 mb-3">
+
+                                        <label class="form-label fw-medium">
+                                            Garansi (Bulan)
+                                        </label>
+
+                                        <input type="number" name="garansi" min="0"
+                                            class="form-control @error('garansi') is-invalid @enderror"
+                                            value="{{ old('garansi') }}">
+
+                                        @error('garansi')
+                                            <div class="invalid-feedback">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+
+                                    </div>
+
+
+                                    {{-- KETERANGAN PENERIMAAN --}}
+                                    <div class="col-md-6 mb-3">
+
+                                        <label class="form-label fw-medium">
+                                            Ket. Penerimaan
+                                        </label>
+
+                                        <select name="ket_penerimaan"
+                                            class="form-select @error('ket_penerimaan') is-invalid @enderror" required>
+
+                                            <option value="BAIK">
+                                                BAIK
+                                            </option>
+
+                                            <option value="RUSAK">
+                                                RUSAK
+                                            </option>
+
+                                        </select>
+
+                                        @error('ket_penerimaan')
+                                            <div class="invalid-feedback">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+
+                                    </div>
+
+
+                                    {{-- INFORMASI --}}
+                                    <div class="col-md-12">
+
+                                        <div class="alert alert-info">
+
+                                            <strong>Informasi :</strong>
+
+                                            Setelah disimpan sistem otomatis membuat:
+
+                                            <ul class="mb-0 mt-2">
+
+                                                <li>No Inventaris (INV-001 dst)</li>
+
+                                                <li>Kode Aset (L.01-001 dst)</li>
+
+                                                <li>Data Inventaris sesuai jumlah penerimaan</li>
+
+                                            </ul>
+
+                                        </div>
+
+                                    </div>
+
 
                                 </div>
 
 
-                                {{-- TYPE --}}
-                                <div class="col-md-6 mb-3">
-
-                                    <label class="form-label fw-medium">Type</label>
-
-                                    <input type="text" name="type"
-                                        class="form-control @error('type') is-invalid @enderror"
-                                        placeholder="Contoh: Ideapad Slim 1" value="{{ old('type') }}" required>
-
-                                    @error('type')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-
-                                </div>
-
-
-                                {{-- MEREK --}}
-                                <div class="col-md-6 mb-3">
-
-                                    <label class="form-label fw-medium">Merek</label>
-
-                                    <input type="text" name="merek"
-                                        class="form-control @error('merek') is-invalid @enderror" placeholder="Contoh: Asus"
-                                        value="{{ old('merek') }}" required>
-
-                                    @error('merek')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-
-                                </div>
-                                <div class="col-md-6 mb-3">
-
-                                    <label class="form-label">
-                                        Kondisi Asset
-                                    </label>
-
-                                    <select name="kondisi" class="form-select">
-
-                                        <option value="Baru">
-                                            Baru
-                                        </option>
-
-                                        <option value="Bekas">
-                                            Bekas
-                                        </option>
-
-                                    </select>
-
-                                </div>
-
-                                {{-- JUMLAH --}}
-                                <div class="col-md-6 mb-3">
-
-                                    <label class="form-label fw-medium">Jumlah</label>
-
-                                    <input type="number" name="jumlah"
-                                        class="form-control @error('jumlah') is-invalid @enderror" placeholder="Contoh: 10"
-                                        value="{{ old('jumlah') }}" required>
-
-                                    @error('jumlah')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-
-                                </div>
-
-
-                                {{-- TANGGAL BELI --}}
-                                <div class="col-md-6 mb-3">
-
-                                    <label class="form-label fw-medium">Tanggal Beli</label>
-
-                                    <input type="date" name="tgl_beli"
-                                        class="form-control @error('tgl_beli') is-invalid @enderror"
-                                        value="{{ old('tgl_beli') }}" required>
-
-                                    @error('tgl_beli')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-
-                                </div>
-
-
-                                {{-- GARANSI --}}
-                                <div class="col-md-6 mb-3">
-
-                                    <label class="form-label fw-medium">Garansi (Bulan)</label>
-
-                                    <input type="number" name="garansi"
-                                        class="form-control @error('garansi') is-invalid @enderror" placeholder="Contoh: 12"
-                                        value="{{ old('garansi') }}" required>
-
-                                    @error('garansi')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-
-                                </div>
-
-
-                                {{-- SUPPLIER --}}
-                                <div class="col-md-6 mb-3">
-
-                                    <label class="form-label fw-medium">Supplier</label>
-
-                                    <input type="text" name="supplier"
-                                        class="form-control @error('supplier') is-invalid @enderror"
-                                        placeholder="Contoh: PT Sumber Jaya" value="{{ old('supplier') }}" required>
-
-                                    @error('supplier')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-
-                                </div>
-
-
-                                {{-- HARGA --}}
-                                <div class="col-md-6 mb-3">
-
-                                    <label class="form-label fw-medium">Harga</label>
-
-                                    <input type="text" name="harga"
-                                        class="form-control @error('harga') is-invalid @enderror"
-                                        placeholder="Harga / satuan" value="{{ old('harga') }}" required>
-
-                                    @error('harga')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-
-                                </div>
-
-
-
-                                </div>
                                 <div class="d-flex justify-content-end gap-2 mt-3">
 
                                     <a href="{{ route('transaksi-masuk.index') }}" class="btn btn-secondary px-4">
@@ -383,98 +437,127 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
 
-            // =========================
-            // ELEMENT
-            // =========================
-            const perusahaanSelect = document.querySelector('[name="id_perusahaan"]');
-            const kategoriSelect = document.getElementById('kategori');
-            const kodeInput = document.getElementById('kode_masuk');
+            const perusahaan = document.getElementById('perusahaan');
+            const supplier = document.getElementById('supplier');
+            const dataAset = document.getElementById('data_aset');
 
+            if (!perusahaan) return;
 
+            perusahaan.addEventListener('change', function() {
 
-            // =========================
-            // DEFAULT STATE (SUPER ADMIN)
-            // =========================
-            if (kategoriSelect && perusahaanSelect) {
-                kategoriSelect.disabled = true;
-                kategoriSelect.innerHTML = '<option value="">-- Pilih Perusahaan dulu --</option>';
-            }
+                let perusahaanId = this.value;
 
-            // =========================
-            // LOAD KODE MASUK
-            // =========================
-            function loadKode(id) {
-                if (!id || !kodeInput) return;
+                // RESET
+                supplier.innerHTML =
+                    '<option value="">Loading Supplier...</option>';
 
-                fetch('/dashboard/get-kode-masuk/' + id)
-                    .then(res => res.json())
-                    .then(data => {
-                        kodeInput.value = data.kode;
-                    })
-                    .catch(err => console.log('Kode Error:', err));
-            }
+                dataAset.innerHTML =
+                    '<option value="">Loading Data Aset...</option>';
 
-            // =========================
-            // LOAD KATEGORI
-            // =========================
-            function loadKategori(id) {
-                if (!id || !kategoriSelect) return;
+                if (!perusahaanId) {
 
-                kategoriSelect.innerHTML = '<option>Loading...</option>';
-                kategoriSelect.disabled = true;
+                    supplier.innerHTML =
+                        '<option value="">-- Pilih Supplier --</option>';
 
-                fetch('/dashboard/get-kategori/' + id)
-                    .then(res => res.json())
+                    dataAset.innerHTML =
+                        '<option value="">-- Pilih Data Aset --</option>';
+
+                    return;
+                }
+
+                // ==========================
+                // LOAD SUPPLIER
+                // ==========================
+
+                fetch('/dashboard/get-supplier/' + perusahaanId)
+
+                    .then(response => response.json())
+
                     .then(data => {
 
-                        let html = '<option value="">-- Pilih Barang --</option>';
+                        let html =
+                            '<option value="">-- Pilih Supplier --</option>';
 
                         if (data.length === 0) {
-                            html = '<option value="">Data barang kosong</option>';
+
+                            html =
+                                '<option value="">Supplier tidak tersedia</option>';
+
                         } else {
+
                             data.forEach(item => {
-                                html += `<option value="${item.id}">${item.nama_barang}</option>`;
+
+                                html += `
+                            <option value="${item.id}">
+                                ${item.nama_supplier}
+                            </option>
+                        `;
+
                             });
+
                         }
 
-                        kategoriSelect.innerHTML = html;
-
-                        // 🔥 AKTIFKAN SELECT
-                        kategoriSelect.disabled = false;
+                        supplier.innerHTML = html;
 
                     })
-                    .catch(err => {
-                        console.log('Kategori Error:', err);
-                        kategoriSelect.innerHTML = '<option>Error load data</option>';
-                        kategoriSelect.disabled = true;
+
+                    .catch(error => {
+
+                        console.log(error);
+
+                        supplier.innerHTML =
+                            '<option value="">Gagal memuat supplier</option>';
+
                     });
-            }
 
-            // =========================
-            // EVENT: CHANGE PERUSAHAAN
-            // =========================
-            if (perusahaanSelect) {
+                // ==========================
+                // LOAD DATA ASET
+                // ==========================
 
-                perusahaanSelect.addEventListener('change', function() {
+                fetch('/dashboard/get-data-aset/' + perusahaanId)
 
-                    let id = this.value;
+                    .then(response => response.json())
 
-                    if (!id) {
-                        kategoriSelect.innerHTML = '<option>-- Pilih Perusahaan dulu --</option>';
-                        kategoriSelect.disabled = true;
-                        return;
-                    }
+                    .then(data => {
 
-                    loadKode(id);
-                    loadKategori(id);
-                });
+                        let html =
+                            '<option value="">-- Pilih Data Aset --</option>';
 
-                // 🔥 AUTO LOAD JIKA SUDAH ADA VALUE (EDIT / OLD VALUE)
-                if (perusahaanSelect.value) {
-                    loadKode(perusahaanSelect.value);
-                    loadKategori(perusahaanSelect.value);
-                }
-            }
+                        if (data.length === 0) {
+
+                            html =
+                                '<option value="">Data aset tidak tersedia</option>';
+
+                        } else {
+
+                            data.forEach(item => {
+
+                                html += `
+                            <option value="${item.id}">
+                                ${item.kategori.nama_barang}
+                                - ${item.merek}
+                                - ${item.type}
+                            </option>
+                        `;
+
+                            });
+
+                        }
+
+                        dataAset.innerHTML = html;
+
+                    })
+
+                    .catch(error => {
+
+                        console.log(error);
+
+                        dataAset.innerHTML =
+                            '<option value="">Gagal memuat data aset</option>';
+
+                    });
+
+            });
 
         });
     </script>

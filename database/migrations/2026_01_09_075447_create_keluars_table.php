@@ -12,38 +12,34 @@ return new class extends Migration {
   {
     Schema::create('keluars', function (Blueprint $table) {
       $table->id();
-      // Relasi
-      $table
-        ->foreignId('id_karyawan')
+
+    $table->foreignId('inventaris_id')
+        ->constrained('inventaris')
+        ->cascadeOnDelete();
+
+    $table->foreignId('perusahaan_id')
+        ->constrained('perusahaans')
+        ->cascadeOnDelete();
+
+    $table->foreignId('karyawan_id')
         ->nullable()
         ->constrained('karyawans')
-        ->cascadeOnDelete();
-      $table
-        ->foreignId('id_masuk')
-        ->constrained('masuks')
-        ->cascadeOnDelete();
+        ->nullOnDelete();
 
-      // Data transaksi
-      $table->string('kode_keluar', 30)->unique();
-      $table->integer('jumlah')->default(1);
-      $table->string('keterangan', 100)->nullable();
+    $table->date('tgl_keluar');
 
-      // Data barang
-      $table->string('kode_barang', 30)->index(); // jangan unique
-      $table->string('warna', 50)->nullable();
-      $table->string('no_inventaris', 50)->nullable();
+    $table->enum('jenis_penerima', [
+        'Perorangan',
+        'Perdivisi'
+    ]);
 
-      // Jika barang kadang milik divisi, kadang per orang
-      $table->enum('jenis_penerima', ['Perorangan', 'Perdivisi'])->default('Perorangan');
-      // isi: "divisi" / "karyawan"
-      $table->string('divisi_klr', 50)->nullable();
-      $table->string('perusahaan_klr', 50)->nullable();
-      $table->timestamps();
+    $table->string('divisi_klr')->nullable();
 
-      $table
-        ->foreignId('id_perusahaan')
-        ->constrained('perusahaans')
-        ->onDelete('cascade');
+    $table->string('perusahaan_klr')->nullable();
+
+    $table->string('gambar')->nullable();
+
+    $table->timestamps();
     });
   }
 

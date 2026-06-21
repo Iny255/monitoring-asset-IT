@@ -10,6 +10,7 @@ use App\Models\Keluar;
 use App\Models\Peminjaman;
 use App\Models\MutasiMaping;
 use App\Models\Maping;
+use App\Models\Inventaris;
 use App\Models\User;
 use App\Models\Perusahaan;
 use Illuminate\Support\Facades\DB;
@@ -25,10 +26,10 @@ class DashboardSuperAdminController extends Controller
 ===================================== */
 
     // TOTAL MASUK
-    $totalMasuk = Masuk::sum('jumlah');
+   $totalMasuk = Inventaris::count();
 
     // TOTAL KELUAR
-    $totalKeluar = Keluar::sum('jumlah');
+    $totalKeluar = Keluar::distinct('inventaris_id')->count();
 
     // STOK REAL
     $totalStok = $totalMasuk - $totalKeluar;
@@ -90,7 +91,6 @@ class DashboardSuperAdminController extends Controller
 
     $petugasCount = User::where('role', 'petugas')->count();
 
-    $managerCount = User::where('role', 'manager')->count();
 
     /* =====================================
         | GRAFIK
@@ -126,42 +126,7 @@ class DashboardSuperAdminController extends Controller
 | LIST PERUSAHAAN
 ===================================== */
 
-    $perusahaanList = Perusahaan::with(['masuk', 'keluar', 'maping'])
-
-      ->get()
-
-      ->map(function ($p) {
-        // TOTAL BARANG MASUK
-        $asetMasuk = $p->masuk->sum('jumlah');
-
-        // TOTAL BARANG KELUAR
-        $asetKeluar = $p->keluar->sum('jumlah');
-
-        // STOK TERSEDIA
-        $stokTersedia = $asetMasuk - $asetKeluar;
-
-        // TOTAL DIGUNAKAN
-        $asetDigunakan = $p->maping->count();
-
-        return (object) [
-          'nama_perusahaan' => $p->nama_perusahaan,
-
-          // TOTAL MASUK
-          'aset_masuk' => $asetMasuk,
-
-          // TOTAL KELUAR
-          'aset_keluar' => $asetKeluar,
-
-          // STOK TERSEDIA
-          'stok_tersedia' => $stokTersedia,
-
-          // TOTAL DIGUNAKAN
-          'aset_digunakan' => $asetDigunakan,
-
-          // TOTAL ASET
-          'total_aset' => $asetMasuk,
-        ];
-      });
+   $perusahaanList = collect();
 
     return view(
       'content.dashboard.superadmin',
@@ -177,7 +142,7 @@ class DashboardSuperAdminController extends Controller
         'totalMutasi',
         'perusahaanCount',
         'petugasCount',
-        'managerCount',
+  
         'bulanLabel',
         'dataMasuk',
         'dataKeluar',

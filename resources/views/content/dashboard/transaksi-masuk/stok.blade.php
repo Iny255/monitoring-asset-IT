@@ -1,6 +1,6 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Stok Barang')
+@section('title', 'Stok Aset')
 
 @section('content')
 
@@ -9,7 +9,7 @@
         <div class="card-header d-flex justify-content-between align-items-center">
 
             <h5 class="text-primary mb-0">
-                Stok Barang
+                Stok Aset
             </h5>
 
             <div class="d-flex gap-2">
@@ -95,185 +95,119 @@
 
                             <th>MEREK</th>
 
-                            <th>KONDISI</th>
+                            <th>TOTAL ASET</th>
 
-                            <th>STOK AWAL</th>
+                            <th>TERSEDIA</th>
 
-                            <th>DIPAKAI OLEH</th>
+                            <th>DIPAKAI</th>
 
-                            <th>TOTAL KELUAR</th>
+                            <th>DIPINJAM</th>
 
-                            <th>SISA STOK</th>
+                            <th>RUSAK</th>
+
+                            <th>PEMAKAI</th>
+
                             <th>AKSI</th>
 
                         </tr>
 
                     </thead>
-
                     <tbody>
 
-                        @forelse ($stoks ?? collect() as $group)
+                        @forelse($stoks as $stok)
+
                             @php
 
-                                $group = collect($group);
+                                $pemakai = collect();
 
-                                $first = $group->first();
-
-                                if (!$first) {
-                                    continue;
+                                foreach ($stok->inventaris as $inv) {
+                                    if ($inv->keluar) {
+                                        if ($inv->keluar->jenis_penerima == 'Perorangan') {
+                                            $pemakai->push($inv->keluar->karyawan->nama_karyawan ?? '-');
+                                        } else {
+                                            $pemakai->push($inv->keluar->divisi_klr ?? '-');
+                                        }
+                                    }
                                 }
-
-                                $stokAwal = $group->sum('jumlah');
-
-                                $totalKeluar = $group->sum(function ($item) {
-                                    return collect(data_get($item, 'keluars', []))->sum('jumlah');
-                                });
-
-                                $sisa = $stokAwal - $totalKeluar;
 
                             @endphp
 
                             <tr>
 
-                                {{-- NO --}}
                                 <td class="text-center">
-
                                     {{ $loop->iteration }}
-
                                 </td>
 
-                                {{-- PERUSAHAAN --}}
                                 @if (auth()->user()->role == 'super_admin')
                                     <td>
-
-                                        {{ data_get($first, 'perusahaan.nama_perusahaan', '-') }}
-
+                                        {{ $stok->perusahaan->nama_perusahaan ?? '-' }}
                                     </td>
                                 @endif
 
-                                {{-- NAMA BARANG --}}
                                 <td>
-
-                                    {{ data_get($first, 'kategori.nama_barang', '-') }}
-
+                                    {{ $stok->kategori->nama_barang ?? '-' }}
                                 </td>
 
-                                {{-- TYPE --}}
                                 <td>
-
-                                    {{ data_get($first, 'type', '-') }}
-
+                                    {{ $stok->type ?? '-' }}
                                 </td>
 
-                                {{-- MEREK --}}
                                 <td>
-
-                                    {{ data_get($first, 'merek', '-') }}
-
+                                    {{ $stok->merek ?? '-' }}
                                 </td>
 
-                                {{-- KONDISI --}}
                                 <td class="text-center">
-
-                                    @if (data_get($first, 'kondisi') == 'Baru')
-                                        <span class="badge bg-primary">
-
-                                            Baru
-
-                                        </span>
-                                    @else
-                                        <span class="badge bg-warning">
-
-                                            Bekas
-
-                                        </span>
-                                    @endif
-
-                                </td>
-
-                                {{-- STOK AWAL --}}
-                                <td class="text-center">
-
-                                    <span class="badge bg-info">
-
-                                        {{ $stokAwal }}
-
+                                    <span class="badge bg-primary">
+                                        {{ $stok->total_aset }}
                                     </span>
-
                                 </td>
 
-                                {{-- DIPAKAI OLEH --}}
+                                <td class="text-center">
+                                    <span class="badge bg-success">
+                                        {{ $stok->tersedia }}
+                                    </span>
+                                </td>
+
+                                <td class="text-center">
+                                    <span class="badge bg-warning">
+                                        {{ $stok->dipakai }}
+                                    </span>
+                                </td>
+
+                                <td class="text-center">
+                                    <span class="badge bg-info">
+                                        {{ $stok->dipinjam }}
+                                    </span>
+                                </td>
+
+                                <td class="text-center">
+                                    <span class="badge bg-danger">
+                                        {{ $stok->rusak }}
+                                    </span>
+                                </td>
+
                                 <td>
-                                    @php
 
-                                        $pemakai = collect();
-
-                                        foreach ($group ?? collect() as $item) {
-                                            foreach (data_get($item, 'keluars', collect()) as $keluar) {
-                                                if (data_get($keluar, 'jenis_penerima') == 'Perorangan') {
-                                                    $pemakai->push(data_get($keluar, 'karyawan.nama_karyawan', '-'));
-                                                } else {
-                                                    $pemakai->push(data_get($keluar, 'divisi_klr', '-'));
-                                                }
-                                            }
-                                        }
-
-                                    @endphp
-
-                                    @forelse ($pemakai->unique() as $nama)
-                                        <div class="mb-1">
-
-                                            <span class="badge bg-label-primary">
-
-                                                {{ $nama }}
-
-                                            </span>
-
-                                        </div>
+                                    @forelse($pemakai->unique() as $nama)
+                                        <span class="badge bg-label-primary mb-1">
+                                            {{ $nama }}
+                                        </span>
+                                        <br>
 
                                     @empty
 
                                         <span class="text-muted">
-
                                             Belum dipakai
-
                                         </span>
                                     @endforelse
 
                                 </td>
 
-                                {{-- TOTAL KELUAR --}}
                                 <td class="text-center">
 
-                                    <span class="badge bg-danger">
-
-                                        {{ $totalKeluar }}
-
-                                    </span>
-
-                                </td>
-
-                                {{-- SISA --}}
-                                <td class="text-center">
-
-                                    <span class="badge bg-success">
-
-                                        {{ $sisa }}
-
-                                    </span>
-
-                                </td>
-
-                                {{-- AKSI --}}
-                                <td class="text-center">
-
-                                    <a href="{{ auth()->user()->role == 'manager'
-                                        ? route('manager.stok.history', data_get($first, 'id'))
-                                        : route('stok.history', data_get($first, 'id')) }}"
+                                    <a href="{{ route('stok.history', $stok->data_aset_id) }}"
                                         class="btn btn-primary btn-sm">
-
                                         Riwayat
-
                                     </a>
 
                                 </td>
@@ -284,7 +218,8 @@
 
                             <tr>
 
-                               <td colspan="{{ auth()->user()->role == 'super_admin' ? 11 : 10 }}" class="text-center text-muted">
+                                <td colspan="{{ auth()->user()->role == 'super_admin' ? 12 : 11 }}"
+                                    class="text-center text-muted">
 
                                     Data stok belum tersedia
 
@@ -295,7 +230,6 @@
                         @endforelse
 
                     </tbody>
-
                 </table>
 
             </div>

@@ -18,7 +18,7 @@ class PerusahaanSeeder extends Seeder
             // PT SEMBILAN MATAHARI SAKTI
             // =====================================
             [
-                'kode_perusahaan' => 'PT0001',
+                'kode_perusahaan' => '01',
 
                 'nama_perusahaan' => 'PT SEMBILAN MATAHARI SAKTI',
 
@@ -36,7 +36,7 @@ class PerusahaanSeeder extends Seeder
             // PT PADMA JARKA ABADI
             // =====================================
             [
-                'kode_perusahaan' => 'PT0002',
+                'kode_perusahaan' => '02',
 
                 'nama_perusahaan' => 'PT PADMA JARKA ABADI',
 
@@ -54,7 +54,7 @@ class PerusahaanSeeder extends Seeder
             // PT SEMESTA MATARAM SAKTI
             // =====================================
             [
-                'kode_perusahaan' => 'PT0003',
+                'kode_perusahaan' => '03',
 
                 'nama_perusahaan' => 'PT SEMESTA MATARAM SAKTI',
 
@@ -72,7 +72,7 @@ class PerusahaanSeeder extends Seeder
             // PT SUMBER SANTOSO ABADI
             // =====================================
             [
-                'kode_perusahaan' => 'PT0004',
+                'kode_perusahaan' => '04',
 
                 'nama_perusahaan' => 'PT SUMBER SANTOSO ABADI',
 

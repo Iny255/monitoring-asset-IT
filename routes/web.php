@@ -15,6 +15,7 @@ use App\Http\Controllers\KeluarController;
 use App\Http\Controllers\MapingController;
 use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\DataAsetController;
 use App\Http\Controllers\main_dashboard\DashboardPetugasController;
 
 Route::get('/', function () {
@@ -47,12 +48,10 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/detailuser/{id}', [DashboardUserController::class, 'show']);
     Route::resource('/dashboard/perusahaan', PerusahaanController::class);
   });
-  Route::get('/dashboard/get-kode-lokasi/{id}', [LokasiController::class, 'getKode']);
-  Route::get('/dashboard/get-kode-masuk/{id}', [MasukController::class, 'getKode']);
-  Route::get('/dashboard/get-kategori/{id}', [MasukController::class, 'getKategori']);
-  Route::get('/dashboard/get-kode-keluar/{id}', [KeluarController::class, 'getKodeKeluar']);
+
   Route::get('/maping/lokasi-by-perusahaan/{id}', [MapingController::class, 'getLokasiByPerusahaan']);
   Route::get('/dashboard/peminjaman/lokasi-by-perusahaan/{id}', [PeminjamanController::class, 'lokasiByPerusahaan']);
+  Route::get('/dashboard/get-kategori/{id}', [DataAsetController::class, 'getKategori'])->name('data-aset.getKategori');
   /*
     |--------------------------------------------------------------------------
     | PETUGAS (SUPERADMIN JUGA BISA)
@@ -73,21 +72,39 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('/dashboard/useraset', KaryawanController::class)->except(['show']);
     Route::resource('/dashboard/lokasi', LokasiController::class);
     Route::resource('/dashboard/supplier', SupplierController::class);
+    Route::resource('/dashboard/data-aset', DataAsetController::class);
+
+    Route::get('/dashboard/transaksi-masuk/cetak', [MasukController::class, 'cetak'])->name('transaksi-masuk.cetak');
     Route::get('/dashboard/transaksi-masuk/stok', [MasukController::class, 'stok'])->name('transaksi-masuk.stok');
-    Route::get('/stok/history/{id}', [MasukController::class, 'history'])->name('stok.history');
     Route::resource('/dashboard/transaksi-masuk', MasukController::class)->parameters([
       'transaksi-masuk' => 'masuk',
     ]);
-    Route::get('/dashboard/transaksi-masuk/{masuk}/download', [MasukController::class, 'download'])->name(
-      'transaksi-masuk.download'
+    Route::get('/dashboard/get-supplier/{id}', [MasukController::class, 'getSupplier']);
+
+    Route::get('/dashboard/get-data-aset/{id}', [MasukController::class, 'getDataAset']);
+    
+    Route::get('/dashboard/transaksi-keluar/cetak', [KeluarController::class, 'cetak'])->name('transaksi-keluar.cetak');
+    Route::resource('/dashboard/transaksi-keluar', KeluarController::class);
+    Route::get('/dashboard/get-kategori/{perusahaan}', [KeluarController::class, 'getKategori'])->name(
+      'transaksi-keluar.getKategori'
+    );
+    Route::get('/dashboard/get-kategori/{perusahaan}', [KeluarController::class, 'getKategori'])->name(
+      'transaksi-keluar.getKategori'
     );
 
-    Route::resource('/dashboard/transaksi-keluar', KeluarController::class);
-    Route::post('/dashboard/transaksi-keluar/autofill', [KeluarController::class, 'autofillByKodeMasuk'])->name(
-      'transaksi-keluar.autofill'
+    Route::post('/dashboard/get-inventaris', [KeluarController::class, 'getInventaris'])->name(
+      'transaksi-keluar.getInventaris'
     );
-    Route::post('/dashboard/transaksi-keluar/get-karyawan', [KeluarController::class, 'getKaryawanByNama'])->name(
-      'keluar.getKaryawanByNama'
+
+    Route::get('/dashboard/get-inventaris-detail/{id}', [KeluarController::class, 'getInventarisDetail'])->name(
+      'transaksi-keluar.getInventarisDetail'
+    );
+
+    Route::post('/dashboard/search-karyawan', [KeluarController::class, 'getKaryawan'])->name(
+      'transaksi-keluar.searchKaryawan'
+    );
+    Route::get('/dashboard/transaksi-masuk/history-stok/{dataAsetId}', [MasukController::class, 'historyStok'])->name(
+      'stok.history'
     );
     Route::get('/dashboard/maping/print', [MapingController::class, 'print'])->name('maping.print');
     Route::resource('/dashboard/maping', MapingController::class);

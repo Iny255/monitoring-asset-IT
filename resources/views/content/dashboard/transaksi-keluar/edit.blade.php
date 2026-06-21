@@ -1,343 +1,178 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Edit Transaksi Keluar')
+@section('title', 'Edit Pemakaian Aset')
 
 @section('content')
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <div class="card shadow-sm border-0">
+    <style>
+        .compact-card {
+            margin-bottom: 15px;
+        }
 
-        {{-- HEADER --}}
-        <div class="card-header bg-white border-bottom">
-            <h4 class="mb-0 text-primary fw-bold">
-                Edit Transaksi Keluar
-            </h4>
+        .compact-card .card-header {
+            padding: 10px 15px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .compact-card .card-body {
+            padding: 15px;
+        }
+
+        .compact-form label {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .compact-form .form-control,
+        .compact-form .form-select {
+            height: 38px;
+            font-size: 14px;
+        }
+
+        .preview-image {
+            max-width: 220px;
+            max-height: 220px;
+            object-fit: contain;
+        }
+
+        .result-box {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+
+    <form action="{{ route('transaksi-keluar.update', $keluar->id) }}" method="POST" enctype="multipart/form-data"
+        class="compact-form">
+
+        @csrf
+        @method('PUT')
+
+        {{-- INFORMASI ASET --}}
+        <div class="card compact-card shadow-sm border-0">
+
+            <div class="card-header bg-light">
+                Informasi Aset
+            </div>
+
+            <div class="card-body">
+
+                <div class="row">
+
+                    <div class="col-md-4 mb-2">
+                        <label>Kode Aset</label>
+                        <input type="text" class="form-control" value="{{ $keluar->inventaris->kode_aset }}" readonly>
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+                        <label>No Inventaris</label>
+                        <input type="text" class="form-control" value="{{ $keluar->inventaris->no_inventaris }}"
+                            readonly>
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+                        <label>Status</label>
+                        <input type="text" class="form-control" value="{{ $keluar->inventaris->status }}" readonly>
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+                        <label>Nama Barang</label>
+                        <input type="text" class="form-control"
+                            value="{{ $keluar->inventaris->dataAset->kategori->nama_barang ?? '-' }}" readonly>
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+                        <label>Merek</label>
+                        <input type="text" class="form-control" value="{{ $keluar->inventaris->dataAset->merek ?? '-' }}"
+                            readonly>
+                    </div>
+
+                    <div class="col-md-4 mb-2">
+                        <label>Type</label>
+                        <input type="text" class="form-control" value="{{ $keluar->inventaris->dataAset->type ?? '-' }}"
+                            readonly>
+                    </div>
+
+                </div>
+
+            </div>
+
         </div>
 
-        <div class="card-body">
+        {{-- DETAIL PEMAKAIAN --}}
+        <div class="card compact-card shadow-sm border-0">
 
-            {{-- ALERT --}}
-            @if (session('error'))
-                <div class="alert alert-danger alert-dismissible fade show">
+            <div class="card-header bg-light">
+                Detail Pemakaian
+            </div>
 
-                    {{ session('error') }}
+            <div class="card-body">
 
-                    <button type="button" class="btn-close" data-bs-dismiss="alert">
-                    </button>
+                <div class="row">
 
-                </div>
-            @endif
-
-            <form action="{{ route('transaksi-keluar.update', $keluar->id) }}" method="POST" enctype="multipart/form-data">
-
-                @csrf
-                @method('PUT')
-
-                {{-- ========================================= --}}
-                {{-- SUPER ADMIN --}}
-                {{-- ========================================= --}}
-
-                @if (auth()->user()->role === 'super_admin')
-
-                    <div class="card border-0 shadow-sm mb-4">
-
-                        <div class="card-header bg-light fw-semibold">
-                            Data Perusahaan
-                        </div>
-
-                        <div class="card-body">
-
-                            <div class="row">
-
-                                <div class="col-md-6">
-
-                                    <label class="form-label">
-                                        Perusahaan
-                                    </label>
-
-                                    <select name="perusahaan_id" id="perusahaan_select" class="form-select" required>
-
-                                        <option value="">
-                                            -- Pilih Perusahaan --
-                                        </option>
-
-                                        @foreach ($perusahaans as $p)
-                                            <option value="{{ $p->id }}"
-                                                {{ $keluar->id_perusahaan == $p->id ? 'selected' : '' }}>
-
-                                                {{ $p->nama_perusahaan }}
-
-                                            </option>
-                                        @endforeach
-
-                                    </select>
-
-                                </div>
-
-                            </div>
-
-                        </div>
-
+                    <div class="col-md-6">
+                        <label>Tanggal Keluar</label>
+                        <input type="date" name="tgl_keluar" class="form-control"
+                            value="{{ old('tgl_keluar', \Carbon\Carbon::parse($keluar->tgl_keluar)->format('Y-m-d')) }}">
                     </div>
 
-                @endif
+                    <div class="col-md-6">
+                        <label>Jenis Penerima</label>
 
+                        <select name="jenis_penerima" id="jenis_penerima" class="form-select">
 
-                {{-- ========================================= --}}
-                {{-- INFORMASI BARANG --}}
-                {{-- ========================================= --}}
+                            <option value="Perorangan" {{ $keluar->jenis_penerima == 'Perorangan' ? 'selected' : '' }}>
+                                Perorangan
+                            </option>
 
-                <div class="card border-0 shadow-sm mb-4">
+                            <option value="Perdivisi" {{ $keluar->jenis_penerima == 'Perdivisi' ? 'selected' : '' }}>
+                                Perdivisi
+                            </option>
 
-                    <div class="card-header bg-light fw-semibold">
-                        Informasi Barang
-                    </div>
-
-                    <div class="card-body">
-
-                        <div class="row">
-
-                            {{-- KODE KELUAR --}}
-                            <div class="col-md-6 mb-3">
-
-                                <label class="form-label">
-                                    Kode Keluar
-                                </label>
-
-                                <input type="text" name="kode_keluar" id="kode_keluar" class="form-control"
-                                    value="{{ $keluar->kode_keluar }}" readonly>
-
-                            </div>
-
-                            {{-- KODE MASUK --}}
-                            <div class="col-md-6 mb-3">
-
-                                <label class="form-label">
-                                    Kode Masuk
-                                </label>
-
-                                <input type="text" id="kode_masuk" class="form-control"
-                                    value="{{ $keluar->masuk->kode_masuk ?? '' }}">
-
-                                <input type="hidden" name="id_masuk" id="id_masuk" value="{{ $keluar->id_masuk }}">
-
-                            </div>
-
-                            {{-- NAMA BARANG --}}
-                            <div class="col-md-3 mb-3">
-
-                                <label class="form-label">
-                                    Nama Barang
-                                </label>
-
-                                <input type="text" id="nama_barang" class="form-control"
-                                    value="{{ optional(optional($keluar->masuk)->kategori)->nama_barang }}" readonly>
-
-                            </div>
-
-                            {{-- TYPE --}}
-                            <div class="col-md-3 mb-3">
-
-                                <label class="form-label">
-                                    Type
-                                </label>
-
-                                <input type="text" id="type" class="form-control"
-                                    value="{{ $keluar->masuk->type ?? '' }}" readonly>
-
-                            </div>
-
-                            {{-- MEREK --}}
-                            <div class="col-md-3 mb-3">
-
-                                <label class="form-label">
-                                    Merek
-                                </label>
-
-                                <input type="text" id="merek" class="form-control"
-                                    value="{{ $keluar->masuk->merek ?? '' }}" readonly>
-
-                            </div>
-
-                            {{-- TANGGAL BELI --}}
-                            <div class="col-md-3 mb-3">
-
-                                <label class="form-label">
-                                    Tanggal Beli
-                                </label>
-
-                                <input type="text" id="tgl_beli" class="form-control"
-                                    value="{{ $keluar->masuk->tgl_beli ?? '' }}" readonly>
-
-                            </div>
-
-                        </div>
+                        </select>
 
                     </div>
 
                 </div>
 
+            </div>
 
-                {{-- ========================================= --}}
-                {{-- DETAIL TRANSAKSI --}}
-                {{-- ========================================= --}}
+        </div>
 
-                <div class="card border-0 shadow-sm mb-4">
+        {{-- PENERIMA + FOTO --}}
+        <div class="row">
 
-                    <div class="card-header bg-light fw-semibold">
-                        Detail Transaksi Keluar
-                    </div>
+            <div class="col-lg-7">
 
-                    <div class="card-body">
+                <div class="card compact-card shadow-sm border-0">
 
-                        <div class="row">
-
-                            {{-- KODE BARANG --}}
-                            <div class="col-md-4 mb-3">
-
-                                <label class="form-label">
-                                    Kode Barang
-                                </label>
-
-                                <input type="text" name="kode_barang" class="form-control"
-                                    value="{{ old('kode_barang', $keluar->kode_barang) }}">
-
-                            </div>
-
-                            {{-- WARNA --}}
-                            <div class="col-md-4 mb-3">
-
-                                <label class="form-label">
-                                    Warna
-                                </label>
-
-                                <input type="text" name="warna" class="form-control"
-                                    value="{{ old('warna', $keluar->warna) }}">
-
-                            </div>
-
-                            {{-- NO INVENTARIS --}}
-                            <div class="col-md-4 mb-3">
-
-                                <label class="form-label">
-                                    No Inventaris
-                                </label>
-
-                                <input type="text" name="no_inventaris" class="form-control"
-                                    value="{{ old('no_inventaris', $keluar->no_inventaris) }}">
-
-                            </div>
-
-                            {{-- JUMLAH --}}
-                            <div class="col-md-4 mb-3">
-
-                                <label class="form-label">
-                                    Jumlah Keluar
-                                </label>
-
-                                <input type="number" name="jumlah" class="form-control"
-                                    value="{{ old('jumlah', $keluar->jumlah) }}" min="1">
-
-                            </div>
-
-                            {{-- TANGGAL --}}
-                            <div class="col-md-4 mb-3">
-
-                                <label class="form-label">
-                                    Tanggal Keluar
-                                </label>
-
-                                <input type="date" name="tgl_keluar" class="form-control"
-                                    value="{{ old('tgl_keluar', $keluar->tgl_keluar ? \Carbon\Carbon::parse($keluar->tgl_keluar)->format('Y-m-d') : '') }}"
-                                    required>
-
-                            </div>
-
-                            {{-- JENIS --}}
-                            <div class="col-md-4 mb-3">
-
-                                <label class="form-label">
-                                    Jenis Penerima
-                                </label>
-
-                                <select name="jenis_penerima" id="jenis_penerima" class="form-select">
-
-                                    <option value="Perorangan"
-                                        {{ $keluar->jenis_penerima == 'Perorangan' ? 'selected' : '' }}>
-
-                                        Perorangan
-
-                                    </option>
-
-                                    <option value="Perdivisi"
-                                        {{ $keluar->jenis_penerima == 'Perdivisi' ? 'selected' : '' }}>
-
-                                        Perdivisi
-
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                {{-- ========================================= --}}
-                {{-- PERORANGAN --}}
-                {{-- ========================================= --}}
-
-                <div id="group_karyawan" class="card border-0 shadow-sm mb-4">
-
-                    <div class="card-header bg-light fw-semibold">
+                    <div class="card-header bg-light">
                         Informasi Penerima
                     </div>
 
                     <div class="card-body">
 
-                        <div class="row">
+                        <div id="group_karyawan">
 
-                            {{-- NAMA --}}
-                            <div class="col-md-4 mb-3">
+                            <input type="hidden" name="karyawan_id" id="karyawan_id" value="{{ $keluar->karyawan_id }}">
 
-                                <label class="form-label">
-                                    Nama Karyawan
-                                </label>
+                            <label>User Aset</label>
 
-                                <input type="text" id="nama_karyawan" class="form-control"
-                                    value="{{ optional($keluar->karyawan)->nama_karyawan }}">
+                            <input type="text" id="search_karyawan" class="form-control"
+                                value="{{ $keluar->karyawan->nama_karyawan ?? '' }}"
+                                placeholder="Cari UID / Nama Karyawan">
 
-                                <input type="hidden" name="id_karyawan" id="id_karyawan"
-                                    value="{{ $keluar->id_karyawan }}">
+                            <div id="result_karyawan" class="list-group result-box mt-2"></div>
 
-                            </div>
+                        </div>
 
-                            {{-- DIVISI --}}
-                            <div class="col-md-4 mb-3">
+                        <div id="group_divisi">
 
-                                <label class="form-label">
-                                    Divisi
-                                </label>
+                            <label>Divisi</label>
 
-                                <input type="text" id="divisi" class="form-control"
-                                    value="{{ optional($keluar->karyawan)->divisi }}" readonly>
-
-                            </div>
-
-                            {{-- PERUSAHAAN --}}
-                            <div class="col-md-4 mb-3">
-
-                                <label class="form-label">
-                                    Perusahaan
-                                </label>
-
-                                <input type="text" id="perusahaan" class="form-control"
-                                    value="{{ $keluar->karyawan?->perusahaan?->nama_perusahaan }}" readonly>
-
-                            </div>
+                            <input type="text" name="divisi_klr" class="form-control" value="{{ $keluar->divisi_klr }}">
 
                         </div>
 
@@ -345,143 +180,45 @@
 
                 </div>
 
+            </div>
 
-                {{-- ========================================= --}}
-                {{-- PERDIVISI --}}
-                {{-- ========================================= --}}
+            <div class="col-lg-5">
 
-                <div id="group_divisi" class="card border-0 shadow-sm mb-4">
+                <div class="card compact-card shadow-sm border-0">
 
-                    <div class="card-header bg-light fw-semibold">
-                        Informasi Divisi
+                    <div class="card-header bg-light">
+                        Foto Aset
                     </div>
 
-                    <div class="card-body">
+                    <div class="card-body text-center">
 
-                        <div class="row">
+                        @if ($keluar->gambar)
+                            <img src="{{ asset('storage/' . $keluar->gambar) }}" class="preview-image img-thumbnail mb-3">
+                        @endif
 
-                            <div class="col-md-6 mb-3">
-
-                                <label class="form-label">
-                                    Divisi
-                                </label>
-
-                                <input type="text" name="divisi_klr" id="divisi_klr" class="form-control"
-                                    value="{{ $keluar->divisi_klr }}">
-
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-
-                                <label class="form-label">
-                                    Perusahaan
-                                </label>
-
-                                <input type="text" class="form-control" value="{{ $keluar->perusahaan_klr }}"
-                                    readonly>
-
-                            </div>
-
-                        </div>
+                        <input type="file" name="gambar" class="form-control">
 
                     </div>
 
                 </div>
 
-
-                {{-- ========================================= --}}
-                {{-- UPLOAD GAMBAR --}}
-                {{-- ========================================= --}}
-
-                <div class="card border-0 shadow-sm mb-4">
-
-                    <div class="card-header bg-light fw-semibold">
-                        Upload Gambar
-                    </div>
-
-                    <div class="card-body">
-
-                        <div class="row align-items-center">
-
-                            <div class="col-md-6 mb-3">
-
-                                <input type="file" name="gambar" class="form-control" accept=".jpg,.jpeg,.png">
-
-                                <small class="text-muted">
-                                    Format JPG, JPEG, PNG • Maksimal 2 MB
-                                </small>
-
-                            </div>
-
-                            <div class="col-md-6 text-center">
-
-                                @if ($keluar->gambar)
-                                    <img src="{{ asset('storage/' . $keluar->gambar) }}"
-                                        class="img-fluid rounded shadow border"
-                                        style="max-height:250px; object-fit:cover;">
-                                @else
-                                    <div class="text-muted py-4">
-
-                                        <i class="bx bx-image-alt display-5"></i>
-
-                                        <p class="mb-0 mt-2">
-                                            Gambar tidak tersedia
-                                        </p>
-
-                                    </div>
-                                @endif
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-
-                {{-- ========================================= --}}
-                {{-- KETERANGAN --}}
-                {{-- ========================================= --}}
-
-                <div class="card border-0 shadow-sm mb-4">
-
-                    <div class="card-header bg-light fw-semibold">
-                        Keterangan
-                    </div>
-
-                    <div class="card-body">
-
-                        <textarea name="keterangan" class="form-control" rows="3">{{ $keluar->keterangan }}</textarea>
-
-                    </div>
-
-                </div>
-
-
-                {{-- ========================================= --}}
-                {{-- BUTTON --}}
-                {{-- ========================================= --}}
-
-                <div class="d-flex justify-content-end gap-2 border-top pt-4">
-
-                    <a href="{{ route('transaksi-keluar.index') }}" class="btn btn-secondary px-4">
-
-                        Kembali
-
-                    </a>
-
-                    <button type="submit" class="btn btn-primary px-4">
-
-                        Update
-
-                    </button>
-
-                </div>
-
-            </form>
+            </div>
 
         </div>
+
+        <div class="d-flex justify-content-end gap-2 border-top pt-3 mt-3">
+
+            <a href="{{ route('transaksi-keluar.index') }}" class="btn btn-secondary">
+                Kembali
+            </a>
+
+            <button type="submit" class="btn btn-primary">
+                Update Data
+            </button>
+
+        </div>
+
+    </form>
 
     </div>
 
@@ -489,39 +226,16 @@
 
 @section('scripts')
 
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
 
-            const csrf = document.querySelector('meta[name="csrf-token"]').content;
-
-            // =========================
-            // ELEMENT
-            // =========================
-
-            const perusahaanSelect = document.getElementById('perusahaan_select');
-
-            const kodeKeluar = document.getElementById('kode_keluar');
-
-            const kodeMasuk = document.getElementById('kode_masuk');
-
             const jenisPenerima = document.getElementById('jenis_penerima');
-
             const groupKaryawan = document.getElementById('group_karyawan');
-
             const groupDivisi = document.getElementById('group_divisi');
-
-
-            // =========================
-            // TOGGLE PENERIMA
-            // =========================
 
             function togglePenerima() {
 
-                let jenis = jenisPenerima.value;
-
-                if (jenis === 'Perorangan') {
+                if (jenisPenerima.value === 'Perorangan') {
 
                     groupKaryawan.style.display = 'block';
                     groupDivisi.style.display = 'none';
@@ -532,169 +246,80 @@
                     groupDivisi.style.display = 'block';
 
                 }
+
             }
 
             togglePenerima();
 
             jenisPenerima.addEventListener('change', togglePenerima);
 
+            // AUTOCOMPLETE KARYAWAN
+            $('#search_karyawan').keyup(function() {
 
-            // =========================
-            // SUPER ADMIN
-            // AUTO KODE KELUAR
-            // =========================
+                let keyword = $(this).val();
 
-            if (perusahaanSelect) {
+                if (keyword.length < 2) {
 
-                perusahaanSelect.addEventListener('change', function() {
+                    $('#result_karyawan').html('');
+                    return;
 
-                    let id = this.value;
+                }
 
-                    if (!id) return;
+                $.post(
+                    '/dashboard/search-karyawan', {
+                        keyword: keyword,
+                        _token: $('meta[name="csrf-token"]').attr('content')
+                    },
+                    function(data) {
 
-                    // 🔥 AUTO KODE KELUAR
-                    fetch('/dashboard/get-kode-keluar/' + id)
+                        let rows = data.data ?? data;
+                        let html = '';
 
-                        .then(res => res.json())
+                        rows.forEach(function(row) {
 
-                        .then(data => {
+                            html += `
+                        <a href="#"
+                           class="list-group-item list-group-item-action pilih-karyawan"
+                           data-id="${row.id}"
+                           data-nama="${row.nama_karyawan}">
 
-                            kodeKeluar.value = data.kode;
+                            <strong>${row.kode_karyawan}</strong>
+                            |
+                            ${row.nama_karyawan}
+                            |
+                            ${row.divisi}
+
+                        </a>
+                    `;
 
                         });
 
+                        $('#result_karyawan').html(html);
 
-                    // 🔥 RESET DATA BARANG
-                    document.getElementById('kode_masuk').value = '';
-                    document.getElementById('id_masuk').value = '';
-
-                    document.getElementById('nama_barang').value = '';
-                    document.getElementById('type').value = '';
-                    document.getElementById('merek').value = '';
-                    document.getElementById('tgl_beli').value = '';
-
-                });
-
-            }
-
-
-            // =========================
-            // AUTOFILL KODE MASUK
-            // =========================
-
-            kodeMasuk.addEventListener('blur', function() {
-
-                let kode = this.value.trim();
-
-                if (!kode) return;
-
-                fetch("{{ route('transaksi-keluar.autofill') }}", {
-
-                        method: "POST",
-
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRF-TOKEN": csrf
-                        },
-
-                        body: JSON.stringify({
-
-                            kode_masuk: kode,
-
-                            perusahaan_id: perusahaanSelect ?
-                                perusahaanSelect.value : null
-
-                        })
-
-                    })
-
-                    .then(res => res.json())
-
-                    .then(res => {
-
-                        if (!res.status) {
-
-                            Swal.fire(
-                                'Gagal',
-                                'Kode masuk tidak ditemukan',
-                                'error'
-                            );
-
-                            return;
-                        }
-
-                        document.getElementById('id_masuk').value = res.data.id_masuk;
-
-                        document.getElementById('nama_barang').value = res.data.nama_barang;
-
-                        document.getElementById('type').value = res.data.type;
-
-                        document.getElementById('merek').value = res.data.merek;
-
-                        document.getElementById('tgl_beli').value = res.data.tgl_beli;
-
-                    });
+                    }
+                );
 
             });
 
+            $(document).on(
+                'click',
+                '.pilih-karyawan',
+                function(e) {
 
-            // =========================
-            // AUTOFILL KARYAWAN
-            // =========================
+                    e.preventDefault();
 
-            document.getElementById('nama_karyawan')
-                .addEventListener('blur', function() {
+                    $('#karyawan_id').val(
+                        $(this).data('id')
+                    );
 
-                    if (jenisPenerima.value !== 'Perorangan') return;
+                    $('#search_karyawan').val(
+                        $(this).data('nama')
+                    );
 
-                    let nama = this.value.trim();
+                    $('#result_karyawan').html('');
 
-                    if (!nama) return;
-
-                    fetch("{{ route('keluar.getKaryawanByNama') }}", {
-
-                            method: "POST",
-
-                            headers: {
-                                "Content-Type": "application/json",
-                                "X-CSRF-TOKEN": csrf
-                            },
-
-                            body: JSON.stringify({
-
-                                nama_karyawan: nama,
-
-                                perusahaan_id: perusahaanSelect ?
-                                    perusahaanSelect.value : null
-
-                            })
-
-                        })
-
-                        .then(res => res.json())
-
-                        .then(res => {
-
-                            if (!res.status) {
-
-                                Swal.fire(
-                                    'Gagal',
-                                    'Nama karyawan tidak ditemukan',
-                                    'error'
-                                );
-
-                                return;
-                            }
-
-                            document.getElementById('id_karyawan').value = res.data.id;
-
-                            document.getElementById('divisi').value = res.data.divisi;
-
-                            document.getElementById('perusahaan').value = res.data.perusahaan;
-
-                        });
-
-                });
+                }
+            );
 
         });
     </script>

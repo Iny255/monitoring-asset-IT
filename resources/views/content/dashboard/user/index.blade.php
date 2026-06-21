@@ -149,7 +149,6 @@
                                 <select name="role" class="form-control">
                                     <option value="">Pilih Role</option>
                                     <option value="petugas">Petugas</option>
-                                    <option value="manager">Manager</option>
                                     <option value="super_admin">Super Admin</option>
                                 </select>
                             </div>
@@ -220,7 +219,6 @@
                                 <label>Role</label>
                                 <select id="editRole" name="role" class="form-control">
                                     <option value="petugas">Petugas</option>
-                                    <option value="manager">Manager</option>
                                     <option value="super_admin">Super Admin</option>
                                 </select>
                             </div>

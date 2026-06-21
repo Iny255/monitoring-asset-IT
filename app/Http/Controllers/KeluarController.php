@@ -9,6 +9,8 @@ use App\Models\Keluar;
 use App\Models\Masuk;
 use App\Models\Karyawan;
 use App\Models\Perusahaan;
+use App\Models\Inventaris;
+use App\Models\Kategori;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,68 +27,96 @@ class KeluarController extends Controller
   {
     $user = auth()->user();
 
-    $query = Keluar::with(['masuk.kategori', 'karyawan', 'perusahaan']);
+    $query = Keluar::with(['inventaris.dataAset.kategori', 'karyawan', 'perusahaan']);
 
-    // 🔥 FIX ROLE
-    if ($user->role !== 'super_admin') {
-      $query->where('id_perusahaan', $user->id_perusahaan);
-    } else {
-      // optional filter perusahaan
-      if ($request->perusahaan_id) {
-        $query->where('id_perusahaan', $request->perusahaan_id);
-      }
+    // FILTER PERUSAHAAN
+    if ($user->role != 'super_admin') {
+      $query->where('perusahaan_id', $user->id_perusahaan);
+    } elseif ($request->perusahaan_id) {
+      $query->where('perusahaan_id', $request->perusahaan_id);
     }
 
-    // 🔍 SEARCH
+    // FILTER TANGGAL
+    if ($request->tanggal_awal) {
+      $query->whereDate('tgl_keluar', '>=', $request->tanggal_awal);
+    }
+
+    if ($request->tanggal_akhir) {
+      $query->whereDate('tgl_keluar', '<=', $request->tanggal_akhir);
+    }
+    // FILTER KATEGORI
+    if ($request->filled('kategori_id')) {
+      $query->whereHas('inventaris.dataAset', function ($q) use ($request) {
+        $q->where('kategori_id', $request->kategori_id);
+      });
+    }
+
+    // SEARCH
     if ($request->search) {
       $search = $request->search;
 
       $query->where(function ($q) use ($search) {
-        $q->where('kode_keluar', 'like', "%$search%")
-          ->orWhere('kode_barang', 'like', "%$search%")
-          ->orWhere('warna', 'like', "%$search%")
-          ->orWhereHas('masuk', function ($m) use ($search) {
-            $m->where('kode_masuk', 'like', "%$search%")
-              ->orWhere('type', 'like', "%$search%")
-              ->orWhere('merek', 'like', "%$search%");
-          })
-          ->orWhereHas('masuk.kategori', function ($k) use ($search) {
-            $k->where('nama_barang', 'like', "%$search%");
-          })
+        $q->whereHas('inventaris', function ($i) use ($search) {
+          $i->where('kode_aset', 'like', "%{$search}%")->orWhere('no_inventaris', 'like', "%{$search}%");
+        })
+
           ->orWhereHas('karyawan', function ($k) use ($search) {
-            $k->where('nama_karyawan', 'like', "%$search%");
-          });
+            $k->where('nama_karyawan', 'like', "%{$search}%");
+          })
+
+          ->orWhere('divisi_klr', 'like', "%{$search}%");
       });
     }
 
     $keluars = $query
       ->latest()
-      ->paginate(5)
+      ->paginate(10)
       ->appends($request->query());
 
-    // 🔥 TAMBAHAN (untuk filter dropdown)
-    $perusahaans = $user->role === 'super_admin' ? Perusahaan::all() : collect();
+    $perusahaans = Perusahaan::all();
+    $kategoris = Kategori::orderBy('nama_barang')->get();
 
-    return view('content.dashboard.transaksi-keluar.index', compact('keluars', 'perusahaans'));
+    return view('content.dashboard.transaksi-keluar.index', compact('keluars', 'perusahaans', 'kategoris'));
   }
-
-  private function generateKodeKeluar()
+  public function cetak(Request $request)
   {
-    $tahun = Carbon::now()->year;
+    $user = auth()->user();
 
-    $last = Keluar::whereYear('created_at', $tahun)
-      ->where('id_perusahaan', auth()->user()->id_perusahaan)
-      ->orderBy('id', 'desc')
-      ->first();
+    $query = Keluar::with(['inventaris.dataAset.kategori', 'karyawan', 'perusahaan']);
 
-    if ($last) {
-      $lastNumber = (int) substr($last->kode_keluar, -4);
-      $nextNumber = $lastNumber + 1;
-    } else {
-      $nextNumber = 1;
+    if ($user->role != 'super_admin') {
+      $query->where('perusahaan_id', $user->id_perusahaan);
+    } elseif ($request->perusahaan_id) {
+      $query->where('perusahaan_id', $request->perusahaan_id);
     }
 
-    return 'KLR-' . $tahun . '-' . str_pad($nextNumber, 4, '0', STR_PAD_LEFT);
+    if ($request->tanggal_awal) {
+      $query->whereDate('tgl_keluar', '>=', $request->tanggal_awal);
+    }
+
+    if ($request->tanggal_akhir) {
+      $query->whereDate('tgl_keluar', '<=', $request->tanggal_akhir);
+    }
+    // FILTER KATEGORI
+    if ($request->filled('kategori_id')) {
+      $query->whereHas('inventaris.dataAset', function ($q) use ($request) {
+        $q->where('kategori_id', $request->kategori_id);
+      });
+    }
+
+    $keluars = $query->orderBy('tgl_keluar')->get();
+
+    $namaPerusahaan = 'SEMBILAN GROUP';
+
+    if ($user->role == 'super_admin') {
+      if ($request->perusahaan_id) {
+        $namaPerusahaan = Perusahaan::find($request->perusahaan_id)?->nama_perusahaan;
+      }
+    } else {
+      $namaPerusahaan = Perusahaan::find($user->id_perusahaan)?->nama_perusahaan;
+    }
+
+    return view('content.dashboard.transaksi-keluar.cetak', compact('keluars', 'namaPerusahaan'));
   }
 
   /**
@@ -96,12 +126,9 @@ class KeluarController extends Controller
   {
     $user = auth()->user();
 
-    $kodeKeluar = $this->generateKodeKeluar();
-    $karyawans = Karyawan::orderBy('nama_karyawan')->get();
+    $perusahaans = $user->role == 'super_admin' ? Perusahaan::orderBy('nama_perusahaan')->get() : collect();
 
-    $perusahaans = $user->role === 'super_admin' ? Perusahaan::all() : collect();
-
-    return view('content.dashboard.transaksi-keluar.create', compact('kodeKeluar', 'karyawans', 'perusahaans'));
+    return view('content.dashboard.transaksi-keluar.create', compact('perusahaans'));
   }
 
   /**
@@ -111,55 +138,24 @@ class KeluarController extends Controller
   {
     $user = auth()->user();
 
-    // 🔥 TENTUKAN PERUSAHAAN
-    $perusahaanId = $user->role === 'super_admin' ? $request->perusahaan_id : $user->id_perusahaan;
+    $perusahaanId = $user->role == 'super_admin' ? $request->perusahaan_id : $user->id_perusahaan;
 
-    // 🔒 VALIDASI
-    $request->validate(
-      [
-        'kode_keluar' => [
-          'required',
-          Rule::unique('keluars')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
-        ],
+    $request->validate([
+      'inventaris_id' => 'required|exists:inventaris,id',
 
-        'id_masuk' => ['required', 'exists:masuks,id'],
+      'tgl_keluar' => 'required|date',
 
-        'kode_barang' => [
-          'required',
-          Rule::unique('keluars')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
-        ],
+      'jenis_penerima' => 'required|in:Perorangan,Perdivisi',
 
-        'jumlah' => 'required|integer|min:1',
+      'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:1048',
+    ]);
 
-        'tgl_keluar' => 'required|date',
-
-        'keterangan' => 'required|string|max:100',
-
-        'warna' => 'required|string|max:50',
-
-        'no_inventaris' => 'required|string|max:50',
-
-        'jenis_penerima' => 'required|in:Perorangan,Perdivisi',
-
-        // VALIDASI GAMBAR
-        'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-
-        'perusahaan_id' => $user->role === 'super_admin' ? 'required|exists:perusahaans,id' : 'nullable',
-      ],
-      [
-        'gambar.image' => 'File harus berupa gambar.',
-        'gambar.mimes' => 'Format gambar harus JPG, JPEG, atau PNG.',
-        'gambar.max' => 'Ukuran gambar maksimal 2 MB.',
-      ]
-    );
-    // 🔥 VALIDASI PERORANGAN
     if ($request->jenis_penerima == 'Perorangan') {
       $request->validate([
-        'id_karyawan' => 'required|exists:karyawans,id',
+        'karyawan_id' => 'required|exists:karyawans,id',
       ]);
     }
 
-    // 🔥 VALIDASI PERDIVISI
     if ($request->jenis_penerima == 'Perdivisi') {
       $request->validate([
         'divisi_klr' => 'required',
@@ -169,103 +165,47 @@ class KeluarController extends Controller
     DB::beginTransaction();
 
     try {
-      // =====================================
-      // AMBIL DATA MASUK
-      // =====================================
+      $inventaris = Inventaris::where('perusahaan_id', $perusahaanId)
+        ->where('status', 'TERSEDIA')
+        ->findOrFail($request->inventaris_id);
 
-      $masuk = Masuk::with('keluars')
-        ->lockForUpdate()
-        ->findOrFail($request->id_masuk);
-
-      // =====================================
-      // HITUNG SISA STOK
-      // =====================================
-
-      $totalKeluar = $masuk->keluars->sum('jumlah');
-
-      $sisaStok = $masuk->jumlah - $totalKeluar;
-
-      // =====================================
-      // VALIDASI STOK
-      // =====================================
-
-      if ($request->jumlah > $sisaStok) {
-        DB::rollBack();
-
-        return back()
-          ->withInput()
-          ->with('error', 'Jumlah keluar melebihi stok tersedia!');
-      }
-
-      // =====================================
-      // AMBIL NAMA PERUSAHAAN
-      // =====================================
-
-      $namaPerusahaan = Perusahaan::find($perusahaanId)?->nama_perusahaan;
       $gambar = null;
 
       if ($request->hasFile('gambar')) {
-        $gambar = $request->file('gambar')->store('keluar', 'public');
+        $gambar = $request->file('gambar')->store('transaksi-keluar', 'public');
       }
 
-      // =====================================
-      // SIMPAN
-      // =====================================
-
       Keluar::create([
-        'kode_keluar' => strtoupper($request->kode_keluar),
+        'inventaris_id' => $inventaris->id,
 
-        'id_masuk' => $request->id_masuk,
+        'perusahaan_id' => $perusahaanId,
 
-        'kode_barang' => strtoupper($request->kode_barang),
-
-        'jumlah' => $request->jumlah,
+        'karyawan_id' => $request->jenis_penerima == 'Perorangan' ? $request->karyawan_id : null,
 
         'tgl_keluar' => $request->tgl_keluar,
 
         'jenis_penerima' => $request->jenis_penerima,
 
-        'id_perusahaan' => $perusahaanId,
-
-        // =========================
-        // PERORANGAN
-        // =========================
-
-        'id_karyawan' => $request->jenis_penerima == 'Perorangan' ? $request->id_karyawan : null,
-
-        // =========================
-        // PERDIVISI
-        // =========================
-
         'divisi_klr' => $request->jenis_penerima == 'Perdivisi' ? strtoupper($request->divisi_klr) : null,
 
-        'perusahaan_klr' => $request->jenis_penerima == 'Perdivisi' ? strtoupper($namaPerusahaan) : null,
+        'perusahaan_klr' => $request->jenis_penerima == 'Perdivisi' ? strtoupper($request->perusahaan_klr) : null,
+
         'gambar' => $gambar,
+      ]);
 
-        // =========================
-        // DETAIL
-        // =========================
-
-        'keterangan' => strtoupper($request->keterangan),
-
-        'warna' => strtoupper($request->warna),
-
-        'no_inventaris' => strtoupper($request->no_inventaris),
+      $inventaris->update([
+        'status' => 'DIPAKAI',
       ]);
 
       DB::commit();
 
       return redirect()
         ->route('transaksi-keluar.index')
-        ->with('success', 'Transaksi keluar berhasil disimpan');
+        ->with('success', 'Pemakaian aset berhasil disimpan');
     } catch (\Exception $e) {
       DB::rollBack();
 
-      Log::error($e->getMessage());
-
-      return back()
-        ->withInput()
-        ->with('error', 'Terjadi kesalahan, silakan ulangi');
+      dd($e->getMessage());
     }
   }
 
@@ -274,14 +214,7 @@ class KeluarController extends Controller
    */
   public function show(int $id)
   {
-    $query = Keluar::with(['masuk.kategori', 'karyawan', 'perusahaan']);
-
-    // 🔥 FIX ROLE
-    if (auth()->user()->role !== 'super_admin') {
-      $query->where('id_perusahaan', auth()->user()->id_perusahaan);
-    }
-
-    $keluar = $query->findOrFail($id);
+    $keluar = Keluar::with(['inventaris.dataAset.kategori', 'karyawan', 'perusahaan'])->findOrFail($id);
 
     return view('content.dashboard.transaksi-keluar.show', compact('keluar'));
   }
@@ -293,17 +226,15 @@ class KeluarController extends Controller
   {
     $user = auth()->user();
 
-    $query = Keluar::with(['masuk.kategori', 'karyawan', 'perusahaan']);
+    $query = Keluar::with(['inventaris.dataAset.kategori', 'karyawan', 'perusahaan']);
 
-    // PETUGAS hanya bisa edit perusahaannya sendiri
-    if ($user->role !== 'super_admin') {
-      $query->where('id_perusahaan', $user->id_perusahaan);
+    if ($user->role != 'super_admin') {
+      $query->where('perusahaan_id', $user->id_perusahaan);
     }
 
     $keluar = $query->findOrFail($id);
 
-    // 🔥 TAMBAHAN INI
-    $perusahaans = $user->role === 'super_admin' ? Perusahaan::all() : collect();
+    $perusahaans = $user->role == 'super_admin' ? Perusahaan::all() : collect();
 
     return view('content.dashboard.transaksi-keluar.edit', compact('keluar', 'perusahaans'));
   }
@@ -311,144 +242,45 @@ class KeluarController extends Controller
   /**
    * Update the specified resource in storage.
    */
-  public function update(Request $request, int $id)
+  public function update(Request $request, $id)
   {
     $user = auth()->user();
 
-    // =====================================
-    // TENTUKAN PERUSAHAAN
-    // =====================================
-
     $perusahaanId = $user->role === 'super_admin' ? $request->perusahaan_id : $user->id_perusahaan;
 
-    // =====================================
-    // NORMALISASI TEXT
-    // =====================================
-
-    $request->merge([
-      'kode_barang' => strtoupper($request->kode_barang),
-
-      'keterangan' => strtoupper($request->keterangan),
-
-      'warna' => strtoupper($request->warna),
-
-      'no_inventaris' => strtoupper($request->no_inventaris),
-
-      'divisi_klr' => strtoupper($request->divisi_klr),
+    $request->validate([
+      'tgl_keluar' => 'required|date',
+      'jenis_penerima' => 'required|in:Perorangan,Perdivisi',
+      'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
     ]);
 
-    // =====================================
-    // VALIDASI
-    // =====================================
-
-    $request->validate(
-      [
-        'perusahaan_id' => $user->role === 'super_admin' ? 'required|exists:perusahaans,id' : 'nullable',
-
-        'id_masuk' => [
-          'required',
-
-          Rule::exists('masuks', 'id')->where(fn($q) => $q->where('perusahaan_id', $perusahaanId)),
-        ],
-
-        'kode_barang' => [
-          'required',
-
-          Rule::unique('keluars')
-            ->where(fn($q) => $q->where('id_perusahaan', $perusahaanId))
-            ->ignore($id),
-        ],
-
-        'jumlah' => 'required|integer|min:1',
-        'tgl_keluar' => 'required|date',
-    
-        'keterangan' => 'required|string|max:100',
-
-        'warna' => 'required|string|max:50',
-
-        'no_inventaris' => 'required|string|max:50',
-
-        'jenis_penerima' => 'required|in:Perorangan,Perdivisi',
-
-        'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-      ],
-      [
-        'gambar.image' => 'File harus berupa gambar.',
-        'gambar.mimes' => 'Format gambar harus JPG, JPEG, atau PNG.',
-        'gambar.max' => 'Ukuran gambar maksimal 2 MB.',
-      ]
-    );
-
-    // =====================================
-    // VALIDASI PERORANGAN
-    // =====================================
-
+    // PERORANGAN
     if ($request->jenis_penerima == 'Perorangan') {
       $request->validate([
-        'id_karyawan' => [
-          'required',
-
-          Rule::exists('karyawans', 'id')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
-        ],
+        'karyawan_id' => 'required|exists:karyawans,id',
       ]);
     }
 
-    // =====================================
-    // VALIDASI PERDIVISI
-    // =====================================
-
+    // PERDIVISI
     if ($request->jenis_penerima == 'Perdivisi') {
       $request->validate([
-        'divisi_klr' => 'required|string|max:50',
+        'divisi_klr' => 'required|string|max:255',
       ]);
     }
 
     DB::beginTransaction();
 
     try {
-      // =====================================
-      // AMBIL DATA KELUAR
-      // =====================================
-
       $keluar = Keluar::where('id', $id)
-        ->where('id_perusahaan', $perusahaanId)
-        ->firstOrFail();
-
-      // =====================================
-      // KEMBALIKAN STOK LAMA
-      // =====================================
-
-      $masukLama = Masuk::lockForUpdate()->findOrFail($keluar->id_masuk);
-
-      // =====================================
-      // AMBIL DATA MASUK BARU
-      // =====================================
-
-      $masukBaru = Masuk::where('id', $request->id_masuk)
         ->where('perusahaan_id', $perusahaanId)
-        ->lockForUpdate()
         ->firstOrFail();
-
-      // =====================================
-      // VALIDASI STOK
-      // =====================================
-
-      if ($request->jumlah > $masukBaru->jumlah) {
-        DB::rollBack();
-
-        return back()
-          ->withInput()
-          ->with('error', 'Jumlah keluar melebihi stok tersedia!');
-      }
-
-      // =====================================
-      // AMBIL NAMA PERUSAHAAN
-      // =====================================
 
       $namaPerusahaan = Perusahaan::find($perusahaanId)?->nama_perusahaan;
+
+      // Upload gambar baru
       if ($request->hasFile('gambar')) {
         if ($keluar->gambar) {
-          Storage::delete('public/' . $keluar->gambar);
+          Storage::disk('public')->delete($keluar->gambar);
         }
 
         $gambar = $request->file('gambar')->store('keluar', 'public');
@@ -456,53 +288,25 @@ class KeluarController extends Controller
         $gambar = $keluar->gambar;
       }
 
-      // =====================================
-      // UPDATE
-      // =====================================
-
       $keluar->update([
-        'id_masuk' => $request->id_masuk,
-
-        'kode_barang' => $request->kode_barang,
-
-        'jumlah' => $request->jumlah,
         'tgl_keluar' => $request->tgl_keluar,
 
         'jenis_penerima' => $request->jenis_penerima,
 
-        'id_perusahaan' => $perusahaanId,
+        'karyawan_id' => $request->jenis_penerima == 'Perorangan' ? $request->karyawan_id : null,
 
-        // =========================
-        // PERORANGAN
-        // =========================
-
-        'id_karyawan' => $request->jenis_penerima == 'Perorangan' ? $request->id_karyawan : null,
-
-        // =========================
-        // PERDIVISI
-        // =========================
-
-        'divisi_klr' => $request->jenis_penerima == 'Perdivisi' ? $request->divisi_klr : null,
+        'divisi_klr' => $request->jenis_penerima == 'Perdivisi' ? strtoupper($request->divisi_klr) : null,
 
         'perusahaan_klr' => $request->jenis_penerima == 'Perdivisi' ? strtoupper($namaPerusahaan) : null,
+
         'gambar' => $gambar,
-
-        // =========================
-        // DETAIL
-        // =========================
-
-        'keterangan' => $request->keterangan,
-
-        'warna' => $request->warna,
-
-        'no_inventaris' => $request->no_inventaris,
       ]);
 
       DB::commit();
 
       return redirect()
         ->route('transaksi-keluar.index')
-        ->with('success', 'Transaksi keluar berhasil diperbarui');
+        ->with('success', 'Data pemakaian aset berhasil diperbarui.');
     } catch (\Exception $e) {
       DB::rollBack();
 
@@ -510,7 +314,7 @@ class KeluarController extends Controller
 
       return back()
         ->withInput()
-        ->with('error', 'Terjadi kesalahan');
+        ->with('error', $e->getMessage());
     }
   }
 
@@ -519,129 +323,97 @@ class KeluarController extends Controller
    */
   public function destroy(int $id)
   {
+    DB::beginTransaction();
+
     try {
-      $query = Keluar::query();
+      $keluar = Keluar::findOrFail($id);
 
-      if (auth()->user()->role !== 'super_admin') {
-        $query->where('id_perusahaan', auth()->user()->id_perusahaan);
+      $keluar->inventaris->update([
+        'status' => 'TERSEDIA',
+      ]);
+
+      if ($keluar->gambar && Storage::disk('public')->exists($keluar->gambar)) {
+        Storage::disk('public')->delete($keluar->gambar);
       }
-
-      $keluar = $query->findOrFail($id);
 
       $keluar->delete();
 
+      DB::commit();
+
       return back()->with('success', 'Data berhasil dihapus');
     } catch (\Exception $e) {
-      return back()->with('error', 'Gagal hapus data');
+      DB::rollBack();
+
+      return back()->with('error', $e->getMessage());
     }
   }
-  public function getMasukByKode(string $kode)
+
+  public function getKaryawan(Request $request)
   {
-    $masuk = Masuk::with('kategori')
-      ->where('kode_masuk', $kode)
-      ->where('id_perusahaan', request('perusahaan_id') ?? auth()->user()->id_perusahaan)
-      ->first();
+    $query = Karyawan::query();
 
-    if (!$masuk) {
-      return response()->json(['status' => false]);
-    }
-
-    return response()->json([
-      'status' => true,
-      'data' => [
-        'id_masuk' => $masuk->id,
-        'nama_barang' => $masuk->kategori->nama_barang ?? '-',
-        'type' => $masuk->type,
-        'merek' => $masuk->merek,
-        'tgl_beli' => $masuk->tgl_beli,
-        'stok' => $masuk->jumlah,
-      ],
-    ]);
-  }
-  public function autofillByKodeMasuk(Request $request)
-  {
-    $query = Masuk::with('kategori')->where('kode_masuk', $request->kode_masuk);
-
-    // 🔥 BEDAKAN ROLE
-    if (auth()->user()->role !== 'super_admin') {
-      $query->where('perusahaan_id', auth()->user()->id_perusahaan);
-    } else {
-      // SUPER ADMIN pakai perusahaan dari dropdown
-      if ($request->perusahaan_id) {
-        $query->where('perusahaan_id', $request->perusahaan_id);
-      }
-    }
-
-    $masuk = $query->first();
-
-    if (!$masuk) {
-      return response()->json([
-        'status' => false,
-      ]);
-    }
-
-    return response()->json([
-      'status' => true,
-      'data' => [
-        'id_masuk' => $masuk->id,
-        'nama_barang' => optional($masuk->kategori)->nama_barang ?? '-',
-        'type' => $masuk->type ?? '-',
-        'merek' => $masuk->merek ?? '-',
-        'tgl_beli' => $masuk->tgl_beli ?? null,
-      ],
-    ]);
-  }
-
-  public function getKaryawanByNama(Request $request)
-  {
-    $request->validate([
-      'nama_karyawan' => 'required',
-    ]);
-
-    $user = auth()->user();
-
-    $query = Karyawan::with('perusahaan')->where('nama_karyawan', $request->nama_karyawan);
-
-    // 🔥 BEDAKAN ROLE
-    if ($user->role !== 'super_admin') {
-      $query->where('id_perusahaan', $user->id_perusahaan);
-    } else {
-      // SUPER ADMIN pakai perusahaan dari dropdown
+    if (auth()->user()->role == 'super_admin') {
       if ($request->perusahaan_id) {
         $query->where('id_perusahaan', $request->perusahaan_id);
       }
+    } else {
+      $query->where('id_perusahaan', auth()->user()->id_perusahaan);
     }
 
-    $karyawan = $query->first();
+    $query->where(function ($q) use ($request) {
+      $q->where('nama_karyawan', 'like', '%' . $request->keyword . '%')->orWhere(
+        'kode_karyawan',
+        'like',
+        '%' . $request->keyword . '%'
+      );
+    });
 
-    if (!$karyawan) {
-      return response()->json(['status' => false]);
-    }
+    $data = $query
+      ->select('id', 'kode_karyawan', 'nama_karyawan', 'divisi')
+      ->limit(10)
+      ->get();
 
-    return response()->json([
-      'status' => true,
-      'data' => [
-        'id' => $karyawan->id,
-        'divisi' => $karyawan->divisi,
-        'perusahaan' => $karyawan->perusahaan->nama_perusahaan ?? '-',
-      ],
-    ]);
+    return response()->json($data);
   }
-  public function getKodeKeluar(int $id)
+
+  public function getKategori($perusahaanId)
   {
-    $tahun = now()->year;
+    return response()->json(
+      Kategori::where('perusahaan_id', $perusahaanId)
+        ->orderBy('nama_barang')
+        ->get()
+    );
+  }
+  public function getInventaris(Request $request)
+  {
+    $query = Inventaris::with(['dataAset.kategori'])->where('status', 'TERSEDIA');
 
-    $last = Keluar::where('id_perusahaan', $id)
-      ->whereYear('created_at', $tahun)
-      ->orderByDesc('id')
-      ->first();
+    if (auth()->user()->role == 'super_admin') {
+      $query->where('perusahaan_id', $request->perusahaan_id);
+    } else {
+      $query->where('perusahaan_id', auth()->user()->id_perusahaan);
+    }
 
-    $number = $last ? (int) substr($last->kode_keluar, -4) + 1 : 1;
+    $query->whereHas('dataAset', function ($q) use ($request) {
+      $q->where('kategori_id', $request->kategori_id);
+    });
 
-    $kode = 'KLR-' . $tahun . '-' . str_pad($number, 4, '0', STR_PAD_LEFT);
+    return response()->json($query->orderBy('kode_aset')->get());
+  }
+  public function getInventarisDetail($id)
+  {
+    $inventaris = Inventaris::with(['dataAset.kategori'])->findOrFail($id);
 
     return response()->json([
-      'kode' => $kode,
+      'kategori' => $inventaris->dataAset->kategori->nama_barang,
+
+      'merek' => $inventaris->dataAset->merek,
+
+      'type' => $inventaris->dataAset->type,
+
+      'kode_aset' => $inventaris->kode_aset,
+
+      'no_inventaris' => $inventaris->no_inventaris,
     ]);
   }
 }

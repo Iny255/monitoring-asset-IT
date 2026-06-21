@@ -5,56 +5,67 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
+  public function up(): void
+  {
+    Schema::create('mapings', function (Blueprint $table) {
+      $table->id();
 
-    public function up(): void
-    {
-        Schema::create('mapings', function (Blueprint $table) {
-            $table->id();
+      // RELASI
+      $table
+        ->foreignId('id_keluar')
+        ->constrained('keluars')
+        ->cascadeOnDelete();
 
-            // ================= RELASI =================
-            $table->foreignId('id_lokasi')
-                ->constrained('lokasis')
-                ->cascadeOnDelete();
+      $table
+        ->foreignId('id_lokasi')
+        ->constrained('lokasis')
+        ->cascadeOnDelete();
 
-            $table->foreignId('id_keluar')
-                ->constrained('keluars')
-                ->cascadeOnDelete();
+      $table
+        ->foreignId('id_perusahaan')
+        ->constrained('perusahaans')
+        ->cascadeOnDelete();
 
-            $table->foreignId('id_perusahaan')
-                ->constrained('perusahaans')
-                ->cascadeOnDelete();
+      // SPESIFIKASI DEVICE
+      $table->string('processor', 100)->nullable();
 
-            // ================= SPESIFIKASI =================
-            $table->string('processor', 100)->nullable();
-            $table->string('device_id', 50)->nullable();
-            $table->string('produk_id', 50)->nullable();
-            $table->integer('ram')->nullable();
-            $table->string('system', 50)->nullable();
-            $table->string('version', 20)->nullable(); // 🔥 dari 5 jadi 20 (lebih realistis)
-            $table->date('instal_on')->nullable();
+      $table->string('ram', 20)->nullable();
 
-            // ================= DATA =================
-            $table->string('aplikasi', 100)->nullable();
-            $table->string('data_p', 100)->nullable();
-            $table->string('data_n', 100)->nullable();
+      $table->string('device_id', 100)->nullable();
 
-            // 🔥 TAMBAHAN PENTING
-            $table->enum('status', ['aktif', 'dicabut'])->default('aktif');
+      $table->string('produk_id', 100)->nullable();
 
-            $table->timestamps();
+      $table->string('system', 50)->nullable();
 
-            // ================= INDEX =================
-            $table->index('id_perusahaan');
-            $table->index('id_keluar');
+      $table->string('version', 50)->nullable();
 
-            // 🔥 UNIQUE PER PERUSAHAAN (AMAN)
-            $table->unique(['device_id', 'id_perusahaan']);
-            $table->unique(['produk_id', 'id_perusahaan']);
-        });
-    }
+      $table->date('instal_on')->nullable();
 
-    public function down(): void
-    {
-        Schema::dropIfExists('mapings');
-    }
+      // HAK AKSES
+      $table->string('aplikasi', 150)->nullable();
+
+      $table->string('data_p', 150)->nullable();
+
+      $table->string('data_n', 150)->nullable();
+
+      // STATUS MAPPING
+      $table->enum('status', ['aktif', 'dicabut'])->default('aktif');
+
+      $table->timestamps();
+
+      // INDEX
+      $table->index('id_perusahaan');
+      $table->index('id_keluar');
+      $table->index('id_lokasi');
+
+      // UNIQUE
+      $table->unique(['device_id', 'id_perusahaan']);
+      $table->unique(['produk_id', 'id_perusahaan']);
+    });
+  }
+
+  public function down(): void
+  {
+    Schema::dropIfExists('mapings');
+  }
 };

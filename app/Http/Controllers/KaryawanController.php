@@ -39,7 +39,7 @@ class KaryawanController extends Controller
       });
     }
 
-    $karyawans = $karyawans->latest()->paginate(5);
+    $karyawans = $karyawans->latest()->paginate(10);
 
     return view('content.dashboard.useraset.index', compact('karyawans', 'perusahaans'));
   }
@@ -87,7 +87,7 @@ class KaryawanController extends Controller
   /**
    * Update the specified resource.
    */
-  public function update(Request $request, $id)
+  public function update(Request $request, string $id)
   {
     $karyawan = Karyawan::findOrFail($id);
 

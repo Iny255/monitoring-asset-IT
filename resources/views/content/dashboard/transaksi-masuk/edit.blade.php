@@ -1,6 +1,6 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Edit Transaksi Masuk')
+@section('title', 'Edit Penerimaan Aset')
 
 @section('content')
 
@@ -10,8 +10,8 @@
 
                 <div class="card border-0 shadow-sm rounded-4">
                     <div class="card-header border-0 px-4 pt-4">
-                        <h5 class="text-primary mb-0">Edit Transaksi Masuk</h5>
-                        <small class="text-muted">Silakan perbarui data barang masuk</small>
+                        <h5 class="text-primary mb-0">Edit Penerimaan Aset</h5>
+                        <small class="text-muted">Silakan perbarui data penerimaan aset</small>
                     </div>
 
                     <div class="card-body px-4 pb-4">
@@ -23,139 +23,135 @@
 
                             <div class="row">
 
-                                {{-- 🔥 PERUSAHAAN (SUPER ADMIN) --}}
-                                @if (auth()->user()->role === 'super_admin')
+                                <div class="row">
+
+                                    {{-- PERUSAHAAN --}}
+                                    @if (auth()->user()->role == 'super_admin')
+                                        <div class="col-md-6 mb-3">
+
+                                            <label class="form-label">
+                                                Perusahaan
+                                            </label>
+
+                                            <input type="text" class="form-control"
+                                                value="{{ $masuk->perusahaan->nama_perusahaan }}" readonly>
+
+                                        </div>
+                                    @endif
+
+
+                                    {{-- SUPPLIER --}}
                                     <div class="col-md-6 mb-3">
-                                        <label class="form-label fw-medium">Perusahaan</label>
 
-                                        <select name="id_perusahaan" id="perusahaan" class="form-select" required>
+                                        <label class="form-label">
+                                            Supplier
+                                        </label>
 
-                                            @foreach ($perusahaans as $p)
-                                                <option value="{{ $p->id }}"
-                                                    {{ $masuk->perusahaan_id == $p->id ? 'selected' : '' }}>
-                                                    {{ $p->nama_perusahaan }}
+                                        <select name="supplier_id" class="form-select" required>
+
+                                            @foreach ($suppliers as $supplier)
+                                                <option value="{{ $supplier->id }}"
+                                                    {{ $masuk->supplier_id == $supplier->id ? 'selected' : '' }}>
+
+                                                    {{ $supplier->nama_supplier }}
+
                                                 </option>
                                             @endforeach
 
                                         </select>
+
                                     </div>
-                                @endif
 
-                                {{-- KODE MASUK --}}
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-medium">Kode Masuk</label>
-                                    <input type="text" name="kode_masuk" class="form-control"
-                                        value="{{ $masuk->kode_masuk }}" readonly>
-                                </div>
+                                    {{-- DATA ASET --}}
+                                    <div class="col-md-6 mb-3">
 
-                                {{-- NAMA BARANG --}}
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-medium">Nama Barang</label>
+                                        <label class="form-label">
+                                            Data Aset
+                                        </label>
 
-                                    <select name="id_kategori" id="kategori"
-                                        class="form-select @error('id_kategori') is-invalid @enderror" required>
+                                        <input type="text" class="form-control"
+                                            value="{{ $masuk->dataAset->kategori->nama_barang }} - {{ $masuk->dataAset->merek }} - {{ $masuk->dataAset->type }}"
+                                            readonly>
 
-                                        <option value="">-- Pilih Barang --</option>
+                                    </div>
 
-                                        @foreach ($kategoris as $kategori)
-                                            <option value="{{ $kategori->id }}"
-                                                {{ $masuk->id_kategori == $kategori->id ? 'selected' : '' }}>
-                                                {{ $kategori->nama_barang }}
+                                    {{-- JUMLAH --}}
+                                    <div class="col-md-6 mb-3">
+
+                                        <label class="form-label">
+                                            Jumlah
+                                        </label>
+
+                                        <input type="number" class="form-control" value="{{ $masuk->jumlah }}" readonly>
+
+                                    </div>
+
+                                    {{-- TANGGAL PEMBELIAN --}}
+                                    <div class="col-md-6 mb-3">
+
+                                        <label class="form-label">
+                                            Tanggal Pembelian
+                                        </label>
+
+                                        <input type="date" name="tanggal_pembelian" class="form-control"
+                                            value="{{ old('tanggal_pembelian', $masuk->tanggal_pembelian) }}" required>
+
+                                    </div>
+
+                                    {{-- HARGA SATUAN --}}
+                                    <div class="col-md-6 mb-3">
+
+                                        <label class="form-label">
+                                            Harga Satuan
+                                        </label>
+
+                                        <input type="number" name="harga_satuan" class="form-control"
+                                            value="{{ $masuk->harga_satuan }}" required>
+
+                                    </div>
+
+                                    {{-- GARANSI --}}
+                                    <div class="col-md-6 mb-3">
+
+                                        <label class="form-label">
+                                            Garansi (Bulan)
+                                        </label>
+
+                                        <input type="number" name="garansi" class="form-control"
+                                            value="{{ $masuk->garansi }}">
+
+                                    </div>
+                                    {{-- KET PENERIMAAN --}}
+                                    <div class="col-md-6 mb-3">
+
+                                        <label class="form-label">
+                                            Ket. Penerimaan
+                                        </label>
+
+                                        <select name="ket_penerimaan" class="form-select" required>
+
+                                            <option value="BAIK"
+                                                {{ $masuk->ket_penerimaan == 'BAIK' ? 'selected' : '' }}>
+                                                BAIK
                                             </option>
-                                        @endforeach
 
-                                    </select>
+                                            <option value="RUSAK"
+                                                {{ $masuk->ket_penerimaan == 'RUSAK' ? 'selected' : '' }}>
+                                                RUSAK
+                                            </option>
 
-                                    @error('id_kategori')
-                                        <div class="invalid-feedback">{{ $message }}</div>
-                                    @enderror
-                                </div>
+                                        </select>
 
-                                {{-- TYPE --}}
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-medium">Type</label>
-                                    <input type="text" name="type" class="form-control" value="{{ $masuk->type }}"
-                                        required>
-                                </div>
+                                    </div>
 
-                                {{-- MEREK --}}
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-medium">Merek</label>
-                                    <input type="text" name="merek" class="form-control" value="{{ $masuk->merek }}"
-                                        required>
-                                </div>
-                                {{-- KONDISI --}}
-                                <div class="col-md-6 mb-3">
-
-                                    <label class="form-label fw-medium">
-                                        Kondisi Asset
-                                    </label>
-
-                                    <select name="kondisi" class="form-select" required>
-
-                                        <option value="">
-                                            -- Pilih Kondisi --
-                                        </option>
-
-                                        <option value="Baru"
-                                            {{ old('kondisi', $masuk->kondisi) == 'Baru' ? 'selected' : '' }}>
-                                            Baru
-                                        </option>
-
-                                        <option value="Bekas"
-                                            {{ old('kondisi', $masuk->kondisi) == 'Bekas' ? 'selected' : '' }}>
-                                            Bekas
-                                        </option>
-
-                                    </select>
-
-                                </div>
-
-                                {{-- JUMLAH --}}
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-medium">Jumlah</label>
-                                    <input type="number" name="jumlah" class="form-control" value="{{ $masuk->jumlah }}"
-                                        required>
-                                </div>
-
-                                {{-- TANGGAL --}}
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-medium">Tanggal Beli</label>
-                                    <input type="date" name="tgl_beli" class="form-control"
-                                        value="{{ $masuk->tgl_beli }}" required>
-                                </div>
-
-                                {{-- GARANSI --}}
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-medium">Garansi</label>
-                                    <input type="number" name="garansi" class="form-control" value="{{ $masuk->garansi }}"
-                                        required>
-                                </div>
-
-                                {{-- SUPPLIER --}}
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-medium">Supplier</label>
-                                    <input type="text" name="supplier" class="form-control"
-                                        value="{{ $masuk->supplier }}" required>
-                                </div>
-
-                                {{-- HARGA --}}
-                                <div class="col-md-6 mb-3">
-                                    <label class="form-label fw-medium">Harga</label>
-                                    <input type="text" name="harga" class="form-control" value="{{ $masuk->harga }}"
-                                        required>
-                                </div>
-
-                              
-
-                            <div class="d-flex justify-content-end gap-2 mt-3">
-                                <a href="{{ route('transaksi-masuk.index') }}" class="btn btn-secondary px-4">
-                                    Batal
-                                </a>
-                                <button type="submit" class="btn btn-primary px-4">
-                                    Update
-                                </button>
-                            </div>
+                                    <div class="d-flex justify-content-end gap-2 mt-3">
+                                        <a href="{{ route('transaksi-masuk.index') }}" class="btn btn-secondary px-4">
+                                            Batal
+                                        </a>
+                                        <button type="submit" class="btn btn-primary px-4">
+                                            Update
+                                        </button>
+                                    </div>
 
                         </form>
 
@@ -169,71 +165,42 @@
 @endsection
 
 @section('scripts')
+
     <script>
         document.addEventListener('DOMContentLoaded', function() {
 
-            const perusahaan = document.getElementById('perusahaan');
-            const kategori = document.getElementById('kategori');
+            const perusahaanSelect = document.getElementById('perusahaan');
+            const dataAsetSelect = document.getElementById('data_aset');
 
-            if (perusahaan) {
+            if (perusahaanSelect) {
 
-                perusahaan.addEventListener('change', function() {
+                perusahaanSelect.addEventListener('change', function() {
 
-                    let id = this.value;
+                    let perusahaanId = this.value;
 
-                    fetch('/dashboard/get-kategori/' + id)
-                        .then(res => res.json())
+                    fetch('/dashboard/get-data-aset/' + perusahaanId)
+
+                        .then(response => response.json())
+
                         .then(data => {
 
-                            let html = '<option value="">-- Pilih Barang --</option>';
+                            let html =
+                                '<option value="">-- Pilih Data Aset --</option>';
 
                             data.forEach(item => {
-                                html +=
-                                    `<option value="${item.id}">${item.nama_barang}</option>`;
+
+                                html += `
+                            <option value="${item.id}">
+                                ${item.kategori.nama_barang}
+                                - ${item.merek}
+                                - ${item.type}
+                            </option>
+                        `;
+
                             });
 
-                            kategori.innerHTML = html;
-                        });
+                            dataAsetSelect.innerHTML = html;
 
-                });
-
-            }
-
-        });
-        document.addEventListener('DOMContentLoaded', function() {
-
-            const perusahaan = document.getElementById('perusahaan');
-            const kodeInput = document.querySelector('[name="kode_masuk"]');
-            const kategori = document.getElementById('kategori');
-
-            if (perusahaan) {
-
-                perusahaan.addEventListener('change', function() {
-
-                    let id = this.value;
-
-                    if (!id) return;
-
-                    // 🔥 UPDATE KODE MASUK
-                    fetch('/dashboard/get-kode-masuk/' + id)
-                        .then(res => res.json())
-                        .then(data => {
-                            kodeInput.value = data.kode;
-                        });
-
-                    // 🔥 UPDATE KATEGORI
-                    fetch('/dashboard/get-kategori/' + id)
-                        .then(res => res.json())
-                        .then(data => {
-
-                            let html = '<option value="">-- Pilih Barang --</option>';
-
-                            data.forEach(item => {
-                                html +=
-                                    `<option value="${item.id}">${item.nama_barang}</option>`;
-                            });
-
-                            kategori.innerHTML = html;
                         });
 
                 });
@@ -242,4 +209,5 @@
 
         });
     </script>
+
 @endsection

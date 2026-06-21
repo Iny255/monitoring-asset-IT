@@ -14,42 +14,34 @@ class Keluar extends Model
   use HasFactory;
 
   protected $fillable = [
-    'id_karyawan',
-    'id_masuk',
-    'id_perusahaan', // ✅ WAJIB
-    'kode_keluar',
-    'kode_barang',
-    'jumlah',
-    'keterangan',
-    'warna',
-    'no_inventaris',
-    'gambar',
+    'inventaris_id',
+    'perusahaan_id',
+    'karyawan_id',
+    'tgl_keluar',
     'jenis_penerima',
     'divisi_klr',
     'perusahaan_klr',
-    'tgl_keluar',
+    'gambar',
   ];
 
-  // ================= RELASI =================
+  /*
+    |--------------------------------------------------------------------------
+    | RELATIONSHIP
+    |--------------------------------------------------------------------------
+    */
 
-  public function karyawan()
+  public function inventaris()
   {
-    return $this->belongsTo(Karyawan::class, 'id_karyawan');
+    return $this->belongsTo(Inventaris::class, 'inventaris_id');
   }
-
-  public function masuk()
-{
-    return $this->belongsTo(Masuk::class, 'id_masuk');
-      
-}
 
   public function perusahaan()
   {
-    return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
+    return $this->belongsTo(Perusahaan::class, 'perusahaan_id');
   }
 
-  public function maping()
+  public function karyawan()
   {
-    return $this->hasMany(Maping::class, 'id_keluar');
+    return $this->belongsTo(Karyawan::class, 'karyawan_id');
   }
 }
