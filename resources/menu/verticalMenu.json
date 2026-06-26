@@ -64,9 +64,17 @@
           "url": "dashboard/data-aset",
           "name": "Data Aset",
           "icon": "menu-icon tf-icons bx bx-package"
+        },
+        {
+          "url": "dashboard/hak-akses",
+          "name": "Hak Akses & Aplikasi",
+          "icon": "menu-icon tf-icons bi bi-shield-lock",
+          "slug": "hak-akses",
+          "roles": ["petugas", "super_admin"]
         }
       ]
     },
+    
     {
       "name": "Transaksi Aset",
       "icon": "menu-icon tf-icons bi bi-arrow-left-right",

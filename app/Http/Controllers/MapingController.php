@@ -13,6 +13,8 @@ use App\Models\Kategori;
 use App\Models\Karyawan;
 use App\Models\MutasiMaping;
 use App\Models\Pencabutan;
+use App\Models\Access;
+use App\Models\MapingAccess;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,100 +27,183 @@ class MapingController extends Controller
    */
   public function index(Request $request)
   {
-    $status = $request->get('status', 'aktif');
-    $query = Maping::with(['lokasi', 'perusahaan', 'keluar.masuk.kategori', 'keluar.karyawan'])->where(
-      'status',
-      $status
-    );
+    $user = auth()->user();
 
-    if (auth()->user()->role !== 'super_admin') {
-      $query->where('id_perusahaan', auth()->user()->id_perusahaan);
-    }
+    $query = Maping::with(['keluar.inventaris.kategori', 'keluar.karyawan', 'lokasi', 'perusahaan']);
+
     /*
-    |====================================================
-    | FILTER CEPAT (EXACT MATCH → SUPER CEPAT)
-    |====================================================
+    |--------------------------------------------------------------------------
+    | FILTER PERUSAHAAN
+    |--------------------------------------------------------------------------
     */
 
-    // Filter Lokasi
-    if ($request->filled('lokasi')) {
-      $query->where('id_lokasi', $request->lokasi);
+    if ($user->role != 'super_admin') {
+      $query->where('id_perusahaan', $user->id_perusahaan);
+    } elseif ($request->filled('perusahaan_id')) {
+      $query->where('id_perusahaan', $request->perusahaan_id);
     }
 
-    // Filter Perusahaan
-    if ($request->filled('perusahaan')) {
-      $query->where('id_perusahaan', $request->perusahaan);
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER LOKASI
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('lokasi_id')) {
+      $query->where('id_lokasi', $request->lokasi_id);
     }
 
-    // Filter Tahun Pembelian
-    if ($request->filled('tahun')) {
-      $query->whereHas('keluar.masuk', function ($q) use ($request) {
-        $q->whereYear('tgl_beli', $request->tahun);
-      });
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('status')) {
+      $query->where('status', $request->status);
     }
 
-    // Filter Nama Barang
-    if ($request->filled('barang')) {
-      $query->whereHas('keluar.masuk.kategori', function ($q) use ($request) {
-        $q->where('id', $request->barang);
-      });
-    }
-    // Filter Merek
-    if ($request->filled('merek')) {
-      $query->whereHas('keluar.masuk', function ($q) use ($request) {
-        $q->where('merek', 'like', '%' . $request->merek . '%');
-      });
-    }
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER USER ASET
+    |--------------------------------------------------------------------------
+    */
 
-    // Filter Type
-    if ($request->filled('type')) {
-      $query->whereHas('keluar.masuk', function ($q) use ($request) {
-        $q->where('type', 'like', '%' . $request->type . '%');
+    if ($request->filled('karyawan_id')) {
+      $query->whereHas('keluar', function ($q) use ($request) {
+        $q->where('karyawan_id', $request->karyawan_id);
       });
     }
 
     /*
-    |====================================================
-    | GLOBAL SEARCH (OPTIONAL)
-    |====================================================
+    |--------------------------------------------------------------------------
+    | FILTER KATEGORI
+    |--------------------------------------------------------------------------
     */
+
+    if ($request->filled('kategori_id')) {
+      $query->whereHas('keluar.inventaris', function ($q) use ($request) {
+        $q->where('kategori_id', $request->kategori_id);
+      });
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER RENTANG TANGGAL
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('tanggal_awal') && $request->filled('tanggal_akhir')) {
+      $query->whereBetween('tanggal_digunakan', [$request->tanggal_awal, $request->tanggal_akhir]);
+    } elseif ($request->filled('tanggal_awal')) {
+      $query->whereDate('tanggal_digunakan', '>=', $request->tanggal_awal);
+    } elseif ($request->filled('tanggal_akhir')) {
+      $query->whereDate('tanggal_digunakan', '<=', $request->tanggal_akhir);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH
+    |--------------------------------------------------------------------------
+    */
+
+    /*
+|--------------------------------------------------------------------------
+| SEARCH
+|--------------------------------------------------------------------------
+*/
+
     if ($request->filled('search')) {
-      $search = $request->search;
+      $search = trim($request->search);
 
       $query->where(function ($q) use ($search) {
-        $q->where('processor', 'like', "%$search%")
-          ->orWhere('device_id', 'like', "%$search%")
-          ->orWhere('produk_id', 'like', "%$search%")
+        // Mapping
+        $q->where('processor', 'like', "%{$search}%")
+          ->orWhere('ram', 'like', "%{$search}%")
+          ->orWhere('device_id', 'like', "%{$search}%")
+          ->orWhere('produk_id', 'like', "%{$search}%")
+          ->orWhere('system', 'like', "%{$search}%")
+          ->orWhere('version', 'like', "%{$search}%")
+          ->orWhere('catatan', 'like', "%{$search}%")
 
-          ->orWhereHas('lokasi', function ($l) use ($search) {
-            $l->where('nama_lokasi', 'like', "%$search%");
+          // Pemakaian
+          ->orWhereHas('keluar', function ($k) use ($search) {
+            $k->where('kode_inventaris', 'like', "%{$search}%")->orWhere('serial_number', 'like', "%{$search}%");
           })
 
-          ->orWhereHas('perusahaan', function ($p) use ($search) {
-            $p->where('nama_perusahaan', 'like', "%$search%");
-          })
-
+          // User Aset
           ->orWhereHas('keluar.karyawan', function ($k) use ($search) {
-            $k->where('nama_karyawan', 'like', "%$search%");
+            $k->where('nama_karyawan', 'like', "%{$search}%");
           })
 
-          ->orWhereHas('keluar.masuk.kategori', function ($b) use ($search) {
-            $b->where('nama_barang', 'like', "%$search%");
+          // Data Aset
+          ->orWhereHas('keluar.inventaris', function ($a) use ($search) {
+            $a->where('merek', 'like', "%{$search}%")
+              ->orWhere('type', 'like', "%{$search}%")
+              ->orWhere('kode_inventaris', 'like', "%{$search}%")
+              ->orWhere('serial_number', 'like', "%{$search}%");
+          })
+
+          // Kategori
+          ->orWhereHas('keluar.inventaris.kategori', function ($k) use ($search) {
+            $k->where('nama_barang', 'like', "%{$search}%");
+          })
+
+          // Lokasi
+          ->orWhereHas('lokasi', function ($l) use ($search) {
+            $l->where('nama_lokasi', 'like', "%{$search}%");
           });
       });
     }
 
+    /*
+    |--------------------------------------------------------------------------
+    | DATA
+    |--------------------------------------------------------------------------
+    */
+
     $mapings = $query
       ->latest()
-      ->paginate(5)
+      ->paginate(10)
       ->appends(request()->query());
 
-    // Data untuk dropdown filter
-    $lokasis = Lokasi::orderBy('nama_lokasi')->get();
-    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
-    $barangs = Kategori::orderBy('nama_barang')->get();
+    /*
+    |--------------------------------------------------------------------------
+    | DROPDOWN
+    |--------------------------------------------------------------------------
+    */
 
-    return view('content.dashboard.maping.index', compact('mapings', 'lokasis', 'perusahaans', 'barangs', 'status'));
+    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+
+    $lokasis =
+      $user->role == 'super_admin'
+        ? Lokasi::orderBy('nama_lokasi')->get()
+        : Lokasi::where('id_perusahaan', $user->id_perusahaan)
+          ->orderBy('nama_lokasi')
+          ->get();
+
+    $karyawans =
+      $user->role == 'super_admin'
+        ? Karyawan::orderBy('nama_karyawan')->get()
+        : Karyawan::where('id_perusahaan', $user->id_perusahaan)
+          ->orderBy('nama_karyawan')
+          ->get();
+
+    $kategoris =
+      $user->role == 'super_admin'
+        ? Kategori::orderBy('nama_barang')->get()
+        : Kategori::where('perusahaan_id', $user->id_perusahaan)
+          ->orderBy('nama_barang')
+          ->get();
+
+    $keluars = Keluar::doesntHave('maping')
+      ->when($user->role != 'super_admin', fn($q) => $q->where('perusahaan_id', $user->id_perusahaan))
+      ->get();
+
+    return view(
+      'content.dashboard.maping.index',
+      compact('mapings', 'perusahaans', 'lokasis', 'karyawans', 'kategoris', 'keluars')
+    );
   }
 
   /**
@@ -128,89 +213,93 @@ class MapingController extends Controller
   {
     $user = auth()->user();
 
-    if ($user->role === 'super_admin') {
-      $lokasis = collect();
+    /*
+    |--------------------------------------------------------------------------
+    | PERUSAHAAN
+    |--------------------------------------------------------------------------
+    */
 
+    if ($user->role == 'super_admin') {
       $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+
+      $lokasis = collect();
     } else {
+      $perusahaans = collect();
+
       $lokasis = Lokasi::where('id_perusahaan', $user->id_perusahaan)
         ->orderBy('nama_lokasi')
         ->get();
-
-      $perusahaans = collect();
     }
 
-    return view('content.dashboard.maping.create', compact('lokasis', 'perusahaans'));
+    /*
+    |--------------------------------------------------------------------------
+    | MASTER ACCESS
+    |--------------------------------------------------------------------------
+    */
+
+    $aplikasis = Access::where('kategori', 'Aplikasi')
+      ->where('jenis', 'Software')
+      ->where('status', 'aktif')
+      ->orderBy('nama_akses')
+      ->get();
+
+    $hakAksesPPN = Access::where('kategori', 'Hak Akses')
+      ->where('jenis', 'PPN')
+      ->where('status', 'aktif')
+      ->orderBy('nama_akses')
+      ->get();
+
+    $hakAksesNonPPN = Access::where('kategori', 'Hak Akses')
+      ->where('jenis', 'NON PPN')
+      ->where('status', 'aktif')
+      ->orderBy('nama_akses')
+      ->get();
+
+    return view(
+      'content.dashboard.maping.create',
+      compact('perusahaans', 'lokasis', 'aplikasis', 'hakAksesPPN', 'hakAksesNonPPN')
+    );
   }
 
-  public function getBarangByKeluar(Request $request)
+  public function getKategori(Request $request)
   {
-    try {
-      $request->validate([
-        'kode_barang' => 'required',
-      ]);
+    return response()->json(Kategori::orderBy('nama_barang')->get());
+  }
+  public function getAset(Request $request)
+  {
+    $query = Keluar::with(['inventaris.dataAset.kategori', 'karyawan']);
 
-      // 🔍 Cari TANPA filter dulu
-      $query = Keluar::with(['masuk.kategori', 'karyawan'])->where('kode_barang', $request->kode_barang);
-
-      // 🔥 SUPER ADMIN FILTER PERUSAHAAN
-      if (auth()->user()->role === 'super_admin') {
-        if ($request->perusahaan_id) {
-          $query->where('id_perusahaan', $request->perusahaan_id);
-        }
-      } else {
-        $query->where('id_perusahaan', auth()->user()->id_perusahaan);
-      }
-
-      $keluar = $query->first();
-
-      // ❌ Tidak ada sama sekali
-      if (!$keluar) {
-        return response()->json([
-          'status' => false,
-          'message' => 'Kode barang tidak ditemukan',
-        ]);
-      }
-
-      // ❌ Ada tapi beda perusahaan
-      if (auth()->user()->role !== 'super_admin' && $keluar->id_perusahaan != auth()->user()->id_perusahaan) {
-        return response()->json([
-          'status' => false,
-          'message' => 'Kode barang bukan milik perusahaan Anda',
-        ]);
-      }
-
-      // ❌ Sudah dipakai
-      if (Maping::where('id_keluar', $keluar->id)->exists()) {
-        return response()->json([
-          'status' => true,
-          'used' => true,
-          'message' => 'Kode barang sudah digunakan',
-        ]);
-      }
-
-      // ✅ OK
-      return response()->json([
-        'status' => true,
-        'data' => [
-          'id_keluar' => $keluar->id,
-          'nama_barang' => optional($keluar->masuk->kategori)->nama_barang ?? '-',
-          'type' => optional($keluar->masuk)->type ?? '-',
-          'merek' => optional($keluar->masuk)->merek ?? '-',
-          'warna' => $keluar->warna ?? '-',
-          'nama_karyawan' => optional($keluar->karyawan)->nama_karyawan ?? '-',
-        ],
-      ]);
-    } catch (\Throwable $e) {
-      return response()->json(
-        [
-          'status' => false,
-          'message' => 'Terjadi kesalahan server',
-          'error' => $e->getMessage(),
-        ],
-        500
-      );
+    if ($request->id_perusahaan) {
+      $query->where('perusahaan_id', $request->id_perusahaan);
     }
+
+    $query->whereHas('inventaris.dataAset', function ($q) use ($request) {
+      $q->where('kategori_id', $request->id_kategori);
+    });
+
+    $used = Maping::pluck('id_keluar');
+
+    if ($request->current_keluar) {
+      $used = $used->reject(fn($id) => $id == $request->current_keluar);
+    }
+
+    $query->whereNotIn('id', $used);
+
+    return response()->json($query->get());
+  }
+  public function getDetailAset($id)
+  {
+    $keluar = Keluar::with(['inventaris.dataAset.kategori', 'karyawan'])->findOrFail($id);
+
+    return response()->json([
+      'id_keluar' => $keluar->id,
+      'kode_aset' => $keluar->inventaris->kode_aset ?? '-',
+      'nama_barang' => $keluar->inventaris->dataAset->kategori->nama_barang ?? '-',
+      'type' => $keluar->inventaris->dataAset->type ?? '-',
+      'merek' => $keluar->inventaris->dataAset->merek ?? '-',
+      'warna' => $keluar->inventaris->dataAset->warna ?? '-',
+      'nama_karyawan' => $keluar->karyawan->nama_karyawan ?? '-',
+    ]);
   }
 
   /**
@@ -220,124 +309,110 @@ class MapingController extends Controller
   {
     $user = auth()->user();
 
-    // =====================================
-    // PERUSAHAAN
-    // =====================================
-
-    $perusahaanId = $user->role === 'super_admin' ? $request->id_perusahaan : $user->id_perusahaan;
-
-    // =====================================
-    // VALIDASI
-    // =====================================
-
     $validated = $request->validate([
-      'id_keluar' => [
-        'required',
-
-        'exists:keluars,id',
-
-        function ($attribute, $value, $fail) {
-          $exists = Maping::where('id_keluar', $value)->exists();
-
-          if ($exists) {
-            $fail('Kode barang ini sudah digunakan dan tidak bisa dipakai lagi.');
-          }
-        },
-      ],
-
+      'id_keluar' => 'required|exists:keluars,id',
       'id_lokasi' => 'required|exists:lokasis,id',
 
-      'id_perusahaan' => $user->role === 'super_admin' ? 'required|exists:perusahaans,id' : 'nullable',
-
       'processor' => 'nullable|string|max:100',
+      'ram' => 'nullable|string|max:20',
 
-      'device_id' => [
-        'nullable',
-
-        'string',
-
-        'max:50',
-
-        Rule::unique('mapings')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
-      ],
-
-      'produk_id' => [
-        'nullable',
-
-        'string',
-
-        'max:50',
-
-        Rule::unique('mapings')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
-      ],
-
-      'ram' => 'nullable|integer|min:1',
+      'device_id' => 'nullable|string|max:100',
+      'produk_id' => 'nullable|string|max:100',
 
       'system' => 'nullable|string|max:50',
-
-      'version' => 'nullable|string|max:20',
+      'version' => 'nullable|string|max:50',
 
       'instal_on' => 'nullable|date',
 
-      'aplikasi' => 'nullable|string|max:100',
+      'tanggal_digunakan' => 'required|date',
 
-      'data_p' => 'nullable|string|max:100',
-
-      'data_n' => 'nullable|string|max:100',
+      'catatan' => 'nullable|string',
+      'accesses' => 'nullable|array',
+      'accesses.*' => 'exists:accesses,id',
     ]);
 
-    DB::beginTransaction();
-
     try {
-      // =====================================
-      // UPPERCASE
-      // =====================================
+      // Tentukan perusahaan
+      $perusahaanId =
+        $user->role == 'super_admin' ? Keluar::findOrFail($request->id_keluar)->id_perusahaan : $user->id_perusahaan;
 
-      $validated['processor'] = strtoupper($validated['processor'] ?? '');
+      // Pastikan inventaris belum pernah dimapping
+      $cekMaping = Maping::where('id_keluar', $request->id_keluar)->exists();
 
-      $validated['device_id'] = strtoupper($validated['device_id'] ?? '');
+      if ($cekMaping) {
+        return back()->with('error', 'Inventaris tersebut sudah pernah dimapping.');
+      }
 
-      $validated['produk_id'] = strtoupper($validated['produk_id'] ?? '');
+      // Cek Device ID
+      if ($request->filled('device_id')) {
+        $device = Maping::where('device_id', $request->device_id)
+          ->where('id_perusahaan', $perusahaanId)
+          ->exists();
 
-      $validated['system'] = strtoupper($validated['system'] ?? '');
+        if ($device) {
+          return back()->with('error', 'Device ID sudah digunakan.');
+        }
+      }
 
-      $validated['version'] = strtoupper($validated['version'] ?? '');
+      // Cek Product ID
+      if ($request->filled('produk_id')) {
+        $produk = Maping::where('produk_id', $request->produk_id)
+          ->where('id_perusahaan', $perusahaanId)
+          ->exists();
 
-      $validated['aplikasi'] = strtoupper($validated['aplikasi'] ?? '');
+        if ($produk) {
+          return back()->with('error', 'Product ID sudah digunakan.');
+        }
+      }
 
-      $validated['data_p'] = strtoupper($validated['data_p'] ?? '');
+      $maping = Maping::create([
+        'id_keluar' => $request->id_keluar,
 
-      $validated['data_n'] = strtoupper($validated['data_n'] ?? '');
+        'id_lokasi' => $request->id_lokasi,
 
-      // =====================================
-      // DEFAULT
-      // =====================================
+        'id_perusahaan' => $perusahaanId,
 
-      $validated['id_perusahaan'] = $perusahaanId;
+        'processor' => strtoupper($request->processor),
 
-      $validated['status'] = 'aktif';
+        'ram' => strtoupper($request->ram),
 
-      // =====================================
-      // SIMPAN
-      // =====================================
+        'device_id' => strtoupper($request->device_id),
 
-      Maping::create($validated);
+        'produk_id' => strtoupper($request->produk_id),
 
-      DB::commit();
+        'system' => strtoupper($request->system),
+
+        'version' => strtoupper($request->version),
+
+        'instal_on' => $request->instal_on,
+
+        'tanggal_digunakan' => $request->tanggal_digunakan,
+
+        'catatan' => $request->catatan,
+
+        'status' => 'dipakai',
+      ]);
+      // ===============================
+      // SIMPAN HAK AKSES & APLIKASI
+      // ===============================
+
+      if ($request->filled('accesses')) {
+        foreach ($request->accesses as $accessId) {
+          MapingAccess::create([
+            'maping_id' => $maping->id,
+
+            'access_id' => $accessId,
+          ]);
+        }
+      }
 
       return redirect()
         ->route('maping.index')
-        ->with('success', 'Data Maping berhasil disimpan');
+        ->with('success', 'Mapping aset berhasil disimpan.');
     } catch (\Exception $e) {
-      DB::rollBack();
+      Log::error($e->getMessage());
 
-      Log::error('Gagal simpan Maping', [
-        'error' => $e->getMessage(),
-      ]);
-
-      return back()
-        ->withInput()
-        ->with('error', 'Terjadi kesalahan saat menyimpan data');
+      return back()->with('error', 'Gagal menyimpan mapping aset.');
     }
   }
 
@@ -346,9 +421,9 @@ class MapingController extends Controller
    */
   public function show(int $id)
   {
-    $query = Maping::with(['lokasi', 'perusahaan', 'keluar.masuk.kategori', 'keluar.karyawan']);
+    $query = Maping::with(['lokasi', 'perusahaan', 'keluar.karyawan', 'keluar.inventaris.dataAset.kategori']);
 
-    if (auth()->user()->role !== 'super_admin') {
+    if (auth()->user()->role != 'super_admin') {
       $query->where('id_perusahaan', auth()->user()->id_perusahaan);
     }
 
@@ -364,161 +439,123 @@ class MapingController extends Controller
   {
     $user = auth()->user();
 
-    $maping = Maping::with(['keluar.masuk.kategori', 'keluar.karyawan', 'lokasi', 'perusahaan'])->findOrFail($id);
+    $maping = Maping::with([
+      'keluar.inventaris.dataAset.kategori',
+      'keluar.karyawan',
+      'lokasi',
+      'perusahaan',
+    ])->findOrFail($id);
 
-    // proteksi perusahaan
     if ($user->role !== 'super_admin' && $maping->id_perusahaan != $user->id_perusahaan) {
       abort(403);
     }
 
-    // lokasi sesuai perusahaan
     $lokasis = Lokasi::where('id_perusahaan', $maping->id_perusahaan)->get();
 
-    // perusahaan untuk super admin
     $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
 
-    return view('content.dashboard.maping.edit', compact('maping', 'lokasis', 'perusahaans'));
+    $kategoris = Kategori::orderBy('nama_barang')->get();
+
+    return view('content.dashboard.maping.edit', compact('maping', 'lokasis', 'perusahaans', 'kategoris'));
   }
 
   /**
    * Update the specified resource in storage.
    */
-  public function update(Request $request, Maping $maping)
+  public function update(Request $request, string $id)
   {
-    $user = auth()->user();
-
-    // =====================================
-    // PERUSAHAAN
-    // =====================================
-
-    $perusahaanId = $user->role === 'super_admin' ? $request->id_perusahaan : $user->id_perusahaan;
-
-    // =====================================
-    // VALIDASI
-    // =====================================
+    $maping = Maping::findOrFail($id);
 
     $validated = $request->validate([
-      'id_keluar' => [
-        'required',
-
-        'exists:keluars,id',
-
-        function ($attribute, $value, $fail) use ($maping) {
-          $exists = Maping::where('id_keluar', $value)
-            ->where('id', '!=', $maping->id)
-            ->exists();
-
-          if ($exists) {
-            $fail('Kode barang ini sudah digunakan oleh data lain.');
-          }
-        },
-      ],
-
-      'id_lokasi' => 'nullable|exists:lokasis,id',
-
-      'id_perusahaan' => $user->role === 'super_admin' ? 'required|exists:perusahaans,id' : 'nullable',
-
-      // =====================================
-      // SPESIFIKASI
-      // =====================================
+      'id_lokasi' => 'required|exists:lokasis,id',
 
       'processor' => 'nullable|string|max:100',
 
-      'device_id' => [
-        'nullable',
+      'ram' => 'nullable|string|max:20',
 
-        'string',
+      'device_id' => 'nullable|string|max:100',
 
-        'max:50',
-
-        Rule::unique('mapings')
-          ->where(fn($q) => $q->where('id_perusahaan', $perusahaanId))
-          ->ignore($maping->id),
-      ],
-
-      'produk_id' => [
-        'nullable',
-
-        'string',
-
-        'max:50',
-
-        Rule::unique('mapings')
-          ->where(fn($q) => $q->where('id_perusahaan', $perusahaanId))
-          ->ignore($maping->id),
-      ],
-
-      'ram' => 'nullable|integer|min:1',
+      'produk_id' => 'nullable|string|max:100',
 
       'system' => 'nullable|string|max:50',
 
-      'version' => 'nullable|string|max:10',
+      'version' => 'nullable|string|max:50',
 
       'instal_on' => 'nullable|date',
 
-      'aplikasi' => 'nullable|string|max:100',
+      'tanggal_digunakan' => 'required|date',
 
-      'data_p' => 'nullable|string|max:255',
-
-      'data_n' => 'nullable|string|max:255',
-
-      'status' => 'required|in:aktif,dicabut',
+      'catatan' => 'nullable|string',
     ]);
 
-    DB::beginTransaction();
-
     try {
-      // =====================================
-      // UPPERCASE
-      // =====================================
+      // ==========================
+      // VALIDASI DEVICE ID
+      // ==========================
 
-      $validated['processor'] = strtoupper($validated['processor'] ?? '');
+      if ($request->filled('device_id')) {
+        $cekDevice = Maping::where('device_id', $request->device_id)
 
-      $validated['device_id'] = strtoupper($validated['device_id'] ?? '');
+          ->where('id_perusahaan', $maping->id_perusahaan)
 
-      $validated['produk_id'] = strtoupper($validated['produk_id'] ?? '');
+          ->where('id', '!=', $maping->id)
 
-      $validated['system'] = strtoupper($validated['system'] ?? '');
+          ->exists();
 
-      $validated['version'] = strtoupper($validated['version'] ?? '');
+        if ($cekDevice) {
+          return back()->with('error', 'Device ID sudah digunakan.');
+        }
+      }
 
-      $validated['instal_on'] = strtoupper($validated['instal_on'] ?? '');
+      // ==========================
+      // VALIDASI PRODUCT ID
+      // ==========================
 
-      $validated['aplikasi'] = strtoupper($validated['aplikasi'] ?? '');
+      if ($request->filled('produk_id')) {
+        $cekProduk = Maping::where('produk_id', $request->produk_id)
 
-      $validated['data_p'] = strtoupper($validated['data_p'] ?? '');
+          ->where('id_perusahaan', $maping->id_perusahaan)
 
-      $validated['data_n'] = strtoupper($validated['data_n'] ?? '');
+          ->where('id', '!=', $maping->id)
 
-      $validated['status'] = strtoupper($validated['status']);
+          ->exists();
 
-      // =====================================
-      // PERUSAHAAN
-      // =====================================
+        if ($cekProduk) {
+          return back()->with('error', 'Product ID sudah digunakan.');
+        }
+      }
 
-      $validated['id_perusahaan'] = $perusahaanId;
-
-      // =====================================
+      // ==========================
       // UPDATE
-      // =====================================
+      // ==========================
 
-      $maping->update($validated);
+      $maping->update([
+        'id_lokasi' => $request->id_lokasi,
 
-      DB::commit();
+        'processor' => strtoupper($request->processor),
 
-      return redirect()
-        ->route('maping.index')
-        ->with('success', 'Data Maping berhasil diperbarui');
-    } catch (\Exception $e) {
-      DB::rollBack();
+        'ram' => strtoupper($request->ram),
 
-      Log::error('Gagal update Maping', [
-        'error' => $e->getMessage(),
+        'device_id' => strtoupper($request->device_id),
+
+        'produk_id' => strtoupper($request->produk_id),
+
+        'system' => strtoupper($request->system),
+
+        'version' => strtoupper($request->version),
+
+        'instal_on' => $request->instal_on,
+
+        'tanggal_digunakan' => $request->tanggal_digunakan,
+
+        'catatan' => $request->catatan,
       ]);
 
-      return back()
-        ->withInput()
-        ->with('error', 'Terjadi kesalahan saat update data');
+      return back()->with('success', 'Mapping aset berhasil diperbarui.');
+    } catch (\Exception $e) {
+      Log::error($e->getMessage());
+
+      return back()->with('error', 'Gagal memperbarui mapping aset.');
     }
   }
 
@@ -527,110 +564,161 @@ class MapingController extends Controller
    */
   public function destroy(int $id)
   {
-    $maping = Maping::findOrFail($id);
-    $maping->delete();
+    try {
+      $maping = Maping::findOrFail($id);
 
-    return redirect()
-      ->back()
-      ->with('success', 'Maping  berhasil dihapus');
+      /*
+        |--------------------------------------------------------------------------
+        | CEK APAKAH SUDAH PERNAH DIGUNAKAN TRANSAKSI
+        |--------------------------------------------------------------------------
+        */
+
+      // Sudah pernah mutasi
+      if ($maping->mutasiMapings()->exists()) {
+        return back()->with('error', 'Mapping tidak dapat dihapus karena sudah memiliki riwayat mutasi.');
+      }
+
+      /*
+        |--------------------------------------------------------------------------
+        | HAPUS
+        |--------------------------------------------------------------------------
+        */
+
+      $maping->delete();
+
+      return back()->with('success', 'Mapping berhasil dihapus.');
+    } catch (\Exception $e) {
+      Log::error($e->getMessage());
+
+      return back()->with('error', 'Gagal menghapus mapping.');
+    }
   }
 
   public function print(Request $request)
   {
     $user = auth()->user();
 
-    $query = Maping::with(['lokasi', 'perusahaan', 'keluar.masuk.kategori', 'keluar.karyawan'])->where(
-      'status',
-      $request->get('status', 'aktif')
-    );
+    $query = Maping::with([
+      'lokasi',
+      'perusahaan',
+      'keluar.karyawan',
+      'keluar.inventaris.masuk',
+      'keluar.inventaris.dataAset.kategori',
+    ])->where('status', $request->get('status', 'aktif'));
 
-    /*
-    |====================================================
-    | FILTER (SAMA DENGAN INDEX)
-    |====================================================
-    */
+    // =====================================
+    // PETUGAS HANYA DATA PERUSAHAAN SENDIRI
+    // =====================================
 
-    // Lokasi
+    if ($user->role !== 'super_admin') {
+      $query->where('id_perusahaan', $user->id_perusahaan);
+    }
+
+    // =====================================
+    // FILTER LOKASI
+    // =====================================
+
     if ($request->filled('lokasi')) {
       $query->where('id_lokasi', $request->lokasi);
     }
 
-    // 🔒 Perusahaan (HANYA SUPER ADMIN BOLEH)
+    // =====================================
+    // FILTER PERUSAHAAN
+    // =====================================
+
     if ($user->role === 'super_admin' && $request->filled('perusahaan')) {
       $query->where('id_perusahaan', $request->perusahaan);
     }
 
-    // Tahun
+    // =====================================
+    // FILTER TAHUN PEMBELIAN
+    // =====================================
+
     if ($request->filled('tahun')) {
-      $query->whereHas('keluar.masuk', function ($q) use ($request) {
-        $q->whereYear('tgl_beli', $request->tahun);
+      $query->whereHas('keluar.inventaris.masuk', function ($q) use ($request) {
+        $q->whereYear('tanggal_pembelian', $request->tahun);
       });
     }
 
-    // Barang
+    // =====================================
+    // FILTER KATEGORI BARANG
+    // =====================================
+
     if ($request->filled('barang')) {
-      $query->whereHas('keluar.masuk.kategori', function ($q) use ($request) {
-        $q->where('id', $request->barang);
+      $query->whereHas('keluar.inventaris.dataAset', function ($q) use ($request) {
+        $q->where('kategori_id', $request->barang);
       });
     }
 
-    // Merek
+    // =====================================
+    // FILTER MEREK
+    // =====================================
+
     if ($request->filled('merek')) {
-      $query->whereHas('keluar.masuk', function ($q) use ($request) {
+      $query->whereHas('keluar.inventaris.dataAset', function ($q) use ($request) {
         $q->where('merek', 'like', '%' . $request->merek . '%');
       });
     }
 
-    // Type
+    // =====================================
+    // FILTER TYPE
+    // =====================================
+
     if ($request->filled('type')) {
-      $query->whereHas('keluar.masuk', function ($q) use ($request) {
+      $query->whereHas('keluar.inventaris.dataAset', function ($q) use ($request) {
         $q->where('type', 'like', '%' . $request->type . '%');
       });
     }
 
-    /*
-    |====================================================
-    | SEARCH GLOBAL
-    |====================================================
-    */
+    // =====================================
+    // SEARCH GLOBAL
+    // =====================================
+
     if ($request->filled('search')) {
       $search = $request->search;
 
       $query->where(function ($q) use ($search) {
-        $q->where('processor', 'like', "%$search%")
-          ->orWhere('device_id', 'like', "%$search%")
-          ->orWhere('produk_id', 'like', "%$search%")
+        $q->where('processor', 'like', "%{$search}%")
+          ->orWhere('device_id', 'like', "%{$search}%")
+          ->orWhere('produk_id', 'like', "%{$search}%")
+          ->orWhere('system', 'like', "%{$search}%")
+          ->orWhere('version', 'like', "%{$search}%")
 
-          ->orWhereHas('lokasi', function ($l) use ($search) {
-            $l->where('nama_lokasi', 'like', "%$search%");
+          ->orWhereHas('lokasi', function ($sub) use ($search) {
+            $sub->where('nama_lokasi', 'like', "%{$search}%");
           })
 
-          ->orWhereHas('perusahaan', function ($p) use ($search) {
-            $p->where('nama_perusahaan', 'like', "%$search%");
+          ->orWhereHas('perusahaan', function ($sub) use ($search) {
+            $sub->where('nama_perusahaan', 'like', "%{$search}%");
           })
 
-          ->orWhereHas('keluar.karyawan', function ($k) use ($search) {
-            $k->where('nama_karyawan', 'like', "%$search%");
+          ->orWhereHas('keluar.karyawan', function ($sub) use ($search) {
+            $sub->where('nama_karyawan', 'like', "%{$search}%");
           })
 
-          ->orWhereHas('keluar.masuk.kategori', function ($b) use ($search) {
-            $b->where('nama_barang', 'like', "%$search%");
+          ->orWhereHas('keluar.inventaris', function ($sub) use ($search) {
+            $sub
+              ->where('kode_aset', 'like', "%{$search}%")
+
+              ->orWhere('no_inventaris', 'like', "%{$search}%");
+          })
+
+          ->orWhereHas('keluar.inventaris.dataAset.kategori', function ($sub) use ($search) {
+            $sub->where('nama_barang', 'like', "%{$search}%");
           });
       });
     }
 
-    /*
-    |====================================================
-    | GET DATA
-    |====================================================
-    */
-    $mapings = $query->latest()->get();
+    // =====================================
+    // GET DATA
+    // =====================================
 
-    /*
-    |====================================================
-    | NAMA PERUSAHAAN
-    |====================================================
-    */
+    $mapings = $query->orderBy('id', 'desc')->get();
+
+    // =====================================
+    // NAMA PERUSAHAAN
+    // =====================================
+
     if ($user->role === 'super_admin') {
       $namaPerusahaan = $request->filled('perusahaan')
         ? optional(Perusahaan::find($request->perusahaan))->nama_perusahaan
@@ -652,16 +740,24 @@ class MapingController extends Controller
   }
   public function mutasiForm(int $id)
   {
-    $maping = Maping::findOrFail($id);
-    $lokasi = Lokasi::all();
+    $maping = Maping::with([
+      'keluar.karyawan',
+      'keluar.inventaris.dataAset.kategori',
+      'lokasi',
+      'perusahaan',
+    ])->findOrFail($id);
+
+    $lokasi = Lokasi::orderBy('nama_lokasi')->get();
 
     $user = auth()->user();
 
     if ($user->role === 'super_admin') {
-      $perusahaan = Perusahaan::all();
+      $perusahaan = Perusahaan::orderBy('nama_perusahaan')->get();
+
       $modePerusahaan = 'select';
     } else {
-      $perusahaan = $user->perusahaan; // single object
+      $perusahaan = $user->perusahaan;
+
       $modePerusahaan = 'fixed';
     }
 
@@ -672,101 +768,90 @@ class MapingController extends Controller
   {
     $request->validate([
       'ke_lokasi' => 'required|exists:lokasis,id',
+
       'ke_perusahaan' => 'required|exists:perusahaans,id',
+
       'tanggal_mutasi' => 'required|date',
-    ]);
-    $request->merge([
-      'ke_aplikasi' => strtoupper($request->ke_aplikasi ?? ''),
 
-      'ke_data_ppn' => strtoupper($request->ke_data_ppn ?? ''),
-
-      'ke_data_non_ppn' => strtoupper($request->ke_data_non_ppn ?? ''),
-
-      'ke_no_inventaris' => strtoupper($request->ke_no_inventaris ?? ''),
-
-      'keterangan' => strtoupper($request->keterangan ?? ''),
+      'ke_karyawan' => 'nullable|exists:karyawans,id',
     ]);
 
-    $maping = Maping::with('keluar')->findOrFail($id);
+    $maping = Maping::with(['keluar'])->findOrFail($id);
 
     DB::beginTransaction();
 
     try {
-      // =====================================
-      // SIMPAN HISTORY MUTASI
-      // =====================================
-
       MutasiMaping::create([
-        // RELASI
         'id_maping' => $maping->id,
 
-        // 🔥 WAJIB UNTUK MULTI PERUSAHAAN
         'id_perusahaan' => $request->ke_perusahaan,
 
-        // =================================
+        // =====================
         // DARI
-        // =================================
+        // =====================
 
         'dari_lokasi' => $maping->id_lokasi,
-        'dari_perusahaan' => $maping->id_perusahaan,
-        'dari_karyawan' => optional($maping->keluar)->id_karyawan,
 
-        'dari_no_inventaris' => optional($maping->keluar)->no_inventaris,
+        'dari_perusahaan' => $maping->id_perusahaan,
+
+        'dari_karyawan' => optional($maping->keluar)->karyawan_id,
+
         'dari_aplikasi' => $maping->aplikasi,
+
         'dari_data_ppn' => $maping->data_p,
+
         'dari_data_non_ppn' => $maping->data_n,
 
-        // =================================
+        // =====================
         // KE
-        // =================================
+        // =====================
 
         'ke_lokasi' => $request->ke_lokasi,
+
         'ke_perusahaan' => $request->ke_perusahaan,
 
-        'ke_karyawan' => $request->ke_karyawan ?: optional($maping->keluar)->id_karyawan,
+        'ke_karyawan' => $request->ke_karyawan,
 
-        'ke_no_inventaris' => $request->ke_no_inventaris,
+        'ke_aplikasi' => strtoupper($request->ke_aplikasi ?? ''),
 
-        'ke_aplikasi' => $request->ke_aplikasi,
+        'ke_data_ppn' => strtoupper($request->ke_data_ppn ?? ''),
 
-        'ke_data_ppn' => $request->ke_data_ppn,
+        'ke_data_non_ppn' => strtoupper($request->ke_data_non_ppn ?? ''),
 
-        'ke_data_non_ppn' => $request->ke_data_non_ppn,
-
-        // =================================
-        // LAINNYA
-        // =================================
+        // =====================
+        // META
+        // =====================
 
         'tanggal_mutasi' => $request->tanggal_mutasi,
 
-        'keterangan' => $request->keterangan,
+        'keterangan' => strtoupper($request->keterangan ?? ''),
+
+        'created_by' => auth()->id(),
       ]);
 
-      // =====================================
+      // =====================
       // UPDATE MAPING
-      // =====================================
+      // =====================
 
       $maping->update([
         'id_lokasi' => $request->ke_lokasi,
 
         'id_perusahaan' => $request->ke_perusahaan,
 
-        'aplikasi' => $request->ke_aplikasi,
+        'aplikasi' => strtoupper($request->ke_aplikasi ?? ''),
 
-        'data_p' => $request->ke_data_ppn,
+        'data_p' => strtoupper($request->ke_data_ppn ?? ''),
 
-        'data_n' => $request->ke_data_non_ppn,
+        'data_n' => strtoupper($request->ke_data_non_ppn ?? ''),
       ]);
 
-      // =====================================
-      // UPDATE KELUAR
-      // =====================================
+      // =====================
+      // UPDATE USER ASET
+      // =====================
 
-      if ($maping->keluar) {
+      if ($maping->keluar && $request->filled('ke_karyawan')) {
         $maping->keluar->update([
-          'id_karyawan' => $request->ke_karyawan ?: $maping->keluar->id_karyawan,
-
-          'no_inventaris' => $request->ke_no_inventaris ?: $maping->keluar->no_inventaris,
+          'karyawan_id' => $request->ke_karyawan,
         ]);
       }
 
@@ -778,27 +863,35 @@ class MapingController extends Controller
     } catch (\Exception $e) {
       DB::rollBack();
 
-      dd($e->getMessage());
+      return back()
+        ->withInput()
+        ->with('error', $e->getMessage());
     }
   }
   public function searchKaryawan(Request $request)
   {
-    $q = $request->q;
+    $keyword = $request->q;
     $perusahaanId = $request->perusahaan_id;
 
     $karyawan = Karyawan::query()
 
-      ->when($perusahaanId, function ($query) use ($perusahaanId) {
-        $query->where('id_perusahaan', $perusahaanId);
+      ->when($perusahaanId, function ($q) use ($perusahaanId) {
+        $q->where('id_perusahaan', $perusahaanId);
       })
 
-      ->when($q, function ($query) use ($q) {
-        $query->where('nama_karyawan', 'like', '%' . $q . '%');
+      ->when($keyword, function ($q) use ($keyword) {
+        $q->where(function ($sub) use ($keyword) {
+          $sub
+            ->where('kode_karyawan', 'like', "%{$keyword}%")
+            ->orWhere('nama_karyawan', 'like', "%{$keyword}%")
+            ->orWhere('divisi', 'like', "%{$keyword}%");
+        });
       })
 
-      ->limit(10)
+      ->orderBy('nama_karyawan')
+      ->limit(15)
 
-      ->get(['id', 'nama_karyawan']);
+      ->get(['id', 'kode_karyawan', 'nama_karyawan', 'divisi']);
 
     return response()->json($karyawan);
   }
@@ -1034,7 +1127,12 @@ class MapingController extends Controller
   }
   public function publicShow(int $id)
   {
-    $maping = Maping::with(['keluar.masuk.kategori', 'keluar.karyawan', 'lokasi', 'perusahaan'])->findOrFail($id);
+    $maping = Maping::with([
+      'perusahaan',
+      'lokasi',
+      'keluar.karyawan',
+      'keluar.inventaris.dataAset.kategori',
+    ])->findOrFail($id);
 
     return view('content.dashboard.maping.public_show', compact('maping'));
   }

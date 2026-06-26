@@ -44,4 +44,8 @@ class Keluar extends Model
   {
     return $this->belongsTo(Karyawan::class, 'karyawan_id');
   }
+  public function maping()
+{
+    return $this->hasOne(Maping::class, 'id_keluar');
+}
 }

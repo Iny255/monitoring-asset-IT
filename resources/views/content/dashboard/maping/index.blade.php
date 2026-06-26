@@ -1,347 +1,587 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Data Mapping')
+@section('title', 'Mapping Inventaris')
 
 @section('content')
+    <style>
+        .table td {
 
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show" role="alert">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
+            vertical-align: middle;
 
-    @if (session('error'))
-        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-            {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
+        }
 
-    <div class="card">
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="text-primary mb-0">Data Mapping</h5>
+        .dropdown-menu {
 
-                {{-- HANYA PETUGAS BISA TAMBAH --}}
-                @if (auth()->user()->role == 'petugas' || auth()->user()->role == 'super_admin')
-                    <a href="/dashboard/maping/create" class="btn btn-primary">
-                        Tambah Data Mapping
-                    </a>
-                @endif
+            min-width: 220px;
+
+        }
+
+        .dropdown-item {
+
+            padding: .55rem 1rem;
+
+        }
+
+        .dropdown-item i {
+
+            width: 22px;
+
+        }
+
+        .badge {
+
+            font-size: 12px;
+
+        }
+
+        .card-header {
+
+            padding: 18px 22px;
+
+        }
+    </style>
+
+    <div class="container-fluid">
+
+        {{-- ALERT SUCCESS --}}
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show">
+                {{ session('success') }}
+                <button class="btn-close" data-bs-dismiss="alert"></button>
             </div>
-        </div>
+        @endif
 
-        <div class="card-body">
-            {{-- 🔔 INDIKATOR FILTER --}}
-            @if (request()->query())
-                <div class="alert alert-info">
-                    🔎 Filter aktif
+        {{-- ALERT ERROR --}}
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show">
+                {{ session('error') }}
+                <button class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        <div class="card shadow-sm border-0">
+
+            {{-- HEADER --}}
+            <div class="card-header d-flex justify-content-between align-items-center">
+
+                <div>
+
+                    <h5 class="mb-1 text-primary">
+
+                        Mapping Inventaris
+
+                    </h5>
+
+                    <small class="text-muted">
+
+                        Kelola inventaris yang sedang digunakan
+
+                    </small>
+
                 </div>
-            @endif
-            {{-- SEARCH --}}
-            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
 
-                {{-- KIRI: FILTER & RESET --}}
                 <div class="d-flex gap-2">
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
-                        🔍 Filter
+
+                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
+
+                        <i class="bx bx-filter-alt"></i>
+
+                        Filter
+
                     </button>
 
-                    @if (auth()->user()->role === 'manager')
-                        <a href="{{ route('manager.maping.index') }}" class="btn btn-secondary">
-                            Reset
-                        </a>
-                    @else
-                        <a href="{{ route('maping.index') }}" class="btn btn-secondary">
-                            Reset
-                        </a>
-                    @endif
-                </div>
+                    <div class="dropdown">
 
-                {{-- KANAN: CETAK --}}
-                <div>
-                    @if (auth()->user()->role === 'petugas' || auth()->user()->role === 'super_admin')
-                        <a href="{{ route('maping.print', request()->query()) }}" target="_blank" class="btn btn-success">
-                            🖨️ Cetak
-                        </a>
-                    @elseif (auth()->user()->role === 'manager')
-                        <a href="{{ route('manager.maping.cetak', request()->query()) }}" target="_blank"
-                            class="btn btn-success">
-                            🖨️ Cetak
-                        </a>
-                    @endif
+                        <button class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">
+
+                            <i class="bx bx-export"></i>
+
+                            Export
+
+                        </button>
+
+                        <ul class="dropdown-menu">
+
+                            <li>
+
+                                <a class="dropdown-item" href="#">
+
+                                    PDF
+
+                                </a>
+
+                            </li>
+
+                            <li>
+
+                                <a class="dropdown-item" href="#">
+
+                                    Excel
+
+                                </a>
+
+                            </li>
+
+
+                        </ul>
+
+                    </div>
+
+                    <a href="{{ route('maping.create') }}" class="btn btn-primary">
+
+                        <i class="bx bx-plus"></i>
+
+                        Tambah Mapping
+
+                    </a>
+
                 </div>
 
             </div>
 
-            </form>
+            <div class="card-body">
 
-            {{-- TABLE --}}
-            <div class="table-responsive">
-                <table class="table table-bordered table-hover">
-                    <thead class="table-primary text-center">
-                        <tr>
-                            <th width="5%">No</th>
-                            <th>Kode Barang</th>
-                            <th>Nama Barang</th>
-                            <th>Nama Karyawan</th>
-                            <th>Lokasi</th>
-                            <th>Perusahaan</th>
-                            <th>Processor</th>
-                            <th>RAM</th>
-                            <th>QR</th>
-                            <th>Status</th>
-                            <th width="15%">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse ($mapings as $index => $maping)
+
+                {{-- TABLE --}}
+                <div class="table-responsive">
+
+                    <table class="table table-bordered table-hover align-middle">
+
+                        <thead class="table-primary text-center">
+
                             <tr>
-                                <td class="text-center">
-                                    {{ $mapings->firstItem() + $index }}
-                                </td>
-                                <td>{{ $maping->keluar->kode_barang }}</td>
-                                <td>{{ $maping->keluar->masuk->kategori->nama_barang ?? '-' }}</td>
-                                <td>{{ $maping->keluar->karyawan->nama_karyawan ?? '-' }}</td>
-                                <td>{{ $maping->lokasi->nama_lokasi ?? '-' }}</td>
-                                <td>{{ $maping->perusahaan->nama_perusahaan ?? '-' }}</td>
-                                <td>{{ $maping->processor ?? '-' }}</td>
-                                <td>{{ $maping->ram }} GB</td>
-                                <td class="text-center">
 
-                                    {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(60)->generate(route('maping.public_show', $maping->id)) !!}
+                                <th width="60">NO</th>
 
-                                </td>
-                                <td class="text-center">
+                                <th width="140">KODE INVENTARIS</th>
 
-                                    @if ($maping->status == 'aktif')
-                                        <span class="badge bg-success">Aktif</span>
-                                    @else
-                                        <span class="badge bg-danger">Dicabut</span>
+                                <th>DATA ASET</th>
+
+                                <th width="170">USER ASET</th>
+
+                                <th width="160">
+                                    LOKASI
+                                </th>
+
+                                <th width="110">
+                                    QR CODE
+                                </th>
+
+                                <th width="130">
+                                    TGL DIGUNAKAN
+                                </th>
+
+                                <th width="120">STATUS</th>
+
+                                @if (auth()->user()->role == 'super_admin')
+                                    <th width="180">PERUSAHAAN</th>
+                                @endif
+
+                                <th width="120">ACTION</th>
+
+                            </tr>
+
+                        </thead>
+
+                        <tbody>
+
+                            @forelse($mapings as $maping)
+                                <tr>
+
+                                    {{-- NO --}}
+                                    <td class="text-center">
+
+                                        {{ ($mapings->currentPage() - 1) * $mapings->perPage() + $loop->iteration }}
+
+                                    </td>
+
+                                    {{-- KODE INVENTARIS --}}
+                                    <td>
+
+                                        <strong>
+
+                                            {{ $maping->keluar->inventaris->no_inventaris ?? '-' }}
+
+                                        </strong>
+
+                                    </td>
+
+                                    {{-- DATA ASET --}}
+                                    <td>
+
+                                        <strong>
+
+                                            {{ strtoupper($maping->keluar->inventaris->dataAset->kategori->nama_barang ?? '-') }}
+
+                                        </strong>
+
+                                        <br>
+
+                                        <small class="text-muted">
+
+                                            {{ strtoupper($maping->keluar->inventaris->dataAset->merek ?? '-') }}
+
+                                            {{ strtoupper($maping->keluar->inventaris->dataAset->type ?? '-') }}
+
+                                        </small>
+
+                                    </td>
+
+                                    {{-- USER --}}
+                                    <td>
+
+                                        {{ strtoupper($maping->keluar->karyawan->nama_karyawan ?? '-') }}
+
+                                    </td>
+
+                                    {{-- LOKASI --}}
+                                    <td>
+
+                                        {{ strtoupper($maping->lokasi->nama_lokasi ?? '-') }}
+
+                                    </td>
+                                    <td class="text-center">
+
+                                        @if ($maping->id)
+                                            <a href="{{ route('maping.public_show', $maping->id) }}" target="_blank"
+                                                class="btn btn-sm btn-outline-primary" title="Lihat QR Code">
+
+                                                <i class="bx bx-qr"></i>
+
+                                            </a>
+                                        @else
+                                            -
+                                        @endif
+
+                                    </td>
+
+                                    {{-- TANGGAL DIGUNAKAN --}}
+                                    <td class="text-center">
+
+                                        {{ \Carbon\Carbon::parse($maping->tanggal_digunakan)->format('d-m-Y') }}
+
+                                    </td>
+
+                                    {{-- STATUS --}}
+                                    <td class="text-center">
+
+                                        @switch($maping->status)
+                                            @case('tersedia')
+                                                <span class="badge bg-label-secondary">
+
+                                                    Tersedia
+
+                                                </span>
+                                            @break
+
+                                            @case('dipakai')
+                                                <span class="badge bg-label-success">
+
+                                                    Dipakai
+
+                                                </span>
+                                            @break
+
+                                            @case('dipinjam')
+                                                <span class="badge bg-label-warning">
+
+                                                    Dipinjam
+
+                                                </span>
+                                            @break
+
+                                            @case('servis')
+                                                <span class="badge bg-label-danger">
+
+                                                    Servis
+
+                                                </span>
+                                            @break
+
+                                            @case('maintenance')
+                                                <span class="badge bg-label-info">
+
+                                                    Maintenance
+
+                                                </span>
+                                            @break
+                                        @endswitch
+
+                                    </td>
+
+                                    {{-- PERUSAHAAN --}}
+                                    @if (auth()->user()->role == 'super_admin')
+                                        <td>
+
+                                            {{ strtoupper($maping->perusahaan->nama_perusahaan ?? '-') }}
+
+                                        </td>
                                     @endif
 
-                                </td>
-                                <td class="text-center">
+                                    {{-- ACTION --}}
+                                    <td class="text-center">
 
-                                    {{-- ================= PETUGAS ================= --}}
-                                    @if (auth()->user()->role === 'petugas' || auth()->user()->role === 'super_admin')
-                                        {{-- SHOW --}}
-                                        <a href="{{ route('maping.show', $maping->id) }}" class="btn btn-info btn-sm">
-                                            <i class="bx bx-show"></i>
-                                        </a>
+                                        <div class="dropdown">
 
-                                        {{-- EDIT --}}
-                                        <button class="btn btn-warning btn-sm btn-edit" data-id="{{ $maping->id }}">
-                                            <i class="bx bx-edit-alt"></i>
-                                        </button>
+                                            <button class="btn btn-sm btn-primary dropdown-toggle"
+                                                data-bs-toggle="dropdown">
 
-                                        {{-- DELETE --}}
-                                        <form id="delete-form-{{ $maping->id }}"
-                                            action="{{ route('maping.destroy', $maping->id) }}" method="POST"
-                                            style="display:none;">
-                                            @csrf
-                                            @method('DELETE')
-                                        </form>
+                                                Aksi
 
-                                        <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $maping->id }}">
-                                            <i class="bx bx-trash"></i>
-                                        </button>
+                                            </button>
 
-                                        {{-- MUTASI --}}
-                                        <button class="btn btn-success btn-sm btn-mutasi" data-id="{{ $maping->id }}">
-                                            <i class="bx bx-transfer"></i>
-                                        </button>
-                                        {{-- CABUT INVENTARIS --}}
-                                        <form id="cabut-form-{{ $maping->id }}"
-                                            action="{{ route('maping.cabut', $maping->id) }}" method="POST"
-                                            style="display:none;">
-                                            @csrf
-                                        </form>
+                                            <ul class="dropdown-menu">
 
-                                        <button class="btn btn-dark btn-sm btn-cabut" data-id="{{ $maping->id }}"
-                                            data-kode="{{ $maping->keluar->kode_barang }}"
-                                            data-nama="{{ $maping->keluar->masuk->kategori->nama_barang ?? '-' }}">
-                                            <i class="bx bx-power-off"></i>
-                                        </button>
+                                                <li>
 
-                                        {{-- ================= MANAGER ================= --}}
-                                    @elseif(auth()->user()->role === 'manager')
-                                        <a href="{{ route('manager.maping.show', $maping->id) }}"
-                                            class="btn btn-info btn-sm">
-                                            <i class="bx bx-show"></i> Detail
-                                        </a>
-                                    @endif
+                                                    <a class="dropdown-item"
+                                                        href="{{ route('maping.show', $maping->id) }}">
 
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="10" class="text-center text-muted">
-                                    Data belum tersedia
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                                                        <i class="bx bx-show me-2"></i>
 
-            <div class="mt-3">
-                {{ $mapings->links() }}
+                                                        Detail
+
+                                                    </a>
+
+                                                </li>
+
+                                                <li>
+
+                                                    <a class="dropdown-item"
+                                                        href="{{ route('maping.edit', $maping->id) }}">
+
+                                                        <i class="bx bx-edit me-2"></i>
+
+                                                        Edit
+
+                                                    </a>
+
+                                                </li>
+
+                                                <li>
+
+                                                    <hr class="dropdown-divider">
+
+                                                </li>
+
+                                                <li>
+
+                                                    {{-- <a class="dropdown-item"
+                                                        href="{{ route('maping.hak-akses', $maping->id) }}">
+
+                                                        <i class="bx bx-lock-alt me-2"></i>
+
+                                                        Kelola Hak Akses
+
+                                                    </a> --}}
+
+                                                </li>
+
+                                                <li>
+
+                                                    <a class="dropdown-item"
+                                                        href="{{ route('maping.mutasi', $maping->id) }}">
+
+                                                        <i class="bx bx-transfer me-2"></i>
+
+                                                        Mutasi
+
+                                                    </a>
+
+                                                </li>
+
+                                                <li>
+
+                                                    {{-- <a class="dropdown-item"
+                                                        href="{{ route('maping.peminjaman', $maping->id) }}">
+
+                                                        <i class="bx bx-package me-2"></i>
+
+                                                        Peminjaman
+
+                                                    </a> --}}
+
+                                                </li>
+
+                                                <li>
+
+                                                    {{-- <a class="dropdown-item"
+                                                        href="{{ route('maping.servis', $maping->id) }}">
+
+                                                        <i class="bx bx-wrench me-2"></i>
+
+                                                        Servis
+
+                                                    </a> --}}
+
+                                                </li>
+
+                                                <li>
+
+                                                    {{-- <a class="dropdown-item"
+                                                        href="{{ route('maintenance.create', $maping->id) }}">
+
+                                                        <i class="bx bx-cog me-2"></i>
+
+                                                        Maintenance
+
+                                                    </a> --}}
+
+                                                </li>
+
+                                                <li>
+
+                                                    {{-- <a class="dropdown-item"
+                                                        href="{{ route('pencabutan.create', $maping->id) }}">
+
+                                                        <i class="bx bx-power-off me-2"></i>
+
+                                                        Pencabutan
+
+                                                    </a> --}}
+
+                                                </li>
+
+                                                <li>
+
+                                                    <hr class="dropdown-divider">
+
+                                                </li>
+
+                                                <li>
+
+                                                    <form action="{{ route('maping.destroy', $maping->id) }}"
+                                                        method="POST" class="form-delete">
+
+                                                        @csrf
+                                                        @method('DELETE')
+
+                                                        <button type="submit" class="dropdown-item text-danger">
+
+                                                            <i class="bx bx-trash me-2"></i>
+
+                                                            Hapus
+
+                                                        </button>
+
+                                                    </form>
+
+                                                </li>
+
+                                            </ul>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+
+                                @empty
+
+                                    <tr>
+
+                                        <td colspan="{{ auth()->user()->role == 'super_admin' ? 9 : 8 }}" class="text-center">
+
+                                            Belum ada data Mapping.
+
+                                        </td>
+
+                                    </tr>
+                                @endforelse
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                    {{-- PAGINATION --}}
+                    <div class="mt-3">
+
+                        {{ $mapings->links('pagination::bootstrap-5') }}
+
+                    </div>
+
+                </div>
+
             </div>
 
         </div>
-    </div>
-    <!-- MODAL PENCABUTAN -->
-    <div class="modal fade" id="modalCabut" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <form id="formCabut" method="POST">
-                @csrf
+        <!-- ================= FILTER MODAL ================= -->
+        <div class="modal fade" id="modalFilter" tabindex="-1" aria-hidden="true">
+
+            <div class="modal-dialog modal-xl">
 
                 <div class="modal-content">
 
-                    <div class="modal-header text-white modal-theme-header">
-                        <h5 class="mb-0" style="color:white;">Form Pencabutan Inventaris</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
+                    <form method="GET" action="{{ route('maping.index') }}">
 
-                    <div class="modal-body">
+                        <div class="modal-header">
 
-                        <div class="row">
+                            <h5 class="modal-title">
 
-                            <div class="col-md-6 mb-3">
-                                <label>Kode Barang</label>
-                                <input type="text" id="cabut_kode" class="form-control" readonly>
-                            </div>
+                                <i class="bx bx-filter-alt me-2"></i>
 
-                            <div class="col-md-6 mb-3">
-                                <label>Nama Barang</label>
-                                <input type="text" id="cabut_nama" class="form-control" readonly>
-                            </div>
+                                Filter Data Mapping
 
-                            <div class="col-md-6 mb-3">
-                                <label>Tanggal Pencabutan</label>
-                                <input type="date" name="tanggal_cabut" class="form-control"
-                                    value="{{ date('Y-m-d') }}" required>
-                            </div>
+                            </h5>
 
-                            <div class="col-md-6 mb-3">
-                                <label>Kondisi Barang</label>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
 
-                                <select name="kondisi" class="form-control" required>
-                                    <option value="">-- Pilih Kondisi --</option>
-                                    <option value="Baik">Baik</option>
-                                    <option value="Rusak">Rusak</option>
-
-                                </select>
-                            </div>
-
-                            {{-- ALASAN --}}
-                            <div class="col-md-12 mb-3">
-
-                                <label>
-                                    Alasan Pencabutan
-                                </label>
-
-                                <select name="alasan" id="alasan_select" class="form-control" required>
-
-                                    <option value="">
-                                        -- Pilih Alasan --
-                                    </option>
-
-                                    <option value="RESIGN">
-                                        RESIGN
-                                    </option>
-
-                                    <option value="MUTASI KARYAWAN">
-                                        MUTASI KARYAWAN
-                                    </option>
-
-                                    <option value="LAIN-LAIN">
-                                        LAIN-LAIN
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-                            {{-- INPUT LAIN-LAIN --}}
-                            <div class="col-md-12 mb-3 d-none" id="lainnya_wrapper">
-
-                                <label>
-                                    Tulis Alasan Lainnya
-                                </label>
-
-                                <textarea name="alasan_lainnya" id="alasan_lainnya" class="form-control" rows="3"
-                                    placeholder="Tuliskan alasan pencabutan..."></textarea>
-
-
-                            </div>
                         </div>
 
-                    </div>
+                        <div class="modal-body">
 
-                    <div class="modal-footer">
+                            <div class="row">
 
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                            Batal
-                        </button>
+                                {{-- Perusahaan --}}
+                                @if (auth()->user()->role == 'super_admin')
 
-                        <button class="btn btn-primary">
-                            Simpan Pencabutan
-                        </button>
+                                    <div class="col-md-4 mb-3">
 
-                    </div>
+                                        <label class="form-label">
+                                            Perusahaan
+                                        </label>
 
-                </div>
+                                        <select name="perusahaan_id" class="form-select">
 
-            </form>
-        </div>
-    </div>
-    <!-- MODAL FILTER -->
-    <div class="modal fade" id="modalFilter" tabindex="-1">
-        <div class="modal-dialog modal-lg">
-            <form method="GET">
-                <div class="modal-content">
+                                            <option value="">
+                                                Semua Perusahaan
+                                            </option>
 
-                    <div class="modal-header text-white"
-                        style="
-                            background: linear-gradient(
-                                90deg,
-                                var(--theme-primary),
-                                var(--theme-secondary)
-                            );
-                        ">
-                        <h5 class="mb-0 text-white">Filter Data Mapping</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-                    </div>
+                                            @foreach ($perusahaans as $perusahaan)
+                                                <option value="{{ $perusahaan->id }}"
+                                                    {{ request('perusahaan_id') == $perusahaan->id ? 'selected' : '' }}>
 
-                    <div class="modal-body">
-                        <div class="row">
+                                                    {{ strtoupper($perusahaan->nama_perusahaan) }}
 
-                            {{-- ========================================= --}}
-                            {{-- SUPER ADMIN --}}
-                            {{-- ========================================= --}}
-                            @if (auth()->user()->role === 'super_admin')
+                                                </option>
+                                            @endforeach
 
-                                {{-- PERUSAHAAN --}}
-                                <div class="col-md-6 mb-3">
+                                        </select>
 
-                                    <label>
-                                        Perusahaan
+                                    </div>
+
+                                @endif
+
+                                {{-- Lokasi --}}
+                                <div class="col-md-4 mb-3">
+
+                                    <label class="form-label">
+                                        Lokasi
                                     </label>
 
-                                    <select name="perusahaan" id="filter_perusahaan" class="form-select">
+                                    <select name="lokasi_id" class="form-select">
 
                                         <option value="">
-                                            -- Pilih Perusahaan --
+                                            Semua Lokasi
                                         </option>
 
-                                        @foreach ($perusahaans as $p)
-                                            <option value="{{ $p->id }}"
-                                                {{ request('perusahaan') == $p->id ? 'selected' : '' }}>
+                                        @foreach ($lokasis as $lokasi)
+                                            <option value="{{ $lokasi->id }}"
+                                                {{ request('lokasi_id') == $lokasi->id ? 'selected' : '' }}>
 
-                                                {{ $p->nama_perusahaan }}
+                                                {{ strtoupper($lokasi->nama_lokasi) }}
 
                                             </option>
                                         @endforeach
@@ -350,41 +590,47 @@
 
                                 </div>
 
-                                {{-- LOKASI --}}
-                                <div class="col-md-6 mb-3">
+                                {{-- Status --}}
+                                <div class="col-md-4 mb-3">
 
-                                    <label>
-                                        Lokasi
+                                    <label class="form-label">
+                                        Status
                                     </label>
 
-                                    <select name="lokasi" id="filter_lokasi" class="form-select">
+                                    <select name="status" class="form-select">
 
                                         <option value="">
-                                            -- Pilih Lokasi --
+                                            Semua Status
                                         </option>
+
+                                        <option value="tersedia">Tersedia</option>
+                                        <option value="dipakai">Dipakai</option>
+                                        <option value="dipinjam">Dipinjam</option>
+                                        <option value="servis">Servis</option>
+                                        <option value="maintenance">Maintenance</option>
 
                                     </select>
 
                                 </div>
-                            @else
-                                {{-- USER BIASA --}}
-                                <div class="col-md-6 mb-3">
 
-                                    <label>
-                                        Lokasi
+                                {{-- Kategori --}}
+                                <div class="col-md-4 mb-3">
+
+                                    <label class="form-label">
+                                        Kategori Aset
                                     </label>
 
-                                    <select name="lokasi" class="form-select">
+                                    <select name="kategori_id" class="form-select">
 
                                         <option value="">
-                                            -- Semua --
+                                            Semua Kategori
                                         </option>
 
-                                        @foreach ($lokasis as $l)
-                                            <option value="{{ $l->id }}"
-                                                {{ request('lokasi') == $l->id ? 'selected' : '' }}>
+                                        @foreach ($kategoris as $kategori)
+                                            <option value="{{ $kategori->id }}"
+                                                {{ request('kategori_id') == $kategori->id ? 'selected' : '' }}>
 
-                                                {{ $l->nama_lokasi }}
+                                                {{ strtoupper($kategori->nama_barang) }}
 
                                             </option>
                                         @endforeach
@@ -393,258 +639,156 @@
 
                                 </div>
 
-                            @endif
+                                {{-- Dari --}}
+                                <div class="col-md-4 mb-3">
 
-                            <div class="col-md-6 mb-3">
-                                <label>Tahun</label>
-                                <select name="tahun" class="form-select">
-                                    <option value="">-- Semua --</option>
-                                    @for ($i = date('Y'); $i >= 2018; $i--)
-                                        <option value="{{ $i }}"
-                                            {{ request('tahun') == $i ? 'selected' : '' }}>
-                                            {{ $i }}
-                                        </option>
-                                    @endfor
-                                </select>
-                            </div>
+                                    <label class="form-label">
+                                        Dari Tanggal Digunakan
+                                    </label>
 
-                            <div class="col-md-6 mb-3">
-                                <label>Status</label>
-                                <select name="status" class="form-select">
-                                    <option value="aktif"
-                                        {{ request()->get('status', 'aktif') == 'aktif' ? 'selected' : '' }}>Aktif</option>
-                                    <option value="dicabut" {{ request('status') == 'dicabut' ? 'selected' : '' }}>Dicabut
-                                    </option>
-                                </select>
-                            </div>
+                                    <input type="date" name="tanggal_awal" class="form-control"
+                                        value="{{ request('tanggal_awal') }}">
 
-                            {{-- 🔥 TAMBAHAN BARU --}}
-                            <div class="col-md-6 mb-3">
-                                <label>Merek</label>
-                                <input type="text" name="merek" class="form-control"
-                                    value="{{ request('merek') }}" placeholder="Contoh: Lenovo">
-                            </div>
+                                </div>
 
-                            <div class="col-md-6 mb-3">
-                                <label>Type</label>
-                                <input type="text" name="type" class="form-control" value="{{ request('type') }}"
-                                    placeholder="Contoh: Ideapad">
-                            </div>
+                                {{-- Sampai --}}
+                                <div class="col-md-4 mb-3">
 
-                            <div class="col-md-12 mb-3">
-                                <label>Search</label>
-                                <input type="text" name="search" class="form-control"
-                                    value="{{ request('search') }}" placeholder="Nama / Device / Barang / Processor">
+                                    <label class="form-label">
+                                        Sampai Tanggal Digunakan
+                                    </label>
+
+                                    <input type="date" name="tanggal_akhir" class="form-control"
+                                        value="{{ request('tanggal_akhir') }}">
+
+                                </div>
+
+                                {{-- Processor --}}
+                                <div class="col-md-4 mb-3">
+
+                                    <label class="form-label">
+                                        Processor
+                                    </label>
+
+                                    <input type="text" name="processor" class="form-control"
+                                        value="{{ request('processor') }}">
+
+                                </div>
+
+                                {{-- RAM --}}
+                                <div class="col-md-4 mb-3">
+
+                                    <label class="form-label">
+                                        RAM
+                                    </label>
+
+                                    <input type="text" name="ram" class="form-control" value="{{ request('ram') }}">
+
+                                </div>
+
+                                {{-- Operating System --}}
+                                <div class="col-md-4 mb-3">
+
+                                    <label class="form-label">
+                                        Operating System
+                                    </label>
+
+                                    <input type="text" name="system" class="form-control"
+                                        value="{{ request('system') }}">
+
+                                </div>
+
+                                {{-- Search --}}
+                                <div class="col-md-12">
+
+                                    <label class="form-label">
+
+                                        Pencarian Umum
+
+                                    </label>
+
+                                    <input type="text" name="search" class="form-control"
+                                        placeholder="Kode Inventaris, User Aset, Merek, Type, Device ID, Product ID, Serial Number..."
+                                        value="{{ request('search') }}">
+
+                                </div>
+
                             </div>
 
                         </div>
-                    </div>
 
-                    <div class="modal-footer">
-                        <button class="btn btn-primary">Terapkan Filter</button>
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
-                    </div>
+                        <div class="modal-footer">
+
+                            <a href="{{ route('maping.index') }}" class="btn btn-secondary">
+
+                                <i class="bx bx-refresh"></i>
+
+                                Reset
+
+                            </a>
+
+                            <button class="btn btn-primary">
+
+                                <i class="bx bx-search"></i>
+
+                                Terapkan Filter
+
+                            </button>
+
+                        </div>
+
+                    </form>
 
                 </div>
-            </form>
+
+            </div>
+
         </div>
-    </div>
-@endsection
+    @endsection
+    @section('scripts')
 
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
 
-@section('scripts')
+                document.querySelectorAll('.form-delete').forEach(function(form) {
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
+                    form.addEventListener('submit', function(e) {
 
-            // DELETE
-            document.querySelectorAll('.btn-delete').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const id = this.dataset.id;
+                        e.preventDefault();
 
-                    Swal.fire({
-                        title: 'Apakah kamu yakin?',
-                        text: "Data mapping ini akan dihapus!",
-                        icon: 'warning',
-                        showCancelButton: true,
-                        confirmButtonText: 'Ya, hapus!',
-                        cancelButtonText: 'Batal'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            document.getElementById(`delete-form-${id}`).submit();
-                        }
-                    });
-                });
-            });
+                        Swal.fire({
 
-            // EDIT
-            document.querySelectorAll('.btn-edit').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const id = this.dataset.id;
+                            title: 'Hapus Mapping?',
 
-                    Swal.fire({
-                        title: 'Edit data ini?',
-                        text: 'Kamu akan diarahkan ke halaman edit',
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonText: 'Ya, Edit',
-                        cancelButtonText: 'Batal'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            window.location.href = `/dashboard/maping/${id}/edit`;
-                        }
-                    });
-                });
-            });
+                            text: 'Data Mapping akan dihapus.',
 
-            // MUTASI
-            document.querySelectorAll('.btn-mutasi').forEach(btn => {
-                btn.addEventListener('click', function() {
+                            icon: 'warning',
 
-                    const id = this.dataset.id;
-                    const url = `/dashboard/maping/mutasi/${id}`;
+                            showCancelButton: true,
 
-                    Swal.fire({
-                        title: 'Mutasi data ini?',
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonText: 'Ya, Mutasi',
-                        cancelButtonText: 'Batal'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            window.location.href = url;
-                        }
-                    });
+                            confirmButtonColor: '#696cff',
 
-                });
-            });
-            // CABUT INVENTARIS
-            document.querySelectorAll('.btn-cabut').forEach(btn => {
+                            cancelButtonColor: '#8592a3',
 
-                btn.addEventListener('click', function() {
+                            confirmButtonText: 'Ya, Hapus',
 
-                    const id = this.dataset.id;
-                    const kode = this.dataset.kode;
-                    const nama = this.dataset.nama;
+                            cancelButtonText: 'Batal'
 
-                    document.getElementById('cabut_kode').value = kode;
-                    document.getElementById('cabut_nama').value = nama;
+                        }).then((result) => {
 
-                    const url = "{{ route('maping.cabut', ':id') }}".replace(':id', id);
-                    document.getElementById('formCabut').action = url;
+                            if (result.isConfirmed) {
 
-                    let modal = new bootstrap.Modal(document.getElementById('modalCabut'));
-                    modal.show();
+                                form.submit();
 
-                });
-
-            });
-        });
-
-        document.addEventListener('DOMContentLoaded', function() {
-
-            const perusahaanSelect =
-                document.getElementById('filter_perusahaan');
-
-            const lokasiSelect =
-                document.getElementById('filter_lokasi');
-
-            // khusus super admin
-            if (perusahaanSelect && lokasiSelect) {
-
-                // load lokasi jika perusahaan sudah dipilih
-                if (perusahaanSelect.value) {
-
-                    loadLokasi(
-                        perusahaanSelect.value,
-                        "{{ request('lokasi') }}"
-                    );
-
-                }
-
-                perusahaanSelect.addEventListener('change', function() {
-
-                    lokasiSelect.innerHTML =
-                        '<option value="">-- Pilih Lokasi --</option>';
-
-                    if (!this.value) {
-                        return;
-                    }
-
-                    loadLokasi(this.value);
-
-                });
-
-            }
-
-            function loadLokasi(perusahaanId, selectedLokasi = null) {
-
-                fetch(`/maping/lokasi-by-perusahaan/${perusahaanId}`)
-
-                    .then(response => response.json())
-
-                    .then(data => {
-
-                        lokasiSelect.innerHTML =
-                            '<option value="">-- Semua --</option>';
-
-                        data.forEach(lokasi => {
-
-                            lokasiSelect.innerHTML += `
-                        <option value="${lokasi.id}"
-                            ${selectedLokasi == lokasi.id ? 'selected' : ''}>
-                            ${lokasi.nama_lokasi}
-                        </option>
-                    `;
+                            }
 
                         });
 
-                    })
-
-                    .catch(error => {
-
-                        console.log(error);
-
                     });
 
-            }
-
-        });
-    </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-
-            const alasanSelect =
-                document.getElementById('alasan_select');
-
-            const lainnyaWrapper =
-                document.getElementById('lainnya_wrapper');
-
-            const alasanLainnya =
-                document.getElementById('alasan_lainnya');
-
-            alasanSelect.addEventListener('change', function() {
-
-                if (this.value === 'LAIN-LAIN') {
-
-                    lainnyaWrapper.classList.remove('d-none');
-
-                    alasanLainnya.setAttribute('required', true);
-
-                } else {
-
-                    lainnyaWrapper.classList.add('d-none');
-
-                    alasanLainnya.removeAttribute('required');
-
-                    alasanLainnya.value = '';
-
-                }
+                });
 
             });
+        </script>
 
-        });
-    </script>
-
-
-@endsection
+    @endsection

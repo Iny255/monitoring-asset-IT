@@ -242,7 +242,7 @@ class KeluarController extends Controller
   /**
    * Update the specified resource in storage.
    */
-  public function update(Request $request, $id)
+  public function update(Request $request, string $id)
   {
     $user = auth()->user();
 
@@ -376,7 +376,7 @@ class KeluarController extends Controller
     return response()->json($data);
   }
 
-  public function getKategori($perusahaanId)
+  public function getKategori(int $perusahaanId)
   {
     return response()->json(
       Kategori::where('perusahaan_id', $perusahaanId)
@@ -400,7 +400,7 @@ class KeluarController extends Controller
 
     return response()->json($query->orderBy('kode_aset')->get());
   }
-  public function getInventarisDetail($id)
+  public function getInventarisDetail( string $id)
   {
     $inventaris = Inventaris::with(['dataAset.kategori'])->findOrFail($id);
 

@@ -11,63 +11,75 @@ use App\Models\MutasiMaping;
 
 class Maping extends Model
 {
-    use HasFactory;
+  use HasFactory;
 
-    protected $fillable = [
-        'id_lokasi',
-        'id_keluar',
-        'id_perusahaan',
-        'processor',
-        'device_id',
-        'produk_id',
-        'ram',
-        'system',
-        'version',
-        'instal_on',
-        'aplikasi',
-        'data_p',
-        'data_n',
-        'status',
-    ];
+  protected $fillable = [
+    'id_keluar',
+    'id_lokasi',
+    'id_perusahaan',
 
-    // ================= RELASI =================
+    'processor',
+    'ram',
+    'device_id',
+    'produk_id',
+    'system',
+    'version',
+    'instal_on',
 
-    public function lokasi()
-    {
-        return $this->belongsTo(Lokasi::class, 'id_lokasi');
-    }
+    'tanggal_digunakan',
+    'catatan',
 
-    public function keluar()
-    {
-        return $this->belongsTo(Keluar::class, 'id_keluar');
-    }
+    'status',
+  ];
 
-    public function perusahaan()
-    {
-        return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
-    }
+  /*
+    |--------------------------------------------------------------------------
+    | RELASI
+    |--------------------------------------------------------------------------
+    */
 
-    public function mutasiMapings()
-    {
-        return $this->hasMany(MutasiMaping::class, 'id_maping');
-    }
+  public function lokasi()
+  {
+    return $this->belongsTo(Lokasi::class, 'id_lokasi');
+  }
 
-    // ================= AUTO + FILTER =================
+  public function keluar()
+  {
+    return $this->belongsTo(Keluar::class, 'id_keluar');
+  }
 
-    protected static function booted()
-    {
-        // 🔥 AUTO ISI PERUSAHAAN
-        static::creating(function ($model) {
-            if (auth()->check() && auth()->user()->role != 'super_admin') {
-                $model->id_perusahaan = auth()->user()->id_perusahaan;
-            }
-        });
+  public function perusahaan()
+  {
+    return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
+  }
 
-        // 🔥 AUTO FILTER DATA
-        static::addGlobalScope('perusahaan', function ($query) {
-            if (auth()->check() && auth()->user()->role != 'super_admin') {
-                $query->where('id_perusahaan', auth()->user()->id_perusahaan);
-            }
-        });
-    }
+  public function mutasiMapings()
+  {
+    return $this->hasMany(MutasiMaping::class, 'id_maping');
+  }
+  public function hakAkses()
+{
+    return $this->hasMany(MapingAccess::class);
+}
+
+  /*
+    |--------------------------------------------------------------------------
+    | AUTO FILTER PERUSAHAAN
+    |--------------------------------------------------------------------------
+    */
+
+  protected static function booted()
+  {
+    static::creating(function ($model) {
+      if (auth()->check() && auth()->user()->role !== 'super_admin') {
+        $model->id_perusahaan = auth()->user()->id_perusahaan;
+      }
+    });
+
+    static::addGlobalScope('perusahaan', function ($query) {
+      if (auth()->check() && auth()->user()->role !== 'super_admin') {
+        $query->where('id_perusahaan', auth()->user()->id_perusahaan);
+      }
+    });
+  }
 }

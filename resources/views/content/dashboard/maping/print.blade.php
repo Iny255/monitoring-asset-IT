@@ -125,11 +125,11 @@
                 </th>
 
                 <th width="90">
-                    Kode Barang
+                    Kode Aset
                 </th>
 
                 <th width="160">
-                    Nama Karyawan
+                    User Aset
                 </th>
 
                 <th width="90">
@@ -137,7 +137,7 @@
                 </th>
 
                 <th width="100">
-                    Nama Barang
+                    Nama Aset
                 </th>
 
                 <th width="270">
@@ -182,9 +182,9 @@
                         {{ $i + 1 }}
                     </td>
 
-                    {{-- KODE BARANG --}}
+                    {{-- KODE ASET --}}
                     <td>
-                        {{ $m->keluar->kode_barang ?? '-' }}
+                        {{ $m->keluar->inventaris->kode_aset ?? '-' }}
                     </td>
 
                     {{-- NAMA KARYAWAN --}}
@@ -199,7 +199,7 @@
 
                     {{-- NAMA BARANG --}}
                     <td>
-                        {{ $m->keluar->masuk->kategori->nama_barang ?? '-' }}
+                        {{ $m->keluar->inventaris->dataAset->kategori->nama_barang ?? '-' }}
                     </td>
 
                     {{-- SPESIFIKASI --}}
@@ -209,17 +209,17 @@
 
                             <div>
                                 <b>TYPE</b> :
-                                {{ $m->keluar->masuk->type ?? '-' }}
+                                {{ $m->keluar->inventaris->dataAset->type ?? '-' }}
                             </div>
 
                             <div>
                                 <b>MEREK</b> :
-                                {{ $m->keluar->masuk->merek ?? '-' }}
+                                {{ $m->keluar->inventaris->dataAset->merek ?? '-' }}
                             </div>
 
                             <div>
                                 <b>WARNA</b> :
-                                {{ $m->keluar->warna ?? '-' }}
+                                {{ $m->keluar->inventaris->dataAset->warna ?? '-' }}
                             </div>
 
                             <div>
@@ -233,13 +233,13 @@
                             </div>
 
                             <div>
-                                <b>PRODUCT ID</b> :
-                                {{ $m->product_id ?? '-' }}
+                                <b>PRODUK ID</b> :
+                                {{ $m->produk_id ?? '-' }}
                             </div>
 
                             <div>
                                 <b>RAM</b> :
-                                {{ $m->ram ?? '-' }}
+                                {{ $m->ram ? $m->ram . ' GB' : '-' }}
                             </div>
 
                             <div>
@@ -254,7 +254,7 @@
 
                             <div>
                                 <b>INSTALL ON</b> :
-                                {{ $m->install_on ?? '-' }}
+                                {{ $m->instal_on ? \Carbon\Carbon::parse($m->instal_on)->format('d-m-Y') : '-' }}
                             </div>
 
                         </div>
@@ -264,37 +264,43 @@
                     {{-- GARANSI --}}
                     <td class="center">
 
-                        {{ $m->keluar->masuk->garansi ?? '-' }}
-
-                        Bulan
+                        @if ($m->keluar->inventaris->masuk->garansi ?? false)
+                            {{ $m->keluar->inventaris->masuk->garansi }} Bulan
+                        @else
+                            -
+                        @endif
 
                     </td>
 
-                    {{-- INVENTARIS --}}
+                    {{-- NO INVENTARIS --}}
                     <td class="center">
-                        {{ $m->keluar->no_inventaris ?? '-' }}
+                        {{ $m->keluar->inventaris->no_inventaris ?? '-' }}
                     </td>
 
-                    {{-- TANGGAL BELI --}}
+                    {{-- TANGGAL PEMBELIAN --}}
                     <td class="center nowrap">
 
-                        {{ $m->keluar->masuk->tgl_beli ?? '-' }}
+                        @if ($m->keluar->inventaris->masuk->tanggal_pembelian ?? false)
+                            {{ \Carbon\Carbon::parse($m->keluar->inventaris->masuk->tanggal_pembelian)->format('d-m-Y') }}
+                        @else
+                            -
+                        @endif
 
                     </td>
 
                     {{-- APLIKASI --}}
                     <td>
-                        {{ $m->aplikasi ?: '-' }}
+                        {!! nl2br(e($m->aplikasi ?? '-')) !!}
                     </td>
 
                     {{-- DATA PPN --}}
                     <td>
-                        {{ $m->data_p ?: '-' }}
+                        {!! nl2br(e($m->data_p ?? '-')) !!}
                     </td>
 
-                    {{-- DATA NON --}}
+                    {{-- DATA NON PPN --}}
                     <td>
-                        {{ $m->data_n ?: '-' }}
+                        {!! nl2br(e($m->data_n ?? '-')) !!}
                     </td>
 
                 </tr>
@@ -302,13 +308,9 @@
             @empty
 
                 <tr>
-
                     <td colspan="12" class="center">
-
                         Tidak ada data
-
                     </td>
-
                 </tr>
             @endforelse
 

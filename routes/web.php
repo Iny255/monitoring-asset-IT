@@ -16,6 +16,8 @@ use App\Http\Controllers\MapingController;
 use App\Http\Controllers\PeminjamanController;
 use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\DataAsetController;
+use App\Http\Controllers\AccessController;
+use App\Http\Controllers\MapingAccessController;
 use App\Http\Controllers\main_dashboard\DashboardPetugasController;
 
 Route::get('/', function () {
@@ -28,7 +30,9 @@ Route::get('/login', [LoginController::class, 'index'])
 
 Route::post('/login', [LoginController::class, 'authenticate']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
-Route::get('/maping/{id}', [MapingController::class, 'publicShow'])->name('maping.public_show');
+Route::get('/maping/{id}', [MapingController::class, 'publicShow'])
+  ->where('id', '[0-9]+')
+  ->name('maping.public_show');
 
 Route::middleware(['auth'])->group(function () {
   /*
@@ -73,6 +77,7 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('/dashboard/lokasi', LokasiController::class);
     Route::resource('/dashboard/supplier', SupplierController::class);
     Route::resource('/dashboard/data-aset', DataAsetController::class);
+    Route::resource('/dashboard/hak-akses', AccessController::class)->names('hak-akses');
 
     Route::get('/dashboard/transaksi-masuk/cetak', [MasukController::class, 'cetak'])->name('transaksi-masuk.cetak');
     Route::get('/dashboard/transaksi-masuk/stok', [MasukController::class, 'stok'])->name('transaksi-masuk.stok');
@@ -82,7 +87,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/get-supplier/{id}', [MasukController::class, 'getSupplier']);
 
     Route::get('/dashboard/get-data-aset/{id}', [MasukController::class, 'getDataAset']);
-    
+
     Route::get('/dashboard/transaksi-keluar/cetak', [KeluarController::class, 'cetak'])->name('transaksi-keluar.cetak');
     Route::resource('/dashboard/transaksi-keluar', KeluarController::class);
     Route::get('/dashboard/get-kategori/{perusahaan}', [KeluarController::class, 'getKategori'])->name(
@@ -108,8 +113,12 @@ Route::middleware(['auth'])->group(function () {
     );
     Route::get('/dashboard/maping/print', [MapingController::class, 'print'])->name('maping.print');
     Route::resource('/dashboard/maping', MapingController::class);
-    Route::post('/dashboard/maping/get-barang', [MapingController::class, 'getBarangByKeluar'])->name(
-      'maping.getBarang'
+    Route::get('/maping/get-kategori', [MapingController::class, 'getKategori'])->name('maping.getKategori');
+
+    Route::get('/maping/get-aset', [MapingController::class, 'getAset'])->name('maping.getAset');
+
+    Route::get('/maping/get-detail-aset/{id}', [MapingController::class, 'getDetailAset'])->name(
+      'maping.getDetailAset'
     );
     Route::get('/dashboard/karyawan/search', [MapingController::class, 'searchKaryawan'])->name('karyawan.search');
 
@@ -122,6 +131,15 @@ Route::middleware(['auth'])->group(function () {
 
     Route::post('/dashboard/maping/cabut/{id}', [MapingController::class, 'cabut'])->name('maping.cabut');
     Route::get('/dashboard/history/pencabutan', [MapingController::class, 'historyCabut'])->name('maping.historyCabut');
+    Route::prefix('dashboard/maping/{maping}')->group(function () {
+      Route::get('/hak-akses', [MapingAccessController::class, 'index'])->name('maping.hak-akses');
+
+      Route::post('/hak-akses', [MapingAccessController::class, 'store'])->name('maping.hak-akses.store');
+
+      Route::delete('/hak-akses/{access}', [MapingAccessController::class, 'destroy'])->name(
+        'maping.hak-akses.destroy'
+      );
+    });
   });
 
   /*

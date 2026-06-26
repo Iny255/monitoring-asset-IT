@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-
-<html>
+<html lang="id">
 
 <head>
 
     <meta charset="utf-8">
 
-    <title>Detail Asset</title>
+    <title>
+        Detail Asset
+    </title>
 
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -14,65 +15,62 @@
 
     <style>
         body {
-
             background: #f1f5f9;
-
-            padding: 30px;
-
+            padding: 20px;
         }
 
         .asset-card {
-
-            max-width: 900px;
-
+            max-width: 1000px;
             margin: auto;
-
             border: none;
-
             border-radius: 20px;
-
             overflow: hidden;
-
             box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
-
         }
 
         .asset-header {
-
-            background: linear-gradient(135deg,
-                    #2563eb,
-                    #1d4ed8);
-
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
             color: white;
-
             padding: 30px;
-
         }
 
         .asset-title {
-
             font-size: 28px;
-
             font-weight: 700;
+        }
 
+        .asset-subtitle {
+            opacity: .9;
+        }
+
+        .asset-image {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+            border-radius: 15px;
         }
 
         .table th {
-
             width: 35%;
-
             background: #f8fafc;
-
             color: #475569;
-
         }
 
         .table td {
-
             color: #0f172a;
-
             font-weight: 500;
+        }
 
+        .section-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: #1e3a8a;
+            margin-bottom: 15px;
+        }
+
+        .badge-status {
+            font-size: 14px;
+            padding: 8px 15px;
         }
     </style>
 
@@ -80,94 +78,296 @@
 
 <body>
 
-    <div class="card asset-card">
+    <div class="container py-4">
 
-        {{-- HEADER --}}
-        <div class="asset-header">
+        <div class="card asset-card">
 
-            <div class="asset-title">
+            {{-- HEADER --}}
+            <div class="asset-header">
 
-                {{ $maping->keluar->masuk->kategori->nama_barang ?? '-' }}
+                <div class="row align-items-center">
 
-            </div>
+                    <div class="col-md-9">
 
-            <div>
+                        <h2 class="asset-title mb-2">
 
-                {{ $maping->keluar->kode_barang ?? '-' }}
+                            {{ strtoupper($maping->keluar->inventaris->dataAset->kategori->nama_barang ?? '-') }}
 
-            </div>
+                        </h2>
 
-        </div>
+                        <div class="asset-subtitle">
 
-        {{-- BODY --}}
-        <div class="card-body p-0">
+                            Monitoring Asset System
 
-            <table class="table table-bordered mb-0">
+                        </div>
 
-                <tr>
-                    <th>No Inventaris</th>
-                    <td>{{ $maping->keluar->no_inventaris ?? '-' }}</td>
-                </tr>
+                        <div class="mt-2">
 
-                <tr>
-                    <th>Nama Karyawan</th>
-                    <td>{{ $maping->keluar->karyawan->nama_karyawan ?? '-' }}</td>
-                </tr>
+                            <span class="badge bg-light text-dark">
 
-                <tr>
-                    <th>Lokasi</th>
-                    <td>{{ $maping->lokasi->nama_lokasi ?? '-' }}</td>
-                </tr>
+                                Kode Aset :
+                                {{ $maping->keluar->inventaris->kode_aset ?? '-' }}
 
-                <tr>
-                    <th>Perusahaan</th>
-                    <td>{{ $maping->perusahaan->nama_perusahaan ?? '-' }}</td>
-                </tr>
-                <tr>
-                    <th>Warna</th>
-                    <td>{{ $maping->keluar->warna ?? '-' }}</td>
-                </tr>
-                <tr>
-                    <th>Tanggal Beli</th>
-                    <td>{{ $maping->keluar->masuk->tgl_beli ?? '-' }}</td>
-
-                <tr>
-                    <th>Processor</th>
-                    <td>{{ $maping->processor ?? '-' }}</td>
-                </tr>
-
-                <tr>
-                    <th>RAM</th>
-                    <td>{{ $maping->ram ?? '-' }} GB</td>
-                </tr>
-
-                <tr>
-                    <th>System</th>
-                    <td>{{ $maping->system ?? '-' }}</td>
-                </tr>
-
-                <tr>
-                    <th>Status</th>
-                    <td>
-
-                        @if ($maping->status == 'aktif')
-                            <span class="badge bg-success">
-                                Aktif
                             </span>
-                        @else
-                            <span class="badge bg-danger">
-                                Dicabut
+
+                            <span class="badge bg-warning text-dark ms-2">
+
+                                No Inventaris :
+                                {{ $maping->keluar->inventaris->no_inventaris ?? '-' }}
+
                             </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-md-3 text-end">
+
+                        @if ($maping->perusahaan)
+                            <h5 class="text-white mb-0">
+
+                                {{ strtoupper($maping->perusahaan->nama_perusahaan) }}
+
+                            </h5>
                         @endif
 
-                    </td>
-                </tr>
+                    </div>
 
-            </table>
+                </div>
+
+            </div>
+
+
+            <div class="card-body p-4">
+
+                <div class="row g-4 align-items-start">
+
+                    {{-- FOTO --}}
+                    <div class="col-lg-4">
+
+                        <div class="card shadow-sm border-0">
+
+                            <div class="card-header bg-light">
+
+                                <strong>
+
+                                    Foto Asset
+
+                                </strong>
+
+                            </div>
+
+                            <div class="card-body">
+
+                                @if ($maping->keluar->gambar)
+                                    <img src="{{ asset('storage/' . $maping->keluar->gambar) }}" class="asset-image">
+                                @else
+                                    <img src="{{ asset('assets/img/no-image.png') }}" class="asset-image">
+                                @endif
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {{-- INFORMASI --}}
+                    <div class="col-md-8">
+
+                        <div class="section-title">
+
+                            Identitas Asset
+
+                        </div>
+                        <table class="table table-bordered">
+
+                            <tr>
+                                <th>Kode Aset</th>
+                                <td>
+                                    {{ $maping->keluar->inventaris->kode_aset ?? '-' }}
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>No Inventaris</th>
+                                <td>
+                                    {{ $maping->keluar->inventaris->no_inventaris ?? '-' }}
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>Nama Barang</th>
+                                <td>
+                                    {{ $maping->keluar->inventaris->dataAset->kategori->nama_barang ?? '-' }}
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>Type</th>
+                                <td>
+                                    {{ $maping->keluar->inventaris->dataAset->type ?? '-' }}
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>Merek</th>
+                                <td>
+                                    {{ $maping->keluar->inventaris->dataAset->merek ?? '-' }}
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>Warna</th>
+                                <td>
+                                    {{ $maping->keluar->inventaris->dataAset->warna ?? '-' }}
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>User Asset</th>
+                                <td>
+                                    {{ $maping->keluar->karyawan->nama_karyawan ?? '-' }}
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>Lokasi</th>
+                                <td>
+                                    {{ $maping->lokasi->nama_lokasi ?? '-' }}
+                                </td>
+                            </tr>
+                            <tr>
+
+                                <th>Tanggal Digunakan</th>
+
+                                <td>
+
+                                    {{ $maping->tanggal_digunakan ? \Carbon\Carbon::parse($maping->tanggal_digunakan)->format('d-m-Y') : '-' }}
+
+                                </td>
+
+                            </tr>
+
+                            <tr>
+                                <th>Perusahaan</th>
+                                <td>
+                                    {{ $maping->perusahaan->nama_perusahaan ?? '-' }}
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th>Status</th>
+                                <td>
+
+                                    @if ($maping->status == 'dipakai')
+                                        <span class="badge bg-success badge-status">
+
+                                            DIPAKAI
+
+                                        </span>
+                                    @elseif($maping->status == 'dipinjam')
+                                        <span class="badge bg-warning badge-status">
+
+                                            DIPINJAM
+
+                                        </span>
+                                    @elseif($maping->status == 'servis')
+                                        <span class="badge bg-danger badge-status">
+
+                                            SERVIS
+
+                                        </span>
+                                    @elseif($maping->status == 'maintenance')
+                                        <span class="badge bg-info badge-status">
+
+                                            MAINTENANCE
+
+                                        </span>
+                                    @else
+                                        <span class="badge bg-secondary badge-status">
+
+                                            TERSEDIA
+
+                                        </span>
+                                    @endif
+
+                                </td>
+                            </tr>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+                {{-- SPESIFIKASI --}}
+                <div class="mt-4">
+
+                    <div class="section-title">
+                        Spesifikasi Perangkat
+                    </div>
+
+                    <table class="table table-bordered">
+
+                        <tr>
+                            <th>Processor</th>
+                            <td>{{ $maping->processor ?? '-' }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>RAM</th>
+                            <td>{{ $maping->ram ?? '-' }} GB</td>
+                        </tr>
+
+                        <tr>
+                            <th>System</th>
+                            <td>{{ $maping->system ?? '-' }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Version</th>
+                            <td>{{ $maping->version ?? '-' }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Device ID</th>
+                            <td>{{ $maping->device_id ?? '-' }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Produk ID</th>
+                            <td>{{ $maping->produk_id ?? '-' }}</td>
+                        </tr>
+
+                        <tr>
+                            <th>Install On</th>
+                            <td>
+                                {{ $maping->instal_on ? \Carbon\Carbon::parse($maping->instal_on)->format('d-m-Y') : '-' }}
+                            </td>
+                        </tr>
+
+                    </table>
+
+                </div>
+
+                {{-- APLIKASI --}}
+                @if ($maping->aplikasi)
+                    <div class="mt-4">
+
+                        <div class="section-title">
+                            Aplikasi Terinstall
+                        </div>
+
+                        <div class="alert alert-light border">
+                            {!! nl2br(e($maping->aplikasi)) !!}
+                        </div>
+
+                    </div>
+                @endif
+
+            </div>
 
         </div>
-
-    </div>
 
 </body>
 

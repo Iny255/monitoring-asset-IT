@@ -11,7 +11,8 @@
         <div class="card shadow-sm border-0">
 
             {{-- HEADER --}}
-            <div class="card-header text-white py-3" style="
+            <div class="card-header text-white py-3"
+                style="
                     background: linear-gradient(
                     90deg,
                     var(--theme-primary),
@@ -28,15 +29,12 @@
             <div class="card-body">
 
                 <form action="{{ route('maping.mutasi.store', $maping->id) }}" method="POST">
-
                     @csrf
 
-                    <div class="row">
+                    <div class="row g-3">
 
-                        {{-- ===================================== --}}
                         {{-- PERUSAHAAN --}}
-                        {{-- ===================================== --}}
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-6">
 
                             <label class="form-label fw-semibold">
                                 Perusahaan Baru
@@ -52,9 +50,7 @@
 
                                     @foreach ($perusahaan as $p)
                                         <option value="{{ $p->id }}">
-
                                             {{ $p->nama_perusahaan }}
-
                                         </option>
                                     @endforeach
 
@@ -62,20 +58,15 @@
                             @else
                                 <input type="hidden" name="ke_perusahaan" id="ke_perusahaan" value="{{ $perusahaan->id }}">
 
-                                <div class="form-control bg-light">
-
-                                    {{ $perusahaan->nama_perusahaan }}
-
-                                </div>
+                                <input type="text" class="form-control" value="{{ $perusahaan->nama_perusahaan }}"
+                                    readonly>
 
                             @endif
 
                         </div>
 
-                        {{-- ===================================== --}}
                         {{-- LOKASI --}}
-                        {{-- ===================================== --}}
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-6">
 
                             <label class="form-label fw-semibold">
                                 Lokasi Baru
@@ -87,123 +78,106 @@
                                     -- Pilih Lokasi --
                                 </option>
 
-                                @if ($modePerusahaan !== 'select')
-
-                                    @foreach ($lokasi as $l)
-                                        <option value="{{ $l->id }}">
-
-                                            {{ $l->nama_lokasi }}
-
-                                        </option>
-                                    @endforeach
-
-                                @endif
+                                @foreach ($lokasi as $l)
+                                    <option value="{{ $l->id }}">
+                                        {{ $l->nama_lokasi }}
+                                    </option>
+                                @endforeach
 
                             </select>
 
                         </div>
 
-                        {{-- ===================================== --}}
                         {{-- KARYAWAN --}}
-                        {{-- ===================================== --}}
-                        <div class="col-md-6 mb-3 position-relative">
+                        <div class="col-md-6 position-relative">
 
                             <label class="form-label fw-semibold">
                                 Karyawan Baru
                             </label>
 
-                            <input type="text" id="search_karyawan" class="form-control" autocomplete="off"
-                                placeholder="Ketik nama karyawan...">
-
                             <input type="hidden" name="ke_karyawan" id="ke_karyawan">
 
-                            {{-- RESULT --}}
-                            <div id="result_karyawan" class="autocomplete-box shadow-sm">
+                            <input type="text" id="nama_karyawan" class="form-control"
+                                placeholder="Ketik kode atau nama karyawan">
 
-                            </div>
-
-                        </div>
-
-                        {{-- ===================================== --}}
-                        {{-- NO INVENTARIS --}}
-                        {{-- ===================================== --}}
-                        <div class="col-md-6 mb-3">
-
-                            <label class="form-label fw-semibold">
-                                No Inventaris Baru
-                            </label>
-
-                            <input type="text" name="ke_no_inventaris" class="form-control"
-                                placeholder="Masukkan No Inventaris">
+                            <div id="autocomplete-list"></div>
 
                         </div>
 
-                        {{-- ===================================== --}}
-                        {{-- APLIKASI --}}
-                        {{-- ===================================== --}}
-                        <div class="col-md-6 mb-3">
-
-                            <label class="form-label fw-semibold">
-                                Aplikasi
-                            </label>
-
-                            <input type="text" name="ke_aplikasi" class="form-control"
-                                placeholder="Contoh: Office, Accurate, dll">
-
-                        </div>
-
-                        {{-- ===================================== --}}
-                        {{-- DATA PPN --}}
-                        {{-- ===================================== --}}
-                        <div class="col-md-3 mb-3">
-
-                            <label class="form-label fw-semibold">
-                                Data PPN
-                            </label>
-
-                            <input type="text" name="ke_data_ppn" class="form-control">
-
-                        </div>
-
-                        {{-- ===================================== --}}
-                        {{-- DATA NON PPN --}}
-                        {{-- ===================================== --}}
-                        <div class="col-md-3 mb-3">
-
-                            <label class="form-label fw-semibold">
-                                Data Non PPN
-                            </label>
-
-                            <input type="text" name="ke_data_non_ppn" class="form-control">
-
-                        </div>
-
-                        {{-- ===================================== --}}
                         {{-- TANGGAL --}}
-                        {{-- ===================================== --}}
-                        <div class="col-md-6 mb-3">
+                        <div class="col-md-6">
 
                             <label class="form-label fw-semibold">
                                 Tanggal Mutasi
                             </label>
 
-                            <input type="date" name="tanggal_mutasi" class="form-control" required>
+                            <input type="date" name="tanggal_mutasi" class="form-control" value="{{ date('Y-m-d') }}"
+                                required>
+
+                        </div>
+
+                        {{-- APLIKASI --}}
+                        <div class="col-md-12">
+
+                            <label class="form-label fw-semibold">
+                                Aplikasi
+                            </label>
+
+                            <textarea name="ke_aplikasi" rows="3" class="form-control"
+                                placeholder="Contoh : Microsoft Office, Accurate, Coretax, WhatsApp"></textarea>
+
+                        </div>
+
+                        {{-- DATA PPN --}}
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-semibold">
+                                Hak Akses Data PPN
+                            </label>
+
+                            <textarea name="ke_data_ppn" rows="4" class="form-control"></textarea>
+
+                        </div>
+
+                        {{-- DATA NON PPN --}}
+                        <div class="col-md-6">
+
+                            <label class="form-label fw-semibold">
+                                Hak Akses Data Non PPN
+                            </label>
+
+                            <textarea name="ke_data_non_ppn" rows="4" class="form-control"></textarea>
+
+                        </div>
+
+                        {{-- KETERANGAN --}}
+                        <div class="col-md-12">
+
+                            <label class="form-label fw-semibold">
+                                Keterangan Mutasi
+                            </label>
+
+                            <textarea name="keterangan" rows="3" class="form-control"
+                                placeholder="Alasan mutasi lokasi, user, atau perusahaan"></textarea>
 
                         </div>
 
                     </div>
 
-                    {{-- BUTTON --}}
-                    <div class="text-end mt-3">
+                    <hr class="my-4">
+
+                    <div class="d-flex justify-content-end gap-2">
 
                         <a href="{{ route('maping.index') }}" class="btn btn-secondary">
 
+                            <i class="bx bx-arrow-back"></i>
                             Kembali
 
                         </a>
 
                         <button type="submit" class="btn btn-primary">
 
+                            <i class="bx bx-transfer"></i>
                             Simpan Mutasi
 
                         </button>
@@ -213,7 +187,6 @@
                 </form>
 
             </div>
-
         </div>
 
     </div>
@@ -222,30 +195,52 @@
     {{-- STYLE AUTOCOMPLETE --}}
     {{-- ===================================== --}}
     <style>
-        .autocomplete-box {
+        #autocomplete-list {
             position: absolute;
             top: 100%;
             left: 0;
             right: 0;
             background: #fff;
-            border: 1px solid #ddd;
-            border-top: none;
-            border-radius: 0 0 10px 10px;
+            border: 1px solid #dce1e7;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, .15);
+            z-index: 9999;
             max-height: 250px;
             overflow-y: auto;
-            z-index: 9999;
-            display: none;
         }
 
         .autocomplete-item {
-            padding: 10px 14px;
+            padding: 10px 15px;
             cursor: pointer;
-            transition: .2s;
-            border-bottom: 1px solid #f1f1f1;
+            border-bottom: 1px solid #eee;
+        }
+
+        .autocomplete-item:last-child {
+            border-bottom: none;
         }
 
         .autocomplete-item:hover {
-            background: #f5f7ff;
+            background: #f5f8ff;
+        }
+
+        ..autocomplete-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .autocomplete-kode {
+            font-weight: 700;
+            color: #0d6efd;
+            min-width: 80px;
+        }
+
+        .autocomplete-nama {
+            font-weight: 600;
+        }
+
+        .autocomplete-divisi {
+            color: #6c757d;
         }
     </style>
 
@@ -255,27 +250,17 @@
     <script>
         document.addEventListener('DOMContentLoaded', function() {
 
-            // =====================================
-            // ELEMENT
-            // =====================================
+            const perusahaanField = document.getElementById('ke_perusahaan');
+            const lokasiSelect = document.getElementById('ke_lokasi');
 
-            const perusahaanField =
-                document.getElementById('ke_perusahaan');
+            const inputKaryawan = document.getElementById('nama_karyawan');
+            const hiddenKaryawan = document.getElementById('ke_karyawan');
+            const resultBox = document.getElementById('autocomplete-list');
 
-            const lokasiSelect =
-                document.getElementById('ke_lokasi');
-
-            const inputKaryawan =
-                document.getElementById('search_karyawan');
-
-            const hiddenId =
-                document.getElementById('ke_karyawan');
-
-            const resultBox =
-                document.getElementById('result_karyawan');
+            let debounceTimer;
 
             // =====================================
-            // LOAD LOKASI
+            // LOAD LOKASI BERDASARKAN PERUSAHAAN
             // =====================================
 
             if (
@@ -285,32 +270,29 @@
 
                 perusahaanField.addEventListener('change', function() {
 
-                    let perusahaanId = this.value;
+                    const perusahaanId = this.value;
 
-                    // reset lokasi
                     lokasiSelect.innerHTML =
                         '<option value="">-- Pilih Lokasi --</option>';
 
-                    // reset karyawan
                     inputKaryawan.value = '';
-                    hiddenId.value = '';
+                    hiddenKaryawan.value = '';
 
                     resultBox.innerHTML = '';
-                    resultBox.style.display = 'none';
 
                     if (!perusahaanId) return;
 
                     fetch(`/maping/lokasi-by-perusahaan/${perusahaanId}`)
 
-                        .then(res => res.json())
+                        .then(response => response.json())
 
                         .then(data => {
 
-                            data.forEach(lokasi => {
+                            data.forEach(item => {
 
                                 lokasiSelect.innerHTML += `
-                            <option value="${lokasi.id}">
-                                ${lokasi.nama_lokasi}
+                            <option value="${item.id}">
+                                ${item.nama_lokasi}
                             </option>
                         `;
 
@@ -318,10 +300,8 @@
 
                         })
 
-                        .catch(err => {
-
-                            console.log(err);
-
+                        .catch(error => {
+                            console.log(error);
                         });
 
                 });
@@ -329,114 +309,133 @@
             }
 
             // =====================================
-            // AUTOCOMPLETE
+            // AUTOCOMPLETE KARYAWAN
             // =====================================
 
-            inputKaryawan.addEventListener('input', function() {
+            inputKaryawan.addEventListener('keyup', function() {
 
-                let keyword =
-                    this.value.trim();
+                clearTimeout(debounceTimer);
 
-                let perusahaanId =
+                const keyword = this.value.trim();
+
+                const perusahaanId =
                     perusahaanField ?
                     perusahaanField.value :
-                    '{{ auth()->user()->id_perusahaan ?? '' }}';
+                    '{{ auth()->user()->id_perusahaan }}';
 
-                // minimal 2 karakter
-                if (keyword.length < 2) {
+                if (keyword.length < 1) {
 
-                    resultBox.style.display = 'none';
                     resultBox.innerHTML = '';
-
                     return;
 
                 }
 
-                // wajib pilih perusahaan
                 if (!perusahaanId) {
 
-                    Swal.fire(
-                        'Peringatan',
-                        'Pilih perusahaan terlebih dahulu',
-                        'warning'
-                    );
+                    resultBox.innerHTML = '';
+
+                    alert('Pilih perusahaan terlebih dahulu');
 
                     return;
-
                 }
 
-                fetch(
-                        `{{ route('karyawan.search') }}?q=${encodeURIComponent(keyword)}&perusahaan_id=${perusahaanId}`
-                    )
+                debounceTimer = setTimeout(() => {
 
-                    .then(res => res.json())
+                    fetch(
+                            `{{ route('karyawan.search') }}?q=${encodeURIComponent(keyword)}&perusahaan_id=${perusahaanId}`
+                        )
 
-                    .then(data => {
+                        .then(response => response.json())
 
-                        resultBox.innerHTML = '';
+                        .then(data => {
 
-                        if (!data || data.length === 0) {
+                            resultBox.innerHTML = '';
 
-                            resultBox.style.display = 'none';
+                            if (!data.length) {
 
-                            return;
+                                resultBox.innerHTML = `
+                        <div class="autocomplete-item text-muted">
+                            Data tidak ditemukan
+                        </div>
+                    `;
 
-                        }
+                                return;
+                            }
 
-                        data.forEach(k => {
+                            data.forEach(item => {
 
-                            const item =
-                                document.createElement('div');
+                                resultBox.innerHTML += `
+<div
+    class="autocomplete-item"
+    data-id="${item.id}"
+    data-nama="${item.nama_karyawan}"
+>
 
-                            item.classList.add('autocomplete-item');
+    <div class="autocomplete-row">
 
-                            item.innerHTML =
-                                k.nama_karyawan;
+        <span class="autocomplete-kode">
+            ${item.kode_karyawan ?? '-'}
+        </span>
 
-                            // klik sekali langsung pilih
-                            item.addEventListener('mousedown', function(e) {
+        <span class="autocomplete-nama">
+            ${item.nama_karyawan}
+        </span>
 
-                                e.preventDefault();
+        <span class="autocomplete-divisi">
+            (${item.divisi ?? '-'})
+        </span>
 
-                                inputKaryawan.value =
-                                    k.nama_karyawan;
+    </div>
 
-                                hiddenId.value =
-                                    k.id;
-
-                                resultBox.innerHTML = '';
-                                resultBox.style.display = 'none';
+</div>
+`;
 
                             });
 
-                            resultBox.appendChild(item);
+                        })
+
+                        .catch(error => {
+
+                            console.log(error);
 
                         });
 
-                        resultBox.style.display = 'block';
-
-                    })
-
-                    .catch(err => {
-
-                        console.log(err);
-
-                    });
+                }, 300);
 
             });
 
             // =====================================
-            // KLIK LUAR
+            // PILIH KARYAWAN
+            // =====================================
+
+            document.addEventListener('click', function(e) {
+
+                const item = e.target.closest('.autocomplete-item');
+
+                if (item) {
+
+                    hiddenKaryawan.value =
+                        item.dataset.id;
+
+                    inputKaryawan.value =
+                        item.dataset.nama;
+
+                    resultBox.innerHTML = '';
+                }
+            });
+
+            // =====================================
+            // KLIK DI LUAR
             // =====================================
 
             document.addEventListener('click', function(e) {
 
                 if (
-                    !resultBox.contains(e.target) &&
-                    e.target !== inputKaryawan
+                    !inputKaryawan.contains(e.target) &&
+                    !resultBox.contains(e.target)
                 ) {
 
-                    resultBox.style.display = 'none';
+                    resultBox.innerHTML = '';
 
                 }
 

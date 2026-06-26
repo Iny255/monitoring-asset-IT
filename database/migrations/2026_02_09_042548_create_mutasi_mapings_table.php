@@ -5,87 +5,73 @@ use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration {
+  public function up(): void
+  {
+    Schema::create('mutasi_mapings', function (Blueprint $table) {
+      $table->id();
 
-    public function up(): void
-    {
-        Schema::create('mutasi_mapings', function (Blueprint $table) {
-            $table->id();
+      $table
+        ->foreignId('id_maping')
+        ->constrained('mapings')
+        ->cascadeOnDelete();
 
-            // 🔥 RELASI UTAMA
-            $table->foreignId('id_maping')
-                ->constrained('mapings')
-                ->cascadeOnDelete();
+      $table
+        ->foreignId('id_perusahaan')
+        ->constrained('perusahaans')
+        ->cascadeOnDelete();
 
-            // 🔥 WAJIB MULTI PERUSAHAAN
-            $table->foreignId('id_perusahaan')
-                ->constrained('perusahaans')
-                ->cascadeOnDelete();
+      // lokasi
+      $table
+        ->foreignId('dari_lokasi')
+        ->nullable()
+        ->constrained('lokasis')
+        ->nullOnDelete();
 
-            // ================= LOKASI =================
-            $table->foreignId('dari_lokasi')
-                ->nullable()
-                ->constrained('lokasis')
-                ->nullOnDelete();
+      $table
+        ->foreignId('ke_lokasi')
+        ->nullable()
+        ->constrained('lokasis')
+        ->nullOnDelete();
 
-            $table->foreignId('ke_lokasi')
-                ->nullable()
-                ->constrained('lokasis')
-                ->nullOnDelete();
+      // user aset
+      $table
+        ->foreignId('dari_karyawan')
+        ->nullable()
+        ->constrained('karyawans')
+        ->nullOnDelete();
 
-            // ================= PERUSAHAAN =================
-            $table->foreignId('dari_perusahaan')
-                ->nullable()
-                ->constrained('perusahaans')
-                ->nullOnDelete();
+      $table
+        ->foreignId('ke_karyawan')
+        ->nullable()
+        ->constrained('karyawans')
+        ->nullOnDelete();
 
-            $table->foreignId('ke_perusahaan')
-                ->nullable()
-                ->constrained('perusahaans')
-                ->nullOnDelete();
+      // akses
+      $table->text('dari_aplikasi')->nullable();
+      $table->text('ke_aplikasi')->nullable();
 
-            // ================= KARYAWAN =================
-            $table->foreignId('dari_karyawan')
-                ->nullable()
-                ->constrained('karyawans')
-                ->nullOnDelete();
+      $table->text('dari_data_ppn')->nullable();
+      $table->text('ke_data_ppn')->nullable();
 
-            $table->foreignId('ke_karyawan')
-                ->nullable()
-                ->constrained('karyawans')
-                ->nullOnDelete();
+      $table->text('dari_data_non_ppn')->nullable();
+      $table->text('ke_data_non_ppn')->nullable();
 
-            // ================= DATA =================
-            $table->string('dari_no_inventaris')->nullable();
-            $table->string('ke_no_inventaris')->nullable();
+      $table->date('tanggal_mutasi');
 
-            $table->string('dari_aplikasi')->nullable();
-            $table->string('ke_aplikasi')->nullable();
+      $table->text('keterangan')->nullable();
 
-            $table->string('dari_data_ppn')->nullable();
-            $table->string('ke_data_ppn')->nullable();
+      $table
+        ->foreignId('created_by')
+        ->nullable()
+        ->constrained('users')
+        ->nullOnDelete();
 
-            $table->string('dari_data_non_ppn')->nullable();
-            $table->string('ke_data_non_ppn')->nullable();
+      $table->timestamps();
+    });
+  }
 
-            // ================= META =================
-            $table->date('tanggal_mutasi');
-
-            // 🔥 OPTIONAL (RECOMMENDED)
-            $table->foreignId('created_by')
-                ->nullable()
-                ->constrained('users')
-                ->nullOnDelete();
-
-            $table->timestamps();
-
-            // ================= INDEX =================
-            $table->index('id_perusahaan');
-            $table->index('id_maping');
-        });
-    }
-
-    public function down(): void
-    {
-        Schema::dropIfExists('mutasi_mapings');
-    }
+  public function down(): void
+  {
+    Schema::dropIfExists('mutasi_mapings');
+  }
 };

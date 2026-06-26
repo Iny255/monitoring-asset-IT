@@ -40,16 +40,12 @@ return new class extends Migration {
       $table->string('version', 50)->nullable();
 
       $table->date('instal_on')->nullable();
+      $table->date('tanggal_digunakan');
 
-      // HAK AKSES
-      $table->string('aplikasi', 150)->nullable();
-
-      $table->string('data_p', 150)->nullable();
-
-      $table->string('data_n', 150)->nullable();
+      $table->text('catatan')->nullable();
 
       // STATUS MAPPING
-      $table->enum('status', ['aktif', 'dicabut'])->default('aktif');
+      $table->enum('status', ['tersedia', 'dipakai', 'dipinjam', 'servis', 'maintenance'])->default('dipakai');
 
       $table->timestamps();
 

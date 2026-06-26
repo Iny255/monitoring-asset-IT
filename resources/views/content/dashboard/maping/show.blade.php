@@ -4,310 +4,264 @@
 
 @section('content')
 
-    <style>
-        /* =====================================
-                               CARD
-                            ===================================== */
-        .detail-card {
-            border: none;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, .06);
-            background: #fff;
-        }
+    <div class="container-fluid" style="margin-top:35px;">
 
-        .detail-header {
-            padding: 22px 28px;
-            border-bottom: 1px solid #eef2f7;
-            background: #fff;
-        }
 
-        .detail-title {
-            font-size: 32px;
-            font-weight: 700;
-            color: #0f172a;
-            margin: 0;
-        }
-
-        /* =====================================
-                               BADGE
-                            ===================================== */
-        .badge-inv {
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            color: #fff;
-            padding: 10px 18px;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: 700;
-            letter-spacing: .5px;
-        }
-
-        /* =====================================
-                               TABLE
-                            ===================================== */
-        .detail-table {
-            margin: 0;
-        }
-
-        .detail-table th {
-            width: 18%;
-            background: #f8fafc;
-            color: #475569;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            font-weight: 700;
-            padding: 16px 18px;
-            vertical-align: middle;
-            white-space: nowrap;
-        }
-
-        .detail-table td {
-            width: 32%;
-            background: #fff;
-            color: #1e293b;
-            font-size: 14px;
-            font-weight: 500;
-            padding: 16px 18px;
-            vertical-align: middle;
-            word-break: break-word;
-        }
-
-        .detail-table tr:hover td {
-            background: #f8fbff;
-        }
-
-        /* =====================================
-                               QR CARD
-                            ===================================== */
-        .qr-card {
-            border: none;
-            border-radius: 18px;
-            box-shadow: 0 4px 18px rgba(0, 0, 0, .05);
-            overflow: hidden;
-            height: 100%;
-        }
-
-        .qr-card-body {
-            padding: 30px 20px;
-            text-align: center;
-        }
-
-        .qr-wrapper {
-            background: #fff;
-            padding: 14px;
-            border-radius: 16px;
-            border: 1px solid #e2e8f0;
-            display: inline-block;
-            margin-bottom: 16px;
-        }
-
-        .qr-title {
-            font-size: 30px;
-            font-weight: 800;
-            color: #0f172a;
-            margin-bottom: 8px;
-        }
-
-        .qr-desc {
-            font-size: 14px;
-            color: #64748b;
-            margin-bottom: 24px;
-            line-height: 1.7;
-        }
-
-        /* =====================================
-                               BUTTON
-                            ===================================== */
-        .btn-download {
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            border: none;
-            border-radius: 12px;
-            padding: 12px 22px;
-            font-weight: 600;
-            color: #fff;
-            transition: .25s;
-        }
-
-        .btn-download:hover {
-            transform: translateY(-2px);
-            color: #fff;
-        }
-
-        .btn-kembali {
-            padding: 11px 26px;
-            border-radius: 12px;
-            font-weight: 600;
-        }
-
-        /* =====================================
-                               MOBILE
-                            ===================================== */
-        @media(max-width:992px) {
-
-            .detail-title {
-                font-size: 24px;
-            }
-
-            .detail-table th,
-            .detail-table td {
-                font-size: 13px;
-                padding: 14px;
-            }
-
-            .qr-title {
-                font-size: 24px;
-            }
-
-        }
-    </style>
-
-    <div class="container-fluid px-0">
-
-        <div class="card detail-card">
+        {{-- ============================= --}}
+        {{-- HEADER --}}
+        {{-- ============================= --}}
+        <div class="card border-0 shadow-sm mb-4 mt-4">
 
             {{-- HEADER --}}
-            <div class="detail-header d-flex justify-content-between align-items-center">
+            <div class="card-header bg-white border-bottom py-3">
 
-                <h4 class="detail-title">
-                    Detail Mapping Asset
-                </h4>
+                <div class="d-flex justify-content-between align-items-center flex-wrap">
 
-                <span class="badge-inv">
-                    INV-{{ $maping->keluar->no_inventaris ?? '-' }}
-                </span>
+                    <div>
+
+                        <h3 class="fw-bold text-dark mb-1">
+
+                            <i class="bx bx-desktop text-primary me-2"></i>
+
+                            Detail Mapping Asset
+
+                        </h3>
+
+                        <span class="text-muted">
+
+                            {{ $maping->keluar->inventaris->kode_aset ?? '-' }}
+
+                            •
+
+                            {{ strtoupper($maping->keluar->inventaris->dataAset->merek ?? '-') }}
+
+                            {{ strtoupper($maping->keluar->inventaris->dataAset->type ?? '-') }}
+
+                        </span>
+
+                    </div>
+
+                    <div>
+
+                        <span class="badge bg-label-primary px-3 py-2">
+
+                            {{ strtoupper($maping->perusahaan->nama_perusahaan ?? '-') }}
+
+                        </span>
+
+                    </div>
+
+                </div>
 
             </div>
 
-            {{-- BODY --}}
-            <div class="card-body p-4">
+            {{-- SUMMARY --}}
+            <div class="card-body">
 
-                <div class="row g-4 align-items-start">
+                <div class="row g-3">
 
-                    {{-- DETAIL TABLE --}}
-                    <div class="col-xl-8">
+                    {{-- ====================== --}}
+                    {{-- KODE ASET --}}
+                    {{-- ====================== --}}
+                    <div class="col-lg-3 col-md-6">
 
-                        <div class="table-responsive">
+                        <div class="card border shadow-sm h-100">
 
-                            <table class="table table-bordered detail-table align-middle">
+                            <div class="card-body">
 
-                                <tr>
-                                    <th>Kode Barang</th>
-                                    <td>{{ $maping->keluar->kode_barang }}</td>
+                                <div class="d-flex align-items-center">
 
-                                    <th>Nama Barang</th>
-                                    <td>{{ $maping->keluar->masuk->kategori->nama_barang ?? '-' }}</td>
-                                </tr>
+                                    <div class="avatar avatar-md bg-label-primary me-3">
 
-                                <tr>
-                                    <th>Type</th>
-                                    <td>{{ $maping->keluar->masuk->type ?? '-' }}</td>
+                                        <i class="bx bx-barcode fs-3"></i>
 
-                                    <th>Merek</th>
-                                    <td>{{ $maping->keluar->masuk->merek ?? '-' }}</td>
-                                </tr>
+                                    </div>
 
-                                <tr>
-                                    <th>Warna</th>
-                                    <td>{{ $maping->keluar->warna ?? '-' }}</td>
+                                    <div>
 
-                                    <th>Garansi</th>
-                                    <td>{{ $maping->keluar->masuk->garansi ?? '-' }} BULAN</td>
-                                </tr>
+                                        <small class="text-muted">
 
-                                <tr>
-                                    <th>No Inventaris</th>
-                                    <td>{{ $maping->keluar->no_inventaris ?? '-' }}</td>
+                                            Kode Asset
 
-                                    <th>Tanggal Beli</th>
-                                    <td>{{ $maping->keluar->masuk->tgl_beli ?? '-' }}</td>
-                                </tr>
+                                        </small>
 
-                                <tr>
-                                    <th>Nama Karyawan</th>
-                                    <td>{{ $maping->keluar->karyawan->nama_karyawan ?? '-' }}</td>
+                                        <h5 class="fw-bold mb-0">
 
-                                    <th>Lokasi</th>
-                                    <td>{{ $maping->lokasi->nama_lokasi ?? '-' }}</td>
-                                </tr>
+                                            {{ $maping->keluar->inventaris->kode_aset ?? '-' }}
 
-                                <tr>
-                                    <th>Perusahaan</th>
-                                    <td>{{ $maping->perusahaan->nama_perusahaan ?? '-' }}</td>
+                                        </h5>
 
-                                    <th>Processor</th>
-                                    <td>{{ $maping->processor ?: '-' }}</td>
-                                </tr>
+                                    </div>
 
-                                <tr>
-                                    <th>Device ID</th>
-                                    <td>{{ $maping->device_id ?: '-' }}</td>
+                                </div>
 
-                                    <th>Produk ID</th>
-                                    <td>{{ $maping->produk_id ?: '-' }}</td>
-                                </tr>
-
-                                <tr>
-                                    <th>RAM</th>
-                                    <td>{{ $maping->ram ?: '-' }} GB</td>
-
-                                    <th>System</th>
-                                    <td>{{ $maping->system ?: '-' }}</td>
-                                </tr>
-
-                                <tr>
-                                    <th>Version</th>
-                                    <td>{{ $maping->version ?: '-' }}</td>
-
-                                    <th>Install On</th>
-                                    <td>{{ $maping->instal_on ?: '-' }}</td>
-                                </tr>
-
-                                <tr>
-                                    <th>Aplikasi</th>
-                                    <td>{{ $maping->aplikasi ?: '-' }}</td>
-
-                                    <th>Hak Akses Data PPN</th>
-                                    <td>{{ $maping->data_p ?: '-' }}</td>
-                                </tr>
-                                 <tr>
-                                    <th>Hak Akses Data Non PPN</th>
-                                    <td>{{ $maping->data_n ?: '-' }}</td>
-
-                            </table>
+                            </div>
 
                         </div>
 
                     </div>
 
-                    {{-- QR CODE --}}
-                    <div class="col-xl-4">
+                    {{-- ====================== --}}
+                    {{-- NO INVENTARIS --}}
+                    {{-- ====================== --}}
+                    <div class="col-lg-3 col-md-6">
 
-                        <div class="card qr-card">
+                        <div class="card border shadow-sm h-100">
 
-                            <div class="qr-card-body">
+                            <div class="card-body">
 
-                                {{-- DOWNLOAD QR --}}
-                                <div id="qr-code">
-                                    {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(220)->generate(route('maping.public_show', $maping->id)) !!}
+                                <div class="d-flex align-items-center">
+
+                                    <div class="avatar avatar-md bg-label-success me-3">
+
+                                        <i class="bx bx-package fs-3"></i>
+
+                                    </div>
+
+                                    <div>
+
+                                        <small class="text-muted">
+
+                                            No Inventaris
+
+                                        </small>
+
+                                        <h5 class="fw-bold mb-0">
+
+                                            {{ $maping->keluar->inventaris->no_inventaris ?? '-' }}
+
+                                        </h5>
+
+                                    </div>
+
                                 </div>
 
+                            </div>
 
-                                <div class="qr-title">
-                                    {{ $maping->keluar->kode_barang }}
+                        </div>
+
+                    </div>
+
+                    {{-- ====================== --}}
+                    {{-- USER --}}
+                    {{-- ====================== --}}
+                    <div class="col-lg-3 col-md-6">
+
+                        <div class="card border shadow-sm h-100">
+
+                            <div class="card-body">
+
+                                <div class="d-flex align-items-center">
+
+                                    <div class="avatar avatar-md bg-label-info me-3">
+
+                                        <i class="bx bx-user fs-3"></i>
+
+                                    </div>
+
+                                    <div>
+
+                                        <small class="text-muted">
+
+                                            User Asset
+
+                                        </small>
+
+                                        <h6 class="fw-bold mb-0">
+
+                                            {{ strtoupper($maping->keluar->karyawan->nama_karyawan ?? '-') }}
+
+                                        </h6>
+
+                                    </div>
+
                                 </div>
 
-                                <div class="qr-desc">
-                                    Scan QR untuk melihat detail asset
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {{-- ====================== --}}
+                    {{-- STATUS --}}
+                    {{-- ====================== --}}
+                    <div class="col-lg-3 col-md-6">
+
+                        <div class="card border shadow-sm h-100">
+
+                            <div class="card-body">
+
+                                <div class="d-flex align-items-center">
+
+                                    <div class="avatar avatar-md bg-label-warning me-3">
+
+                                        <i class="bx bx-check-circle fs-3"></i>
+
+                                    </div>
+
+                                    <div>
+
+                                        <small class="text-muted">
+
+                                            Status Mapping
+
+                                        </small>
+
+                                        <br>
+
+                                        @switch($maping->status)
+                                            @case('dipakai')
+                                                <span class="badge bg-success">
+
+                                                    DIPAKAI
+
+                                                </span>
+                                            @break
+
+                                            @case('dipinjam')
+                                                <span class="badge bg-warning text-dark">
+
+                                                    DIPINJAM
+
+                                                </span>
+                                            @break
+
+                                            @case('servis')
+                                                <span class="badge bg-danger">
+
+                                                    SERVIS
+
+                                                </span>
+                                            @break
+
+                                            @case('maintenance')
+                                                <span class="badge bg-info">
+
+                                                    MAINTENANCE
+
+                                                </span>
+                                            @break
+
+                                            @case('mutasi')
+                                                <span class="badge bg-primary">
+
+                                                    MUTASI
+
+                                                </span>
+                                            @break
+
+                                            @default
+                                                <span class="badge bg-secondary">
+
+                                                    TERSEDIA
+
+                                                </span>
+                                        @endswitch
+
+                                    </div>
+
                                 </div>
-                                <button type="button" class="btn btn-download" onclick="downloadQR()">
-
-                                    Download QR
-
-                                </button>
-
-
-                                </a>
 
                             </div>
 
@@ -317,46 +271,365 @@
 
                 </div>
 
-                {{-- BUTTON --}}
-                <div class="mt-4">
+            </div>
 
-                    @auth
+        </div>
+        
+        <div class="row g-4">
 
-                        @if (auth()->user()->role === 'manager')
-                            <a href="{{ route('manager.maping.index') }}" class="btn btn-secondary btn-kembali">
+            {{-- ========================= --}}
+            {{-- INFORMASI & SPESIFIKASI --}}
+            {{-- ========================= --}}
+            <div class="col-lg-8">
 
-                                ← Kembali
+                {{-- INFORMASI MAPPING --}}
+                <div class="card border-0 shadow-sm mb-4">
 
-                            </a>
+                    <div class="card-header bg-white">
+
+                        <h5 class="mb-0 fw-bold">
+
+                            <i class="bx bx-info-circle text-primary me-2"></i>
+
+                            Informasi Asset
+
+                        </h5>
+
+                    </div>
+
+                    <div class="card-body p-0">
+
+                        <table class="table table-hover table-bordered mb-0">
+
+                            <tbody>
+
+                                <tr>
+                                    <th width="35%">Perusahaan</th>
+                                    <td>{{ $maping->perusahaan->nama_perusahaan ?? '-' }}</td>
+                                </tr>
+
+                                <tr>
+                                    <th>Kode Asset</th>
+                                    <td>{{ $maping->keluar->inventaris->kode_aset ?? '-' }}</td>
+                                </tr>
+
+                                <tr>
+                                    <th>No Inventaris</th>
+                                    <td>{{ $maping->keluar->inventaris->no_inventaris ?? '-' }}</td>
+                                </tr>
+
+                                <tr>
+                                    <th>Kategori</th>
+                                    <td>{{ $maping->keluar->inventaris->dataAset->kategori->nama_barang ?? '-' }}</td>
+                                </tr>
+
+                                <tr>
+                                    <th>Merk</th>
+                                    <td>{{ $maping->keluar->inventaris->dataAset->merek ?? '-' }}</td>
+                                </tr>
+
+                                <tr>
+                                    <th>Type</th>
+                                    <td>{{ $maping->keluar->inventaris->dataAset->type ?? '-' }}</td>
+                                </tr>
+
+                                <tr>
+                                    <th>Warna</th>
+                                    <td>{{ $maping->keluar->inventaris->dataAset->warna ?? '-' }}</td>
+                                </tr>
+
+                                <tr>
+                                    <th>User Asset</th>
+                                    <td>{{ $maping->keluar->karyawan->nama_karyawan ?? '-' }}</td>
+                                </tr>
+
+                                <tr>
+                                    <th>Lokasi</th>
+                                    <td>{{ $maping->lokasi->nama_lokasi ?? '-' }}</td>
+                                </tr>
+
+                                <tr>
+                                    <th>Tanggal Digunakan</th>
+                                    <td>
+
+                                        {{ $maping->tanggal_digunakan ? \Carbon\Carbon::parse($maping->tanggal_digunakan)->format('d-m-Y') : '-' }}
+
+                                    </td>
+                                </tr>
+
+                                <tr>
+                                    <th>Catatan</th>
+                                    <td>{{ $maping->catatan ?: '-' }}</td>
+                                </tr>
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+                {{-- SPESIFIKASI --}}
+                <div class="card border-0 shadow-sm">
+
+                    <div class="card-header bg-white">
+
+                        <h5 class="mb-0 fw-bold">
+
+                            <i class="bx bx-chip text-success me-2"></i>
+
+                            Spesifikasi Perangkat
+
+                        </h5>
+
+                    </div>
+
+                    <div class="card-body">
+
+                        <div class="row g-4">
+
+                            <div class="col-md-6">
+
+                                <small class="text-muted">
+
+                                    Processor
+
+                                </small>
+
+                                <div class="fw-semibold">
+
+                                    {{ $maping->processor ?? '-' }}
+
+                                </div>
+
+                            </div>
+
+                            <div class="col-md-6">
+
+                                <small class="text-muted">
+
+                                    RAM
+
+                                </small>
+
+                                <div class="fw-semibold">
+
+                                    {{ $maping->ram ?? '-' }} GB
+
+                                </div>
+
+                            </div>
+
+                            <div class="col-md-6">
+
+                                <small class="text-muted">
+
+                                    Operating System
+
+                                </small>
+
+                                <div class="fw-semibold">
+
+                                    {{ $maping->system ?? '-' }}
+
+                                </div>
+
+                            </div>
+
+                            <div class="col-md-6">
+
+                                <small class="text-muted">
+
+                                    Version
+
+                                </small>
+
+                                <div class="fw-semibold">
+
+                                    {{ $maping->version ?? '-' }}
+
+                                </div>
+
+                            </div>
+
+                            <div class="col-md-6">
+
+                                <small class="text-muted">
+
+                                    Device ID
+
+                                </small>
+
+                                <div class="fw-semibold">
+
+                                    {{ $maping->device_id ?? '-' }}
+
+                                </div>
+
+                            </div>
+
+                            <div class="col-md-6">
+
+                                <small class="text-muted">
+
+                                    Product ID
+
+                                </small>
+
+                                <div class="fw-semibold">
+
+                                    {{ $maping->produk_id ?? '-' }}
+
+                                </div>
+
+                            </div>
+
+                            <div class="col-md-6">
+
+                                <small class="text-muted">
+
+                                    Install On
+
+                                </small>
+
+                                <div class="fw-semibold">
+
+                                    {{ $maping->instal_on ? \Carbon\Carbon::parse($maping->instal_on)->format('d-m-Y') : '-' }}
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            {{-- ========================= --}}
+            {{-- FOTO + QR --}}
+            {{-- ========================= --}}
+            <div class="col-lg-4">
+
+                {{-- FOTO --}}
+                <div class="card border-0 shadow-sm mb-4">
+
+                    <div class="card-header bg-white">
+
+                        <h5 class="mb-0 fw-bold">
+
+                            <i class="bx bx-image me-2 text-primary"></i>
+
+                            Foto Asset
+
+                        </h5>
+
+                    </div>
+
+                    <div class="card-body text-center">
+
+                        @if ($maping->keluar->gambar)
+                            <img src="{{ asset('storage/' . $maping->keluar->gambar) }}"
+                                class="img-fluid rounded border shadow-sm" style="max-height:260px;object-fit:contain;">
                         @else
-                            <a href="{{ route('maping.index') }}" class="btn btn-secondary btn-kembali">
-
-                                ← Kembali
-
-                            </a>
+                            <img src="{{ asset('assets/img/no-image.png') }}" class="img-fluid rounded border shadow-sm">
                         @endif
 
-                    @endauth
+                    </div>
+
+                </div>
+
+                {{-- QR --}}
+                <div class="card border-0 shadow-sm">
+
+                    <div class="card-header bg-white">
+
+                        <h5 class="mb-0 fw-bold">
+
+                            <i class="bx bx-qr text-success me-2"></i>
+
+                            QR Code Asset
+
+                        </h5>
+
+                    </div>
+
+                    <div class="card-body text-center">
+
+                        <div id="qr-code">
+
+                            {!! QrCode::size(220)->generate(route('maping.public_show', $maping->id)) !!}
+
+                        </div>
+
+                        <div class="mt-3">
+
+                            <h5 class="fw-bold">
+
+                                {{ $maping->keluar->inventaris->kode_aset }}
+
+                            </h5>
+
+                            <small class="text-muted">
+
+                                Scan QR untuk melihat informasi asset.
+
+                            </small>
+
+                        </div>
+
+                        <div class="d-grid gap-2 mt-4">
+
+                            <button class="btn btn-primary" onclick="downloadQR()">
+
+                                <i class="bx bx-download me-1"></i>
+
+                                Download QR
+
+                            </button>
+
+
+                        </div>
+
+                    </div>
 
                 </div>
 
             </div>
 
         </div>
+    
+
+        {{-- BUTTON --}}
+        <div class="d-flex justify-content-between mt-4">
+
+            <a href="{{ route('maping.index') }}" class="btn btn-secondary">
+                <i class="bx bx-arrow-back"></i>
+                Kembali
+            </a>
+
+            <a href="{{ route('maping.edit', $maping->id) }}" class="btn btn-warning">
+                <i class="bx bx-edit"></i>
+                Edit Data
+            </a>
+
+        </div>
+
 
     </div>
+
     <script>
         function downloadQR() {
 
-            // ambil svg
             const svg = document.querySelector('#qr-code svg');
 
-            // convert svg
             const serializer = new XMLSerializer();
 
             const source = serializer.serializeToString(svg);
 
-            // buat image
             const image = new Image();
 
             image.src =
@@ -365,7 +638,6 @@
 
             image.onload = function() {
 
-                // canvas
                 const canvas = document.createElement('canvas');
 
                 canvas.width = image.width;
@@ -376,14 +648,12 @@
 
                 ctx.drawImage(image, 0, 0);
 
-                // convert png
                 const pngFile = canvas.toDataURL('image/png');
 
-                // download
                 const downloadLink = document.createElement('a');
 
                 downloadLink.download =
-                    'QR-{{ $maping->keluar->kode_barang }}.png';
+                    'QR-{{ $maping->keluar->inventaris->kode_aset ?? 'asset' }}.png';
 
                 downloadLink.href = pngFile;
 
@@ -391,4 +661,5 @@
             };
         }
     </script>
+
 @endsection

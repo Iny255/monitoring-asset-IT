@@ -36,6 +36,10 @@ class Inventaris extends Model
   {
     return $this->hasOne(Keluar::class, 'inventaris_id');
   }
+  public function kategori()
+{
+    return $this->belongsTo(Kategori::class);
+}
 
   /*
     |--------------------------------------------------------------------------
