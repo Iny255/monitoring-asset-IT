@@ -104,9 +104,12 @@
 
                             <li>
 
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="{{ route('maping.print', request()->query()) }}"
+                                    target="_blank">
 
-                                    PDF
+                                    <i class="bx bxs-file-pdf text-danger me-2"></i>
+
+                                    Export PDF
 
                                 </a>
 
@@ -114,12 +117,13 @@
 
                             <li>
 
-                                <a class="dropdown-item" href="#">
+                                <a class="dropdown-item" href="{{ route('maping.export.excel', request()->query()) }}">
 
-                                    Excel
+                                    <i class="bx bxs-file-export text-success me-2"></i>
+
+                                    Export Excel
 
                                 </a>
-
                             </li>
 
 
@@ -230,7 +234,29 @@
                                     {{-- USER --}}
                                     <td>
 
-                                        {{ strtoupper($maping->keluar->karyawan->nama_karyawan ?? '-') }}
+                                        <div class="fw-semibold">
+
+                                            {{ strtoupper($maping->penerima) }}
+
+                                        </div>
+
+                                        <small class="text-muted">
+
+                                            @if ($maping->jenis_penerima == 'Perorangan')
+                                                <span class="badge bg-label-primary">
+
+                                                    Perorangan
+
+                                                </span>
+                                            @else
+                                                <span class="badge bg-label-warning">
+
+                                                    Per Divisi
+
+                                                </span>
+                                            @endif
+
+                                        </small>
 
                                     </td>
 
@@ -266,18 +292,18 @@
                                     <td class="text-center">
 
                                         @switch($maping->status)
-                                            @case('tersedia')
+                                            @case('servis')
                                                 <span class="badge bg-label-secondary">
 
-                                                    Tersedia
+                                                    Servis
 
                                                 </span>
                                             @break
 
-                                            @case('dipakai')
+                                            @case('aktif')
                                                 <span class="badge bg-label-success">
 
-                                                    Dipakai
+                                                    Aktif
 
                                                 </span>
                                             @break
@@ -290,10 +316,10 @@
                                                 </span>
                                             @break
 
-                                            @case('servis')
+                                            @case('selesai')
                                                 <span class="badge bg-label-danger">
 
-                                                    Servis
+                                                    Non Aktif
 
                                                 </span>
                                             @break
@@ -366,14 +392,14 @@
 
                                                 <li>
 
-                                                    {{-- <a class="dropdown-item"
+                                                    <a class="dropdown-item"
                                                         href="{{ route('maping.hak-akses', $maping->id) }}">
 
                                                         <i class="bx bx-lock-alt me-2"></i>
 
                                                         Kelola Hak Akses
 
-                                                    </a> --}}
+                                                    </a>
 
                                                 </li>
 
@@ -431,14 +457,14 @@
 
                                                 <li>
 
-                                                    {{-- <a class="dropdown-item"
+                                                    <a class="dropdown-item"
                                                         href="{{ route('pencabutan.create', $maping->id) }}">
 
                                                         <i class="bx bx-power-off me-2"></i>
 
                                                         Pencabutan
 
-                                                    </a> --}}
+                                                    </a>
 
                                                 </li>
 
@@ -603,8 +629,8 @@
                                             Semua Status
                                         </option>
 
-                                        <option value="tersedia">Tersedia</option>
-                                        <option value="dipakai">Dipakai</option>
+                                        <option value="aktif">Aktif</option>
+                                        <option value="selesai">Non Aktif</option>
                                         <option value="dipinjam">Dipinjam</option>
                                         <option value="servis">Servis</option>
                                         <option value="maintenance">Maintenance</option>

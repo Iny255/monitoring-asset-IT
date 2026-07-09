@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Masuk;
-use App\Models\Kategori;
+
 use App\Models\Perusahaan;
 use Illuminate\Http\Request;
 use App\Models\Inventaris;
@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
+
+use Carbon\Carbon;
 class MasukController extends Controller
 {
   public function index(Request $request)
@@ -119,8 +121,7 @@ class MasukController extends Controller
       $query->where(function ($q) use ($search) {
         $q->whereHas('dataAset.kategori', function ($sub) use ($search) {
           $sub->where('nama_barang', 'like', "%{$search}%");
-        })
-        ->orWhereHas('dataAset', function ($sub) use ($search) {
+        })->orWhereHas('dataAset', function ($sub) use ($search) {
           $sub
             ->where('merek', 'like', "%{$search}%")
 
@@ -443,7 +444,7 @@ class MasukController extends Controller
   {
     $user = auth()->user();
 
-    $query = Inventaris::with(['dataAset.kategori', 'perusahaan', 'keluar.karyawan']);
+    $query = Inventaris::with(['dataAset.kategori', 'perusahaan', 'keluarTerakhir.karyawan']);
 
     if ($user->role != 'super_admin') {
       $query->where('perusahaan_id', $user->id_perusahaan);
@@ -510,12 +511,5 @@ class MasukController extends Controller
 
     return response()->json($dataAsets);
   }
-  public function historyStok($dataAsetId)
-  {
-    $inventaris = Inventaris::with(['keluar.karyawan', 'dataAset.kategori', 'perusahaan'])
-      ->where('data_aset_id', $dataAsetId)
-      ->get();
-
-    return view('content.dashboard.transaksi-masuk.history-stok', compact('inventaris'));
-  }
+  
 }

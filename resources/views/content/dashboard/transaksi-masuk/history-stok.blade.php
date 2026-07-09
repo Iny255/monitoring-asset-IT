@@ -1,625 +1,727 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Riwayat Stok Asset')
+@section('title', 'Riwayat Perjalanan Asset')
 
 @section('content')
 
     <style>
-        .history-card {
+        .info-card {
             border: none;
-            border-radius: 18px;
-            overflow: hidden;
-            box-shadow: 0 4px 18px rgba(0, 0, 0, .06);
+            border-radius: 16px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, .08);
         }
 
-        .history-header {
-            padding: 24px 28px;
-            background: linear-gradient(135deg, #1e3a8a, #2563eb);
-            color: #fff;
+        .summary-card {
+            border: none;
+            border-radius: 16px;
+            transition: .2s;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, .06);
         }
 
-        .history-title {
-            font-size: 28px;
-            font-weight: 700;
-            margin-bottom: 5px;
-        }
-
-        .history-subtitle {
-            opacity: .9;
-            font-size: 14px;
-        }
-
-        .summary-box {
-            background: #f8fafc;
-            border-radius: 18px;
-            padding: 22px 18px;
-            text-align: center;
-            height: 100%;
-            border: 1px solid #e2e8f0;
-            transition: .2s ease;
-        }
-
-        .summary-box:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, .05);
+        .summary-card:hover {
+            transform: translateY(-3px);
         }
 
         .summary-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
-            margin: 0 auto 14px;
+            width: 55px;
+            height: 55px;
+            border-radius: 15px;
             display: flex;
-            align-items: center;
             justify-content: center;
-            font-size: 22px;
+            align-items: center;
+            margin: auto;
+            font-size: 28px;
         }
 
-        .summary-label {
-            font-size: 11px;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: #64748b;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-        }
-
-        .summary-value {
-            font-size: 32px;
-            font-weight: 700;
-            line-height: 1;
-        }
-
-        .table-history thead th {
-            background: #1d4ed8;
-            color: #fff;
-            font-size: 12px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            text-align: center;
+        .timeline-card {
             border: none;
-            padding: 16px;
+            border-radius: 16px;
+            box-shadow: 0 3px 12px rgba(0, 0, 0, .06);
         }
 
-        .table-history tbody td {
-            vertical-align: middle;
-            padding: 15px;
-        }
-
-        .badge-qty-masuk {
-            background: #dcfce7;
-            color: #166534;
-            padding: 7px 12px;
-            border-radius: 8px;
-            font-weight: 700;
-        }
-
-        .badge-qty-keluar {
-            background: #fee2e2;
-            color: #b91c1c;
-            padding: 7px 12px;
-            border-radius: 8px;
-            font-weight: 700;
-        }
-
-        .btn-back {
-            border-radius: 12px;
-            padding: 10px 22px;
-            font-weight: 600;
-        }
-
-        .input-group-text {
-            border-radius: 12px 0 0 12px;
-            border: 1px solid #dbe2ea;
-        }
-
-        .input-group .form-control {
-            border-radius: 0 12px 12px 0;
-        }
-
-        .form-control,
-        .form-select {
-            height: 46px;
-            border-radius: 12px;
-        }
-
-        .dropdown-menu {
-            animation: fadeIn .2s ease;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(5px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* ====================================
-           TABLE
-        ==================================== */
-
-        .table-wrapper {
-            padding: 0;
-        }
-
-        .table-history {
-            margin-bottom: 0;
-        }
-
-        .table-history th,
-        .table-history td {
+        .table thead th {
+            background: #1d4ed8;
+            color: white;
+            border: none;
             vertical-align: middle;
         }
 
-        .table-history th {
-            white-space: nowrap;
-        }
-
-        /* ====================================
-           FOOTER
-        ==================================== */
-
-        .action-footer {
-            padding: 15px 25px;
-            border-top: 1px solid #e5e7eb;
-            background: #fff;
-        }
-
-        .btn-back {
-            min-width: 140px;
-            height: 45px;
-            border-radius: 12px;
-            font-weight: 600;
+        .badge-status {
+            font-size: 12px;
+            padding: 7px 12px;
         }
     </style>
+
     @php
 
         $first = $inventaris->first();
 
-        $totalAset = $inventaris->count();
+        $totalKeluar = $timeline->where('aktivitas', 'KELUAR')->count();
 
-        $tersedia = $inventaris->where('status', 'TERSEDIA')->count();
+        $totalCabut = $timeline->where('aktivitas', 'PENCABUTAN')->count();
 
-        $dipakai = $inventaris->where('status', 'DIPAKAI')->count();
-
-        $dipinjam = $inventaris->where('status', 'DIPINJAM')->count();
-
-        $rusak = $inventaris->where('status', 'RUSAK')->count();
+        $totalMutasi = $timeline->where('aktivitas', 'MUTASI')->count();
 
     @endphp
 
-    <div class="card history-card">
+    <div class="container-xxl flex-grow-1 container-p-y">
 
         {{-- HEADER --}}
-        <div class="card-header border-0 text-white py-4"
-            style="
-                    background: linear-gradient(
-                    90deg,
-                    var(--theme-primary),
-                    var(--theme-secondary)
-                    );
-                    ">
+        <div class="card border-0 shadow-sm mb-4">
 
-            <div class="history-title">
-                Riwayat Stok Aset
-            </div>
+            <div class="card-body d-flex justify-content-between align-items-center">
 
-            <div class="history-subtitle">
+                <div>
 
-                {{ $first->dataAset->kategori->nama_barang ?? '-' }}
-                -
-                {{ $first->dataAset->merek ?? '-' }}
-                -
-                {{ $first->dataAset->type ?? '-' }}
+                    <h2 class="fw-bold mb-1">
 
-            </div>
+                        Riwayat Perjalanan Asset
 
-        </div>
+                    </h2>
 
+                    <div class="text-muted">
 
-        <div class="card-body p-4">
-            {{-- TOOLBAR --}}
-            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                        {{ optional($first->dataAset->kategori)->nama_barang }}
 
-                {{-- SEARCH --}}
-                <div style="min-width:300px;">
+                        •
 
-                    <div class="input-group">
+                        {{ optional($first->dataAset)->merek }}
 
-                        <span class="input-group-text bg-white">
-                            <i class="bx bx-search"></i>
-                        </span>
+                        •
 
-                        <input type="text" id="searchInput" class="form-control" placeholder="Cari history asset...">
+                        {{ optional($first->dataAset)->type }}
 
                     </div>
 
                 </div>
 
-                {{-- BUTTON FILTER --}}
-                <div class="dropdown">
+                <a href="{{ route('transaksi-masuk.stok') }}" class="btn btn-outline-secondary">
 
-                    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bx bx-arrow-back"></i>
 
-                        <i class="bx bx-filter-alt me-1"></i>
-                        Filter
+                    Kembali
 
-                    </button>
+                </a>
 
-                    <div class="dropdown-menu dropdown-menu-end p-3 shadow border-0"
-                        style="min-width:280px; border-radius:16px;">
+            </div>
 
-                        <div class="mb-3">
+        </div>
+
+        {{-- INFORMASI ASSET --}}
+        <div class="card info-card mb-4">
+
+            <div class="card-header">
+
+                <strong>
+
+                    Informasi Asset
+
+                </strong>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="row">
+
+                    <div class="col-md-3">
+
+                        <label class="text-muted">
+
+                            Kategori
+
+                        </label>
+
+                        <h6>
+
+                            {{ optional($first->dataAset->kategori)->nama_barang }}
+
+                        </h6>
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <label class="text-muted">
+
+                            Merek
+
+                        </label>
+
+                        <h6>
+
+                            {{ optional($first->dataAset)->merek }}
+
+                        </h6>
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <label class="text-muted">
+
+                            Type
+
+                        </label>
+
+                        <h6>
+
+                            {{ optional($first->dataAset)->type }}
+
+                        </h6>
+
+                    </div>
+
+                    <div class="col-md-3">
+
+                        <label class="text-muted">
+
+                            Total Unit
+
+                        </label>
+
+                        <h6>
+
+                            {{ $inventaris->count() }} Unit
+
+                        </h6>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {{-- SUMMARY --}}
+        <div class="row mb-4">
+
+            <div class="col-md-4">
+
+                <div class="card summary-card">
+
+                    <div class="card-body text-center">
+
+                        <div class="summary-icon bg-primary text-white">
+
+                            <i class="bx bx-log-in-circle"></i>
+
+                        </div>
+
+                        <div class="mt-3 text-muted">
+
+                            Total Keluar
+
+                        </div>
+
+                        <h2 class="text-primary">
+
+                            {{ $totalKeluar }}
+
+                        </h2>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-4">
+
+                <div class="card summary-card">
+
+                    <div class="card-body text-center">
+
+                        <div class="summary-icon bg-danger text-white">
+
+                            <i class="bx bx-log-out-circle"></i>
+
+                        </div>
+
+                        <div class="mt-3 text-muted">
+
+                            Pencabutan
+
+                        </div>
+
+                        <h2 class="text-danger">
+
+                            {{ $totalCabut }}
+
+                        </h2>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <div class="col-md-4">
+
+                <div class="card summary-card">
+
+                    <div class="card-body text-center">
+
+                        <div class="summary-icon bg-warning text-white">
+
+                            <i class="bx bx-transfer"></i>
+
+                        </div>
+
+                        <div class="mt-3 text-muted">
+
+                            Mutasi
+
+                        </div>
+
+                        <h2 class="text-warning">
+
+                            {{ $totalMutasi }}
+
+                        </h2>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        {{-- TIMELINE --}}
+        <div class="card timeline-card">
+
+            <div class="card-header">
+
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+
+                    <h5 class="fw-bold mb-0">
+
+                        Timeline Perjalanan Asset
+
+                    </h5>
+
+                    <div style="width:320px">
+
+                        <input type="text" id="searchTimeline" class="form-control"
+                            placeholder="Cari user, petugas, aktivitas...">
+
+                    </div>
+
+                </div>
+
+                <form method="GET">
+
+                    <div class="row g-3 align-items-end">
+
+                        <div class="col-md-3">
 
                             <label class="form-label fw-semibold">
-                                Status Asset
+
+                                Dari Tanggal
+
                             </label>
 
-                            <select id="filterStatus" class="form-select">
+                            <input type="date" name="tanggal_awal" class="form-control"
+                                value="{{ request('tanggal_awal') }}">
+
+                        </div>
+
+                        <div class="col-md-3">
+
+                            <label class="form-label fw-semibold">
+
+                                Sampai Tanggal
+
+                            </label>
+
+                            <input type="date" name="tanggal_akhir" class="form-control"
+                                value="{{ request('tanggal_akhir') }}">
+
+                        </div>
+
+                        <div class="col-md-3">
+
+                            <label class="form-label fw-semibold">
+
+                                Kode Asset
+
+                            </label>
+
+                            <select name="kode_aset" class="form-select">
 
                                 <option value="">
-                                    Semua Status
+
+                                    -- Semua Kode Asset --
+
                                 </option>
 
-                                <option value="TERSEDIA">
-                                    Tersedia
-                                </option>
+                                @foreach ($kodeAsets as $kode)
+                                    <option value="{{ $kode }}"
+                                        {{ request('kode_aset') == $kode ? 'selected' : '' }}>
 
-                                <option value="DIPAKAI">
-                                    Dipakai
-                                </option>
+                                        {{ $kode }}
 
-                                <option value="DIPINJAM">
-                                    Dipinjam
-                                </option>
-
-                                <option value="RUSAK">
-                                    Rusak
-                                </option>
+                                    </option>
+                                @endforeach
 
                             </select>
 
                         </div>
 
-                        <button type="button" id="resetFilter" class="btn btn-secondary w-100">
+                        <div class="col-md-3">
 
-                            Reset Filter
+                            <div class="d-flex gap-2">
 
-                        </button>
+                                <button type="submit" class="btn btn-primary">
 
-                    </div>
+                                    <i class="bx bx-search me-1"></i>
 
-                </div>
-            </div>
-            {{-- SUMMARY --}}
-            <div class="row g-3 mb-4">
+                                    Filter
 
-                <div class="col-lg col-md-6">
+                                </button>
 
-                    <div class="summary-box">
+                                <a href="{{ route('stok.history', $inventaris->first()->data_aset_id) }}"
+                                    class="btn btn-secondary">
 
-                        <div class="summary-label">
-                            TOTAL ASSET
-                        </div>
+                                    Reset
 
-                        <div class="summary-value text-primary">
+                                </a>
 
-                            {{ $totalAset }}
+                            </div>
 
                         </div>
 
                     </div>
 
-                </div>
+                    <div class="mt-3">
 
-                <div class="col-lg col-md-6">
+                        <a href="{{ route('stok.history.cetak', [
+                            'dataAsetId' => $inventaris->first()->data_aset_id,
+                            'tanggal_awal' => request('tanggal_awal'),
+                            'tanggal_akhir' => request('tanggal_akhir'),
+                            'kode_aset' => request('kode_aset'),
+                        ]) }}"
+                            target="_blank" class="btn btn-danger">
 
-                    <div class="summary-box">
+                            <i class="bx bxs-file-pdf me-1"></i>
 
-                        <div class="summary-label">
-                            TERSEDIA
-                        </div>
+                            Cetak PDF
 
-                        <div class="summary-value text-success">
-
-                            {{ $tersedia }}
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div class="col-lg col-md-6">
-
-                    <div class="summary-box">
-
-                        <div class="summary-label">
-                            DIPAKAI
-                        </div>
-
-                        <div class="summary-value text-info">
-
-                            {{ $dipakai }}
-
-                        </div>
+                        </a>
 
                     </div>
 
-                </div>
-
-                <div class="col-lg col-md-6">
-
-                    <div class="summary-box">
-
-                        <div class="summary-label">
-                            DIPINJAM
-                        </div>
-
-                        <div class="summary-value text-warning">
-
-                            {{ $dipinjam }}
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                <div class="col-lg col-md-6">
-
-                    <div class="summary-box">
-
-                        <div class="summary-label">
-                            RUSAK
-                        </div>
-
-                        <div class="summary-value text-danger">
-
-                            {{ $rusak }}
-
-                        </div>
-
-                    </div>
-
-                </div>
+                </form>
 
             </div>
 
-            {{-- ALERT --}}
-            <div class="alert alert-primary mb-4">
 
-                <i class="bx bx-info-circle me-1"></i>
+            <div class="card-body p-0">
 
-                Saat ini terdapat
+                <div class="table-responsive">
 
-                <strong>{{ $dipakai }}</strong> asset digunakan,
+                    <table class="table table-hover align-middle mb-0">
 
-                <strong>{{ $tersedia }}</strong> asset tersedia,
-
-                <strong>{{ $dipinjam }}</strong> asset dipinjam,
-
-                dan
-
-                <strong>{{ $rusak }}</strong> asset rusak.
-
-            </div>
-
-            {{-- TABLE --}}
-            <div class="table-responsive mb-4">
-
-                <table class="table table-bordered table-hover table-history mb-0">
-
-                    <thead>
-
-                        <tr>
-
-                            <th width="6%">NO</th>
-
-                            <th width="18%">KODE ASSET</th>
-
-                            <th width="20%">NO INVENTARIS</th>
-
-                            <th width="15%">STATUS</th>
-
-                            <th width="25%">PEMAKAI</th>
-
-                            <th width="16%">TANGGAL KELUAR</th>
-
-                        </tr>
-
-                    </thead>
-
-                    <tbody id="historyTable">
-
-                        @forelse($inventaris as $index => $item)
+                        <thead>
 
                             <tr>
 
-                                <td class="text-center">
-                                    {{ $index + 1 }}
-                                </td>
+                                <th width="120">Tanggal</th>
 
-                                <td>
-                                    {{ $item->kode_aset }}
-                                </td>
+                                <th width="150">Kode Asset</th>
 
-                                <td>
-                                    {{ $item->no_inventaris }}
-                                </td>
+                                <th width="150">Aktivitas</th>
 
-                                <td class="text-center">
+                                <th>User</th>
 
-                                    @switch($item->status)
-                                        @case('TERSEDIA')
-                                            <span class="badge bg-success">
-                                                TERSEDIA
-                                            </span>
-                                        @break
+                                <th>Lokasi</th>
 
-                                        @case('DIPAKAI')
-                                            <span class="badge bg-primary">
-                                                DIPAKAI
-                                            </span>
-                                        @break
+                                <th>Keterangan</th>
 
-                                        @case('DIPINJAM')
-                                            <span class="badge bg-warning">
-                                                DIPINJAM
-                                            </span>
-                                        @break
-
-                                        @default
-                                            <span class="badge bg-danger">
-                                                RUSAK
-                                            </span>
-                                    @endswitch
-
-                                </td>
-
-                                <td class="text-center">
-
-                                    @if ($item->keluar)
-                                        @if ($item->keluar->jenis_penerima == 'Perorangan')
-                                            <span class="badge bg-label-primary px-3 py-2">
-
-                                                {{ $item->keluar->karyawan->nama_karyawan ?? '-' }}
-
-                                            </span>
-                                        @else
-                                            <span class="badge bg-label-info px-3 py-2">
-
-                                                {{ $item->keluar->divisi_klr ?? '-' }}
-
-                                            </span>
-                                        @endif
-                                    @else
-                                        <span class="badge bg-label-success px-3 py-2">
-
-                                            Belum Dipakai
-
-                                        </span>
-                                    @endif
-
-                                </td>
-
-                                <td class="text-center">
-
-                                    @if ($item->keluar)
-                                        {{ \Carbon\Carbon::parse($item->keluar->tgl_keluar)->format('d-m-Y') }}
-                                    @else
-                                        -
-                                    @endif
-
-                                </td>
+                                <th width="130">Petugas</th>
 
                             </tr>
 
-                            @empty
+                        </thead>
+
+                        <tbody id="timelineBody">
+
+                            @forelse($timeline as $item)
 
                                 <tr>
 
-                                    <td colspan="6" class="text-center py-4 text-muted">
+                                    {{-- ========================= --}}
+                                    {{-- TANGGAL --}}
+                                    {{-- ========================= --}}
+                                    <td>
 
-                                        Tidak ada data inventaris
+                                        {{ \Carbon\Carbon::parse($item['tanggal'])->format('d-m-Y') }}
+
+                                    </td>
+
+                                    {{-- ========================= --}}
+                                    {{-- KODE ASET --}}
+                                    {{-- ========================= --}}
+                                    <td>
+
+                                        @if ($item['aktivitas'] == 'MUTASI')
+                                            @if (($item['kode_aset_lama'] ?? '-') == ($item['kode_aset_baru'] ?? '-'))
+                                                <strong>
+
+                                                    {{ $item['kode_aset_lama'] }}
+
+                                                </strong>
+                                            @else
+                                                <div class="fw-bold text-primary">
+
+                                                    {{ $item['kode_aset_lama'] }}
+
+                                                </div>
+
+                                                <div class="text-center">
+
+                                                    <i class="bx bx-down-arrow-alt text-secondary"></i>
+
+                                                </div>
+
+                                                <div class="fw-bold text-success">
+
+                                                    {{ $item['kode_aset_baru'] }}
+
+                                                </div>
+                                            @endif
+                                        @else
+                                            <strong>
+
+                                                {{ $item['kode_aset'] }}
+
+                                            </strong>
+                                        @endif
+
+                                    </td>
+
+                                    {{-- ========================= --}}
+                                    {{-- AKTIVITAS --}}
+                                    {{-- ========================= --}}
+                                    <td>
+
+                                        @switch($item['aktivitas'])
+                                            @case('KELUAR')
+                                                <span class="badge bg-primary badge-status">
+
+                                                    <i class="bx bx-log-in-circle me-1"></i>
+
+                                                    KELUAR
+
+                                                </span>
+                                            @break
+
+                                            @case('MUTASI')
+                                                <span class="badge bg-warning text-dark badge-status">
+
+                                                    <i class="bx bx-transfer me-1"></i>
+
+                                                    MUTASI
+
+                                                </span>
+                                            @break
+
+                                            @case('PENCABUTAN')
+                                                <span class="badge bg-danger badge-status">
+
+                                                    <i class="bx bx-log-out-circle me-1"></i>
+
+                                                    PENCABUTAN
+
+                                                </span>
+                                            @break
+
+                                            @default
+                                                <span class="badge bg-secondary">
+
+                                                    {{ $item['aktivitas'] }}
+
+                                                </span>
+                                        @endswitch
+
+                                    </td>
+
+                                    {{-- ========================= --}}
+                                    {{-- USER --}}
+                                    {{-- ========================= --}}
+                                    <td>
+
+                                        @if (!empty($item['user_lama']))
+                                            <div class="fw-semibold text-primary">
+
+                                                <i class="bx bx-user me-1"></i>
+
+                                                {{ $item['user_lama'] }}
+
+                                            </div>
+
+                                            <div class="text-center my-1">
+
+                                                <i class="bx bx-down-arrow-alt text-secondary"></i>
+
+                                            </div>
+                                        @endif
+
+                                        @if (!empty($item['user_baru']))
+                                            <div class="fw-semibold text-success">
+
+                                                <i class="bx bx-user-check me-1"></i>
+
+                                                {{ $item['user_baru'] }}
+
+                                            </div>
+                                        @endif
+
+                                    </td>
+
+                                    {{-- ========================= --}}
+                                    {{-- LOKASI --}}
+                                    {{-- ========================= --}}
+                                    <td>
+
+                                        @if (!empty($item['lokasi_lama']))
+                                            <div>
+
+                                                <i class="bx bx-map me-1"></i>
+
+                                                {{ $item['lokasi_lama'] }}
+
+                                            </div>
+
+                                            <div class="text-center my-1">
+
+                                                <i class="bx bx-down-arrow-alt text-secondary"></i>
+
+                                            </div>
+                                        @endif
+
+                                        @if (!empty($item['lokasi_baru']))
+                                            <div>
+
+                                                <i class="bx bx-map-pin me-1"></i>
+
+                                                {{ $item['lokasi_baru'] }}
+
+                                            </div>
+                                        @endif
+
+                                    </td>
+
+                                    {{-- ========================= --}}
+                                    {{-- KETERANGAN --}}
+                                    {{-- ========================= --}}
+                                    <td>
+
+                                        {{ $item['keterangan'] }}
+
+                                        @if ($item['aktivitas'] == 'MUTASI')
+                                            <div class="mt-2">
+
+                                                <span class="badge bg-info">
+
+                                                    {{ $item['jenis_mutasi'] == 'internal' ? 'Mutasi Internal' : 'Mutasi Antar Perusahaan' }}
+
+                                                </span>
+
+                                                @if ($item['hak_akses'] == 'copy')
+                                                    <span class="badge bg-primary">
+
+                                                        Hak Akses Disalin
+
+                                                    </span>
+                                                @else
+                                                    <span class="badge bg-warning text-dark">
+
+                                                        Hak Akses Manual
+
+                                                    </span>
+                                                @endif
+
+                                            </div>
+                                        @endif
+
+                                    </td>
+
+                                    {{-- ========================= --}}
+                                    {{-- PETUGAS --}}
+                                    {{-- ========================= --}}
+                                    <td>
+
+                                        {{ $item['petugas'] ?? '-' }}
 
                                     </td>
 
                                 </tr>
 
-                            @endforelse
+                                @empty
 
-                        </tbody>
+                                    <tr>
 
-                    </table>
+                                        <td colspan="7" class="text-center py-5">
 
-                </div>
+                                            <img src="{{ asset('assets/img/illustrations/page-misc-error-light.png') }}"
+                                                width="120" class="mb-3">
 
-                {{-- FOOTER --}}
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 border-top pt-3">
+                                            <br>
 
-                    <div class="text-muted">
+                                            <span class="text-muted">
 
-                        Menampilkan
-                        <strong>{{ $totalAset }}</strong>
-                        unit asset inventaris
+                                                Belum ada riwayat perjalanan asset.
+
+                                            </span>
+
+                                        </td>
+
+                                    </tr>
+
+                                @endforelse
+
+                            </tbody>
+
+                        </table>
 
                     </div>
 
-                    <a href="{{ route('transaksi-masuk.stok') }}" class="btn btn-secondary btn-back">
-
-                        <i class="bx bx-arrow-back me-1"></i>
-
-                        Kembali
-
-                    </a>
-
                 </div>
 
-            </div> {{-- tutup card-body --}}
+            </div>
+
         </div>
 
     @endsection
+
     @section('scripts')
 
         <script>
             document.addEventListener('DOMContentLoaded', function() {
 
-                const searchInput = document.getElementById('searchInput');
-                const filterStatus = document.getElementById('filterStatus');
-                const resetFilter = document.getElementById('resetFilter');
+                const search = document.getElementById('searchTimeline');
 
-                function filterTable() {
+                if (search) {
 
-                    const keyword = searchInput.value.toLowerCase();
-                    const status = filterStatus.value.toLowerCase();
+                    search.addEventListener('keyup', function() {
 
-                    document.querySelectorAll('#historyTable tr').forEach(function(row) {
+                        let keyword = this.value.toLowerCase();
 
-                        const text = row.innerText.toLowerCase();
+                        document.querySelectorAll('#timelineBody tr').forEach(function(row) {
 
-                        const matchKeyword =
-                            text.includes(keyword);
+                            row.style.display =
+                                row.innerText.toLowerCase().includes(keyword) ?
+                                '' :
+                                'none';
 
-                        const matchStatus =
-                            status === '' ||
-                            text.includes(status);
-
-                        row.style.display =
-                            (matchKeyword && matchStatus) ?
-                            '' :
-                            'none';
+                        });
 
                     });
 
                 }
-
-                searchInput.addEventListener(
-                    'keyup',
-                    filterTable
-                );
-
-                filterStatus.addEventListener(
-                    'change',
-                    filterTable
-                );
-
-                resetFilter.addEventListener(
-                    'click',
-                    function() {
-
-                        searchInput.value = '';
-                        filterStatus.value = '';
-
-                        filterTable();
-
-                    }
-                );
 
             });
         </script>

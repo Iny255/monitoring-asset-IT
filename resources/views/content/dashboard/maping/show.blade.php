@@ -169,7 +169,7 @@
 
                                         <h6 class="fw-bold mb-0">
 
-                                            {{ strtoupper($maping->keluar->karyawan->nama_karyawan ?? '-') }}
+                                            {{ strtoupper($maping->penerima ?? '-') }}
 
                                         </h6>
 
@@ -211,10 +211,10 @@
                                         <br>
 
                                         @switch($maping->status)
-                                            @case('dipakai')
-                                                <span class="badge bg-success">
+                                            @case('servis')
+                                                <span class="badge bg-secondary">
 
-                                                    DIPAKAI
+                                                    SERVIS
 
                                                 </span>
                                             @break
@@ -227,10 +227,10 @@
                                                 </span>
                                             @break
 
-                                            @case('servis')
+                                            @case('selesai')
                                                 <span class="badge bg-danger">
 
-                                                    SERVIS
+                                                    NON AKTIF
 
                                                 </span>
                                             @break
@@ -252,9 +252,9 @@
                                             @break
 
                                             @default
-                                                <span class="badge bg-secondary">
+                                                <span class="badge bg-success">
 
-                                                    TERSEDIA
+                                                    AKTIF
 
                                                 </span>
                                         @endswitch
@@ -274,7 +274,7 @@
             </div>
 
         </div>
-        
+
         <div class="row g-4">
 
             {{-- ========================= --}}
@@ -312,6 +312,7 @@
                                     <th>Kode Asset</th>
                                     <td>{{ $maping->keluar->inventaris->kode_aset ?? '-' }}</td>
                                 </tr>
+        
 
                                 <tr>
                                     <th>No Inventaris</th>
@@ -340,7 +341,7 @@
 
                                 <tr>
                                     <th>User Asset</th>
-                                    <td>{{ $maping->keluar->karyawan->nama_karyawan ?? '-' }}</td>
+                                     <td>{{ $maping->penerima ?? '-' }}</td>
                                 </tr>
 
                                 <tr>
@@ -601,65 +602,167 @@
             </div>
 
         </div>
-    
+        {{-- ========================= --}}
+        {{-- HAK AKSES & APLIKASI --}}
+        {{-- ========================= --}}
+        <div class="card border-0 shadow-sm mt-4">
 
-        {{-- BUTTON --}}
-        <div class="d-flex justify-content-between mt-4">
+            <div class="card-header bg-white">
 
-            <a href="{{ route('maping.index') }}" class="btn btn-secondary">
-                <i class="bx bx-arrow-back"></i>
-                Kembali
-            </a>
+                <h5 class="mb-0 fw-bold">
 
-            <a href="{{ route('maping.edit', $maping->id) }}" class="btn btn-warning">
-                <i class="bx bx-edit"></i>
-                Edit Data
-            </a>
+                    <i class="bx bx-shield-quarter text-primary me-2"></i>
+
+                    Hak Akses & Aplikasi
+
+                </h5>
+
+            </div>
+
+            <div class="card-body">
+
+                <div class="row g-3">
+
+                    @forelse($maping->mapingAccesses as $item)
+                        <div class="col-lg-4 col-md-6">
+
+                            <div class="card border h-100 shadow-sm">
+
+                                <div class="card-body">
+
+                                    <div class="fw-bold">
+
+                                        {{ $item->access->nama_akses }}
+
+                                    </div>
+
+                                    <div class="mt-3">
+
+                                        @if ($item->access->kategori == 'Aplikasi')
+                                            <span class="badge bg-label-primary">
+
+                                                Aplikasi
+
+                                            </span>
+                                        @else
+                                            <span class="badge bg-label-success">
+
+                                                Hak Akses
+
+                                            </span>
+                                        @endif
+
+
+                                        @switch($item->access->jenis)
+                                            @case('Software')
+                                                <span class="badge bg-label-info">
+
+                                                    Software
+
+                                                </span>
+                                            @break
+
+                                            @case('PPN')
+                                                <span class="badge bg-label-warning">
+
+                                                    PPN
+
+                                                </span>
+                                            @break
+
+                                            @default
+                                                <span class="badge bg-label-secondary">
+
+                                                    NON PPN
+
+                                                </span>
+                                        @endswitch
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        @empty
+
+                            <div class="col-12">
+
+                                <div class="alert alert-warning mb-0">
+
+                                    Belum ada Hak Akses maupun Aplikasi.
+
+                                </div>
+
+                            </div>
+                        @endforelse
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            {{-- BUTTON --}}
+            <div class="d-flex justify-content-between mt-4">
+
+                <a href="{{ route('maping.index') }}" class="btn btn-secondary">
+                    <i class="bx bx-arrow-back"></i>
+                    Kembali
+                </a>
+
+                <a href="{{ route('maping.edit', $maping->id) }}" class="btn btn-warning">
+                    <i class="bx bx-edit"></i>
+                    Edit Data
+                </a>
+
+            </div>
+
 
         </div>
 
+        <script>
+            function downloadQR() {
 
-    </div>
+                const svg = document.querySelector('#qr-code svg');
 
-    <script>
-        function downloadQR() {
+                const serializer = new XMLSerializer();
 
-            const svg = document.querySelector('#qr-code svg');
+                const source = serializer.serializeToString(svg);
 
-            const serializer = new XMLSerializer();
+                const image = new Image();
 
-            const source = serializer.serializeToString(svg);
+                image.src =
+                    'data:image/svg+xml;base64,' +
+                    btoa(unescape(encodeURIComponent(source)));
 
-            const image = new Image();
+                image.onload = function() {
 
-            image.src =
-                'data:image/svg+xml;base64,' +
-                btoa(unescape(encodeURIComponent(source)));
+                    const canvas = document.createElement('canvas');
 
-            image.onload = function() {
+                    canvas.width = image.width;
 
-                const canvas = document.createElement('canvas');
+                    canvas.height = image.height;
 
-                canvas.width = image.width;
+                    const ctx = canvas.getContext('2d');
 
-                canvas.height = image.height;
+                    ctx.drawImage(image, 0, 0);
 
-                const ctx = canvas.getContext('2d');
+                    const pngFile = canvas.toDataURL('image/png');
 
-                ctx.drawImage(image, 0, 0);
+                    const downloadLink = document.createElement('a');
 
-                const pngFile = canvas.toDataURL('image/png');
+                    downloadLink.download =
+                        'QR-{{ $maping->keluar->inventaris->kode_aset ?? 'asset' }}.png';
 
-                const downloadLink = document.createElement('a');
+                    downloadLink.href = pngFile;
 
-                downloadLink.download =
-                    'QR-{{ $maping->keluar->inventaris->kode_aset ?? 'asset' }}.png';
+                    downloadLink.click();
+                };
+            }
+        </script>
 
-                downloadLink.href = pngFile;
-
-                downloadLink.click();
-            };
-        }
-    </script>
-
-@endsection
+    @endsection

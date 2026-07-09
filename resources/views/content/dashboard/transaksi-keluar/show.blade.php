@@ -251,13 +251,22 @@
                                         <th>Divisi</th>
                                         <td>{{ $keluar->karyawan->divisi ?? '-' }}</td>
                                     </tr>
+
+                                    <tr>
+                                        <th>Lokasi Penempatan</th>
+                                        <td>{{ $keluar->lokasi->nama_lokasi ?? '-' }}</td>
+                                    </tr>
                                 @else
                                     <tr>
                                         <th width="35%">Divisi</th>
                                         <td>{{ $keluar->divisi_klr ?? '-' }}</td>
                                     </tr>
-                                @endif
 
+                                    <tr>
+                                        <th>Lokasi Penempatan</th>
+                                        <td>{{ $keluar->lokasi->nama_lokasi ?? '-' }}</td>
+                                    </tr>
+                                @endif
                             </table>
 
                         </div>

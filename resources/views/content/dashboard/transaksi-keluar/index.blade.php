@@ -301,13 +301,19 @@
                                             <i class="bx bx-edit"></i>
 
                                         </a>
-
                                         <button type="button" class="btn btn-danger btn-sm btn-delete"
                                             data-id="{{ $keluar->id }}">
-
                                             <i class="bx bx-trash"></i>
-
                                         </button>
+
+                                        <form id="delete-form-{{ $keluar->id }}"
+                                            action="{{ route('transaksi-keluar.destroy', $keluar->id) }}" method="POST"
+                                            style="display:none;">
+                                            @csrf
+                                            @method('DELETE')
+                                        </form>
+
+                    
 
                                     </div>
 

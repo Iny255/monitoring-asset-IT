@@ -226,7 +226,7 @@
                             <tr>
                                 <th>User Asset</th>
                                 <td>
-                                    {{ $maping->keluar->karyawan->nama_karyawan ?? '-' }}
+                                     {{ $maping->penerima ?? '-' }}
                                 </td>
                             </tr>
 
@@ -259,10 +259,10 @@
                                 <th>Status</th>
                                 <td>
 
-                                    @if ($maping->status == 'dipakai')
-                                        <span class="badge bg-success badge-status">
+                                    @if ($maping->status == 'servis')
+                                        <span class="badge bg-secondary badge-status">
 
-                                            DIPAKAI
+                                            SERVIS
 
                                         </span>
                                     @elseif($maping->status == 'dipinjam')
@@ -271,10 +271,10 @@
                                             DIPINJAM
 
                                         </span>
-                                    @elseif($maping->status == 'servis')
+                                    @elseif($maping->status == 'selesai')
                                         <span class="badge bg-danger badge-status">
 
-                                            SERVIS
+                                            NON AKTIF
 
                                         </span>
                                     @elseif($maping->status == 'maintenance')
@@ -284,9 +284,9 @@
 
                                         </span>
                                     @else
-                                        <span class="badge bg-secondary badge-status">
+                                        <span class="badge bg-success badge-status">
 
-                                            TERSEDIA
+                                            AKTIF
 
                                         </span>
                                     @endif

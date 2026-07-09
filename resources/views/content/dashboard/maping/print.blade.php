@@ -42,9 +42,22 @@
         }
 
         table {
-            border-collapse: collapse;
             width: 100%;
-            table-layout: fixed;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #000;
+            padding: 6px;
+            vertical-align: top;
+            font-size: 10px;
+        }
+
+        th {
+            background: #efefef;
+            text-align: center;
+            font-weight: bold;
         }
 
         th,
@@ -120,52 +133,28 @@
 
             <tr>
 
-                <th width="30">
+                <th style="width:4%">
                     No
                 </th>
 
-                <th width="90">
+                <th style="width:12%">
                     Kode Aset
                 </th>
 
-                <th width="160">
-                    User Aset
+                <th style="width:16%">
+                    Nama Pengguna
                 </th>
 
-                <th width="90">
-                    Lokasi
-                </th>
-
-                <th width="100">
-                    Nama Aset
-                </th>
-
-                <th width="270">
+                <th style="width:26%">
                     Spesifikasi
                 </th>
 
-                <th width="90">
-                    Garansi
+                <th style="width:18%">
+                    Data Aset
                 </th>
 
-                <th width="90">
-                    No Inventaris
-                </th>
-
-                <th width="90">
-                    Tanggal Beli
-                </th>
-
-                <th width="180">
-                    Aplikasi
-                </th>
-
-                <th width="120">
-                    Data PPN
-                </th>
-
-                <th width="150">
-                    Data NON PPN
+                <th style="width:24%">
+                    Hak Akses
                 </th>
 
             </tr>
@@ -175,132 +164,145 @@
         <tbody>
 
             @forelse($mapings as $i => $m)
+
                 <tr>
 
+                    {{-- ===================== --}}
                     {{-- NO --}}
+                    {{-- ===================== --}}
                     <td class="center">
                         {{ $i + 1 }}
                     </td>
 
+                    {{-- ===================== --}}
                     {{-- KODE ASET --}}
-                    <td>
-                        {{ $m->keluar->inventaris->kode_aset ?? '-' }}
-                    </td>
-
-                    {{-- NAMA KARYAWAN --}}
-                    <td>
-                        {{ $m->keluar->karyawan->nama_karyawan ?? '-' }}
-                    </td>
-
-                    {{-- LOKASI --}}
-                    <td>
-                        {{ $m->lokasi->nama_lokasi ?? '-' }}
-                    </td>
-
-                    {{-- NAMA BARANG --}}
-                    <td>
-                        {{ $m->keluar->inventaris->dataAset->kategori->nama_barang ?? '-' }}
-                    </td>
-
-                    {{-- SPESIFIKASI --}}
+                    {{-- ===================== --}}
                     <td>
 
-                        <div class="spec-box">
+                        <strong>
+                            {{ $m->keluar->inventaris->kode_aset ?? '-' }}
+                        </strong>
 
-                            <div>
-                                <b>TYPE</b> :
-                                {{ $m->keluar->inventaris->dataAset->type ?? '-' }}
-                            </div>
+                        <br>
 
-                            <div>
-                                <b>MEREK</b> :
-                                {{ $m->keluar->inventaris->dataAset->merek ?? '-' }}
-                            </div>
-
-                            <div>
-                                <b>WARNA</b> :
-                                {{ $m->keluar->inventaris->dataAset->warna ?? '-' }}
-                            </div>
-
-                            <div>
-                                <b>PROCESSOR</b> :
-                                {{ $m->processor ?? '-' }}
-                            </div>
-
-                            <div>
-                                <b>DEVICE ID</b> :
-                                {{ $m->device_id ?? '-' }}
-                            </div>
-
-                            <div>
-                                <b>PRODUK ID</b> :
-                                {{ $m->produk_id ?? '-' }}
-                            </div>
-
-                            <div>
-                                <b>RAM</b> :
-                                {{ $m->ram ? $m->ram . ' GB' : '-' }}
-                            </div>
-
-                            <div>
-                                <b>SYSTEM</b> :
-                                {{ $m->system ?? '-' }}
-                            </div>
-
-                            <div>
-                                <b>VERSION</b> :
-                                {{ $m->version ?? '-' }}
-                            </div>
-
-                            <div>
-                                <b>INSTALL ON</b> :
-                                {{ $m->instal_on ? \Carbon\Carbon::parse($m->instal_on)->format('d-m-Y') : '-' }}
-                            </div>
-
-                        </div>
-
-                    </td>
-
-                    {{-- GARANSI --}}
-                    <td class="center">
-
-                        @if ($m->keluar->inventaris->masuk->garansi ?? false)
-                            {{ $m->keluar->inventaris->masuk->garansi }} Bulan
-                        @else
-                            -
-                        @endif
-
-                    </td>
-
-                    {{-- NO INVENTARIS --}}
-                    <td class="center">
                         {{ $m->keluar->inventaris->no_inventaris ?? '-' }}
+
                     </td>
 
-                    {{-- TANGGAL PEMBELIAN --}}
-                    <td class="center nowrap">
+                    {{-- ===================== --}}
+                    {{-- NAMA PENGGUNA --}}
+                    {{-- ===================== --}}
+                    <td>
 
-                        @if ($m->keluar->inventaris->masuk->tanggal_pembelian ?? false)
-                            {{ \Carbon\Carbon::parse($m->keluar->inventaris->masuk->tanggal_pembelian)->format('d-m-Y') }}
-                        @else
+                        <strong>
+                            {{ strtoupper($m->penerima ?? '-') }}
+                        </strong>
+
+                        <br>
+
+                        {{ $m->lokasi->nama_lokasi ?? '-' }}
+
+                    </td>
+
+                    {{-- ===================== --}}
+                    {{-- SPESIFIKASI --}}
+                    {{-- ===================== --}}
+                    <td>
+
+                        <strong>Processor</strong> :
+                        {{ $m->processor ?? '-' }}
+
+                        <br>
+
+                        <strong>RAM</strong> :
+                        {{ $m->ram ? $m->ram . ' GB' : '-' }}
+
+                        <br>
+
+                        <strong>Operating System</strong> :
+                        {{ $m->system ?? '-' }}
+
+                        <br>
+
+                        <strong>Version</strong> :
+                        {{ $m->version ?? '-' }}
+
+                        <br>
+
+                        <strong>Device ID</strong> :
+                        {{ $m->device_id ?? '-' }}
+
+                        <br>
+
+                        <strong>Product ID</strong> :
+                        {{ $m->produk_id ?? '-' }}
+
+                    </td>
+
+                    {{-- ===================== --}}
+                    {{-- DATA ASET --}}
+                    {{-- ===================== --}}
+                    <td>
+
+                        <strong>Kategori</strong> :
+                        {{ $m->keluar->inventaris->dataAset->kategori->nama_barang ?? '-' }}
+
+                        <br>
+
+                        <strong>Merek</strong> :
+                        {{ $m->keluar->inventaris->dataAset->merek ?? '-' }}
+
+                        <br>
+
+                        <strong>Type</strong> :
+                        {{ $m->keluar->inventaris->dataAset->type ?? '-' }}
+
+                        <br>
+
+                        <strong>Warna</strong> :
+                        {{ $m->keluar->inventaris->dataAset->warna ?? '-' }}
+
+                    </td>
+
+                    {{-- ===================== --}}
+                    {{-- HAK AKSES --}}
+                    {{-- ===================== --}}
+                    <td>
+
+                        <strong>Aplikasi</strong>
+
+                        <br>
+
+                        @forelse($m->aplikasis as $akses)
+                            • {{ $akses->access->nama_akses }}<br>
+                        @empty
+                            -<br>
+                        @endforelse
+
+                        <br>
+
+                        <strong>Hak Akses PPN</strong>
+
+                        <br>
+
+                        @forelse($m->hakAksesPPN as $akses)
+                            • {{ $akses->access->nama_akses }}<br>
+                        @empty
+                            -<br>
+                        @endforelse
+
+                        <br>
+
+                        <strong>Hak Akses NON PPN</strong>
+
+                        <br>
+
+                        @forelse($m->hakAksesNonPPN as $akses)
+                            • {{ $akses->access->nama_akses }}<br>
+                        @empty
                             -
-                        @endif
+                        @endforelse
 
-                    </td>
-
-                    {{-- APLIKASI --}}
-                    <td>
-                        {!! nl2br(e($m->aplikasi ?? '-')) !!}
-                    </td>
-
-                    {{-- DATA PPN --}}
-                    <td>
-                        {!! nl2br(e($m->data_p ?? '-')) !!}
-                    </td>
-
-                    {{-- DATA NON PPN --}}
-                    <td>
-                        {!! nl2br(e($m->data_n ?? '-')) !!}
                     </td>
 
                 </tr>
@@ -308,10 +310,15 @@
             @empty
 
                 <tr>
-                    <td colspan="12" class="center">
+
+                    <td colspan="6" class="center">
+
                         Tidak ada data
+
                     </td>
+
                 </tr>
+
             @endforelse
 
         </tbody>

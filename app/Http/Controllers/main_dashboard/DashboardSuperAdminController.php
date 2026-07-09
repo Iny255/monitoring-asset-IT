@@ -69,19 +69,7 @@ class DashboardSuperAdminController extends Controller
 
       ->values();
 
-    /* =====================================
-        | PEMINJAMAN
-        ===================================== */
-
-    $dipinjam = Peminjaman::where('status', 'Dipinjam')->count();
-
-    $dikembalikan = Peminjaman::where('status', 'Dikembalikan')->count();
-
-    /* =====================================
-        | MUTASI
-        ===================================== */
-
-    $totalMutasi = MutasiMaping::count();
+    
 
     /* =====================================
         | USER
@@ -137,9 +125,8 @@ class DashboardSuperAdminController extends Controller
         'totalKeluar',
         'totalDigunakan',
         'komposisiAset',
-        'dipinjam',
-        'dikembalikan',
-        'totalMutasi',
+        
+    
         'perusahaanCount',
         'petugasCount',
   

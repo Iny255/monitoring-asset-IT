@@ -21,7 +21,6 @@ class User extends Authenticatable
 
   const ROLE_PETUGAS = 'petugas';
 
-
   protected $fillable = ['username', 'name', 'email', 'password', 'role', 'id_perusahaan'];
 
   /**
@@ -57,5 +56,17 @@ class User extends Authenticatable
   public function perusahaan()
   {
     return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
+  }
+  public function historyHakAkses()
+  {
+    return $this->hasMany(HistoryHakAkses::class, 'user_id');
+  }
+  public function historyMutasis()
+  {
+    return $this->hasMany(HistoryMutasi::class, 'created_by');
+  }
+  public function peminjamans()
+  {
+    return $this->hasMany(Peminjaman::class);
   }
 }

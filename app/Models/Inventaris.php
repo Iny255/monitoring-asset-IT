@@ -32,14 +32,23 @@ class Inventaris extends Model
   {
     return $this->belongsTo(DataAset::class);
   }
-  public function keluar()
+  public function keluars()
   {
-    return $this->hasOne(Keluar::class, 'inventaris_id');
+    return $this->hasMany(Keluar::class);
+  }
+
+  public function keluarTerakhir()
+  {
+    return $this->hasOne(Keluar::class)->latestOfMany();
   }
   public function kategori()
-{
+  {
     return $this->belongsTo(Kategori::class);
-}
+  }
+  public function peminjamans()
+  {
+    return $this->hasMany(Peminjaman::class);
+  }
 
   /*
     |--------------------------------------------------------------------------

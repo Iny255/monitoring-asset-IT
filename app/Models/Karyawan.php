@@ -30,4 +30,12 @@ class Karyawan extends Model
   {
     return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
   }
+  public function peminjamans()
+  {
+    return $this->hasMany(Peminjaman::class);
+  }
+  public function peminjamanTujuan()
+  {
+    return $this->hasMany(Peminjaman::class, 'karyawan_tujuan_id');
+  }
 }

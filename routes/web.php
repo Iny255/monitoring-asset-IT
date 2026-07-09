@@ -18,6 +18,12 @@ use App\Http\Controllers\SupplierController;
 use App\Http\Controllers\DataAsetController;
 use App\Http\Controllers\AccessController;
 use App\Http\Controllers\MapingAccessController;
+use App\Http\Controllers\HistoryHakAksesController;
+use App\Http\Controllers\MutasiController;
+use App\Http\Controllers\HistoryMutasiController;
+use App\Http\Controllers\PencabutanController;
+use App\Http\Controllers\HistoryPencabutanController;
+use App\Http\Controllers\HistoryStokController;
 use App\Http\Controllers\main_dashboard\DashboardPetugasController;
 
 Route::get('/', function () {
@@ -54,6 +60,7 @@ Route::middleware(['auth'])->group(function () {
   });
 
   Route::get('/maping/lokasi-by-perusahaan/{id}', [MapingController::class, 'getLokasiByPerusahaan']);
+
   Route::get('/dashboard/peminjaman/lokasi-by-perusahaan/{id}', [PeminjamanController::class, 'lokasiByPerusahaan']);
   Route::get('/dashboard/get-kategori/{id}', [DataAsetController::class, 'getKategori'])->name('data-aset.getKategori');
   /*
@@ -81,9 +88,13 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/dashboard/transaksi-masuk/cetak', [MasukController::class, 'cetak'])->name('transaksi-masuk.cetak');
     Route::get('/dashboard/transaksi-masuk/stok', [MasukController::class, 'stok'])->name('transaksi-masuk.stok');
+    Route::get('/stok/{dataAsetId}/history/cetak', [HistoryStokController::class, 'cetakHistoryStok'])->name(
+      'stok.history.cetak'
+    );
     Route::resource('/dashboard/transaksi-masuk', MasukController::class)->parameters([
       'transaksi-masuk' => 'masuk',
     ]);
+
     Route::get('/dashboard/get-supplier/{id}', [MasukController::class, 'getSupplier']);
 
     Route::get('/dashboard/get-data-aset/{id}', [MasukController::class, 'getDataAset']);
@@ -108,10 +119,20 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/dashboard/search-karyawan', [KeluarController::class, 'getKaryawan'])->name(
       'transaksi-keluar.searchKaryawan'
     );
-    Route::get('/dashboard/transaksi-masuk/history-stok/{dataAsetId}', [MasukController::class, 'historyStok'])->name(
-      'stok.history'
+    Route::get('/dashboard/get-lokasi/{perusahaan}', [KeluarController::class, 'getLokasi']);
+    Route::get('/dashboard/transaksi-masuk/history-stok/{dataAsetId}', [
+      HistoryStokController::class,
+      'historyStok',
+    ])->name('stok.history');
+    Route::get('/dashboard/maping/get-lokasi', [MutasiController::class, 'getLokasi'])->name('maping.getLokasi');
+    Route::get('/dashboard/maping/get-divisi', [MutasiController::class, 'getDivisi'])->name('maping.getDivisi');
+
+    Route::get('/dashboard/maping/search-user-mutasi', [MutasiController::class, 'searchUserMutasi'])->name(
+      'maping.searchUserMutasi'
     );
     Route::get('/dashboard/maping/print', [MapingController::class, 'print'])->name('maping.print');
+
+    Route::get('/dashboard/maping/export-excel', [MapingController::class, 'exportExcel'])->name('maping.export.excel');
     Route::resource('/dashboard/maping', MapingController::class);
     Route::get('/maping/get-kategori', [MapingController::class, 'getKategori'])->name('maping.getKategori');
 
@@ -120,17 +141,41 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/maping/get-detail-aset/{id}', [MapingController::class, 'getDetailAset'])->name(
       'maping.getDetailAset'
     );
-    Route::get('/dashboard/karyawan/search', [MapingController::class, 'searchKaryawan'])->name('karyawan.search');
+    Route::get('/maping/get-access', [MapingController::class, 'getAccess'])->name('maping.getAccess');
+    Route::get('/dashboard/karyawan/search', [MutasiController::class, 'searchKaryawan'])->name('karyawan.search');
 
-    Route::get('/dashboard/maping/mutasi/{id}', [MapingController::class, 'mutasiForm'])->name('maping.mutasi');
-    Route::post('/dashboard/maping/mutasi/{id}', [MapingController::class, 'mutasiStore'])->name('maping.mutasi.store');
-    Route::get('/dashboard/history/mutasi', [MapingController::class, 'historyGlobal'])->name('maping.historyGlobal');
-    Route::get('/maping/{id}/history-user', [MapingController::class, 'historyUser'])->name('maping.historyUser');
+    Route::get('/dashboard/hak-akses/filter/{jenis}', [AccessController::class, 'filterJenis'])->name(
+      'hak-akses.filter'
+    );
+    Route::prefix('dashboard/history')
+      ->middleware(['role:petugas,super_admin'])
+      ->group(function () {
+        // HISTORY HAK AKSES
+        Route::get('/hak-akses', [HistoryHakAksesController::class, 'index'])->name('history.hak-akses.index');
 
-    Route::get('/maping/{id}/detail-ajax', [MapingController::class, 'detailAjax'])->name('maping.detailAjax');
+        Route::get('/hak-akses/cetak', [HistoryHakAksesController::class, 'cetak'])->name('history.hak-akses.cetak');
 
-    Route::post('/dashboard/maping/cabut/{id}', [MapingController::class, 'cabut'])->name('maping.cabut');
-    Route::get('/dashboard/history/pencabutan', [MapingController::class, 'historyCabut'])->name('maping.historyCabut');
+        // HISTORY MUTASI
+        Route::get('/mutasi', [HistoryMutasiController::class, 'index'])->name('history.mutasi.index');
+
+        Route::get('/mutasi/{historyMutasi}', [HistoryMutasiController::class, 'show'])->name('history.mutasi.show');
+
+        Route::get('/mutasi/{historyMutasi}/cetak', [HistoryMutasiController::class, 'print'])->name(
+          'history.mutasi.cetak'
+        );
+
+        Route::get('/mutasi/cetak/semua', [HistoryMutasiController::class, 'printAll'])->name(
+          'history.mutasi.cetak.semua'
+        );
+
+        // HISTORY PENCABUTAN
+        Route::get('/pencabutan', [HistoryPencabutanController::class, 'index'])->name('history.pencabutan.index');
+
+        Route::get('/pencabutan/cetak', [HistoryPencabutanController::class, 'cetak'])->name(
+          'history.pencabutan.cetak'
+        );
+      });
+
     Route::prefix('dashboard/maping/{maping}')->group(function () {
       Route::get('/hak-akses', [MapingAccessController::class, 'index'])->name('maping.hak-akses');
 
@@ -140,31 +185,21 @@ Route::middleware(['auth'])->group(function () {
         'maping.hak-akses.destroy'
       );
     });
-  });
 
-  /*
-    |--------------------------------------------------------------------------
-    | SHARED (SEMUA ROLE)
-    |--------------------------------------------------------------------------
-    */
-  Route::get('/dashboard/peminjaman/search-karyawan', [PeminjamanController::class, 'searchKaryawan'])->name(
-    'peminjaman.search'
-  );
-  Route::middleware(['role:petugas,super_admin'])->group(function () {
-    Route::resource('/dashboard/peminjaman', PeminjamanController::class);
-    Route::get('/dashboard/peminjaman/get-nama-barang/{kode}', [PeminjamanController::class, 'getNamaBarang']);
-    Route::get('/peminjaman/cek-status/{kode}', [PeminjamanController::class, 'cekStatus']);
+    Route::prefix('dashboard/maping')
+      ->name('maping.')
+      ->group(function () {
+        Route::get('{maping}/mutasi', [MutasiController::class, 'mutasiForm'])->name('mutasi');
 
-    Route::get('/dashboard/history/mutasi', [MapingController::class, 'historyGlobal'])->name('maping.historyGlobal');
-    Route::get('/maping/{id}/history-user', [MapingController::class, 'historyUser'])->name('maping.historyUser');
-    Route::delete('/mutasi/{id}', [MapingController::class, 'destroyMutasi']);
+        Route::post('{maping}/mutasi', [MutasiController::class, 'mutasiStore'])->name('mutasi.store');
+      });
 
-    Route::get('/dashboard/history/pencabutan', [MapingController::class, 'historyCabut'])->name('maping.historyCabut');
+    Route::prefix('dashboard/pencabutan')
+      ->name('pencabutan.')
+      ->group(function () {
+        Route::get('{maping}/create', [PencabutanController::class, 'create'])->name('create');
 
-    Route::delete('/dashboard/history/pencabutan/{id}', [MapingController::class, 'hapusCabut'])->name(
-      'history.cabut.hapus'
-    );
-
-    Route::get('/maping/{id}/detail-ajax', [MapingController::class, 'detailAjax'])->name('maping.detail');
+        Route::post('{maping}', [PencabutanController::class, 'store'])->name('store');
+      });
   });
 });

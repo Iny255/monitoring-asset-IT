@@ -67,18 +67,7 @@ class DashboardPetugasController extends Controller
       ->sortByDesc('total')
 
       ->values();
-    /* ================= PEMINJAMAN ================= */
-
-    $dipinjam = Peminjaman::where('status', 'Dipinjam')->count(); // sudah aman karena pakai global scope
-    $dikembalikan = Peminjaman::where('status', 'Dikembalikan')->count();
-
-    /* ================= MUTASI ================= */
-
-    $totalMutasi = MutasiMaping::whereHas('maping', function ($q) use ($user) {
-      if ($user->role !== 'super_admin') {
-        $q->where('id_perusahaan', $user->id_perusahaan);
-      }
-    })->count();
+   
 
     /* ================= GRAFIK ================= */
 
@@ -110,12 +99,11 @@ class DashboardPetugasController extends Controller
         'totalStok',
         'totalKeluar',
         'komposisiAset',
-        'dipinjam',
-        'dikembalikan',
+       
         'bulanLabel',
         'dataMasuk',
         'dataKeluar',
-        'totalMutasi'
+        
       )
     );
   }

@@ -187,14 +187,29 @@
                     </div>
 
                 </div>
+                <div class="row">
 
-                <div class="mb-3">
+                    <div class="col-md-6 mb-3">
 
-                    <label class="form-label">
-                        Foto Aset
-                    </label>
+                        <label class="form-label">
+                            Lokasi Penempatan
+                        </label>
 
-                    <input type="file" name="gambar" class="form-control">
+                        <select name="lokasi_id" id="lokasi_id" class="form-select" required>
+                            <option value="">Pilih Lokasi</option>
+                        </select>
+
+                    </div>
+
+                    <div class="col-md-6 mb-3">
+
+                        <label class="form-label">
+                            Foto Aset
+                        </label>
+
+                        <input type="file" name="gambar" class="form-control">
+
+                    </div>
 
                 </div>
 
@@ -230,6 +245,7 @@
         $(document).ready(function() {
 
             loadKategori();
+            loadLokasi();
 
             function loadKategori() {
                 let perusahaanId = null;
@@ -476,6 +492,42 @@
             );
 
         });
+
+        function loadLokasi() {
+
+            let perusahaanId = null;
+
+            @if (auth()->user()->role == 'super_admin')
+
+                perusahaanId = $('#perusahaan_id').val();
+
+                if (!perusahaanId) {
+                    return;
+                }
+            @else
+
+                perusahaanId = {{ auth()->user()->id_perusahaan }};
+            @endif
+
+            $.get('/dashboard/get-lokasi/' + perusahaanId, function(data) {
+
+                let html = '<option value="">Pilih Lokasi</option>';
+
+                data.forEach(function(item) {
+
+                    html += `
+                <option value="${item.id}">
+                    ${item.nama_lokasi}
+                </option>
+            `;
+
+                });
+
+                $('#lokasi_id').html(html);
+
+            });
+
+        }
     </script>
 
 @endsection

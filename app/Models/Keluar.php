@@ -8,6 +8,7 @@ use App\Models\Karyawan;
 use App\Models\Masuk;
 use App\Models\Perusahaan;
 use App\Models\Maping;
+use App\Models\Lokasi;
 
 class Keluar extends Model
 {
@@ -17,11 +18,13 @@ class Keluar extends Model
     'inventaris_id',
     'perusahaan_id',
     'karyawan_id',
+    'lokasi_id',
     'tgl_keluar',
     'jenis_penerima',
     'divisi_klr',
     'perusahaan_klr',
     'gambar',
+    'created_by',
   ];
 
   /*
@@ -47,5 +50,13 @@ class Keluar extends Model
   public function maping()
 {
     return $this->hasOne(Maping::class, 'id_keluar');
+}
+ public function user()
+  {
+    return $this->belongsTo(User::class, 'created_by');
+  }
+  public function lokasi()
+{
+    return $this->belongsTo(Lokasi::class,'lokasi_id');
 }
 }

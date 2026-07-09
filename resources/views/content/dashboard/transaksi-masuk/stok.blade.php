@@ -28,9 +28,7 @@
         <div class="card-body">
 
             {{-- FILTER + SEARCH --}}
-            <form method="GET"
-                action="{{ auth()->user()->role == 'manager' ? route('manager.laporan.stok') : route('transaksi-masuk.stok') }}"
-                class="row g-3 mb-4">
+           
 
                 {{-- SUPER ADMIN --}}
                 @if (auth()->user()->role == 'super_admin')
@@ -58,7 +56,7 @@
 
                 @endif
 
-                <div class="col-md-6 d-flex">
+                <div class="col-md-6 d-flex mb-4">
 
                     <input type="text" name="search" class="form-control me-2"
                         placeholder="Cari berdasarkan nama barang" value="{{ request('search') }}">
@@ -121,12 +119,21 @@
                                 $pemakai = collect();
 
                                 foreach ($stok->inventaris as $inv) {
-                                    if ($inv->keluar) {
-                                        if ($inv->keluar->jenis_penerima == 'Perorangan') {
-                                            $pemakai->push($inv->keluar->karyawan->nama_karyawan ?? '-');
-                                        } else {
-                                            $pemakai->push($inv->keluar->divisi_klr ?? '-');
-                                        }
+                                    $keluar = $inv->keluarTerakhir;
+
+                                    if (!$keluar) {
+                                        continue;
+                                    }
+
+                                    // hanya tampilkan aset yang memang masih dipakai
+                                    if ($inv->status != 'DIPAKAI') {
+                                        continue;
+                                    }
+
+                                    if ($keluar->jenis_penerima == 'Perorangan') {
+                                        $pemakai->push(optional($keluar->karyawan)->nama_karyawan);
+                                    } else {
+                                        $pemakai->push($keluar->divisi_klr);
                                     }
                                 }
 

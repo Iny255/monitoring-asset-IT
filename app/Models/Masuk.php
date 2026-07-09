@@ -57,6 +57,7 @@ class Masuk extends Model
     return $this->hasMany(Keluar::class, 'id_masuk');
 }
 
+
   /*
     |--------------------------------------------------------------------------
     | MULTI COMPANY

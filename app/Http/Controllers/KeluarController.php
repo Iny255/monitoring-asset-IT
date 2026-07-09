@@ -11,6 +11,7 @@ use App\Models\Karyawan;
 use App\Models\Perusahaan;
 use App\Models\Inventaris;
 use App\Models\Kategori;
+use App\Models\Lokasi;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -82,7 +83,7 @@ class KeluarController extends Controller
   {
     $user = auth()->user();
 
-    $query = Keluar::with(['inventaris.dataAset.kategori', 'karyawan', 'perusahaan']);
+    $query = Keluar::with(['inventaris.dataAset.kategori', 'inventaris.perusahaan', 'karyawan', 'lokasi']);
 
     if ($user->role != 'super_admin') {
       $query->where('perusahaan_id', $user->id_perusahaan);
@@ -148,6 +149,7 @@ class KeluarController extends Controller
       'jenis_penerima' => 'required|in:Perorangan,Perdivisi',
 
       'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:1048',
+      'lokasi_id' => 'required|exists:lokasis,id',
     ]);
 
     if ($request->jenis_penerima == 'Perorangan') {
@@ -181,6 +183,7 @@ class KeluarController extends Controller
         'perusahaan_id' => $perusahaanId,
 
         'karyawan_id' => $request->jenis_penerima == 'Perorangan' ? $request->karyawan_id : null,
+        'lokasi_id' => $request->lokasi_id,
 
         'tgl_keluar' => $request->tgl_keluar,
 
@@ -191,6 +194,7 @@ class KeluarController extends Controller
         'perusahaan_klr' => $request->jenis_penerima == 'Perdivisi' ? strtoupper($request->perusahaan_klr) : null,
 
         'gambar' => $gambar,
+        'created_by' => auth()->id(),
       ]);
 
       $inventaris->update([
@@ -214,8 +218,9 @@ class KeluarController extends Controller
    */
   public function show(int $id)
   {
-    $keluar = Keluar::with(['inventaris.dataAset.kategori', 'karyawan', 'perusahaan'])->findOrFail($id);
-
+    $keluar = Keluar::with(['inventaris.dataAset.kategori', 'inventaris.perusahaan', 'karyawan', 'lokasi'])->findOrFail(
+      $id
+    );
     return view('content.dashboard.transaksi-keluar.show', compact('keluar'));
   }
 
@@ -226,7 +231,7 @@ class KeluarController extends Controller
   {
     $user = auth()->user();
 
-    $query = Keluar::with(['inventaris.dataAset.kategori', 'karyawan', 'perusahaan']);
+    $query = Keluar::with(['inventaris.dataAset.kategori', 'karyawan', 'perusahaan', 'lokasi']);
 
     if ($user->role != 'super_admin') {
       $query->where('perusahaan_id', $user->id_perusahaan);
@@ -235,8 +240,15 @@ class KeluarController extends Controller
     $keluar = $query->findOrFail($id);
 
     $perusahaans = $user->role == 'super_admin' ? Perusahaan::all() : collect();
+    if ($user->role == 'super_admin') {
+      $lokasis = Lokasi::orderBy('nama_lokasi')->get();
+    } else {
+      $lokasis = Lokasi::where('id_perusahaan', $user->id_perusahaan)
+        ->orderBy('nama_lokasi')
+        ->get();
+    }
 
-    return view('content.dashboard.transaksi-keluar.edit', compact('keluar', 'perusahaans'));
+    return view('content.dashboard.transaksi-keluar.edit', compact('keluar', 'perusahaans', 'lokasis'));
   }
 
   /**
@@ -294,6 +306,7 @@ class KeluarController extends Controller
         'jenis_penerima' => $request->jenis_penerima,
 
         'karyawan_id' => $request->jenis_penerima == 'Perorangan' ? $request->karyawan_id : null,
+        'lokasi_id' => $request->lokasi_id,
 
         'divisi_klr' => $request->jenis_penerima == 'Perdivisi' ? strtoupper($request->divisi_klr) : null,
 
@@ -400,7 +413,7 @@ class KeluarController extends Controller
 
     return response()->json($query->orderBy('kode_aset')->get());
   }
-  public function getInventarisDetail( string $id)
+  public function getInventarisDetail(string $id)
   {
     $inventaris = Inventaris::with(['dataAset.kategori'])->findOrFail($id);
 
@@ -415,5 +428,11 @@ class KeluarController extends Controller
 
       'no_inventaris' => $inventaris->no_inventaris,
     ]);
+  }
+  public function getLokasi($perusahaan)
+  {
+    return Lokasi::where('id_perusahaan', $perusahaan)
+      ->orderBy('nama_lokasi')
+      ->get();
   }
 }

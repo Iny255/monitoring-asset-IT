@@ -184,6 +184,35 @@
 
             <div class="col-lg-5">
 
+                {{-- LOKASI --}}
+                <div class="card compact-card shadow-sm border-0 mb-3">
+
+                    <div class="card-header bg-light">
+                        Lokasi Penempatan
+                    </div>
+
+                    <div class="card-body">
+
+                        <label class="form-label">Lokasi</label>
+
+                        <select name="lokasi_id" id="lokasi_id" class="form-select" required>
+
+                            @foreach ($lokasis as $lokasi)
+                                <option value="{{ $lokasi->id }}"
+                                    {{ $keluar->lokasi_id == $lokasi->id ? 'selected' : '' }}>
+
+                                    {{ $lokasi->nama_lokasi }}
+
+                                </option>
+                            @endforeach
+
+                        </select>
+
+                    </div>
+
+                </div>
+
+                {{-- FOTO --}}
                 <div class="card compact-card shadow-sm border-0">
 
                     <div class="card-header bg-light">

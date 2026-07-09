@@ -74,7 +74,7 @@
         }
       ]
     },
-    
+
     {
       "name": "Transaksi Aset",
       "icon": "menu-icon tf-icons bi bi-arrow-left-right",
@@ -90,6 +90,11 @@
           "url": "dashboard/transaksi-keluar",
           "name": "Pemakaian Aset",
           "icon": "menu-icon tf-icons bi bi-box-arrow-up"
+        },
+        {
+          "url": "dashboard/history/peminjaman",
+          "name": "Peminjaman Aset",
+          "icon": "menu-icon tf-icons bi bi-clipboard-check"
         }
       ]
     },
@@ -101,22 +106,25 @@
       "roles": ["petugas", "super_admin"]
     },
     {
-      "url": "dashboard/peminjaman",
-      "name": "Peminjaman Barang",
-      "icon": "menu-icon tf-icons bi bi-clipboard-check",
-      "slug": "dashboard-peminjaman",
-      "roles": ["petugas", "manager", "super_admin"]
-    },
-    {
       "name": "History",
       "icon": "menu-icon tf-icons bi bi-journal-text",
       "slug": "dashboard-history",
       "roles": ["manager", "petugas", "super_admin"],
       "submenu": [
         {
+          "url": "dashboard/history/peminjaman",
+          "name": "Peminjaman",
+          "icon": "menu-icon tf-icons bi bi-clipboard-check"
+        },
+        {
+          "url": "dashboard/history/hak-akses",
+          "name": "Hak Akses",
+          "icon": "menu-icon tf-icons bi bi-shield-lock"
+        },
+        {
           "url": "dashboard/history/mutasi",
           "name": "Mutasi",
-          "icon": "menu-icon tf-icons bi bi-clock-history"
+          "icon": "menu-icon tf-icons bi bi-arrow-left-right"
         },
         {
           "url": "dashboard/history/pencabutan",

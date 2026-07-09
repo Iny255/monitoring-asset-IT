@@ -160,23 +160,13 @@
 
                             {{-- LOKASI --}}
                             <div class="col-md-6">
+                                <label class="form-label">Lokasi</label>
 
-                                <label class="form-label fw-semibold">
+                                <input type="text" id="lokasi" class="form-control"
+                                    placeholder="Lokasi akan terisi otomatis" readonly>
 
-                                    Lokasi
-
-                                </label>
-
-                                <select name="id_lokasi" id="id_lokasi" class="form-select" required>
-
-                                    <option value="">
-                                        -- Pilih Lokasi --
-                                    </option>
-
-                                </select>
-
+                                <input type="hidden" name="id_lokasi" id="id_lokasi">
                             </div>
-
                             {{-- TYPE --}}
                             <div class="col-md-4">
 
@@ -296,8 +286,8 @@
 
                                 </label>
 
-                                <input type="text" name="device_id" class="form-control" value="{{ old('device_id') }}"
-                                    placeholder="Device ID">
+                                <input type="text" name="device_id" class="form-control"
+                                    value="{{ old('device_id') }}" placeholder="Device ID">
 
                             </div>
 
@@ -527,34 +517,15 @@
                             {{-- ===================== --}}
 
                             <h6 class="fw-bold text-primary mb-3">
-
                                 <i class="bx bx-desktop"></i>
-
                                 Aplikasi
-
                             </h6>
 
-                            <div class="row mb-4">
+                            <div id="listAplikasi" class="row mb-4">
 
-                                @foreach ($aplikasis as $item)
-                                    <div class="col-md-4 mb-2">
-
-                                        <div class="form-check">
-
-                                            <input class="form-check-input access-check" type="checkbox"
-                                                value="{{ $item->id }}" data-nama="{{ $item->nama_akses }}"
-                                                id="access{{ $item->id }}">
-
-                                            <label class="form-check-label" for="access{{ $item->id }}">
-
-                                                {{ $item->nama_akses }}
-
-                                            </label>
-
-                                        </div>
-
-                                    </div>
-                                @endforeach
+                                <div class="col-12 text-center text-muted">
+                                    Belum ada data aplikasi.
+                                </div>
 
                             </div>
 
@@ -565,34 +536,15 @@
                             {{-- ===================== --}}
 
                             <h6 class="fw-bold text-warning mb-3">
-
                                 <i class="bx bx-folder"></i>
-
                                 Hak Akses PPN
-
                             </h6>
 
-                            <div class="row mb-4">
+                            <div id="listHakAksesPPN" class="row mb-4">
 
-                                @foreach ($hakAksesPPN as $item)
-                                    <div class="col-md-4 mb-2">
-
-                                        <div class="form-check">
-
-                                            <input class="form-check-input access-check" type="checkbox"
-                                                value="{{ $item->id }}" data-nama="{{ $item->nama_akses }}"
-                                                id="access{{ $item->id }}">
-
-                                            <label class="form-check-label" for="access{{ $item->id }}">
-
-                                                {{ $item->nama_akses }}
-
-                                            </label>
-
-                                        </div>
-
-                                    </div>
-                                @endforeach
+                                <div class="col-12 text-center text-muted">
+                                    Belum ada data Hak Akses PPN.
+                                </div>
 
                             </div>
 
@@ -603,34 +555,15 @@
                             {{-- ===================== --}}
 
                             <h6 class="fw-bold text-success mb-3">
-
                                 <i class="bx bx-folder-open"></i>
-
                                 Hak Akses NON PPN
-
                             </h6>
 
-                            <div class="row">
+                            <div id="listHakAksesNonPPN" class="row">
 
-                                @foreach ($hakAksesNonPPN as $item)
-                                    <div class="col-md-4 mb-2">
-
-                                        <div class="form-check">
-
-                                            <input class="form-check-input access-check" type="checkbox"
-                                                value="{{ $item->id }}" data-nama="{{ $item->nama_akses }}"
-                                                id="access{{ $item->id }}">
-
-                                            <label class="form-check-label" for="access{{ $item->id }}">
-
-                                                {{ $item->nama_akses }}
-
-                                            </label>
-
-                                        </div>
-
-                                    </div>
-                                @endforeach
+                                <div class="col-12 text-center text-muted">
+                                    Belum ada data Hak Akses NON PPN.
+                                </div>
 
                             </div>
 
@@ -654,128 +587,84 @@
         @endsection
 
         @section('scripts')
-
             <script>
                 document.addEventListener('DOMContentLoaded', function() {
 
-                    const perusahaanSelect =
-                        document.getElementById('id_perusahaan');
-
-                    const isSuperAdmin =
-                        perusahaanSelect &&
-                        perusahaanSelect.tagName === 'SELECT';
+                    const perusahaanSelect = document.getElementById('id_perusahaan');
                     const kategoriSelect = document.getElementById('id_kategori');
                     const asetSelect = document.getElementById('id_keluar_select');
                     const lokasiSelect = document.getElementById('id_lokasi');
 
-                    // ==========================
-                    // RESET DETAIL
-                    // ==========================
+                    const isSuperAdmin = perusahaanSelect &&
+                        perusahaanSelect.tagName === 'SELECT';
+
+                    //--------------------------------------------------
+                    // RESET
+                    //--------------------------------------------------
 
                     function resetDetailBarang() {
 
                         document.getElementById('id_keluar').value = '';
-
                         document.getElementById('nama_barang').value = '';
+                        document.getElementById('nama_karyawan').value = '';
                         document.getElementById('type').value = '';
                         document.getElementById('merek').value = '';
                         document.getElementById('warna').value = '';
-                        document.getElementById('nama_karyawan').value = '';
 
+                        document.getElementById('lokasi').value = '';
+                        document.getElementById('id_lokasi').value = '';
                     }
 
-                    // ==========================
+                    //--------------------------------------------------
                     // LOAD KATEGORI
-                    // ==========================
+                    //--------------------------------------------------
 
                     function loadKategori(perusahaanId = '') {
 
+                        kategoriSelect.innerHTML =
+                            '<option value="">Loading...</option>';
+
                         let url = '/maping/get-kategori';
 
-                        if (perusahaanId !== '') {
+                        if (perusahaanId) {
                             url += '?id_perusahaan=' + perusahaanId;
                         }
 
                         fetch(url)
-
-                            .then(response => response.json())
-
-                            .then(data => {
+                            .then(res => res.json())
+                            .then(function(data) {
 
                                 kategoriSelect.innerHTML =
                                     '<option value="">-- Pilih Kategori --</option>';
 
-                                data.forEach(item => {
+                                data.forEach(function(item) {
 
-                                    kategoriSelect.innerHTML += `
-                        <option value="${item.id}">
-                            ${item.nama_barang}
-                        </option>
-                    `;
-
-                                });
-
-                            })
-
-                            .catch(error => {
-
-                                console.log('ERROR KATEGORI', error);
-
-                            });
-
-                    }
-
-                    // ==========================
-                    // LOAD LOKASI
-                    // ==========================
-
-                    function loadLokasi(perusahaanId) {
-
-                        lokasiSelect.innerHTML =
-                            '<option value="">-- Pilih Lokasi --</option>';
-
-                        if (!perusahaanId) {
-                            return;
-                        }
-
-                        fetch('/maping/lokasi-by-perusahaan/' + perusahaanId)
-
-                            .then(response => response.json())
-
-                            .then(data => {
-
-                                data.forEach(item => {
-
-                                    lokasiSelect.innerHTML += `
-                        <option value="${item.id}">
-                            ${item.nama_lokasi}
-                        </option>
-                    `;
+                                    kategoriSelect.innerHTML +=
+                                        `<option value="${item.id}">
+                    ${item.nama_barang}
+                </option>`;
 
                                 });
 
                             })
-
-                            .catch(error => {
-
-                                console.log('ERROR LOKASI', error);
-
+                            .catch(function(error) {
+                                console.log(error);
                             });
 
                     }
 
-                    // ==========================
+
+
+                    //--------------------------------------------------
                     // LOAD ASET
-                    // ==========================
+                    //--------------------------------------------------
 
                     function loadAset(kategoriId, perusahaanId) {
 
                         asetSelect.innerHTML =
-                            '<option value="">-- Pilih Kode Aset --</option>';
+                            '<option value="">-- Pilih Kode Inventaris --</option>';
 
-                        if (!kategoriId) {
-                            return;
-                        }
+                        if (!kategoriId) return;
 
                         let url =
                             '/maping/get-aset?id_kategori=' + kategoriId;
@@ -786,54 +675,49 @@
 
                         fetch(url)
 
-                            .then(response => response.json())
+                            .then(res => res.json())
 
-                            .then(data => {
+                            .then(function(data) {
 
-                                data.forEach(item => {
+                                data.forEach(function(item) {
 
                                     asetSelect.innerHTML += `
-                        <option value="${item.id}">
-                            ${item.inventaris?.kode_aset ?? '-'}
-                        </option>
-                    `;
+                                    <option value="${item.id_keluar}">
+                                        ${item.kode_aset}
+                                    </option>
+                                `;
 
                                 });
-
-                            })
-
-                            .catch(error => {
-
-                                console.log('ERROR ASET', error);
-
                             });
 
                     }
 
-                    // ==========================
+                    //--------------------------------------------------
                     // DETAIL ASET
-                    // ==========================
+                    //--------------------------------------------------
 
                     function loadDetailAset(idKeluar) {
 
                         if (!idKeluar) {
 
                             resetDetailBarang();
-
                             return;
+
                         }
 
                         fetch('/maping/get-detail-aset/' + idKeluar)
 
-                            .then(response => response.json())
+                            .then(res => res.json())
 
-                            .then(data => {
+                            .then(function(data) {
 
                                 document.getElementById('id_keluar').value =
                                     data.id_keluar ?? '';
 
                                 document.getElementById('nama_barang').value =
                                     data.nama_barang ?? '';
+                                document.getElementById('nama_karyawan').value =
+                                    data.user_aset ?? '';
 
                                 document.getElementById('type').value =
                                     data.type ?? '';
@@ -844,14 +728,17 @@
                                 document.getElementById('warna').value =
                                     data.warna ?? '';
 
-                                document.getElementById('nama_karyawan').value =
-                                    data.nama_karyawan ?? '';
+                                document.getElementById('lokasi').value =
+                                    data.nama_lokasi ?? '';
+
+                                document.getElementById('id_lokasi').value =
+                                    data.lokasi_id ?? '';
 
                             })
 
-                            .catch(error => {
+                            .catch(function(error) {
 
-                                console.log('ERROR DETAIL', error);
+                                console.log(error);
 
                                 resetDetailBarang();
 
@@ -859,61 +746,162 @@
 
                     }
 
-                    // ==========================
+                    function renderAccess(data) {
+
+                        const aplikasi = document.getElementById('listAplikasi');
+                        const ppn = document.getElementById('listHakAksesPPN');
+                        const nonppn = document.getElementById('listHakAksesNonPPN');
+
+                        aplikasi.innerHTML = '';
+                        ppn.innerHTML = '';
+                        nonppn.innerHTML = '';
+
+                        function createCheckbox(item) {
+
+                            return `
+            <div class="col-md-4 mb-2">
+                <div class="form-check">
+
+                    <input
+                        class="form-check-input access-check"
+                        type="checkbox"
+                        value="${item.id}"
+                        data-nama="${item.nama_akses}"
+                        id="access${item.id}">
+
+                    <label class="form-check-label"
+                        for="access${item.id}">
+                        ${item.nama_akses}
+                    </label>
+
+                </div>
+            </div>
+        `;
+                        }
+
+                        if (data.aplikasis.length > 0) {
+
+                            data.aplikasis.forEach(function(item) {
+
+                                aplikasi.innerHTML += createCheckbox(item);
+
+                            });
+
+                        } else {
+
+                            aplikasi.innerHTML =
+                                '<div class="col-12 text-center text-muted">Belum ada data.</div>';
+
+                        }
+
+                        if (data.hakAksesPPN.length > 0) {
+
+                            data.hakAksesPPN.forEach(function(item) {
+
+                                ppn.innerHTML += createCheckbox(item);
+
+                            });
+
+                        } else {
+
+                            ppn.innerHTML =
+                                '<div class="col-12 text-center text-muted">Belum ada data.</div>';
+
+                        }
+
+                        if (data.hakAksesNonPPN.length > 0) {
+
+                            data.hakAksesNonPPN.forEach(function(item) {
+
+                                nonppn.innerHTML += createCheckbox(item);
+
+                            });
+
+                        } else {
+
+                            nonppn.innerHTML =
+                                '<div class="col-12 text-center text-muted">Belum ada data.</div>';
+
+                        }
+
+                    }
+
+                    function loadAccess(idPerusahaan) {
+
+                        if (!idPerusahaan) {
+
+                            document.getElementById('listAplikasi').innerHTML = '';
+                            document.getElementById('listHakAksesPPN').innerHTML = '';
+                            document.getElementById('listHakAksesNonPPN').innerHTML = '';
+
+                            return;
+                        }
+
+                        fetch('/maping/get-access?id_perusahaan=' + idPerusahaan)
+
+                            .then(response => response.json())
+
+                            .then(function(data) {
+
+                                renderAccess(data);
+
+                            })
+
+                            .catch(function(error) {
+
+                                console.log(error);
+
+                            });
+
+                    }
+
+
+                    //--------------------------------------------------
                     // SUPER ADMIN
-                    // ==========================
+                    //--------------------------------------------------
 
                     if (isSuperAdmin) {
 
                         perusahaanSelect.addEventListener('change', function() {
 
-                            const perusahaanId = this.value;
-
                             resetDetailBarang();
 
-                            kategoriSelect.innerHTML =
-                                '<option value="">-- Pilih Kategori --</option>';
-
                             asetSelect.innerHTML =
-                                '<option value="">-- Pilih Kode Aset --</option>';
+                                '<option value="">-- Pilih Kode Inventaris --</option>';
 
-                            loadKategori(perusahaanId);
+                            loadKategori(this.value);
 
-                            loadLokasi(perusahaanId);
+                            loadAccess(this.value);
 
                         });
 
                     } else {
 
-                        // PETUGAS
-
                         loadKategori("{{ auth()->user()->id_perusahaan }}");
 
-                        loadLokasi("{{ auth()->user()->id_perusahaan }}");
+                        loadAccess("{{ auth()->user()->id_perusahaan }}");
 
                     }
 
-                    // ==========================
-                    // KATEGORI CHANGE
-                    // ==========================
+                    //--------------------------------------------------
+                    // CHANGE KATEGORI
+                    //--------------------------------------------------
 
                     kategoriSelect.addEventListener('change', function() {
 
-                        const kategoriId = this.value;
+                        resetDetailBarang();
 
-                        const perusahaanId = perusahaanSelect ?
+                        let perusahaanId = isSuperAdmin ?
                             perusahaanSelect.value :
                             "{{ auth()->user()->id_perusahaan }}";
 
-                        resetDetailBarang();
-
-                        loadAset(kategoriId, perusahaanId);
+                        loadAset(this.value, perusahaanId);
 
                     });
 
-                    // ==========================
-                    // ASET CHANGE
-                    // ==========================
+                    //--------------------------------------------------
+                    // CHANGE ASET
+                    //--------------------------------------------------
 
                     asetSelect.addEventListener('change', function() {
 
@@ -922,8 +910,9 @@
                     });
 
                 });
+            </script>
 
-                //tambah hak akses
+            <script>
                 document.addEventListener('DOMContentLoaded', function() {
 
                     const btnTambah = document.getElementById('btnTambahHakAkses');
@@ -940,29 +929,21 @@
 
                         if (checked.length === 0) {
 
-                            list.innerHTML = `
-                <div class="text-muted">
-                    Belum ada Hak Akses dipilih.
-                </div>
-            `;
+                            list.innerHTML = '<div class="text-muted">Belum ada Hak Akses dipilih.</div>';
 
                             return;
+
                         }
 
                         checked.forEach(function(item) {
 
-                            list.innerHTML += `
-                <div class="badge bg-label-primary me-2 mb-2 p-2">
-
-                    ${item.dataset.nama}
-
-                    <input
-                        type="hidden"
-                        name="accesses[]"
-                        value="${item.value}">
-
-                </div>
-            `;
+                            list.innerHTML +=
+                                `<div class="badge bg-label-primary me-2 mb-2 p-2">
+                ${item.dataset.nama}
+                <input type="hidden"
+                       name="accesses[]"
+                       value="${item.value}">
+            </div>`;
 
                         });
 
@@ -978,5 +959,4 @@
 
                 });
             </script>
-
         @endsection

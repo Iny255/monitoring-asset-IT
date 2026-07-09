@@ -8,6 +8,7 @@ use App\Models\Lokasi;
 use App\Models\Keluar;
 use App\Models\Perusahaan;
 use App\Models\MutasiMaping;
+use App\Models\MapingAccess;
 
 class Maping extends Model
 {
@@ -17,7 +18,9 @@ class Maping extends Model
     'id_keluar',
     'id_lokasi',
     'id_perusahaan',
-
+    'karyawan_id',
+    'jenis_penerima',
+    'divisi',
     'processor',
     'ram',
     'device_id',
@@ -53,15 +56,46 @@ class Maping extends Model
     return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
   }
 
-  public function mutasiMapings()
+  public function mapingAccesses()
   {
-    return $this->hasMany(MutasiMaping::class, 'id_maping');
+    return $this->hasMany(MapingAccess::class, 'maping_id');
   }
-  public function hakAkses()
-{
-    return $this->hasMany(MapingAccess::class);
-}
+  public function historyHakAkses()
+  {
+    return $this->hasMany(HistoryHakAkses::class, 'maping_id');
+  }
+  public function historyMutasis()
+  {
+    return $this->hasMany(HistoryMutasi::class);
+  }
+  public function historyPencabutans()
+  {
+    return $this->hasMany(HistoryPencabutan::class);
+  }
+  public function karyawan()
+  {
+    return $this->belongsTo(Karyawan::class, 'karyawan_id');
+  }
+  /*
+|--------------------------------------------------------------------------
+| ACCESSOR
+|--------------------------------------------------------------------------
+*/
 
+  public function getPenerimaAttribute()
+  {
+    // Tidak ada transaksi keluar
+    if ($this->jenis_penerima == 'Perorangan') {
+      return optional($this->karyawan)->nama_karyawan ?? '-';
+    }
+
+    return $this->divisi ?? '-';
+  }
+
+  public function getJenisPenerimaLabelAttribute()
+  {
+    return $this->jenis_penerima ?? '-';
+  }
   /*
     |--------------------------------------------------------------------------
     | AUTO FILTER PERUSAHAAN
@@ -71,7 +105,7 @@ class Maping extends Model
   protected static function booted()
   {
     static::creating(function ($model) {
-      if (auth()->check() && auth()->user()->role !== 'super_admin') {
+      if (empty($model->id_perusahaan) && auth()->check() && auth()->user()->role !== 'super_admin') {
         $model->id_perusahaan = auth()->user()->id_perusahaan;
       }
     });
