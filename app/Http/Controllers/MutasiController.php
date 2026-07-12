@@ -13,6 +13,7 @@ use App\Models\DAtaAset;
 use App\Models\HistoryMutasi;
 use App\Models\MapingAccess;
 use App\Models\Access;
+use App\Models\Masuk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -292,6 +293,25 @@ class MutasiController extends Controller
           'warna' => $dataAsetLama->warna,
         ]);
       }
+      /*
+|--------------------------------------------------------------------------
+| BUAT TRANSAKSI MASUK BARU
+|--------------------------------------------------------------------------
+*/
+
+      $masukBaru = Masuk::create([
+        'perusahaan_id' => $perusahaanTujuan->id,
+        'supplier_id' => null,
+        'perusahaan_asal' => $maping->id_perusahaan,
+        'history_mutasi_id' => null, // nanti diupdate setelah HistoryMutasi dibuat
+        'data_aset_id' => $dataAsetTujuan->id,
+        'jenis_masuk' => 'Mutasi',
+        'tanggal_pembelian' => $request->tanggal_mutasi,
+        'jumlah' => 1,
+        'harga_satuan' => 0,
+        'garansi' => null,
+        'ket_penerimaan' => 'BAIK',
+      ]);
 
       /*
 |--------------------------------------------------------------------------
@@ -346,17 +366,22 @@ class MutasiController extends Controller
 */
 
       $inventarisBaru = Inventaris::create([
-        'masuk_id' => $inventaris->masuk_id,
+        'masuk_id' => $masukBaru->id,
 
         'perusahaan_id' => $perusahaanTujuan->id,
 
         'data_aset_id' => $dataAsetTujuan->id,
 
         'kode_aset' => $kodeAsetBaru,
+        
 
         'no_inventaris' => $noInventarisBaru,
 
         'status' => 'DIPAKAI',
+        'is_transfer' => false,
+      ]);
+      $inventaris->update([
+        'is_transfer' => true,
       ]);
 
       /*
@@ -528,41 +553,28 @@ class MutasiController extends Controller
 |--------------------------------------------------------------------------
 */
 
-      HistoryMutasi::create([
+      $historyMutasi = HistoryMutasi::create([
         'inventaris_id' => $inventaris->id,
-
         'maping_id' => $maping->id,
-
         'jenis_mutasi' => 'antar_perusahaan',
-
         'id_perusahaan_asal' => $maping->id_perusahaan,
-
         'id_perusahaan_tujuan' => $perusahaanTujuan->id,
-
         'kode_aset_lama' => $inventaris->kode_aset,
-
         'kode_aset_baru' => $kodeAsetBaru,
-
         'no_inventaris_lama' => $inventaris->no_inventaris,
-
         'no_inventaris_baru' => $noInventarisBaru,
-
         'nama_aset' => optional($inventaris->dataAset->kategori)->nama_barang,
-
         'lokasi_lama' => optional($lokasiLama)->nama_lokasi,
         'lokasi_baru' => $lokasiBaru->nama_lokasi,
-
         'user_lama' => $userLama,
-
         'user_baru' => $userBaru,
-
         'tanggal_mutasi' => $request->tanggal_mutasi,
-
         'catatan' => trim(($request->catatan ?? '') . "\n\n" . $catatanHakAkses),
-
         'opsi_hak_akses' => $request->opsi_hak_akses,
-
         'created_by' => auth()->id(),
+      ]);
+      $masukBaru->update([
+        'history_mutasi_id' => $historyMutasi->id,
       ]);
 
       /*

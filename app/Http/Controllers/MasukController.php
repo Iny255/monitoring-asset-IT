@@ -21,8 +21,7 @@ class MasukController extends Controller
   {
     $user = auth()->user();
 
-    $query = Masuk::with(['dataAset.kategori', 'supplier', 'perusahaan']);
-
+    $query = Masuk::with(['dataAset.kategori', 'supplier', 'perusahaan', 'perusahaanAsal']);
     // FILTER PERUSAHAAN
     if ($user->role != 'super_admin') {
       $query->where('perusahaan_id', $user->id_perusahaan);
@@ -42,6 +41,9 @@ class MasukController extends Controller
     // FILTER SUPPLIER
     if ($request->supplier_id) {
       $query->where('supplier_id', $request->supplier_id);
+    }
+    if ($request->filled('jenis_masuk')) {
+      $query->where('jenis_masuk', $request->jenis_masuk);
     }
 
     // SEARCH
@@ -63,7 +65,12 @@ class MasukController extends Controller
       ->appends($request->query());
 
     $perusahaans = Perusahaan::all();
-    $suppliers = Supplier::orderBy('nama_supplier')->get();
+    $suppliers =
+      $user->role == 'super_admin'
+        ? Supplier::orderBy('nama_supplier')->get()
+        : Supplier::where('perusahaan_id', $user->id_perusahaan)
+          ->orderBy('nama_supplier')
+          ->get();
 
     return view('content.dashboard.transaksi-masuk.index', compact('masuks', 'perusahaans', 'suppliers'));
   }
@@ -71,8 +78,7 @@ class MasukController extends Controller
   {
     $user = auth()->user();
 
-    $query = Masuk::with(['dataAset.kategori', 'supplier', 'perusahaan']);
-
+    $query = Masuk::with(['dataAset.kategori', 'supplier', 'perusahaan', 'perusahaanAsal']);
     /*
     |--------------------------------------------------------------------------
     | FILTER PERUSAHAAN
@@ -107,6 +113,9 @@ class MasukController extends Controller
 
     if ($request->filled('supplier_id')) {
       $query->where('supplier_id', $request->supplier_id);
+    }
+    if ($request->filled('jenis_masuk')) {
+      $query->where('jenis_masuk', $request->jenis_masuk);
     }
 
     /*
@@ -148,13 +157,17 @@ class MasukController extends Controller
       ->groupBy(function ($item) {
         return ($item->perusahaan_id ?? '') .
           '|' .
+          ($item->jenis_masuk ?? '') .
+          '|' .
           ($item->dataAset->kategori->nama_barang ?? '') .
           '|' .
           ($item->dataAset->merek ?? '') .
           '|' .
           ($item->dataAset->type ?? '') .
           '|' .
-          ($item->supplier_id ?? '');
+          ($item->supplier_id ?? '') .
+          '|' .
+          ($item->perusahaan_asal ?? '');
       })
 
       ->map(function ($items) {
@@ -164,6 +177,7 @@ class MasukController extends Controller
           'tanggal_pembelian' => $first->tanggal_pembelian,
 
           'perusahaan' => $first->perusahaan,
+          'jenis_masuk' => $first->jenis_masuk,
 
           'kategori' => $first->dataAset->kategori->nama_barang ?? '-',
 
@@ -171,15 +185,20 @@ class MasukController extends Controller
 
           'type' => $first->dataAset->type ?? '-',
 
-          'supplier' => $first->supplier->nama_supplier ?? '-',
-
+          'asal' =>
+            $first->jenis_masuk == 'Pembelian'
+              ? $first->supplier->nama_supplier ?? '-'
+              : $first->perusahaanAsal->nama_perusahaan ?? '-',
           'qty' => $items->sum('jumlah'),
 
           'harga_satuan' => $first->harga_satuan,
 
-          'total' => $items->sum(function ($row) {
-            return $row->jumlah * $row->harga_satuan;
-          }),
+          'total' =>
+            $first->jenis_masuk == 'Pembelian'
+              ? $items->sum(function ($row) {
+                return $row->jumlah * $row->harga_satuan;
+              })
+              : 0,
         ];
       })
 
@@ -214,7 +233,7 @@ class MasukController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    $grandTotal = $masuks->sum(function ($item) {
+    $grandTotal = $masuks->where('jenis_masuk', 'Pembelian')->sum(function ($item) {
       return $item->jumlah * $item->harga_satuan;
     });
 
@@ -269,15 +288,14 @@ class MasukController extends Controller
     $request->validate([
       'data_aset_id' => 'required|exists:data_asets,id',
 
-      'supplier_id' => 'required|exists:suppliers,id',
+      'jenis_masuk' => 'required|in:Pembelian,Mutasi',
+
+      'supplier_id' => [Rule::requiredIf($request->jenis_masuk == 'Pembelian'), 'nullable', 'exists:suppliers,id'],
+
       'tanggal_pembelian' => 'required|date',
-
       'jumlah' => 'required|integer|min:1',
-
       'harga_satuan' => 'required|numeric|min:0',
-
       'garansi' => 'nullable|integer|min:0',
-
       'ket_penerimaan' => 'required|in:BAIK,RUSAK',
     ]);
 
@@ -290,6 +308,12 @@ class MasukController extends Controller
         'perusahaan_id' => $perusahaanId,
 
         'supplier_id' => $request->supplier_id,
+
+        'perusahaan_asal' => $request->perusahaan_asal,
+
+        'history_mutasi_id' => $request->history_mutasi_id,
+
+        'jenis_masuk' => $request->jenis_masuk,
 
         'data_aset_id' => $request->data_aset_id,
 
@@ -362,7 +386,14 @@ class MasukController extends Controller
 
   public function show(int $id)
   {
-    $masuk = Masuk::with(['perusahaan', 'supplier', 'dataAset.kategori', 'inventaris'])->findOrFail($id);
+    $masuk = Masuk::with([
+      'perusahaan',
+      'perusahaanAsal',
+      'supplier',
+      'dataAset.kategori',
+      'inventaris',
+      'historyMutasi',
+    ])->findOrFail($id);
 
     return view('content.dashboard.transaksi-masuk.show', compact('masuk'));
   }
@@ -388,7 +419,7 @@ class MasukController extends Controller
   public function update(Request $request, Masuk $masuk)
   {
     $request->validate([
-      'supplier_id' => 'required|exists:suppliers,id',
+      'supplier_id' => [Rule::requiredIf($masuk->jenis_masuk == 'Pembelian'), 'nullable', 'exists:suppliers,id'],
       'tanggal_pembelian' => 'required|date',
       'harga_satuan' => 'required|numeric|min:0',
       'garansi' => 'nullable|integer|min:0',
@@ -511,5 +542,4 @@ class MasukController extends Controller
 
     return response()->json($dataAsets);
   }
-  
 }

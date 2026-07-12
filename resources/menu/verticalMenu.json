@@ -92,9 +92,14 @@
           "icon": "menu-icon tf-icons bi bi-box-arrow-up"
         },
         {
-          "url": "dashboard/history/peminjaman",
+          "url": "dashboard/peminjaman",
           "name": "Peminjaman Aset",
           "icon": "menu-icon tf-icons bi bi-clipboard-check"
+        },
+        {
+          "url": "/dashboard/maintenance",
+          "name": "Service & Maintenance",
+          "icon": "menu-icon tf-icons bx bx-wrench"
         }
       ]
     },
@@ -112,11 +117,6 @@
       "roles": ["manager", "petugas", "super_admin"],
       "submenu": [
         {
-          "url": "dashboard/history/peminjaman",
-          "name": "Peminjaman",
-          "icon": "menu-icon tf-icons bi bi-clipboard-check"
-        },
-        {
           "url": "dashboard/history/hak-akses",
           "name": "Hak Akses",
           "icon": "menu-icon tf-icons bi bi-shield-lock"
@@ -125,6 +125,11 @@
           "url": "dashboard/history/mutasi",
           "name": "Mutasi",
           "icon": "menu-icon tf-icons bi bi-arrow-left-right"
+        },
+        {
+          "url": "/dashboard/history/maintenance",
+          "name": "Service & Maintenance",
+          "icon": "menu-icon tf-icons bx bx-wrench"
         },
         {
           "url": "dashboard/history/pencabutan",

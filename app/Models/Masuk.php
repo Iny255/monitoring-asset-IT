@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use App\Models\Kategori;
 use App\Models\Keluar;
 use App\Models\Perusahaan;
+use App\Models\HistoryMutasi;
 
 class Masuk extends Model
 {
@@ -15,7 +16,10 @@ class Masuk extends Model
   protected $fillable = [
     'perusahaan_id',
     'supplier_id',
+    'perusahaan_asal',
+    'history_mutasi_id',
     'data_aset_id',
+    'jenis_masuk',
     'tanggal_pembelian',
     'jumlah',
     'harga_satuan',
@@ -33,7 +37,7 @@ class Masuk extends Model
   {
     return $this->belongsTo(Perusahaan::class);
   }
-   public function kategori()
+  public function kategori()
   {
     return $this->belongsTo(Kategori::class);
   }
@@ -53,10 +57,17 @@ class Masuk extends Model
     return $this->hasMany(Inventaris::class);
   }
   public function keluars()
-{
+  {
     return $this->hasMany(Keluar::class, 'id_masuk');
-}
-
+  }
+  public function perusahaanAsal()
+  {
+    return $this->belongsTo(Perusahaan::class, 'perusahaan_asal');
+  }
+  public function historyMutasi()
+  {
+    return $this->belongsTo(HistoryMutasi::class, 'history_mutasi_id');
+  }
 
   /*
     |--------------------------------------------------------------------------
@@ -72,7 +83,7 @@ class Masuk extends Model
         return;
       }
 
-      if (auth()->user()->role != 'super_admin') {
+      if (auth()->user()->role != 'super_admin' && empty($model->perusahaan_id)) {
         $model->perusahaan_id = auth()->user()->id_perusahaan;
       }
     });

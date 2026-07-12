@@ -259,49 +259,71 @@ class MapingController extends Controller
       'keluarTerakhir.maping',
     ]);
 
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER PERUSAHAAN
+    |--------------------------------------------------------------------------
+    */
     if ($request->filled('id_perusahaan')) {
       $query->where('perusahaan_id', $request->id_perusahaan);
     }
 
-    $query->whereHas('dataAset', function ($q) use ($request) {
-      $q->where('kategori_id', $request->id_kategori);
-    });
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER KATEGORI
+    |--------------------------------------------------------------------------
+    */
+    if ($request->filled('id_kategori')) {
+      $query->whereHas('dataAset', function ($q) use ($request) {
+        $q->where('kategori_id', $request->id_kategori);
+      });
+    }
 
+    /*
+    |--------------------------------------------------------------------------
+    | HANYA ASET YANG SUDAH DIGUNAKAN
+    |--------------------------------------------------------------------------
+    */
     $query->where('status', 'DIPAKAI');
 
+    /*
+    |--------------------------------------------------------------------------
+    | INVENTARIS YANG BELUM PINDAH PERUSAHAAN
+    |--------------------------------------------------------------------------
+    */
+    $query->where('is_transfer', false);
+
+    /*
+    |--------------------------------------------------------------------------
+    | HARUS SUDAH PERNAH KELUAR
+    |--------------------------------------------------------------------------
+    */
     $query->whereHas('keluarTerakhir');
 
-    $query->whereDoesntHave('keluarTerakhir.maping', function ($q) {
-      $q->whereIn('status', ['aktif', 'dipinjam', 'maintenance', 'servis']);
-    });
+   
 
-    return response()->json(
-      $query->get()->map(function ($inventaris) {
-        $keluar = $inventaris->keluarTerakhir;
+    /*
+|--------------------------------------------------------------------------
+| TIDAK SEDANG SERVICE
+|--------------------------------------------------------------------------
+*/
 
-        if ($keluar->jenis_penerima == 'Perorangan') {
-          $userAset = optional($keluar->karyawan)->nama_karyawan;
-        } else {
-          $userAset = $keluar->divisi_klr;
-        }
-
+    $query->availableForMapping();
+ 
+    $inventaris = $query
+      ->orderBy('kode_aset')
+      ->get()
+      ->map(function ($item) {
         return [
-          'id_keluar' => $keluar->id,
+          'id_keluar' => optional($item->keluarTerakhir)->id,
 
-          'kode_aset' => $inventaris->kode_aset,
-
-          'nama_barang' => optional($inventaris->dataAset->kategori)->nama_barang,
-
-          'user_aset' => $userAset,
-
-          'lokasi' => optional($keluar->lokasi)->nama_lokasi,
-
-          'jenis_penerima' => $keluar->jenis_penerima,
+          'kode_aset' => $item->kode_aset,
         ];
-      })
-    );
+      });
+
+    return response()->json($inventaris);
   }
-  public function getDetailAset($id)
+  public function getDetailAset(string $id)
   {
     $keluar = Keluar::with(['inventaris.dataAset.kategori', 'karyawan', 'lokasi', 'inventaris'])->findOrFail($id);
     /*

@@ -27,11 +27,31 @@
                             </td>
                         </tr>
                     @endif
+                    <tr>
+                        <th>Jenis Penerimaan</th>
+                        <td>
+                            @if ($masuk->jenis_masuk == 'Pembelian')
+                                <span class="badge bg-success">
+                                    Pembelian
+                                </span>
+                            @else
+                                <span class="badge bg-info">
+                                    Mutasi Antar Perusahaan
+                                </span>
+                            @endif
+                        </td>
+                    </tr>
 
                     <tr>
-                        <th>Supplier</th>
+                        <th>Asal Penerimaan</th>
                         <td>
-                            {{ $masuk->supplier->nama_supplier ?? '-' }}
+
+                            @if ($masuk->jenis_masuk == 'Pembelian')
+                                {{ $masuk->supplier->nama_supplier ?? '-' }}
+                            @else
+                                {{ $masuk->perusahaanAsal->nama_perusahaan ?? '-' }}
+                            @endif
+
                         </td>
                     </tr>
 
@@ -71,22 +91,43 @@
 
                     <tr>
                         <th>Harga Satuan</th>
+
                         <td>
-                            Rp {{ number_format($masuk->harga_satuan, 0, ',', '.') }}
+
+                            @if ($masuk->jenis_masuk == 'Pembelian')
+                                Rp {{ number_format($masuk->harga_satuan, 0, ',', '.') }}
+                            @else
+                                -
+                            @endif
+
                         </td>
                     </tr>
 
                     <tr>
                         <th>Total Harga</th>
+
                         <td>
-                            Rp {{ number_format($masuk->jumlah * $masuk->harga_satuan, 0, ',', '.') }}
+
+                            @if ($masuk->jenis_masuk == 'Pembelian')
+                                Rp {{ number_format($masuk->jumlah * $masuk->harga_satuan, 0, ',', '.') }}
+                            @else
+                                -
+                            @endif
+
                         </td>
                     </tr>
 
                     <tr>
                         <th>Garansi</th>
+
                         <td>
-                            {{ $masuk->garansi }} Bulan
+
+                            @if ($masuk->jenis_masuk == 'Pembelian')
+                                {{ $masuk->garansi }} Bulan
+                            @else
+                                -
+                            @endif
+
                         </td>
                     </tr>
 
@@ -113,6 +154,31 @@
                             {{ $masuk->created_at->format('d-m-Y H:i') }}
                         </td>
                     </tr>
+                    @if ($masuk->jenis_masuk == 'Mutasi')
+
+                        <tr>
+                            <th>Perusahaan Asal</th>
+
+                            <td>
+
+                                {{ $masuk->perusahaanAsal->nama_perusahaan ?? '-' }}
+
+                            </td>
+                        </tr>
+
+                        @if ($masuk->historyMutasi)
+                            <tr>
+                                <th>Tanggal Mutasi</th>
+
+                                <td>
+
+                                    {{ \Carbon\Carbon::parse($masuk->historyMutasi->tanggal_mutasi)->format('d-m-Y') }}
+
+                                </td>
+                            </tr>
+                        @endif
+
+                    @endif
 
                 </table>
 

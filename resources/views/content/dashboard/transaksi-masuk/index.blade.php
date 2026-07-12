@@ -124,6 +124,22 @@
                                 </select>
 
                             </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Jenis Masuk</label>
+
+                                <select name="jenis_masuk" class="form-select">
+                                    <option value="">Semua</option>
+
+                                    <option value="Pembelian"
+                                        {{ request('jenis_masuk') == 'Pembelian' ? 'selected' : '' }}>
+                                        Pembelian
+                                    </option>
+
+                                    <option value="Mutasi" {{ request('jenis_masuk') == 'Mutasi' ? 'selected' : '' }}>
+                                        Mutasi Antar Perusahaan
+                                    </option>
+                                </select>
+                            </div>
 
                             <div class="col-md-3">
 
@@ -182,7 +198,8 @@
                                 <th>PERUSAHAAN</th>
                             @endif
                             <th>DATA ASET</th>
-                            <th>SUPPLIER</th>
+                            <th>JENIS</th>
+                            <th>ASAL</th>
                             <th>TGL PEMBELIAN</th>
                             <th>JUMLAH</th>
                             <th>HARGA SATUAN</th>
@@ -227,11 +244,28 @@
                                     </small>
 
                                 </td>
+                                <td class="text-center">
+
+                                    @if ($masuk->jenis_masuk == 'Pembelian')
+                                        <span class="badge bg-success">
+                                            Pembelian
+                                        </span>
+                                    @else
+                                        <span class="badge bg-info">
+                                            Mutasi
+                                        </span>
+                                    @endif
+
+                                </td>
 
                                 {{-- SUPPLIER --}}
                                 <td>
 
-                                    {{ $masuk->supplier->nama_supplier ?? '-' }}
+                                    @if ($masuk->jenis_masuk == 'Pembelian')
+                                        {{ $masuk->supplier->nama_supplier ?? '-' }}
+                                    @else
+                                        {{ $masuk->perusahaanAsal->nama_perusahaan ?? '-' }}
+                                    @endif
 
                                 </td>
                                 <td class="text-center">
@@ -248,7 +282,11 @@
                                 {{-- HARGA --}}
                                 <td class="text-end">
 
-                                    Rp {{ number_format($masuk->harga_satuan, 0, ',', '.') }}
+                                    @if ($masuk->jenis_masuk == 'Pembelian')
+                                        Rp {{ number_format($masuk->harga_satuan, 0, ',', '.') }}
+                                    @else
+                                        -
+                                    @endif
 
                                 </td>
 

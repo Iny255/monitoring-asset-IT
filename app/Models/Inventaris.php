@@ -10,7 +10,15 @@ class Inventaris extends Model
   use HasFactory;
   protected $table = 'inventaris';
 
-  protected $fillable = ['masuk_id', 'perusahaan_id', 'data_aset_id', 'kode_aset', 'no_inventaris', 'status'];
+  protected $fillable = [
+    'masuk_id',
+    'perusahaan_id',
+    'data_aset_id',
+    'kode_aset',
+    'no_inventaris',
+    'status',
+    'is_transfer',
+  ];
 
   /*
     |--------------------------------------------------------------------------
@@ -49,7 +57,102 @@ class Inventaris extends Model
   {
     return $this->hasMany(Peminjaman::class);
   }
+  public function maintenances()
+  {
+    return $this->hasMany(Maintenance::class);
+  }
+  /*
+|--------------------------------------------------------------------------
+| MAINTENANCE
+|--------------------------------------------------------------------------
+*/
 
+  public function maintenanceAktif()
+  {
+    return $this->hasOne(Maintenance::class)->whereIn('status', ['Pengajuan', 'Diproses']);
+  }
+
+  /*
+|--------------------------------------------------------------------------
+| SCOPE
+|--------------------------------------------------------------------------
+*/
+
+  /*
+|--------------------------------------------------------------------------
+| SCOPE : AVAILABLE FOR MAPPING
+|--------------------------------------------------------------------------
+*/
+
+  public function scopeAvailableForMapping(\Illuminate\Database\Eloquent\Builder $query)
+  {
+    return $query
+
+      // Inventaris sudah digunakan
+      ->where('status', 'DIPAKAI')
+
+      // Belum transfer perusahaan
+      ->where('is_transfer', false)
+
+      // Sudah pernah keluar
+      ->whereHas('keluarTerakhir')
+
+      // Belum pernah dimapping
+      ->whereDoesntHave('keluarTerakhir.maping')
+
+      // Tidak sedang service
+      ->whereDoesntHave('maintenanceAktif');
+  }
+
+  /*
+|--------------------------------------------------------------------------
+| SCOPE : AVAILABLE FOR PEMINJAMAN
+|--------------------------------------------------------------------------
+*/
+
+  public function scopeAvailableForPeminjaman(\Illuminate\Database\Eloquent\Builder $query)
+  {
+    return $query
+
+      // Inventaris masih tersedia
+      ->where('status', 'TERSEDIA')
+
+      // Belum transfer perusahaan
+      ->where('is_transfer', false)
+
+      // Tidak sedang service
+      ->whereDoesntHave('maintenanceAktif')
+
+      // Tidak sedang dipinjam
+      ->whereDoesntHave('peminjamans', function ($q) {
+        $q->where('status', 'Dipinjam');
+      });
+  }
+
+  /*
+|--------------------------------------------------------------------------
+| SCOPE : AVAILABLE FOR MAINTENANCE
+|--------------------------------------------------------------------------
+*/
+
+ public function scopeAvailableForMaintenance(\Illuminate\Database\Eloquent\Builder $query)
+{
+    return $query
+
+        ->whereIn('status', [
+
+            'DIPAKAI',
+
+            'TERSEDIA',
+
+            'RUSAK',
+
+        ])
+
+        ->where('is_transfer', false)
+
+        ->whereDoesntHave('maintenanceAktif');
+}
   /*
     |--------------------------------------------------------------------------
     | MULTI COMPANY

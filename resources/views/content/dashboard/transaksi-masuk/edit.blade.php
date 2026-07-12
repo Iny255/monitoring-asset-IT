@@ -38,29 +38,50 @@
 
                                         </div>
                                     @endif
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Jenis Penerimaan</label>
+
+                                        <input type="text" class="form-control" value="{{ $masuk->jenis_masuk }}"
+                                            readonly>
+                                    </div>
 
 
                                     {{-- SUPPLIER --}}
-                                    <div class="col-md-6 mb-3">
+                                    @if ($masuk->jenis_masuk == 'Pembelian')
 
-                                        <label class="form-label">
-                                            Supplier
-                                        </label>
+                                        <div class="col-md-6 mb-3">
 
-                                        <select name="supplier_id" class="form-select" required>
+                                            <label class="form-label">
+                                                Supplier
+                                            </label>
 
-                                            @foreach ($suppliers as $supplier)
-                                                <option value="{{ $supplier->id }}"
-                                                    {{ $masuk->supplier_id == $supplier->id ? 'selected' : '' }}>
+                                            <select name="supplier_id" class="form-select">
 
-                                                    {{ $supplier->nama_supplier }}
+                                                @foreach ($suppliers as $supplier)
+                                                    <option value="{{ $supplier->id }}"
+                                                        {{ $supplier->id == $masuk->supplier_id ? 'selected' : '' }}>
 
-                                                </option>
-                                            @endforeach
+                                                        {{ $supplier->nama_supplier }}
 
-                                        </select>
+                                                    </option>
+                                                @endforeach
 
-                                    </div>
+                                            </select>
+
+                                        </div>
+                                    @else
+                                        <div class="col-md-6 mb-3">
+
+                                            <label class="form-label">
+                                                Perusahaan Asal
+                                            </label>
+
+                                            <input type="text" class="form-control"
+                                                value="{{ $masuk->perusahaanAsal->nama_perusahaan }}" readonly>
+
+                                        </div>
+
+                                    @endif
 
                                     {{-- DATA ASET --}}
                                     <div class="col-md-6 mb-3">

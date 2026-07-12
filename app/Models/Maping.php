@@ -76,6 +76,10 @@ class Maping extends Model
   {
     return $this->belongsTo(Karyawan::class, 'karyawan_id');
   }
+  public function maintenances()
+{
+    return $this->hasMany(Maintenance::class, 'maping_id');
+}
   /*
 |--------------------------------------------------------------------------
 | ACCESSOR

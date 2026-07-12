@@ -66,7 +66,8 @@
                 <th>Kategori</th>
                 <th>Merek</th>
                 <th>Type</th>
-                <th>Supplier</th>
+                <th>Jenis</th>
+                <th>Asal</th>
                 <th>Qty</th>
                 <th>Harga</th>
                 <th>Total</th>
@@ -110,7 +111,11 @@
                     </td>
 
                     <td>
-                        {{ $item->supplier }}
+                        {{ $item->jenis_masuk }}
+                    </td>
+
+                    <td>
+                        {{ $item->asal }}
                     </td>
 
                     <td class="text-center">
@@ -118,11 +123,19 @@
                     </td>
 
                     <td class="text-end">
-                        {{ number_format($item->harga_satuan, 0, ',', '.') }}
+                        @if ($item->jenis_masuk == 'Pembelian')
+                            {{ number_format($item->harga_satuan, 0, ',', '.') }}
+                        @else
+                            -
+                        @endif
                     </td>
 
                     <td class="text-end">
-                        {{ number_format($item->total, 0, ',', '.') }}
+                        @if ($item->jenis_masuk == 'Pembelian')
+                            {{ number_format($item->total, 0, ',', '.') }}
+                        @else
+                            -
+                        @endif
                     </td>
 
                 </tr>
@@ -134,7 +147,7 @@
 
             <tr>
 
-                <th colspan="{{ auth()->user()->role == 'super_admin' ? 9 : 8 }}" style="text-align:right">
+              <th colspan="{{ auth()->user()->role == 'super_admin' ? 10 : 9 }}" style="text-align:right">
 
                     GRAND TOTAL
 

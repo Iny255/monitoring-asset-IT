@@ -9,7 +9,6 @@ use App\Http\Controllers\KategoriController;
 use App\Http\Controllers\KaryawanController;
 use App\Http\Controllers\PerusahaanController;
 use App\Http\Controllers\LokasiController;
-use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\MasukController;
 use App\Http\Controllers\KeluarController;
 use App\Http\Controllers\MapingController;
@@ -24,6 +23,8 @@ use App\Http\Controllers\HistoryMutasiController;
 use App\Http\Controllers\PencabutanController;
 use App\Http\Controllers\HistoryPencabutanController;
 use App\Http\Controllers\HistoryStokController;
+use App\Http\Controllers\MaintenanceController;
+use App\Http\Controllers\HistoryMaintenanceController;
 use App\Http\Controllers\main_dashboard\DashboardPetugasController;
 
 Route::get('/', function () {
@@ -61,7 +62,6 @@ Route::middleware(['auth'])->group(function () {
 
   Route::get('/maping/lokasi-by-perusahaan/{id}', [MapingController::class, 'getLokasiByPerusahaan']);
 
-  Route::get('/dashboard/peminjaman/lokasi-by-perusahaan/{id}', [PeminjamanController::class, 'lokasiByPerusahaan']);
   Route::get('/dashboard/get-kategori/{id}', [DataAsetController::class, 'getKategori'])->name('data-aset.getKategori');
   /*
     |--------------------------------------------------------------------------
@@ -120,6 +120,20 @@ Route::middleware(['auth'])->group(function () {
       'transaksi-keluar.searchKaryawan'
     );
     Route::get('/dashboard/get-lokasi/{perusahaan}', [KeluarController::class, 'getLokasi']);
+    Route::get('/dashboard/peminjaman/search-karyawan', [PeminjamanController::class, 'searchKaryawan'])->name(
+      'peminjaman.search'
+    );
+    Route::get('/dashboard/peminjaman/karyawan-perusahaan/{id}', [
+      PeminjamanController::class,
+      'getKaryawanPerusahaan',
+    ])->name('peminjaman.karyawan-perusahaan');
+    Route::get('/dashboard/peminjaman/inventaris-by-kategori/{kategori}', [
+      PeminjamanController::class,
+      'inventarisByKategori',
+    ])->name('peminjaman.inventaris');
+    Route::get('/dashboard/peminjaman/cetak', [PeminjamanController::class, 'cetak'])->name('peminjaman.cetak');
+    Route::resource('/dashboard/peminjaman', PeminjamanController::class)->except(['destroy']);
+
     Route::get('/dashboard/transaksi-masuk/history-stok/{dataAsetId}', [
       HistoryStokController::class,
       'historyStok',
@@ -147,6 +161,33 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/hak-akses/filter/{jenis}', [AccessController::class, 'filterJenis'])->name(
       'hak-akses.filter'
     );
+    Route::get('/dashboard/maping/{maping}/servis', [MaintenanceController::class, 'createFromMapping'])->name(
+      'maping.servis'
+    );
+    Route::get('/dashboard/peminjaman/{peminjaman}/servis', [
+      MaintenanceController::class,
+      'createFromPeminjaman',
+    ])->name('peminjaman.servis');
+    Route::patch('/dashboard/maintenance/{maintenance}/proses', [MaintenanceController::class, 'proses'])->name(
+      'maintenance.proses'
+    );
+
+    Route::patch('/dashboard/maintenance/{maintenance}/selesai', [MaintenanceController::class, 'selesai'])->name(
+      'maintenance.selesai'
+    );
+    Route::patch('/dashboard/maintenance/{maintenance}/dibatalkan', [MaintenanceController::class, 'dibatalkan'])->name(
+      'maintenance.dibatalkan'
+    );
+
+    Route::patch('/dashboard/maintenance/{maintenance}/tidak-dapat-diperbaiki', [
+      MaintenanceController::class,
+      'tidakDapatDiperbaiki',
+    ])->name('maintenance.tidakDapatDiperbaiki');
+
+   
+    Route::get('/dashboard/maintenance/cetak', [MaintenanceController::class, 'cetak'])->name('maintenance.cetak');
+
+    Route::resource('/dashboard/maintenance', MaintenanceController::class);
     Route::prefix('dashboard/history')
       ->middleware(['role:petugas,super_admin'])
       ->group(function () {
@@ -174,6 +215,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/pencabutan/cetak', [HistoryPencabutanController::class, 'cetak'])->name(
           'history.pencabutan.cetak'
         );
+         Route::get('/maintenance', [HistoryMaintenanceController::class, 'index'])
+            ->name('history.maintenance.index');
+        Route::get('/maintenance/cetak', [HistoryMaintenanceController::class, 'cetak'])
+            ->name('history.maintenance.cetak');
       });
 
     Route::prefix('dashboard/maping/{maping}')->group(function () {
@@ -184,6 +229,7 @@ Route::middleware(['auth'])->group(function () {
       Route::delete('/hak-akses/{access}', [MapingAccessController::class, 'destroy'])->name(
         'maping.hak-akses.destroy'
       );
+
     });
 
     Route::prefix('dashboard/maping')

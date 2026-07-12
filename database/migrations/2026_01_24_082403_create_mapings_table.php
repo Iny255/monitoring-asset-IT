@@ -45,7 +45,7 @@ return new class extends Migration {
       $table->text('catatan')->nullable();
 
       // STATUS MAPPING
-      $table->enum('status', ['aktif', 'selesai', 'dipinjam', 'servis', 'maintenance'])->default('aktif');
+      $table->enum('status', ['aktif', 'selesai', 'servis', 'maintenance'])->default('aktif');
 
       $table->timestamps();
 

@@ -74,7 +74,7 @@ return new class extends Migration {
       $table->text('keterangan_kembali')->nullable();
 
       // Status transaksi
-      $table->enum('status', ['Dipinjam', 'Selesai', 'Hilang'])->default('Dipinjam');
+      $table->enum('status', ['Dipinjam', 'Dikembalikan', 'Hilang'])->default('Dipinjam');
 
       $table->timestamps();
     });

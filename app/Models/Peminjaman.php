@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Peminjaman extends Model
 {
+  protected $table = 'peminjamans';
+
   protected $fillable = [
     'kode_peminjaman',
     'inventaris_id',
@@ -55,4 +57,9 @@ class Peminjaman extends Model
   {
     return $this->belongsTo(User::class);
   }
+  public function maintenanceTerakhir()
+{
+    return $this->hasOne(Maintenance::class, 'peminjaman_id')
+        ->latestOfMany();
+}
 }

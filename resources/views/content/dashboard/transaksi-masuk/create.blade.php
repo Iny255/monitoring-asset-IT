@@ -6,8 +6,8 @@
 
     <style>
         /* =========================
-                                                        DARK MODE ONLY
-                                                     ========================= */
+                                                            DARK MODE ONLY
+                                                         ========================= */
 
         .dark-style .card-dark {
             background: #1f2a3c;
@@ -59,8 +59,8 @@
         }
 
         /* =========================
-                                                   CARD
-                                                ========================= */
+                                                       CARD
+                                                    ========================= */
 
         .card-dark {
             border-radius: 20px;
@@ -68,8 +68,8 @@
         }
 
         /* =========================
-                                                   INPUT
-                                                ========================= */
+                                                       INPUT
+                                                    ========================= */
 
         .form-control,
         .form-select {
@@ -86,8 +86,8 @@
         }
 
         /* =========================
-                                                   LABEL
-                                                ========================= */
+                                                       LABEL
+                                                    ========================= */
 
         .form-label {
             font-size: 13px;
@@ -98,8 +98,8 @@
         }
 
         /* =========================
-                                                   BUTTON
-                                                ========================= */
+                                                       BUTTON
+                                                    ========================= */
 
         .btn {
             border-radius: 12px;
@@ -109,8 +109,8 @@
         }
 
         /* =========================
-                                                   SECTION TITLE
-                                                ========================= */
+                                                       SECTION TITLE
+                                                    ========================= */
 
         .form-section-title {
             font-size: 14px;
@@ -122,8 +122,8 @@
         }
 
         /* =========================
-                                                   RESPONSIVE
-                                                ========================= */
+                                                       RESPONSIVE
+                                                    ========================= */
 
         @media (max-width: 768px) {
             .card-body {
@@ -153,6 +153,7 @@
 
                         <form action="{{ route('transaksi-masuk.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
+                            <input type="hidden" name="jenis_masuk" value="Pembelian">
 
                             <div class="form-section-title">
                                 Informasi Asset

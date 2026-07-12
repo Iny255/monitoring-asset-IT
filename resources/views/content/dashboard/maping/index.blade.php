@@ -416,44 +416,21 @@
 
                                                 </li>
 
-                                                <li>
-
-                                                    {{-- <a class="dropdown-item"
-                                                        href="{{ route('maping.peminjaman', $maping->id) }}">
-
-                                                        <i class="bx bx-package me-2"></i>
-
-                                                        Peminjaman
-
-                                                    </a> --}}
-
-                                                </li>
 
                                                 <li>
 
-                                                    {{-- <a class="dropdown-item"
+                                                    <a class="dropdown-item"
                                                         href="{{ route('maping.servis', $maping->id) }}">
 
                                                         <i class="bx bx-wrench me-2"></i>
 
-                                                        Servis
+                                                        Servis & Maintenance
 
-                                                    </a> --}}
-
-                                                </li>
-
-                                                <li>
-
-                                                    {{-- <a class="dropdown-item"
-                                                        href="{{ route('maintenance.create', $maping->id) }}">
-
-                                                        <i class="bx bx-cog me-2"></i>
-
-                                                        Maintenance
-
-                                                    </a> --}}
+                                                    </a>
 
                                                 </li>
+
+                                              
 
                                                 <li>
 

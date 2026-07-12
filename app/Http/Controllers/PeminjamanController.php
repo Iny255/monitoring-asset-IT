@@ -2,15 +2,15 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Peminjaman;
-use App\Models\Kategori;
-use App\Models\Keluar;
+use App\Models\Inventaris;
 use App\Models\Karyawan;
 use App\Models\Perusahaan;
-use App\Models\Lokasi;
+use App\Models\Kategori;
+use App\Models\Peminjaman;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-
+use Illuminate\Http\JsonResponse;
 class PeminjamanController extends Controller
 {
   /**
@@ -18,75 +18,102 @@ class PeminjamanController extends Controller
    */
   public function index(Request $request)
   {
-    $query = Peminjaman::with(['karyawan', 'kategori', 'keluar.masuk.kategori', 'perusahaan', 'lokasi']);
+    $query = Peminjaman::with([
+      'inventaris.dataAset',
+      'karyawan',
+      'karyawanTujuan',
+      'perusahaanTujuan',
+      'maintenanceTerakhir',
+    ]);
 
-    // =====================================
-    // SEARCH
-    // =====================================
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER PERUSAHAAN
+    |--------------------------------------------------------------------------
+    */
 
-    if ($request->search) {
-      $search = $request->search;
-
-      $query->where(function ($q) use ($search) {
-        $q->whereHas('keluar', function ($k) use ($search) {
-          $k->where('kode_barang', 'like', "%{$search}%");
-        })
-
-          ->orWhereHas('keluar.masuk.kategori', function ($k) use ($search) {
-            $k->where('nama_barang', 'like', "%{$search}%");
-          })
-
-          ->orWhereHas('karyawan', function ($k) use ($search) {
-            $k->where('nama_karyawan', 'like', "%{$search}%");
-          })
-
-          // TAMBAHAN
-          ->orWhere('nama_eksternal', 'like', "%{$search}%")
-
-          ->orWhere('perusahaan_eksternal', 'like', "%{$search}%");
+    if (auth()->user()->role != 'super_admin') {
+      $query->whereHas('inventaris', function ($q) {
+        $q->where('perusahaan_id', auth()->user()->id_perusahaan);
       });
     }
 
-    // =====================================
-    // FILTER PERUSAHAAN
-    // =====================================
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER TANGGAL
+    |--------------------------------------------------------------------------
+    */
 
-    if ($request->perusahaan) {
-      $query->where('perusahaan_id', $request->perusahaan);
+    if ($request->filled('tanggal_awal')) {
+      $query->whereDate('tanggal_pinjam', '>=', $request->tanggal_awal);
     }
 
-    // =====================================
-    // FILTER STATUS
-    // =====================================
+    if ($request->filled('tanggal_akhir')) {
+      $query->whereDate('tanggal_pinjam', '<=', $request->tanggal_akhir);
+    }
 
-    if ($request->status) {
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER JENIS
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('jenis')) {
+      $query->where('jenis_peminjaman', $request->jenis);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('status')) {
       $query->where('status', $request->status);
     }
 
-    // =====================================
-    // PETUGAS HANYA LIHAT PERUSAHAAN SENDIRI
-    // =====================================
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER PENCARIAN
+    |--------------------------------------------------------------------------
+    */
 
-    if (auth()->user()->role != 'super_admin') {
-      $query->where('perusahaan_id', auth()->user()->id_perusahaan);
+    if ($request->filled('search')) {
+      $search = $request->search;
+
+      $query->where(function ($q) use ($search) {
+        $q->where('kode_peminjaman', 'like', "%{$search}%")
+
+          ->orWhereHas('inventaris', function ($inv) use ($search) {
+            $inv->where('kode_aset', 'like', "%{$search}%")->orWhere('no_inventaris', 'like', "%{$search}%");
+          })
+
+          ->orWhereHas('karyawan', function ($kar) use ($search) {
+            $kar->where('nama_karyawan', 'like', "%{$search}%")->orWhere('kode_karyawan', 'like', "%{$search}%");
+          })
+
+          ->orWhereHas('karyawanTujuan', function ($kar) use ($search) {
+            $kar->where('nama_karyawan', 'like', "%{$search}%")->orWhere('kode_karyawan', 'like', "%{$search}%");
+          })
+
+          ->orWhereHas('perusahaanTujuan', function ($per) use ($search) {
+            $per->where('nama_perusahaan', 'like', "%{$search}%");
+          });
+      });
     }
 
-    // =====================================
-    // DATA FILTER
-    // =====================================
-
-    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
-
-    // =====================================
-    // PAGINATION
-    // =====================================
+    /*
+    |--------------------------------------------------------------------------
+    | PAGINATION
+    |--------------------------------------------------------------------------
+    */
 
     $peminjamans = $query
-      ->orderBy('created_at', 'desc')
-      ->paginate(5)
-      ->appends($request->query());
+      ->latest()
+      ->paginate(10)
+      ->appends(request()->query());
 
-    return view('content.dashboard.peminjaman.index', compact('peminjamans', 'perusahaans'));
+    return view('content.dashboard.peminjaman.index', compact('peminjamans'));
   }
 
   /**
@@ -94,16 +121,104 @@ class PeminjamanController extends Controller
    */
   public function create()
   {
-    $keluars = Keluar::orderBy('kode_barang')->get();
-    $kategoris = Kategori::orderBy('nama_barang')->get();
-    $karyawans = Karyawan::orderBy('nama_karyawan')->get();
-    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
-    $lokasis = Lokasi::orderBy('nama_lokasi')->get();
+    if (auth()->user()->role == 'super_admin') {
+      $kategoris = Kategori::orderBy('nama_barang')->get();
+    } else {
+      $kategoris = Kategori::where('perusahaan_id', auth()->user()->id_perusahaan)
+        ->orderBy('nama_barang')
+        ->get();
+    }
+    $inventaris = collect(); // awalnya kosong
 
-    return view(
-      'content.dashboard.peminjaman.create',
-      compact('keluars', 'kategoris', 'karyawans', 'perusahaans', 'lokasis')
-    );
+    $karyawans = Karyawan::where('id_perusahaan', auth()->user()->id_perusahaan)->get();
+    if (auth()->user()->role == 'super_admin') {
+      $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+    } else {
+      $perusahaans = Perusahaan::where('id', '!=', auth()->user()->id_perusahaan)
+        ->orderBy('nama_perusahaan')
+        ->get();
+    }
+    return view('content.dashboard.peminjaman.create', compact('kategoris', 'inventaris', 'karyawans', 'perusahaans'));
+  }
+  public function searchKaryawan(Request $request): JsonResponse
+  {
+    $keyword = trim($request->keyword);
+
+    $query = Karyawan::query();
+
+    // Super Admin melihat semua perusahaan
+    if (auth()->user()->role != 'super_admin') {
+      $query->where('id_perusahaan', auth()->user()->id_perusahaan);
+    }
+
+    // Pencarian
+    if ($keyword) {
+      $query->where(function ($q) use ($keyword) {
+        $q->where('kode_karyawan', 'like', "%{$keyword}%")
+          ->orWhere('nama_karyawan', 'like', "%{$keyword}%")
+          ->orWhere('divisi', 'like', "%{$keyword}%");
+      });
+    }
+
+    $karyawans = $query
+      ->orderBy('nama_karyawan')
+      ->limit(10)
+      ->get(['id', 'kode_karyawan', 'nama_karyawan', 'divisi']);
+
+    return response()->json($karyawans);
+  }
+  public function inventarisByKategori(string $kategoriId)
+  {
+    $query = Inventaris::with(['perusahaan', 'dataAset.kategori'])
+
+      ->availableForPeminjaman()
+      ->whereHas('dataAset', function ($q) use ($kategoriId) {
+        $q->where('kategori_id', $kategoriId);
+      });
+
+    // Selain super admin hanya melihat inventaris perusahaan sendiri
+    if (auth()->user()->role != 'super_admin') {
+      $query->where('perusahaan_id', auth()->user()->id_perusahaan);
+    }
+
+    $inventaris = $query
+      ->orderBy('kode_aset')
+      ->get()
+      ->map(function ($item) {
+        return [
+          'id' => $item->id,
+
+          'kode_aset' => $item->kode_aset,
+
+          'no_inventaris' => $item->no_inventaris,
+
+          'status' => $item->status,
+
+          'perusahaan' => [
+            'nama_perusahaan' => optional($item->perusahaan)->nama_perusahaan,
+          ],
+
+          'data_aset' => [
+            'nama_barang' => optional($item->dataAset->kategori)->nama_barang,
+
+            'merek' => $item->dataAset->merek,
+
+            'type' => $item->dataAset->type,
+
+            'warna' => $item->dataAset->warna,
+          ],
+        ];
+      });
+
+    return response()->json($inventaris);
+  }
+  public function getKaryawanPerusahaan(string $id)
+  {
+    $karyawans = Karyawan::where('id_perusahaan', $id)
+      ->orderBy('nama_karyawan')
+      ->get(['id', 'kode_karyawan', 'nama_karyawan', 'divisi']);
+
+    return response()->json($karyawans);
   }
 
   /**
@@ -111,71 +226,128 @@ class PeminjamanController extends Controller
    */
   public function store(Request $request)
   {
-    $data = $request->all();
+    $request->validate([
+      'jenis_peminjaman' => 'required|in:internal,antar_perusahaan',
+      'inventaris_id' => 'required|exists:inventaris,id',
+      'tanggal_pinjam' => 'required|date',
+      'tanggal_rencana_kembali' => 'required|date|after_or_equal:tanggal_pinjam',
+      'keperluan' => 'required|string|max:500',
 
-    // 🔥 mapping tipe
-    $data['tipe_peminjam'] = $request->tipe_peminjam;
+      'karyawan_id' => 'required_if:jenis_peminjaman,internal|nullable|exists:karyawans,id',
 
-    // ================= AMBIL KATEGORI =================
-    $keluar = Keluar::with('masuk.kategori')->find($request->keluar_id);
+      'perusahaan_tujuan_id' => 'required_if:jenis_peminjaman,antar_perusahaan|nullable|exists:perusahaans,id',
 
-    if (!$keluar || !$keluar->masuk || !$keluar->masuk->kategori) {
-      return back()->with('error', 'Kategori tidak ditemukan dari barang');
+      'karyawan_tujuan_id' => 'required_if:jenis_peminjaman,antar_perusahaan|nullable|exists:karyawans,id',
+    ]);
+
+    DB::beginTransaction();
+
+    try {
+      $inventaris = Inventaris::findOrFail($request->inventaris_id);
+
+      /*
+        |--------------------------------------------------------------------------
+        | Pastikan inventaris tersedia
+        |--------------------------------------------------------------------------
+        */
+
+      if ($inventaris->status != 'TERSEDIA') {
+        return back()
+          ->withInput()
+          ->with('error', 'Inventaris tidak tersedia untuk dipinjam.');
+      }
+
+      /*
+|--------------------------------------------------------------------------
+| GENERATE KODE PEMINJAMAN
+|--------------------------------------------------------------------------
+*/
+
+      $tanggal = \Carbon\Carbon::parse($request->tanggal_pinjam)->format('Ymd');
+
+      $last = Peminjaman::whereHas('inventaris', function ($q) use ($inventaris) {
+        $q->where('perusahaan_id', $inventaris->perusahaan_id);
+      })
+        ->whereDate('tanggal_pinjam', $request->tanggal_pinjam)
+        ->latest('id')
+        ->first();
+
+      $nomor = 1;
+
+      if ($last) {
+        $nomor = ((int) substr($last->kode_peminjaman, -5)) + 1;
+      }
+
+      $kode = 'PJM-' . $tanggal . '-' . str_pad($nomor, 5, '0', STR_PAD_LEFT);
+
+      /*
+        |--------------------------------------------------------------------------
+        | Simpan Peminjaman
+        |--------------------------------------------------------------------------
+        */
+
+      Peminjaman::create([
+        'kode_peminjaman' => $kode,
+
+        'inventaris_id' => $inventaris->id,
+
+        'jenis_peminjaman' => $request->jenis_peminjaman,
+
+        'karyawan_id' => $request->jenis_peminjaman == 'internal' ? $request->karyawan_id : null,
+
+        'perusahaan_tujuan_id' =>
+          $request->jenis_peminjaman == 'antar_perusahaan' ? $request->perusahaan_tujuan_id : null,
+
+        'karyawan_tujuan_id' => $request->jenis_peminjaman == 'antar_perusahaan' ? $request->karyawan_tujuan_id : null,
+
+        'user_id' => auth()->id(),
+
+        'tanggal_pinjam' => $request->tanggal_pinjam,
+
+        'tanggal_rencana_kembali' => $request->tanggal_rencana_kembali,
+
+        'keperluan' => $request->keperluan,
+
+        'status' => 'Dipinjam',
+      ]);
+
+      /*
+        |--------------------------------------------------------------------------
+        | Update Status Inventaris
+        |--------------------------------------------------------------------------
+        */
+
+      $inventaris->update([
+        'status' => 'DIPINJAM',
+      ]);
+
+      DB::commit();
+
+      return redirect()
+        ->route('peminjaman.index')
+        ->with('success', 'Peminjaman berhasil disimpan.');
+    } catch (\Exception $e) {
+      DB::rollBack();
+
+      return back()
+        ->withInput()
+        ->with('error', $e->getMessage());
     }
-
-    $data['kategori_id'] = $keluar->masuk->kategori->id;
-
-    // ================= TIPE =================
-    if ($request->tipe_peminjam == 'external') {
-      $data['karyawan_id'] = null;
-
-      // WAJIB
-      $data['perusahaan_id'] = auth()->user()->id_perusahaan;
-
-      $data['lokasi_id'] = null;
-
-      $data['nama_eksternal'] = $request->nama_eksternal;
-
-      $data['perusahaan_eksternal'] = $request->perusahaan_eksternal;
-
-      $data['lokasi_manual'] = $request->lokasi_manual;
-    } else {
-      $data['karyawan_id'] = $request->karyawan_id;
-
-      $data['perusahaan_id'] = $request->perusahaan_id;
-
-      $data['lokasi_id'] = $request->lokasi_id;
-
-      $data['nama_eksternal'] = null;
-
-      $data['perusahaan_eksternal'] = null;
-
-      $data['lokasi_manual'] = null;
-    }
-    // 🔥 UPPERCASE
-    $data['keperluan'] = strtoupper($request->keperluan ?? '');
-
-    $data['catatan'] = strtoupper($request->catatan ?? '');
-
-    $data['nama_eksternal'] = strtoupper($request->nama_eksternal ?? '');
-
-    $data['perusahaan_eksternal'] = strtoupper($request->perusahaan_eksternal ?? '');
-
-    $data['lokasi_manual'] = strtoupper($request->lokasi_manual ?? '');
-
-    Peminjaman::create($data);
-
-    return redirect()
-      ->route('peminjaman.index')
-      ->with('success', 'Data berhasil disimpan');
   }
 
   /**
    * Display the specified resource.
    */
-  public function show(int $id)
+  public function show(Peminjaman $peminjaman)
   {
-    $peminjaman = Peminjaman::with(['keluar.masuk.kategori', 'karyawan', 'perusahaan', 'lokasi'])->findOrFail($id);
+    $peminjaman->load([
+      'inventaris.dataAset.kategori',
+      'inventaris.perusahaan',
+      'karyawan',
+      'karyawanTujuan',
+      'perusahaanTujuan',
+      'user',
+    ]);
 
     return view('content.dashboard.peminjaman.show', compact('peminjaman'));
   }
@@ -183,192 +355,191 @@ class PeminjamanController extends Controller
   /**
    * Show the form for editing the specified resource.
    */
-  public function edit(int $id)
+  public function edit(Peminjaman $peminjaman)
   {
-    $peminjaman = Peminjaman::with(['keluar.masuk.kategori', 'karyawan', 'perusahaan', 'lokasi'])->findOrFail($id);
+    $peminjaman->load([
+      'inventaris.dataAset.kategori',
+      'inventaris.perusahaan',
+      'karyawan',
+      'karyawanTujuan',
+      'perusahaanTujuan',
+    ]);
 
-    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
-    $lokasis = Lokasi::orderBy('nama_lokasi')->get();
-
-    return view('content.dashboard.peminjaman.edit', compact('peminjaman', 'perusahaans', 'lokasis'));
+    return view('content.dashboard.peminjaman.pengembalian', compact('peminjaman'));
   }
 
   /**
    * Update the specified resource in storage.
    */
-  public function update(Request $request, int $id)
+  public function update(Request $request, Peminjaman $peminjaman)
   {
-    $peminjaman = Peminjaman::findOrFail($id);
+    $request->validate([
+      'tanggal_kembali' => 'required|date',
+      'kondisi_kembali' => 'required|in:Baik,Rusak,Hilang',
+      'keterangan_kembali' => 'nullable|string|max:500',
+    ]);
 
-    // 🔥 mapping tipe
-    $tipe = $request->tipe_peminjam;
+    DB::beginTransaction();
 
-    // ================= VALIDASI DINAMIS =================
-    if ($tipe == 'external') {
-      $request->validate([
-        'keluar_id' => 'required|exists:keluars,id',
-        'tanggal_pinjam' => 'required|date',
-        'tanggal_rencana_kembali' => 'required|date|after_or_equal:tanggal_pinjam',
-        'status' => 'required|in:Dipinjam,Dikembalikan',
+    try {
+      /*
+        |--------------------------------------------------------------------------
+        | Update transaksi peminjaman
+        |--------------------------------------------------------------------------
+        */
 
-        'nama_eksternal' => 'required|string|max:255',
-        'perusahaan_eksternal' => 'required|string|max:255',
-        'lokasi_manual' => 'required|string|max:255',
+      $peminjaman->update([
+        'tanggal_kembali' => $request->tanggal_kembali,
+        'kondisi_kembali' => $request->kondisi_kembali,
+        'keterangan_kembali' => $request->keterangan_kembali,
+        'status' => $request->kondisi_kembali == 'Hilang' ? 'Hilang' : 'Dikembalikan',
       ]);
-    } else {
-      $request->validate([
-        'keluar_id' => 'required|exists:keluars,id',
-        'karyawan_id' => 'required|exists:karyawans,id',
-        'perusahaan_id' => 'required|exists:perusahaans,id',
-        'lokasi_id' => 'required|exists:lokasis,id',
-        'tanggal_pinjam' => 'required|date',
-        'tanggal_rencana_kembali' => 'required|date|after_or_equal:tanggal_pinjam',
-        'status' => 'required|in:Dipinjam,Dikembalikan',
+
+      $statusInventaris = match ($request->kondisi_kembali) {
+        'Baik' => 'TERSEDIA',
+        'Rusak' => 'RUSAK',
+        'Hilang' => 'RUSAK',
+      };
+
+      $peminjaman->inventaris->update([
+        'status' => $statusInventaris,
       ]);
+
+      DB::commit();
+
+      return redirect()
+        ->route('peminjaman.index')
+        ->with('success', 'Pengembalian aset berhasil disimpan.');
+    } catch (\Exception $e) {
+      DB::rollBack();
+
+      dd($e->getMessage(), $e->getFile(), $e->getLine());
+    }
+  }
+  public function cetak(Request $request)
+  {
+    $query = Peminjaman::with([
+      'inventaris.dataAset',
+      'inventaris.perusahaan',
+      'karyawan',
+      'karyawanTujuan',
+      'perusahaanTujuan',
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | MULTI COMPANY
+    |--------------------------------------------------------------------------
+    */
+
+    if (auth()->user()->role != 'super_admin') {
+      $query->whereHas('inventaris', function ($q) {
+        $q->where('perusahaan_id', auth()->user()->id_perusahaan);
+      });
     }
 
-    // ================= AMBIL KATEGORI =================
-    $keluar = Keluar::with('masuk.kategori')->find($request->keluar_id);
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER PERUSAHAAN (SUPER ADMIN)
+    |--------------------------------------------------------------------------
+    */
 
-    if (!$keluar || !$keluar->masuk || !$keluar->masuk->kategori) {
-      return back()->with('error', 'Kategori tidak ditemukan dari barang');
+    if ($request->filled('perusahaan')) {
+      $query->whereHas('inventaris', function ($q) use ($request) {
+        $q->where('perusahaan_id', $request->perusahaan);
+      });
     }
 
-    // ================= DATA UPDATE =================
-    $dataUpdate = [
-      'keluar_id' => $request->keluar_id,
-      'kategori_id' => $keluar->masuk->kategori->id,
-      'tanggal_pinjam' => $request->tanggal_pinjam,
-      'tanggal_rencana_kembali' => $request->tanggal_rencana_kembali,
-      'status' => $request->status,
-      'keperluan' => $request->keperluan,
-      'catatan' => $request->catatan,
-      'tipe_peminjam' => $tipe, // 🔥 penting
-    ];
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER TANGGAL
+    |--------------------------------------------------------------------------
+    */
 
-    // ================= TIPE =================
-    if ($tipe == 'external') {
-      $dataUpdate['karyawan_id'] = null;
-      $dataUpdate['perusahaan_id'] = auth()->user()->id_perusahaan;
-      $dataUpdate['lokasi_id'] = null;
+    if ($request->filled('tanggal_awal')) {
+      $query->whereDate('tanggal_pinjam', '>=', $request->tanggal_awal);
+    }
 
-      $dataUpdate['nama_eksternal'] = $request->nama_eksternal;
-      $dataUpdate['perusahaan_eksternal'] = $request->perusahaan_eksternal;
-      $dataUpdate['lokasi_manual'] = $request->lokasi_manual;
+    if ($request->filled('tanggal_akhir')) {
+      $query->whereDate('tanggal_pinjam', '<=', $request->tanggal_akhir);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER JENIS
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('jenis')) {
+      $query->where('jenis_peminjaman', $request->jenis);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | FILTER STATUS
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('status')) {
+      $query->where('status', $request->status);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | SEARCH
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('search')) {
+      $search = $request->search;
+
+      $query->where(function ($q) use ($search) {
+        $q->where('kode_peminjaman', 'like', "%{$search}%")
+
+          ->orWhereHas('inventaris', function ($i) use ($search) {
+            $i->where('kode_aset', 'like', "%{$search}%")->orWhere('no_inventaris', 'like', "%{$search}%");
+          })
+
+          ->orWhereHas('karyawan', function ($k) use ($search) {
+            $k->where('nama_karyawan', 'like', "%{$search}%");
+          })
+
+          ->orWhereHas('karyawanTujuan', function ($k) use ($search) {
+            $k->where('nama_karyawan', 'like', "%{$search}%");
+          })
+
+          ->orWhereHas('perusahaanTujuan', function ($p) use ($search) {
+            $p->where('nama_perusahaan', 'like', "%{$search}%");
+          });
+      });
+    }
+
+    $laporan = $query->orderBy('tanggal_pinjam')->get();
+
+    /*
+    |--------------------------------------------------------------------------
+    | NAMA PERUSAHAAN
+    |--------------------------------------------------------------------------
+    */
+
+    if (auth()->user()->role == 'super_admin') {
+      if ($request->filled('perusahaan')) {
+        $namaPerusahaan = optional(Perusahaan::find($request->perusahaan))->nama_perusahaan ?? 'SEMUA PERUSAHAAN';
+      } else {
+        $namaPerusahaan = 'SEMUA PERUSAHAAN';
+      }
     } else {
-      $dataUpdate['karyawan_id'] = $request->karyawan_id;
-      $dataUpdate['perusahaan_id'] = $request->perusahaan_id;
-      $dataUpdate['lokasi_id'] = $request->lokasi_id;
-
-      // 🔥 bersihkan data external
-      $dataUpdate['nama_eksternal'] = null;
-      $dataUpdate['perusahaan_eksternal'] = null;
-      $dataUpdate['lokasi_manual'] = null;
+      $namaPerusahaan = auth()->user()->perusahaan->nama_perusahaan;
     }
 
-    // ================= STATUS =================
-    if ($request->status === 'Dikembalikan') {
-      $dataUpdate['tanggal_kembali'] = now();
-    } else {
-      $dataUpdate['tanggal_kembali'] = null;
-    }
-    // 🔥 UPPERCASE
-    $dataUpdate['keperluan'] = strtoupper($request->keperluan ?? '');
-
-    $dataUpdate['catatan'] = strtoupper($request->catatan ?? '');
-
-    $dataUpdate['nama_eksternal'] = strtoupper($request->nama_eksternal ?? '');
-
-    $dataUpdate['perusahaan_eksternal'] = strtoupper($request->perusahaan_eksternal ?? '');
-
-    $dataUpdate['lokasi_manual'] = strtoupper($request->lokasi_manual ?? '');
-
-    // ================= UPDATE =================
-    $peminjaman->update($dataUpdate);
-
-    return redirect()
-      ->route('peminjaman.index')
-      ->with('success', 'Data peminjaman berhasil diupdate');
+    return view('content.dashboard.peminjaman.cetak', compact('laporan', 'namaPerusahaan'));
   }
 
   /**
    * Remove the specified resource from storage.
    */
-  public function destroy(int $id)
+  public function destroy(string $id)
   {
-    $peminjaman = Peminjaman::findOrFail($id);
-    $peminjaman->delete();
-
-    return redirect()
-      ->route('peminjaman.index')
-      ->with('success', 'Data peminjaman berhasil dihapus');
-  }
-
-  public function getNamaBarang(string $kode)
-  {
-    $data = Keluar::with('masuk.kategori')
-      ->where('kode_barang', $kode)
-      ->first();
-
-    if (!$data || !$data->masuk || !$data->masuk->kategori) {
-      return response()->json([
-        'status' => 'not_found',
-      ]);
-    }
-
-    return response()->json([
-      'status' => 'ok',
-      'nama_barang' => $data->masuk->kategori->nama_barang,
-      'keluar_id' => $data->id,
-    ]);
-  }
-
-  public function searchKaryawan(Request $request)
-  {
-    $keyword = $request->q;
-
-    $perusahaanId = $request->perusahaan_id;
-
-    $query = Karyawan::query();
-
-    // search nama
-    $query->where('nama_karyawan', 'like', "%{$keyword}%");
-
-    // filter perusahaan
-    if ($perusahaanId) {
-      $query->where('id_perusahaan', $perusahaanId);
-    }
-
-    $data = $query->limit(10)->get(['id', 'nama_karyawan']);
-
-    return response()->json($data);
-  }
-  public function cekStatus(string $kode)
-  {
-    // Cari barang dari tabel keluar
-    $keluar = Keluar::where('kode_barang', $kode)->first();
-
-    if (!$keluar) {
-      return response()->json([
-        'dipinjam' => false,
-      ]);
-    }
-
-    // Cek apakah masih dipinjam (belum dikembalikan)
-    $dipinjam = Peminjaman::where('keluar_id', $keluar->id)
-      ->whereNull('tanggal_kembali') // BELUM DIKEMBALIKAN
-      ->exists();
-
-    return response()->json([
-      'dipinjam' => $dipinjam,
-    ]);
-  }
-  public function lokasiByPerusahaan(int $id)
-  {
-    $lokasis = Lokasi::where('id_perusahaan', $id)
-      ->orderBy('nama_lokasi')
-      ->get();
-
-    return response()->json($lokasis);
+    //
   }
 }
