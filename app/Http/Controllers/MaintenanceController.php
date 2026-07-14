@@ -31,7 +31,7 @@ class MaintenanceController extends Controller
         $q->where('perusahaan_id', auth()->user()->id_perusahaan);
       });
     }
-
+    
     // Search
     if ($request->filled('search')) {
       $search = $request->search;
@@ -72,7 +72,7 @@ class MaintenanceController extends Controller
       ->appends($request->query());
     $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
 
-    return view('content.dashboard.maintenance.index', compact('maintenances'));
+    return view('content.dashboard.maintenance.index', compact('maintenances', 'perusahaans'));
   }
 
   /**
@@ -80,19 +80,34 @@ class MaintenanceController extends Controller
    */
   public function create()
   {
-    $inventarisList = Inventaris::with(['dataAset.kategori', 'perusahaan', 'keluarTerakhir.maping'])
-      ->availableForMaintenance()
-      ->orderBy('kode_aset')
-      ->get();
+    if (auth()->user()->role == 'super_admin') {
+      $inventarisList = collect();
+
+      $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+    } else {
+      $inventarisList = Inventaris::with(['dataAset.kategori', 'perusahaan', 'keluarTerakhir.maping'])
+        ->availableForMaintenance()
+        ->where('perusahaan_id', auth()->user()->id_perusahaan)
+        ->orderBy('kode_aset')
+        ->get();
+
+      $perusahaans = collect();
+    }
 
     return view('content.dashboard.maintenance.create', [
       'inventaris' => null,
-
       'inventarisList' => $inventarisList,
+      'perusahaans' => $perusahaans,
     ]);
   }
   public function createFromMapping(Maping $maping)
   {
+    if ($maping->status != 'aktif') {
+        return redirect()
+            ->route('maping.index')
+            ->with('error', 'Mapping sudah tidak aktif sehingga tidak dapat dilakukan Service / Maintenance.');
+    }
+
     $maping->load(['keluar.inventaris.dataAset', 'keluar.inventaris.perusahaan']);
 
     $inventaris = $maping->keluar->inventaris;
@@ -114,6 +129,7 @@ class MaintenanceController extends Controller
     }
 
     return view('content.dashboard.maintenance.create', [
+      'perusahaans' => Perusahaan::orderBy('nama_perusahaan')->get(),
       'inventaris' => $inventaris,
       'inventarisList' => collect(),
       'maping' => $maping,
@@ -121,6 +137,7 @@ class MaintenanceController extends Controller
   }
   public function createFromPeminjaman(Peminjaman $peminjaman)
   {
+    
     $peminjaman->load(['inventaris.dataAset.kategori', 'inventaris.perusahaan']);
 
     $inventaris = $peminjaman->inventaris;
@@ -144,10 +161,19 @@ class MaintenanceController extends Controller
     $inventarisList = collect();
 
     return view('content.dashboard.maintenance.create', [
+      'perusahaans' => Perusahaan::orderBy('nama_perusahaan')->get(),
       'inventaris' => $inventaris,
       'inventarisList' => collect(),
       'peminjaman' => $peminjaman,
     ]);
+  }
+  public function inventarisPerusahaan($id)
+  {
+    return Inventaris::with(['dataAset.kategori', 'perusahaan'])
+      ->availableForMaintenance()
+      ->where('perusahaan_id', $id)
+      ->orderBy('kode_aset')
+      ->get();
   }
 
   /**
@@ -201,26 +227,21 @@ class MaintenanceController extends Controller
 |--------------------------------------------------------------------------
 */
 
-    $inventaris = Inventaris::findOrFail($request->inventaris_id);
-
     $tanggal = \Carbon\Carbon::parse($request->tanggal)->format('Ymd');
 
-    $last = Maintenance::whereHas('inventaris', function ($q) use ($inventaris) {
-      $q->where('perusahaan_id', $inventaris->perusahaan_id);
-    })
-      ->whereDate('tanggal', $request->tanggal)
-      ->latest('id')
+    $prefix = 'SRV-' . $tanggal . '-';
+
+    $last = Maintenance::where('kode_service', 'like', $prefix . '%')
+      ->orderByDesc('kode_service')
       ->first();
 
     $nomor = 1;
 
     if ($last) {
-      $lastNomor = (int) substr($last->kode_service, -5);
-
-      $nomor = $lastNomor + 1;
+      $nomor = ((int) substr($last->kode_service, -5)) + 1;
     }
 
-    $kodeService = 'SRV-' . $tanggal . '-' . str_pad($nomor, 5, '0', STR_PAD_LEFT);
+    $kodeService = $prefix . str_pad($nomor, 5, '0', STR_PAD_LEFT);
     Maintenance::create([
       'kode_service' => $kodeService,
       'inventaris_id' => $request->inventaris_id,
@@ -391,7 +412,7 @@ class MaintenanceController extends Controller
     */
 
     $maintenance->inventaris->update([
-      'status' => 'RUSAK',
+      'status' => 'AFKIR',
     ]);
 
     /*
@@ -641,7 +662,7 @@ class MaintenanceController extends Controller
       if ($request->filled('perusahaan_id')) {
         $namaPerusahaan = Perusahaan::find($request->perusahaan_id)?->nama_perusahaan ?? 'Semua Perusahaan';
       } else {
-        $namaPerusahaan = 'Semua Perusahaan';
+        $namaPerusahaan = 'SEMBILAN GROUP';
       }
     } else {
       $namaPerusahaan = auth()->user()->perusahaan->nama_perusahaan;

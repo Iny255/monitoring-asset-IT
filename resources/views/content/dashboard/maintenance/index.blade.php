@@ -217,8 +217,12 @@
                         <th>Tanggal</th>
 
                         <th>Inventaris</th>
+                        @if (auth()->user()->role == 'super_admin')
+                            <th>Perusahaan</th>
+                        @endif
 
                         <th>Jenis</th>
+                        <th>Asal</th>
 
                         <th>Status</th>
 
@@ -252,6 +256,11 @@
                                 <br>
                                 <small>{{ $item->inventaris->dataAset->nama_barang }}</small>
                             </td>
+                            @if (auth()->user()->role == 'super_admin')
+                                <td>
+                                    {{ $item->inventaris->perusahaan->nama_perusahaan ?? '-' }}
+                                </td>
+                            @endif
 
                             <td>
                                 @if ($item->jenis == 'Service')
@@ -259,6 +268,23 @@
                                 @else
                                     <span class="badge bg-label-warning">Maintenance</span>
                                 @endif
+                            </td>
+                            <td>
+
+                                @if ($item->asal == 'Manual')
+                                    <span class="badge bg-label-secondary">
+                                        Manual
+                                    </span>
+                                @elseif($item->asal == 'Mapping')
+                                    <span class="badge bg-label-primary">
+                                        Mapping
+                                    </span>
+                                @else
+                                    <span class="badge bg-label-info">
+                                        Peminjaman
+                                    </span>
+                                @endif
+
                             </td>
 
                             <td>
@@ -412,7 +438,7 @@
                         @empty
 
                             <tr>
-                                <td colspan="8" class="text-center py-4">
+                                <td colspan="{{ auth()->user()->role == 'super_admin' ? 9 : 8 }}" class="text-center py-4">
                                     <i class="bx bx-folder-open fs-2 d-block mb-2"></i>
                                     Belum ada data Service & Maintenance.
                                 </td>

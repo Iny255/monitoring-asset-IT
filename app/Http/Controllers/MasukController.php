@@ -516,6 +516,7 @@ class MasukController extends Controller
           'dipinjam' => $items->where('status', 'DIPINJAM')->count(),
 
           'rusak' => $items->where('status', 'RUSAK')->count(),
+          'afkir' => $items->where('status', 'AFKIR')->count(),
 
           'inventaris' => $items,
         ];

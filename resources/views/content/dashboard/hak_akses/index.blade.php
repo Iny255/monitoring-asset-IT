@@ -54,6 +54,22 @@
                             value="{{ request('search') }}">
 
                     </div>
+                    @if (auth()->user()->role == 'super_admin')
+                        <div class="col-md-3">
+                            <label class="form-label">Perusahaan</label>
+
+                            <select name="perusahaan" class="form-select">
+                                <option value="">Semua Perusahaan</option>
+
+                                @foreach ($perusahaans as $perusahaan)
+                                    <option value="{{ $perusahaan->id }}"
+                                        {{ request('perusahaan') == $perusahaan->id ? 'selected' : '' }}>
+                                        {{ $perusahaan->nama_perusahaan }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
 
                     <div class="col-md-3">
 
@@ -168,6 +184,9 @@
                                 <th width="60">
                                     NO
                                 </th>
+                                @if (auth()->user()->role == 'super_admin')
+                                    <th width="220">PERUSAHAAN</th>
+                                @endif
 
                                 <th width="170">
                                     KATEGORI
@@ -203,6 +222,11 @@
                                     <td class="text-center">
                                         {{ ($accesses->currentPage() - 1) * $accesses->perPage() + $loop->iteration }}
                                     </td>
+                                    @if (auth()->user()->role == 'super_admin')
+                                        <td>
+                                            {{ $access->perusahaan->nama_perusahaan ?? '-' }}
+                                        </td>
+                                    @endif
 
                                     {{-- KATEGORI --}}
                                     <td class="text-center">
@@ -266,9 +290,10 @@
                                         <div class="d-flex justify-content-center gap-2">
 
                                             <button type="button" class="btn btn-warning btn-sm btn-edit"
-                                                data-id="{{ $access->id }}" data-kategori="{{ $access->kategori }}"
-                                                data-jenis="{{ $access->jenis }}" data-nama="{{ $access->nama_akses }}"
-                                                data-status="{{ $access->status }}">
+                                                data-id="{{ $access->id }}"
+                                                data-perusahaan="{{ $access->id_perusahaan }}"
+                                                data-kategori="{{ $access->kategori }}" data-jenis="{{ $access->jenis }}"
+                                                data-nama="{{ $access->nama_akses }}" data-status="{{ $access->status }}">
 
                                                 <i class="bx bx-edit-alt"></i>
 
@@ -338,8 +363,24 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
 
-                    <div class="modal-body">
 
+                    <div class="modal-body">
+                        @if (auth()->user()->role == 'super_admin')
+                            <div class="mb-3">
+                                <label class="form-label">Perusahaan</label>
+
+                                <select name="id_perusahaan" class="form-select" required>
+                                    <option value="">Pilih Perusahaan</option>
+
+                                    @foreach ($perusahaans as $perusahaan)
+                                        <option value="{{ $perusahaan->id }}"
+                                            {{ old('id_perusahaan') == $perusahaan->id ? 'selected' : '' }}>
+                                            {{ $perusahaan->nama_perusahaan }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
                         <div class="mb-3">
 
                             <label class="form-label">
@@ -441,6 +482,21 @@
                     </div>
 
                     <div class="modal-body">
+                        @if (auth()->user()->role == 'super_admin')
+                            <div class="mb-3">
+                                <label class="form-label">Perusahaan</label>
+
+                                <select id="edit_perusahaan" name="id_perusahaan" class="form-select" required>
+
+                                    @foreach ($perusahaans as $perusahaan)
+                                        <option value="{{ $perusahaan->id }}">
+                                            {{ $perusahaan->nama_perusahaan }}
+                                        </option>
+                                    @endforeach
+
+                                </select>
+                            </div>
+                        @endif
 
                         <div class="mb-3">
 
@@ -635,6 +691,11 @@
                     let id = this.dataset.id;
 
                     formEdit.action = '/dashboard/hak-akses/' + id;
+                    let perusahaan = document.getElementById('edit_perusahaan');
+
+                    if (perusahaan) {
+                        perusahaan.value = this.dataset.perusahaan;
+                    }
 
                     document.getElementById('edit_kategori').value = this.dataset.kategori;
 

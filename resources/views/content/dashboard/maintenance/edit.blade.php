@@ -49,6 +49,22 @@
                     <div class="card-body">
 
                         <div class="row">
+                            {{-- Perusahaan --}}
+                            @if (auth()->user()->role == 'super_admin')
+                                <div class="col-md-12 mb-3">
+
+                                    <label class="form-label">
+                                        Perusahaan
+                                    </label>
+
+                                    <input type="hidden" name="perusahaan_id"
+                                        value="{{ $maintenance->inventaris->perusahaan_id }}">
+
+                                    <input type="text" class="form-control"
+                                        value="{{ $maintenance->inventaris->perusahaan->nama_perusahaan }}" readonly>
+
+                                </div>
+                            @endif
 
                             {{-- Inventaris --}}
                             <div class="col-md-12 mb-3">
@@ -257,7 +273,7 @@
                                 <td id="info_kode_aset">
 
                                     @if (isset($inventaris))
-                                        {{ $inventaris->kode_aset }}
+                                        {{ $maintenance->inventaris->kode_aset }}
                                     @else
                                         -
                                     @endif
@@ -275,7 +291,7 @@
                                 <td id="info_no_inventaris">
 
                                     @if (isset($inventaris))
-                                        {{ $inventaris->no_inventaris }}
+                                        {{ $maintenance->inventaris->no_inventaris }}
                                     @else
                                         -
                                     @endif
@@ -293,7 +309,7 @@
                                 <td id="info_barang">
 
                                     @if (isset($inventaris))
-                                        {{ $inventaris->dataAset->kategori->nama_barang }}
+                                        {{ $maintenance->inventaris->dataAset->kategori->nama_barang }}
                                     @else
                                         -
                                     @endif
@@ -311,7 +327,7 @@
                                 <td id="info_merek">
 
                                     @if (isset($inventaris))
-                                        {{ $inventaris->dataAset->merek }}
+                                        {{ $maintenance->inventaris->dataAset->merek }}
                                     @else
                                         -
                                     @endif
@@ -329,7 +345,7 @@
                                 <td id="info_type">
 
                                     @if (isset($inventaris))
-                                        {{ $inventaris->dataAset->type }}
+                                        {{ $maintenance->inventaris->dataAset->type }}
                                     @else
                                         -
                                     @endif
@@ -347,7 +363,7 @@
                                 <td id="info_warna">
 
                                     @if (isset($inventaris))
-                                        {{ $inventaris->dataAset->warna }}
+                                        {{ $maintenance->inventaris->dataAset->warna }}
                                     @else
                                         -
                                     @endif
@@ -365,7 +381,7 @@
                                 <td id="info_perusahaan">
 
                                     @if (isset($inventaris))
-                                        {{ $inventaris->perusahaan->nama_perusahaan }}
+                                        {{ $maintenance->inventaris->perusahaan->nama_perusahaan }}
                                     @else
                                         -
                                     @endif
@@ -384,18 +400,19 @@
 
                                     @if (isset($inventaris))
                                         @php
-                                            $badge = match ($inventaris->status) {
+                                            $badge = match ($maintenance->inventaris->status) {
                                                 'TERSEDIA' => 'success',
                                                 'DIPAKAI' => 'primary',
                                                 'DIPINJAM' => 'warning',
                                                 'RUSAK' => 'danger',
+                                                'AFKIR' => 'dark',
                                                 default => 'secondary',
                                             };
                                         @endphp
 
                                         <span class="badge bg-label-{{ $badge }}">
 
-                                            {{ $inventaris->status }}
+                                           {{ $maintenance->inventaris->status }}
 
                                         </span>
                                     @else

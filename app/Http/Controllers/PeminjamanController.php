@@ -37,6 +37,11 @@ class PeminjamanController extends Controller
         $q->where('perusahaan_id', auth()->user()->id_perusahaan);
       });
     }
+    if (auth()->user()->role == 'super_admin' && $request->filled('perusahaan')) {
+      $query->whereHas('inventaris', function ($q) use ($request) {
+        $q->where('perusahaan_id', $request->perusahaan);
+      });
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -112,8 +117,9 @@ class PeminjamanController extends Controller
       ->latest()
       ->paginate(10)
       ->appends(request()->query());
+    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
 
-    return view('content.dashboard.peminjaman.index', compact('peminjamans'));
+    return view('content.dashboard.peminjaman.index', compact('peminjamans', 'perusahaans'));
   }
 
   /**
@@ -130,7 +136,13 @@ class PeminjamanController extends Controller
     }
     $inventaris = collect(); // awalnya kosong
 
-    $karyawans = Karyawan::where('id_perusahaan', auth()->user()->id_perusahaan)->get();
+    if (auth()->user()->role == 'super_admin') {
+      $karyawans = collect();
+    } else {
+      $karyawans = Karyawan::where('id_perusahaan', auth()->user()->id_perusahaan)
+        ->orderBy('nama_karyawan')
+        ->get();
+    }
     if (auth()->user()->role == 'super_admin') {
       $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
     } else {
@@ -140,11 +152,24 @@ class PeminjamanController extends Controller
     }
     return view('content.dashboard.peminjaman.create', compact('kategoris', 'inventaris', 'karyawans', 'perusahaans'));
   }
+  public function kategoriByPerusahaan($id)
+  {
+    return Kategori::where('perusahaan_id', $id)
+      ->orderBy('nama_barang')
+      ->get();
+  }
   public function searchKaryawan(Request $request): JsonResponse
   {
     $keyword = trim($request->keyword);
 
     $query = Karyawan::query();
+    if (auth()->user()->role == 'super_admin') {
+      if ($request->filled('perusahaan')) {
+        $query->where('id_perusahaan', $request->perusahaan);
+      }
+    } else {
+      $query->where('id_perusahaan', auth()->user()->id_perusahaan);
+    }
 
     // Super Admin melihat semua perusahaan
     if (auth()->user()->role != 'super_admin') {
@@ -167,7 +192,7 @@ class PeminjamanController extends Controller
 
     return response()->json($karyawans);
   }
-  public function inventarisByKategori(string $kategoriId)
+  public function inventarisByKategori(Request $request, string $kategoriId)
   {
     $query = Inventaris::with(['perusahaan', 'dataAset.kategori'])
 
@@ -175,6 +200,13 @@ class PeminjamanController extends Controller
       ->whereHas('dataAset', function ($q) use ($kategoriId) {
         $q->where('kategori_id', $kategoriId);
       });
+    if (auth()->user()->role == 'super_admin') {
+      if ($request->filled('perusahaan')) {
+        $query->where('perusahaan_id', $request->perusahaan);
+      }
+    } else {
+      $query->where('perusahaan_id', auth()->user()->id_perusahaan);
+    }
 
     // Selain super admin hanya melihat inventaris perusahaan sendiri
     if (auth()->user()->role != 'super_admin') {

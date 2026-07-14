@@ -250,9 +250,15 @@
                                                     </span>
                                                 @break
 
+                                                @case('AFKIR')
+                                                    <span class="badge bg-dark">
+                                                        AFKIR
+                                                    </span>
+                                                @break
+
                                                 @default
                                                     <span class="badge bg-secondary">
-                                                        -
+                                                        {{ $inventaris->status }}
                                                     </span>
                                             @endswitch
 

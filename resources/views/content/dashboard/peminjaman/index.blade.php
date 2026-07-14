@@ -77,6 +77,22 @@
 
                                 </div>
                             </div>
+                            @if (auth()->user()->role == 'super_admin')
+                                <div class="col-md-3">
+                                    <label class="form-label">Perusahaan</label>
+
+                                    <select name="perusahaan" class="form-select">
+                                        <option value="">Semua Perusahaan</option>
+
+                                        @foreach ($perusahaans as $perusahaan)
+                                            <option value="{{ $perusahaan->id }}"
+                                                {{ request('perusahaan') == $perusahaan->id ? 'selected' : '' }}>
+                                                {{ $perusahaan->nama_perusahaan }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
 
                             <div class="col-md-2">
                                 <label class="form-label">Jenis Peminjaman</label>
@@ -177,6 +193,9 @@
                                     <th>No Transaksi</th>
 
                                     <th>Inventaris</th>
+                                    @if (auth()->user()->role == 'super_admin')
+                                        <th>Perusahaan</th>
+                                    @endif
 
                                     <th>Jenis</th>
 
@@ -235,6 +254,11 @@
                                             @endif
 
                                         </td>
+                                        @if (auth()->user()->role == 'super_admin')
+                                            <td>
+                                                {{ $item->inventaris->perusahaan->nama_perusahaan ?? '-' }}
+                                            </td>
+                                        @endif
 
                                         <td>
 
@@ -379,7 +403,8 @@
 
                                         <tr>
 
-                                            <td colspan="8" class="text-center">
+                                            <td colspan="{{ auth()->user()->role == 'super_admin' ? 9 : 8 }}"
+                                                class="text-center">
 
                                                 Tidak ada data peminjaman.
 

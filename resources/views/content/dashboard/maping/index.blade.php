@@ -358,118 +358,98 @@
 
                                             <ul class="dropdown-menu">
 
+                                                {{-- Selalu boleh --}}
                                                 <li>
-
-                                                    <a class="dropdown-item"
-                                                        href="{{ route('maping.show', $maping->id) }}">
-
+                                                    <a class="dropdown-item" href="{{ route('maping.show', $maping->id) }}">
                                                         <i class="bx bx-show me-2"></i>
-
                                                         Detail
-
                                                     </a>
-
                                                 </li>
 
-                                                <li>
+                                                {{-- Hanya status aktif --}}
+                                                @if ($maping->status == 'aktif')
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                            href="{{ route('maping.edit', $maping->id) }}">
+                                                            <i class="bx bx-edit me-2"></i>
+                                                            Edit
+                                                        </a>
+                                                    </li>
 
-                                                    <a class="dropdown-item"
-                                                        href="{{ route('maping.edit', $maping->id) }}">
+                                                    <li>
+                                                        <hr class="dropdown-divider">
+                                                    </li>
 
-                                                        <i class="bx bx-edit me-2"></i>
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                            href="{{ route('maping.hak-akses', $maping->id) }}">
+                                                            <i class="bx bx-lock-alt me-2"></i>
+                                                            Kelola Hak Akses
+                                                        </a>
+                                                    </li>
 
-                                                        Edit
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                            href="{{ route('maping.mutasi', $maping->id) }}">
+                                                            <i class="bx bx-transfer me-2"></i>
+                                                            Mutasi
+                                                        </a>
+                                                    </li>
 
-                                                    </a>
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                            href="{{ route('maping.servis', $maping->id) }}">
+                                                            <i class="bx bx-wrench me-2"></i>
+                                                            Servis & Maintenance
+                                                        </a>
+                                                    </li>
 
-                                                </li>
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                            href="{{ route('pencabutan.create', $maping->id) }}">
+                                                            <i class="bx bx-power-off me-2"></i>
+                                                            Pencabutan
+                                                        </a>
+                                                    </li>
 
-                                                <li>
+                                                    <li>
+                                                        <hr class="dropdown-divider">
+                                                    </li>
 
-                                                    <hr class="dropdown-divider">
+                                                    <li>
+                                                        <form action="{{ route('maping.destroy', $maping->id) }}"
+                                                            method="POST" class="form-delete">
 
-                                                </li>
+                                                            @csrf
+                                                            @method('DELETE')
 
-                                                <li>
+                                                            <button type="submit" class="dropdown-item text-danger">
 
-                                                    <a class="dropdown-item"
-                                                        href="{{ route('maping.hak-akses', $maping->id) }}">
+                                                                <i class="bx bx-trash me-2"></i>
 
-                                                        <i class="bx bx-lock-alt me-2"></i>
+                                                                Hapus
 
-                                                        Kelola Hak Akses
+                                                            </button>
 
-                                                    </a>
+                                                        </form>
+                                                    </li>
+                                                @else
+                                                    <li>
+                                                        <hr class="dropdown-divider">
+                                                    </li>
 
-                                                </li>
+                                                    <li>
 
-                                                <li>
+                                                        <span class="dropdown-item text-muted">
 
-                                                    <a class="dropdown-item"
-                                                        href="{{ route('maping.mutasi', $maping->id) }}">
+                                                            <i class="bx bx-lock-alt me-2"></i>
 
-                                                        <i class="bx bx-transfer me-2"></i>
+                                                            Mapping {{ ucfirst($maping->status) }}
 
-                                                        Mutasi
+                                                        </span>
 
-                                                    </a>
-
-                                                </li>
-
-
-                                                <li>
-
-                                                    <a class="dropdown-item"
-                                                        href="{{ route('maping.servis', $maping->id) }}">
-
-                                                        <i class="bx bx-wrench me-2"></i>
-
-                                                        Servis & Maintenance
-
-                                                    </a>
-
-                                                </li>
-
-                                              
-
-                                                <li>
-
-                                                    <a class="dropdown-item"
-                                                        href="{{ route('pencabutan.create', $maping->id) }}">
-
-                                                        <i class="bx bx-power-off me-2"></i>
-
-                                                        Pencabutan
-
-                                                    </a>
-
-                                                </li>
-
-                                                <li>
-
-                                                    <hr class="dropdown-divider">
-
-                                                </li>
-
-                                                <li>
-
-                                                    <form action="{{ route('maping.destroy', $maping->id) }}"
-                                                        method="POST" class="form-delete">
-
-                                                        @csrf
-                                                        @method('DELETE')
-
-                                                        <button type="submit" class="dropdown-item text-danger">
-
-                                                            <i class="bx bx-trash me-2"></i>
-
-                                                            Hapus
-
-                                                        </button>
-
-                                                    </form>
-
-                                                </li>
+                                                    </li>
+                                                @endif
 
                                             </ul>
 

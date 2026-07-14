@@ -8,133 +8,327 @@ use App\Http\Controllers\Controller;
 use App\Models\Masuk;
 use App\Models\Keluar;
 use App\Models\Peminjaman;
-use App\Models\MutasiMaping;
+use App\Models\Maintenance;
 use App\Models\Maping;
 use App\Models\Inventaris;
 use App\Models\User;
 use App\Models\Perusahaan;
+use App\Models\HistoryMutasi;
 use Illuminate\Support\Facades\DB;
 
 class DashboardSuperAdminController extends Controller
 {
-  public function index()
+  public function superAdmin()
   {
     $now = Carbon::now('Asia/Jakarta');
 
-    /* =====================================
-| TOTAL
-===================================== */
+    $dashboard = [
+      'executive' => $this->executive(),
 
-    // TOTAL MASUK
-   $totalMasuk = Inventaris::count();
+      'company' => $this->companyPerformance(),
+      'inventaris' => $this->inventarisGlobal(),
 
-    // TOTAL KELUAR
-    $totalKeluar = Keluar::distinct('inventaris_id')->count();
+      'transaksi' => $this->transaksiGlobal(),
+      'komposisi' => $this->komposisiInventaris(),
 
-    // STOK REAL
-    $totalStok = $totalMasuk - $totalKeluar;
+      'grafik' => $this->grafikGlobal(),
 
-    // TOTAL DIGUNAKAN
-    $totalDigunakan = Maping::count();
+      'timeline' => $this->timelineGlobal(),
 
-    // TOTAL ASET
-    $totalAset = $totalMasuk;
+      'reminder' => $this->reminderGlobal(),
+    ];
 
-    /* =====================================
-| KOMPOSISI STOK REAL
-===================================== */
+    return view('content.dashboard.superadmin', compact('dashboard', 'now'));
+  }
+  private function executive()
+  {
+    return [
+      'perusahaan' => Perusahaan::count(),
 
-    $komposisiAset = Masuk::with(['kategori', 'keluars'])
+      'inventaris' => Inventaris::count(),
 
-      ->get()
+      'user' => User::count(),
 
-      ->groupBy(function ($item) {
-        return $item->kategori->nama_barang ?? 'LAINNYA';
-      })
+      'mapping' => Maping::count(),
 
-      ->map(function ($items, $namaBarang) {
-        $stokMasuk = $items->sum('jumlah');
+      'maintenance' => Maintenance::count(),
 
-        $stokKeluar = $items->sum(function ($item) {
-          return $item->keluars->sum('jumlah');
-        });
+      'peminjaman' => Peminjaman::count(),
+    ];
+  }
+  private function companyPerformance()
+  {
+    return Perusahaan::all()->map(function ($perusahaan) {
+      return [
+        'nama' => $perusahaan->nama_perusahaan,
 
-        return [
-          'nama_barang' => $namaBarang,
-          'total' => max(0, $stokMasuk - $stokKeluar),
-        ];
-      })
+        'primary' => $perusahaan->primary_color,
 
-      ->sortByDesc('total')
+        'secondary' => $perusahaan->secondary_color,
 
-      ->values();
+        'aset' => Inventaris::where('perusahaan_id', $perusahaan->id)->count(),
 
-    
+        'mapping' => Maping::where('id_perusahaan', $perusahaan->id)->count(),
 
-    /* =====================================
-        | USER
-        ===================================== */
+        'user' => User::where('id_perusahaan', $perusahaan->id)->count(),
 
-    $perusahaanCount = Perusahaan::count();
+        'maintenance' => Maintenance::whereHas('inventaris', function ($q) use ($perusahaan) {
+          $q->where('perusahaan_id', $perusahaan->id);
+        })->count(),
+      ];
+    });
+  }
+  private function inventarisGlobal()
+  {
+    return [
+      'tersedia' => Inventaris::where('status', 'TERSEDIA')->count(),
 
-    $petugasCount = User::where('role', 'petugas')->count();
+      'dipakai' => Inventaris::where('status', 'DIPAKAI')->count(),
 
+      'dipinjam' => Inventaris::where('status', 'DIPINJAM')->count(),
 
-    /* =====================================
-        | GRAFIK
-        ===================================== */
+      'rusak' => Inventaris::where('status', 'RUSAK')->count(),
+      'afkir' => Inventaris::where('status', 'AFKIR')->count(),
+    ];
+  }
+  private function transaksiGlobal()
+  {
+    $bulan = now()->month;
+    $tahun = now()->year;
 
-    $mutasiMasuk = Masuk::selectRaw('MONTH(created_at) bulan, COUNT(*) total')
-      ->groupBy('bulan')
-      ->pluck('total', 'bulan')
-      ->toArray();
+    return [
+      'penerimaan' => [
+        'total' => Masuk::count(),
 
-    $mutasiKeluar = Keluar::selectRaw('MONTH(created_at) bulan, COUNT(*) total')
-      ->groupBy('bulan')
-      ->pluck('total', 'bulan')
-      ->toArray();
+        'bulan_ini' => Masuk::whereMonth('created_at', $bulan)
+          ->whereYear('created_at', $tahun)
+          ->count(),
+      ],
 
-    $bulanLabel = [];
+      'pemakaian' => [
+        'total' => Keluar::count(),
 
-    $dataMasuk = [];
+        'bulan_ini' => Keluar::whereMonth('created_at', $bulan)
+          ->whereYear('created_at', $tahun)
+          ->count(),
+      ],
 
-    $dataKeluar = [];
+      'mutasi' => [
+        'total' => HistoryMutasi::count(),
+
+        'bulan_ini' => HistoryMutasi::whereMonth('created_at', $bulan)
+          ->whereYear('created_at', $tahun)
+          ->count(),
+      ],
+
+      'maintenance' => [
+        'total' => Maintenance::count(),
+
+        'diproses' => Maintenance::where('status', 'Diproses')->count(),
+      ],
+
+      'peminjaman' => [
+        'total' => Peminjaman::count(),
+
+        'dipinjam' => Peminjaman::where('status', 'Dipinjam')->count(),
+      ],
+    ];
+  }
+  private function grafikGlobal()
+  {
+    $bulan = [];
+    $masuk = [];
+    $keluar = [];
+    $mutasi = [];
+    $maintenance = [];
+    $peminjaman = [];
 
     for ($i = 1; $i <= 12; $i++) {
-      $bulanLabel[] = Carbon::create()
+      $bulan[] = Carbon::create()
         ->month($i)
         ->translatedFormat('M');
 
-      $dataMasuk[] = $mutasiMasuk[$i] ?? 0;
+      $masuk[] = Masuk::whereMonth('created_at', $i)
+        ->whereYear('created_at', now()->year)
+        ->count();
 
-      $dataKeluar[] = $mutasiKeluar[$i] ?? 0;
+      $keluar[] = Keluar::whereMonth('created_at', $i)
+        ->whereYear('created_at', now()->year)
+        ->count();
+
+      $mutasi[] = HistoryMutasi::whereMonth('created_at', $i)
+        ->whereYear('created_at', now()->year)
+        ->count();
+
+      $maintenance[] = Maintenance::whereMonth('created_at', $i)
+        ->whereYear('created_at', now()->year)
+        ->count();
+
+      $peminjaman[] = Peminjaman::whereMonth('created_at', $i)
+        ->whereYear('created_at', now()->year)
+        ->count();
     }
 
-    /* =====================================
-| LIST PERUSAHAAN
-===================================== */
+    return [
+      'bulan' => $bulan,
 
-   $perusahaanList = collect();
+      'masuk' => $masuk,
 
-    return view(
-      'content.dashboard.superadmin',
-      compact(
-        'now',
-        'totalAset',
-        'totalStok',
-        'totalKeluar',
-        'totalDigunakan',
-        'komposisiAset',
-        
-    
-        'perusahaanCount',
-        'petugasCount',
-  
-        'bulanLabel',
-        'dataMasuk',
-        'dataKeluar',
-        'perusahaanList'
-      )
-    );
+      'keluar' => $keluar,
+
+      'mutasi' => $mutasi,
+
+      'maintenance' => $maintenance,
+
+      'peminjaman' => $peminjaman,
+    ];
+  }
+  private function timelineGlobal()
+  {
+    $timeline = collect();
+
+    /*
+    |--------------------------------------------------------------------------
+    | PENERIMAAN
+    |--------------------------------------------------------------------------
+    */
+
+    foreach (
+      Masuk::with('perusahaan')
+        ->latest()
+        ->take(5)
+        ->get()
+      as $item
+    ) {
+      $timeline->push([
+        'judul' => 'Penerimaan Aset',
+
+        'perusahaan' => optional($item->perusahaan)->nama_perusahaan,
+
+        'icon' => 'bx bx-download',
+
+        'color' => 'success',
+
+        'waktu' => $item->created_at,
+      ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PEMAKAIAN
+    |--------------------------------------------------------------------------
+    */
+
+    foreach (
+      Keluar::with('perusahaan')
+        ->latest()
+        ->take(5)
+        ->get()
+      as $item
+    ) {
+      $timeline->push([
+        'judul' => 'Pemakaian Aset',
+
+        'perusahaan' => optional($item->perusahaan)->nama_perusahaan,
+
+        'icon' => 'bx bx-desktop',
+
+        'color' => 'primary',
+
+        'waktu' => $item->created_at,
+      ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | MAINTENANCE
+    |--------------------------------------------------------------------------
+    */
+
+    foreach (
+      Maintenance::with('inventaris.perusahaan')
+        ->latest()
+        ->take(5)
+        ->get()
+      as $item
+    ) {
+      $timeline->push([
+        'judul' => $item->kode_service,
+
+        'perusahaan' => optional($item->inventaris->perusahaan)->nama_perusahaan,
+
+        'icon' => 'bx bx-wrench',
+
+        'color' => 'danger',
+
+        'waktu' => $item->created_at,
+      ]);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
+    | PEMINJAMAN
+    |--------------------------------------------------------------------------
+    */
+
+    foreach (
+      Peminjaman::with('perusahaanTujuan')
+        ->latest()
+        ->take(5)
+        ->get()
+      as $item
+    ) {
+      $timeline->push([
+        'judul' => $item->kode_peminjaman,
+
+        'perusahaan' => optional($item->perusahaanTujuan)->nama_perusahaan,
+
+        'icon' => 'bx bx-transfer',
+
+        'color' => 'warning',
+
+        'waktu' => $item->created_at,
+      ]);
+    }
+
+    return $timeline
+
+      ->sortByDesc('waktu')
+
+      ->take(10)
+
+      ->values();
+  }
+  private function komposisiInventaris()
+  {
+    return Inventaris::with('dataAset.kategori')
+      ->get()
+      ->groupBy(function ($item) {
+        return optional($item->dataAset->kategori)->nama_barang ?? 'Lainnya';
+      })
+      ->map(function ($items, $kategori) {
+        return [
+          'kategori' => $kategori,
+
+          'total' => $items->count(),
+        ];
+      })
+      ->sortByDesc('total')
+      ->values();
+  }
+  private function reminderGlobal()
+  {
+    return [
+      'maintenance_pengajuan' => Maintenance::where('status', 'Pengajuan')->count(),
+
+      'maintenance_diproses' => Maintenance::where('status', 'Diproses')->count(),
+
+      'peminjaman_aktif' => Peminjaman::where('status', 'Dipinjam')->count(),
+
+      'mapping_servis' => Maping::where('status', 'servis')->count(),
+
+      'inventaris_rusak' => Inventaris::where('status', 'RUSAK')->count(),
+      'inventaris_afkir' => Inventaris::where('status', 'AFKIR')->count(),
+    ];
   }
 }

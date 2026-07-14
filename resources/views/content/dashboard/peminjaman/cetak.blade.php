@@ -61,9 +61,11 @@
         </h2>
 
         <h3>
-
-            {{ strtoupper($namaPerusahaan) }}
-
+            @if (request()->filled('perusahaan'))
+                {{ strtoupper($namaPerusahaan) }}
+            @else
+                SEMBILAN GROUP
+            @endif
         </h3>
 
         @if (request('tanggal_awal') || request('tanggal_akhir'))
@@ -170,9 +172,9 @@
                         <small>
 
                             {{ $item->inventaris->dataAset->nama_barang ?? '-' }}
-                              {{ $item->inventaris->dataAset->merek ?? '' }}
+                            {{ $item->inventaris->dataAset->merek ?? '' }}
 
-                             {{ $item->inventaris->dataAset->type ?? '' }}
+                            {{ $item->inventaris->dataAset->type ?? '' }}
 
                         </small>
 

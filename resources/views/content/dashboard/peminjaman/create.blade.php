@@ -24,90 +24,111 @@
                     </div>
 
                     <div class="card-body">
-
-                        <div class="row">
-
-                            {{-- Jenis --}}
+                        @if (auth()->user()->role == 'super_admin')
                             <div class="row mb-3">
-
-                                {{-- Jenis Peminjaman --}}
                                 <div class="col-md-6">
-
                                     <label class="form-label">
-                                        Jenis Peminjaman
+                                        Perusahaan Asal
                                         <span class="text-danger">*</span>
                                     </label>
 
-                                    <select class="form-select" name="jenis_peminjaman" id="jenis_peminjaman">
+                                    <select name="perusahaan" id="perusahaan" class="form-select" required>
 
-                                        <option value="">-- Pilih --</option>
+                                        <option value="">-- Pilih Perusahaan --</option>
 
-                                        <option value="internal">
-                                            Internal
-                                        </option>
-
-                                        <option value="antar_perusahaan">
-                                            Antar Perusahaan
-                                        </option>
+                                        @foreach ($perusahaans as $perusahaan)
+                                            <option value="{{ $perusahaan->id }}">
+                                                {{ $perusahaan->nama_perusahaan }}
+                                            </option>
+                                        @endforeach
 
                                     </select>
-
                                 </div>
+                            </div>
+                        @endif
 
-                                {{-- Jenis Aset --}}
-                                <div class="col-md-6">
+                        <div class="row mb-3">
 
-                                    <label class="form-label">
-                                        Jenis Aset
-                                        <span class="text-danger">*</span>
-                                    </label>
+                            {{-- Jenis Peminjaman --}}
+                            <div class="col-md-6">
 
-                                    <select class="form-select" id="kategori_id">
+                                <label class="form-label">
+                                    Jenis Peminjaman
+                                    <span class="text-danger">*</span>
+                                </label>
 
+                                <select class="form-select" name="jenis_peminjaman" id="jenis_peminjaman" required>
+
+                                    <option value="">-- Pilih --</option>
+
+                                    <option value="internal">
+                                        Internal
+                                    </option>
+
+                                    <option value="antar_perusahaan">
+                                        Antar Perusahaan
+                                    </option>
+
+                                </select>
+
+                            </div>
+
+                            {{-- Jenis Aset --}}
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Jenis Aset
+                                    <span class="text-danger">*</span>
+                                </label>
+
+                                <select class="form-select" id="kategori_id">
+
+                                    @if (auth()->user()->role == 'super_admin')
+
+                                        <option value="">
+                                            -- Pilih Perusahaan Terlebih Dahulu --
+                                        </option>
+                                    @else
                                         <option value="">
                                             -- Pilih Jenis Aset --
                                         </option>
 
                                         @foreach ($kategoris as $kategori)
                                             <option value="{{ $kategori->id }}">
-
                                                 {{ $kategori->nama_barang }}
-
                                             </option>
                                         @endforeach
 
-                                    </select>
+                                    @endif
 
-                                </div>
-
-                            </div>
-
-                            {{-- Inventaris --}}
-                            <div class="row mb-3">
-
-                                <div class="col-md-6">
-
-                                    <label class="form-label">
-                                        Inventaris
-                                        <span class="text-danger">*</span>
-                                    </label>
-
-                                    <select class="form-select" name="inventaris_id" id="inventaris_id">
-
-                                        <option value="">
-
-                                            Pilih Jenis Aset Terlebih Dahulu
-
-                                        </option>
-
-                                    </select>
-
-                                </div>
+                                </select>
 
                             </div>
 
-                            {{-- Tanggal Pinjam --}}
-                            <div class="col-md-6 mb-3">
+                        </div>
+
+                        {{-- Inventaris --}}
+                        <div class="row mb-3">
+
+                            <div class="col-md-6">
+
+                                <label class="form-label">
+                                    Inventaris
+                                    <span class="text-danger">*</span>
+                                </label>
+
+                                <select class="form-select" name="inventaris_id" id="inventaris_id">
+                                    <option value="">Pilih Jenis Aset Terlebih Dahulu</option>
+                                </select>
+
+                            </div>
+
+                        </div>
+
+                        {{-- Tanggal --}}
+                        <div class="row mb-3">
+
+                            <div class="col-md-6">
 
                                 <label class="form-label">
                                     Tanggal Pinjam
@@ -118,8 +139,7 @@
 
                             </div>
 
-                            {{-- Tanggal Rencana --}}
-                            <div class="col-md-6 mb-3">
+                            <div class="col-md-6">
 
                                 <label class="form-label">
                                     Tanggal Rencana Kembali
@@ -129,23 +149,25 @@
 
                             </div>
 
-                            {{-- Internal --}}
-                            <div class="col-md-12 mb-3" id="internal-section" style="display:none;">
+                        </div>
 
-                                <label class="form-label">
+                        {{-- Internal --}}
+                        <div class="col-md-12 mb-3" id="internal-section" style="display:none;">
 
-                                    Karyawan
+                            <label class="form-label">
 
-                                </label>
+                                Karyawan
 
-                                <div class="position-relative">
+                            </label>
 
-                                    <input type="text" id="search_karyawan" class="form-control"
-                                        placeholder="Cari kode, nama atau divisi..." autocomplete="off">
+                            <div class="position-relative">
 
-                                    <input type="hidden" name="karyawan_id" id="karyawan_id">
-                                    <div id="resultKaryawan" class="list-group shadow bg-white"
-                                        style="
+                                <input type="text" id="search_karyawan" class="form-control"
+                                    placeholder="Cari kode, nama atau divisi..." autocomplete="off">
+
+                                <input type="hidden" name="karyawan_id" id="karyawan_id">
+                                <div id="resultKaryawan" class="list-group shadow bg-white"
+                                    style="
                                                     position:absolute;
                                                     top:100%;
                                                     left:0;
@@ -158,61 +180,61 @@
                                                     border-radius:.375rem;
                                                     margin-top:2px;
                                                 ">
-                                    </div>
-
                                 </div>
 
                             </div>
 
-                            {{-- Antar Perusahaan --}}
-                            <div id="antar-section" style="display:none;">
+                        </div>
 
-                                <div class="row">
+                        {{-- Antar Perusahaan --}}
+                        <div id="antar-section" style="display:none;">
 
-                                    <div class="col-md-6 mb-3">
+                            <div class="row">
 
-                                        <label class="form-label">
+                                <div class="col-md-6 mb-3">
 
-                                            Perusahaan Tujuan
+                                    <label class="form-label">
 
-                                        </label>
+                                        Perusahaan Tujuan
+
+                                    </label>
 
 
-                                        <select name="perusahaan_tujuan_id" id="perusahaan_tujuan_id" class="form-select">
+                                    <select name="perusahaan_tujuan_id" id="perusahaan_tujuan_id" class="form-select">
 
-                                            <option value="">
-                                                -- Pilih --
+                                        <option value="">
+                                            -- Pilih --
+                                        </option>
+
+                                        @foreach ($perusahaans as $perusahaan)
+                                            <option value="{{ $perusahaan->id }}">
+
+                                                {{ $perusahaan->nama_perusahaan }}
+
                                             </option>
+                                        @endforeach
 
-                                            @foreach ($perusahaans as $perusahaan)
-                                                <option value="{{ $perusahaan->id }}">
+                                    </select>
 
-                                                    {{ $perusahaan->nama_perusahaan }}
+                                </div>
 
-                                                </option>
-                                            @endforeach
+                                <div class="col-md-6 mb-3">
 
-                                        </select>
+                                    <label class="form-label">
 
-                                    </div>
+                                        Penanggung Jawab
 
-                                    <div class="col-md-6 mb-3">
+                                    </label>
 
-                                        <label class="form-label">
+                                    <div class="position-relative">
 
-                                            Penanggung Jawab
+                                        <input type="text" id="search_karyawan_tujuan" class="form-control"
+                                            placeholder="Cari kode, nama atau divisi..." autocomplete="off">
 
-                                        </label>
+                                        <input type="hidden" name="karyawan_tujuan_id" id="karyawan_tujuan_id">
 
-                                        <div class="position-relative">
-
-                                            <input type="text" id="search_karyawan_tujuan" class="form-control"
-                                                placeholder="Cari kode, nama atau divisi..." autocomplete="off">
-
-                                            <input type="hidden" name="karyawan_tujuan_id" id="karyawan_tujuan_id">
-
-                                            <div id="resultKaryawanTujuan" class="list-group shadow bg-white"
-                                                style="
+                                        <div id="resultKaryawanTujuan" class="list-group shadow bg-white"
+                                            style="
                 position:absolute;
                 top:100%;
                 left:0;
@@ -225,8 +247,6 @@
                 border-radius:.375rem;
                 margin-top:2px;
             ">
-                                            </div>
-
                                         </div>
 
                                     </div>
@@ -235,18 +255,18 @@
 
                             </div>
 
-                            {{-- Keperluan --}}
-                            <div class="col-md-12">
+                        </div>
 
-                                <label class="form-label">
+                        {{-- Keperluan --}}
+                        <div class="col-md-12">
 
-                                    Keperluan
+                            <label class="form-label">
 
-                                </label>
+                                Keperluan
 
-                                <textarea name="keperluan" rows="4" class="form-control"></textarea>
+                            </label>
 
-                            </div>
+                            <textarea name="keperluan" rows="4" class="form-control"></textarea>
 
                         </div>
 
@@ -256,65 +276,66 @@
 
             </div>
 
-            {{-- =======================
+  
+        {{-- =======================
             INFORMASI INVENTARIS
         ======================== --}}
 
-            <div class="col-lg-5">
+        <div class="col-lg-5">
 
-                <div class="card">
+            <div class="card">
 
-                    <div class="card-header">
+                <div class="card-header">
 
-                        <h5 class="mb-0">
+                    <h5 class="mb-0">
 
-                            Informasi Inventaris
+                        Informasi Inventaris
 
-                        </h5>
+                    </h5>
 
-                    </div>
+                </div>
 
-                    <div class="card-body">
+                <div class="card-body">
 
-                        <table class="table table-borderless">
+                    <table class="table table-borderless">
 
-                            <tr>
-                                <th width="40%">Kode Aset</th>
-                                <td id="info_kode_aset">-</td>
-                            </tr>
+                        <tr>
+                            <th width="40%">Kode Aset</th>
+                            <td id="info_kode_aset">-</td>
+                        </tr>
 
-                            <tr>
-                                <th>No. Inventaris</th>
-                                <td id="info_no_inventaris">-</td>
-                            </tr>
+                        <tr>
+                            <th>No. Inventaris</th>
+                            <td id="info_no_inventaris">-</td>
+                        </tr>
 
-                            <tr>
-                                <th>Nama Barang</th>
-                                <td id="info_barang">-</td>
-                            </tr>
+                        <tr>
+                            <th>Nama Barang</th>
+                            <td id="info_barang">-</td>
+                        </tr>
 
-                            <tr>
-                                <th>Data Aset</th>
-                                <td id="info_data_aset">-</td>
-                            </tr>
+                        <tr>
+                            <th>Data Aset</th>
+                            <td id="info_data_aset">-</td>
+                        </tr>
 
-                            <tr>
-                                <th>Perusahaan</th>
-                                <td id="info_perusahaan">-</td>
-                            </tr>
+                        <tr>
+                            <th>Perusahaan</th>
+                            <td id="info_perusahaan">-</td>
+                        </tr>
 
-                            <tr>
-                                <th>Status</th>
-                                <td id="info_status">-</td>
-                            </tr>
+                        <tr>
+                            <th>Status</th>
+                            <td id="info_status">-</td>
+                        </tr>
 
-                        </table>
-
-                    </div>
+                    </table>
 
                 </div>
 
             </div>
+
+        </div>
 
         </div>
 
@@ -341,6 +362,29 @@
 
     <script>
         $(function() {
+            $('#perusahaan').change(function() {
+
+                let perusahaan = $(this).val();
+
+                $('#kategori_id').html('<option>Memuat...</option>');
+
+                $.get('/dashboard/kategori/by-perusahaan/' + perusahaan, function(data) {
+
+                    let option = '<option value="">-- Pilih Jenis Aset --</option>';
+
+                    $.each(data, function(i, item) {
+
+                        option += `<option value="${item.id}">
+                ${item.nama_barang}
+            </option>`;
+
+                    });
+
+                    $('#kategori_id').html(option);
+
+                });
+
+            });
 
             $('#jenis_peminjaman').change(function() {
 
@@ -403,7 +447,8 @@
                 type: "GET",
 
                 data: {
-                    keyword: keyword
+                    keyword: keyword,
+                    perusahaan: $('#perusahaan').val()
                 },
 
                 success: function(response) {
@@ -502,8 +547,12 @@
                 return;
             }
 
+            let perusahaan = $('#perusahaan').val();
+
             $.get(
-                '/dashboard/peminjaman/inventaris-by-kategori/' + kategori,
+                '/dashboard/peminjaman/inventaris-by-kategori/' + kategori, {
+                    perusahaan: perusahaan
+                },
 
                 function(data) {
 

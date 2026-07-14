@@ -1,165 +1,15 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Dashboard Monitoring Aset')
+@section('title', 'Dashboard')
 
-{{-- ================= THEME ================= --}}
-@php
-
-    $primaryColor = $theme['primary_color'] ?? '#0b2f57';
-
-    $secondaryColor = $theme['secondary_color'] ?? '#154b87';
-
-@endphp
-
-
-{{-- ================= STYLE ================= --}}
+@section('vendor-script')
+    <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+@endsection
 @section('vendor-style')
 
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/apex-charts/apex-charts.css') }}">
 
     <style>
-        :root {
-
-            --primary-theme: {{ $primaryColor }};
-            --secondary-theme: {{ $secondaryColor }};
-
-        }
-
-        /* =====================================
-                               CARD
-                            ===================================== */
-        .card-stat {
-
-            border-radius: 15px;
-
-            border: none;
-
-            overflow: hidden;
-
-            position: relative;
-
-            transition: .3s;
-
-            background: #fff;
-
-            height: 100%;
-
-        }
-
-        .card-stat:hover {
-
-            transform: translateY(-5px);
-
-            box-shadow: 0 10px 20px rgba(0, 0, 0, .08);
-
-        }
-
-        /* =====================================
-                               WAVE
-                            ===================================== */
-        .wave-box {
-
-            position: absolute;
-
-            top: 0;
-            left: 0;
-
-            width: 100%;
-            height: 100%;
-
-            z-index: 0;
-
-            opacity: .10;
-
-            pointer-events: none;
-
-        }
-
-        .wave {
-
-            position: absolute;
-
-            bottom: -50%;
-            left: -25%;
-
-            width: 150%;
-            height: 150%;
-
-            background: currentColor;
-
-            border-radius: 38%;
-
-            animation: waveMove 10s infinite linear;
-
-        }
-
-        @keyframes waveMove {
-
-            from {
-                transform: rotate(0deg)
-            }
-
-            to {
-                transform: rotate(360deg)
-            }
-
-        }
-
-        /* =====================================
-                               TEXT
-                            ===================================== */
-        .stat-label {
-
-            font-weight: 700;
-
-            text-transform: uppercase;
-
-            letter-spacing: .8px;
-
-            font-size: .72rem;
-
-            color: #32475c;
-
-        }
-
-        /* =====================================
-                               ICON
-                            ===================================== */
-        .icon-box {
-
-            width: 50px;
-
-            height: 50px;
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            border-radius: 14px;
-
-            font-size: 24px;
-
-        }
-
-        .theme-icon-box {
-
-            background:
-                linear-gradient(135deg,
-                    var(--primary-theme),
-                    var(--secondary-theme));
-
-            color: white;
-
-            box-shadow:
-                0 4px 12px rgba(0, 0, 0, .12);
-
-        }
-
-        /* =====================================
-                               DASHBOARD HEADER
-                            ===================================== */
         .dashboard-bg {
 
             background:
@@ -167,447 +17,794 @@
                     var(--primary-theme),
                     var(--secondary-theme));
 
-            color: white;
+            border-radius: 18px;
+
+            overflow: hidden;
+
+            position: relative;
+
+        }
+
+        .dashboard-bg::before {
+
+            content: '';
+
+            position: absolute;
+
+            right: -70px;
+
+            top: -70px;
+
+            width: 220px;
+
+            height: 220px;
+
+            border-radius: 50%;
+
+            background: rgba(255, 255, 255, .08);
+
+        }
+
+        .dashboard-bg::after {
+
+            content: '';
+
+            position: absolute;
+
+            left: -60px;
+
+            bottom: -60px;
+
+            width: 180px;
+
+            height: 180px;
+
+            border-radius: 50%;
+
+            background: rgba(255, 255, 255, .05);
+
+        }
+
+        .dashboard-card {
+
+            border: none;
 
             border-radius: 18px;
 
-        }
+            transition: .25s;
 
-        /* =====================================
-                               ANIMATION
-                            ===================================== */
-        .fade-up {
-
-            opacity: 0;
-
-            transform: translateY(20px);
-
-            transition: .5s;
+            overflow: hidden;
 
         }
 
-        .fade-up.show {
+        .dashboard-card:hover {
 
-            opacity: 1;
+            transform: translateY(-5px);
 
-            transform: translateY(0);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, .08);
 
         }
 
-        /* =====================================
-                               CHART
-                            ===================================== */
-        #chartTransaksiAset,
-        #chartDonutAset {
+        .dashboard-label {
 
-            width: 100% !important;
+            font-size: .80rem;
+
+            color: #7a7a7a;
+
+            font-weight: 600;
+
+        }
+
+        .dashboard-number {
+
+            font-size: 2rem;
+
+            font-weight: 700;
+
+            margin: 8px 0;
+
+        }
+
+        .dashboard-icon {
+
+            width: 60px;
+
+            height: 60px;
+
+            border-radius: 16px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            color: #fff;
+
+            font-size: 1.6rem;
+
+        }
+
+        .master-item {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 15px;
+
+            padding: 15px;
+
+            border-radius: 14px;
+
+            transition: .25s;
+
+        }
+
+        .master-item:hover {
+
+            background: #f8f9fa;
+
+        }
+
+        .master-icon {
+
+            width: 52px;
+
+            height: 52px;
+
+            border-radius: 14px;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            font-size: 24px;
+
+        }
+
+
+
+        .monitoring-card {
+
+            background:
+                linear-gradient(135deg,
+                    var(--primary-theme),
+                    var(--secondary-theme));
+
+            border-radius: 20px;
+
+            overflow: hidden;
+
+            position: relative;
+
+        }
+
+        /* ==========================================
+                                                                                   MONITORING CARD
+                                                                                ========================================== */
+
+        .monitor-box {
+
+            background: rgba(255, 255, 255, .12);
+
+            border: 1px solid rgba(255, 255, 255, .15);
+
+            border-radius: 18px;
+
+            padding: 22px;
+
+            transition: .3s;
+
+            height: 100%;
+            position: relative;
+
+            overflow: hidden;
+
+
+        }
+
+        .monitor-box::after {
+
+            content: '';
+
+            position: absolute;
+
+            right: -40px;
+
+            top: -40px;
+
+            width: 120px;
+
+            height: 120px;
+
+            border-radius: 50%;
+
+            background: rgba(255, 255, 255, .05);
+
+        }
+
+        .monitor-box:hover {
+
+            transform: translateY(-6px);
+
+            background: rgba(255, 255, 255, .18);
+
+        }
+
+        .monitor-box h5 {
+
+            color: #fff;
+
+            font-weight: 700;
+
+        }
+
+        .monitor-list {
+
+            margin-top: 10px;
+
+        }
+
+        .monitor-list div {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            padding: 8px 0;
+
+            border-bottom: 1px dashed rgba(255, 255, 255, .15);
+
+        }
+
+        .monitor-list div:last-child {
+
+            border-bottom: none;
+
+        }
+
+        .monitor-list span {
+
+            color: rgba(255, 255, 255, .85);
+
+        }
+
+        .monitor-list strong {
+
+            color: #fff;
+
+            font-weight: 700;
+
+            font-size: 15px;
+
+        }
+
+        #mappingChart,
+        {
+        min-height: 140px;
+        }
+
+        #hakAksesChart,
+        {
+        min-height: 140px;
+
+        }
+
+        #maintenanceChart,
+        {
+        min-height: 140px;
+        }
+
+        #peminjamanChart {
+
+            min-height: 140px;
+
+        }
+
+        #transaksiChart {
 
             min-height: 320px;
+
+        }
+
+        #grafikBulanan {
+
+            min-height: 350px;
+
+        }
+
+        #komposisiChart {
+
+            min-height: 350px;
+
+        }
+
+        .timeline-custom {
+
+            position: relative;
+
+        }
+
+        .timeline-custom::before {
+
+            content: '';
+
+            position: absolute;
+
+            left: 18px;
+
+            top: 0;
+
+            bottom: 0;
+
+            width: 2px;
+
+            background: #e5e7eb;
+
+        }
+
+        .timeline-item {
+
+            display: flex;
+
+            margin-bottom: 30px;
+
+            position: relative;
+
+        }
+
+        .timeline-dot {
+
+            width: 38px;
+
+            height: 38px;
+
+            border-radius: 50%;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            color: #fff;
+
+            z-index: 2;
+
+            flex-shrink: 0;
+
+        }
+
+        .timeline-content {
+
+            margin-left: 20px;
+
+            width: 100%;
+
+            background: #fff;
+
+            border-radius: 12px;
+
+            padding: 14px 18px;
+
+            border: 1px solid #eef2f7;
+
+            transition: .25s;
+
+        }
+
+        .timeline-content:hover {
+
+            transform: translateX(5px);
+
+            box-shadow: 0 10px 20px rgba(0, 0, 0, .08);
+
+        }
+
+        .timeline-scroll {
+
+            max-height: 360px;
+
+            overflow-y: auto;
+
+        }
+
+        .timeline-mini {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 15px;
+
+            padding: 14px 0;
+
+            border-bottom: 1px solid #eef2f7;
+
+        }
+
+        .timeline-mini:last-child {
+
+            border-bottom: none;
+
+        }
+
+        .timeline-icon {
+
+            width: 42px;
+
+            height: 42px;
+
+            border-radius: 50%;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            color: #fff;
+
+            flex-shrink: 0;
+
+        }
+
+        .timeline-info {
+
+            flex: 1;
 
         }
     </style>
 
 @endsection
 
-
-
-{{-- ================= CONTENT ================= --}}
 @section('content')
 
     <div class="container-xxl flex-grow-1 container-p-y">
 
+        @include('content.dashboard.partials._header')
 
-        {{-- =====================================
-         WELCOME
-    ===================================== --}}
-        <div class="row mb-4">
+        @include('content.dashboard.partials._summary')
 
-            <div class="col-12 fade-up">
+        {{-- @include('content.dashboard.partials._master') --}}
+        @include('content.dashboard.partials._chart')
+        @include('content.dashboard.partials._monitoring')
 
-                <div class="card dashboard-bg shadow-sm border-0">
+        @include('content.dashboard.partials._reminder')
+        @include('content.dashboard.partials._transaksi')
 
-                    <div class="card-body d-flex align-items-center justify-content-between">
 
-                        <div>
 
-                            <h4 class="text-white mb-1">
-
-                                Selamat Datang,
-                                {{ Str::upper(auth()->user()->name) }} 👋
-
-                            </h4>
-
-                            <p class="mb-0 opacity-75">
-
-                                Monitoring Aset Divisi IT
-
-                            </p>
-
-                        </div>
-
-                        <img src="{{ asset('assets/img/illustrations/man-with-laptop-light.png') }}" height="120">
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-
-        {{-- =====================================
-         SUMMARY
-    ===================================== --}}
-        @php
-
-            $summary = [
-                [
-                    'title' => 'Total Aset',
-                    'count' => $totalAset ?? 0,
-                    'icon' => 'bx-box',
-                ],
-
-                [
-                    'title' => 'Dipinjam',
-                    'count' => $dipinjam ?? 0,
-                    'icon' => 'bx-transfer',
-                ],
-
-                [
-                    'title' => 'Kembali',
-                    'count' => $dikembalikan ?? 0,
-                    'icon' => 'bx-check-circle',
-                ],
-
-                [
-                    'title' => 'Total Mutasi',
-                    'count' => $totalMutasi ?? 0,
-                    'icon' => 'bx-git-compare',
-                ],
-            ];
-
-        @endphp
-
-
-        <div class="row g-4 mb-4">
-
-            @foreach ($summary as $item)
-                <div class="col-xl-3 col-md-6 fade-up">
-
-                    <div class="card card-stat shadow-sm border-0">
-
-                        <div class="wave-box">
-                            <div class="wave"></div>
-                        </div>
-
-                        <div class="card-body d-flex align-items-center">
-
-                            <div class="icon-box me-3 theme-icon-box">
-
-                                <i class="bx {{ $item['icon'] }}"></i>
-
-                            </div>
-
-                            <div>
-
-                                <span class="stat-label">
-
-                                    {{ $item['title'] }}
-
-                                </span>
-
-                                <h4>
-
-                                    {{ number_format($item['count'], 0, ',', '.') }}
-
-                                </h4>
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-            @endforeach
-
-        </div>
-
-
-        {{-- =====================================
-         CHART
-    ===================================== --}}
-        <div class="row g-4">
-
-
-            {{-- AREA CHART --}}
-            <div class="col-lg-8 fade-up">
-
-                <div class="card shadow-sm border-0" style="border-radius:15px">
-
-                    <div class="card-header">
-
-                        <h5 class="mb-0">
-
-                            Grafik Transaksi Aset
-
-                        </h5>
-
-                    </div>
-
-                    <div class="card-body">
-
-                        <div id="chartTransaksiAset"></div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            {{-- DONUT --}}
-            <div class="col-lg-4 fade-up">
-
-                <div class="card shadow-sm border-0" style="border-radius:15px">
-
-                    <div class="card-header">
-
-                        <h5 class="mb-0">
-
-                            Stok Aset
-
-                        </h5>
-
-                    </div>
-
-                    <div class="card-body d-flex align-items-center justify-content-center">
-
-                        <div id="chartDonutAset"></div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
 
     </div>
 
 @endsection
+@section('scripts')
+    @php
 
+        $kategori = collect($dashboard['komposisi'])->pluck('nama_barang');
 
+        $totalKategori = collect($dashboard['komposisi'])->pluck('total');
 
-{{-- ================= SCRIPT ================= --}}
-@section('vendor-script')
-
-    <script src="{{ asset('assets/vendor/libs/apex-charts/apexcharts.js') }}"></script>
-
-@endsection
-
-
-
-@section('page-script')
-
+    @endphp
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        var options = {
 
-            const isDark = document.documentElement.classList.contains("dark-style")
+            chart: {
 
-            const labelColor = isDark ? "#cbcbe2" : "#566a7f"
+                type: 'bar',
 
+                height: 330,
 
-            /* =====================================
-               AREA CHART
-            ===================================== */
+                toolbar: {
+                    show: false
+                }
 
-            new ApexCharts(document.querySelector("#chartTransaksiAset"), {
+            },
 
-                chart: {
+            series: [{
 
-                    height: 350,
+                name: 'Transaksi',
 
-                    type: 'area',
+                data: @json($dashboard['transaksi_chart']['data'])
 
-                    toolbar: {
-                        show: false
-                    },
+            }],
 
-                    fontFamily: 'Public Sans'
+            plotOptions: {
 
-                },
+                bar: {
 
-                series: [
+                    horizontal: true,
 
-                    {
-                        name: 'Masuk',
-                        data: @json($dataMasuk ?? [])
-                    },
+                    borderRadius: 8,
 
-                    {
-                        name: 'Keluar',
-                        data: @json($dataKeluar ?? [])
-                    }
+                    barHeight: '55%',
 
-                ],
-
-                xaxis: {
-
-                    categories: @json($bulanLabel ?? []),
-
-                    labels: {
-                        style: {
-                            colors: labelColor
-                        }
-                    }
-
-                },
-
-                yaxis: {
-
-                    labels: {
-                        style: {
-                            colors: labelColor
-                        }
-                    }
-
-                },
-
-                legend: {
-
-                    labels: {
-                        colors: labelColor
-                    },
-
-                    position: 'top',
-
-                    horizontalAlign: 'right'
-
-                },
-
-                colors: [
-                    '{{ $primaryColor }}',
-                    '{{ $secondaryColor }}'
-                ],
-
-                stroke: {
-
-                    curve: 'smooth',
-
-                    width: 3
-
-                },
-
-                fill: {
-
-                    type: 'gradient',
-
-                    gradient: {
-
-                        opacityFrom: 0.6,
-
-                        opacityTo: 0.1
-
-                    }
+                    distributed: true
 
                 }
 
-            }).render()
+            },
 
+            dataLabels: {
 
+                enabled: true
 
-            /* =====================================
-               DONUT
-            ===================================== */
+            },
 
-            new ApexCharts(document.querySelector("#chartDonutAset"), {
+            xaxis: {
 
-                chart: {
+                categories: @json($dashboard['transaksi_chart']['label'])
 
-                    type: 'donut',
+            },
 
-                    height: 350,
+            legend: {
 
-                    width: '100%'
+                show: false
+
+            },
+
+            grid: {
+
+                borderColor: '#e9ecef'
+
+            }
+
+        };
+
+        new ApexCharts(
+            document.querySelector("#transaksiChart"),
+            options
+        ).render();
+        var bulananOptions = {
+
+            chart: {
+
+                type: 'area',
+
+                height: 360,
+
+                toolbar: {
+                    show: false
+                },
+
+                zoom: {
+                    enabled: false
+                }
+
+            },
+
+            series: [
+
+                {
+
+                    name: 'Penerimaan',
+
+                    data: @json($dashboard['grafik']['masuk'])
 
                 },
 
-                series: @json($komposisiAset->pluck('total')->map(fn($v) => (int) $v)->values()),
+                {
 
-                labels: @json($komposisiAset->pluck('nama_barang')),
+                    name: 'Pemakaian',
 
-                colors: [
+                    data: @json($dashboard['grafik']['keluar'])
 
-                    '{{ $primaryColor }}',
-                    '{{ $secondaryColor }}',
-                    '#28c76f',
-                    '#ff9f43',
-                    '#03c3ec',
-                    '#ea5455',
-                    '#8e44ad',
-                    '#20c997'
+                }
 
-                ],
+            ],
 
-                plotOptions: {
+            colors: [
 
-                    pie: {
+                '#28C76F',
 
-                        donut: {
+                '#FF9F43'
 
-                            size: '75%',
+            ],
 
-                            labels: {
+            stroke: {
+
+                curve: 'smooth',
+
+                width: 3
+
+            },
+
+            fill: {
+
+                type: 'gradient',
+
+                gradient: {
+
+                    shadeIntensity: 1,
+
+                    opacityFrom: .45,
+
+                    opacityTo: .05,
+
+                    stops: [0, 90, 100]
+
+                }
+
+            },
+
+            dataLabels: {
+
+                enabled: false
+
+            },
+
+            markers: {
+
+                size: 5,
+
+                strokeWidth: 2,
+
+                hover: {
+                    size: 7
+                }
+
+            },
+
+            grid: {
+
+                borderColor: '#ebeef2',
+
+                strokeDashArray: 5
+
+            },
+
+            xaxis: {
+
+                categories: @json($dashboard['grafik']['label']),
+
+                axisBorder: {
+                    show: false
+                },
+
+                axisTicks: {
+                    show: false
+                }
+
+            },
+
+            yaxis: {
+
+                min: 0
+
+            },
+
+            legend: {
+
+                position: 'top',
+
+                horizontalAlign: 'right'
+
+            },
+
+            tooltip: {
+
+                shared: true,
+
+                intersect: false
+
+            }
+
+        };
+
+
+        new ApexCharts(
+            document.querySelector("#grafikBulanan"),
+            bulananOptions
+        ).render();
+
+        function hexToRgb(hex) {
+
+            hex = hex.replace('#', '');
+
+            let bigint = parseInt(hex, 16);
+
+            return {
+                r: (bigint >> 16) & 255,
+                g: (bigint >> 8) & 255,
+                b: bigint & 255
+            };
+        }
+
+        function lightenColor(hex, percent) {
+
+            const rgb = hexToRgb(hex);
+
+            const r = Math.min(255, Math.round(rgb.r + (255 - rgb.r) * percent));
+            const g = Math.min(255, Math.round(rgb.g + (255 - rgb.g) * percent));
+            const b = Math.min(255, Math.round(rgb.b + (255 - rgb.b) * percent));
+
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+        const rootStyle = getComputedStyle(document.documentElement);
+
+        const primaryTheme = rootStyle
+            .getPropertyValue('--primary-theme')
+            .trim();
+
+        const secondaryTheme = rootStyle
+            .getPropertyValue('--secondary-theme')
+            .trim();
+        var donutOptions = {
+
+            chart: {
+
+                type: 'donut',
+
+                height: 360
+
+            },
+
+            series: @json($totalKategori),
+
+            labels: @json($kategori),
+            colors: [
+
+                primaryTheme,
+
+                secondaryTheme,
+
+                lightenColor(primaryTheme, 0.15),
+
+                lightenColor(primaryTheme, 0.30),
+
+                lightenColor(primaryTheme, 0.45),
+
+                lightenColor(primaryTheme, 0.60),
+
+                lightenColor(primaryTheme, 0.75),
+
+            ],
+
+            legend: {
+
+                position: 'bottom'
+
+            },
+
+            dataLabels: {
+
+                enabled: true
+
+            },
+
+            stroke: {
+
+                width: 2
+
+            },
+
+            plotOptions: {
+
+                pie: {
+
+                    donut: {
+
+                        size: '68%',
+
+                        labels: {
+
+                            show: true,
+
+                            total: {
 
                                 show: true,
 
-                                name: {
+                                label: 'Total',
 
-                                    show: true,
+                                formatter: function() {
 
-                                    color: labelColor,
-
-                                    offsetY: -10
-
-                                },
-
-                                value: {
-
-                                    show: true,
-
-                                    color: labelColor,
-
-                                    offsetY: 10,
-
-                                    fontWeight: 700,
-
-                                    formatter: function(val) {
-
-                                        return Number(val);
-
-                                    }
-
-                                },
-
-                                total: {
-
-                                    show: true,
-
-                                    label: 'Total Stok',
-
-                                    color: labelColor,
-
-                                    formatter: function(w) {
-
-                                        return w.globals.seriesTotals.reduce(function(a, b) {
-
-                                            return parseInt(a) + parseInt(b);
-
-                                        }, 0);
-
-                                    }
+                                    return {{ collect($dashboard['komposisi'])->sum('total') }};
 
                                 }
 
@@ -617,43 +814,29 @@
 
                     }
 
-                },
+                }
 
-                legend: {
+            },
 
-                    position: 'bottom',
+            tooltip: {
 
-                    labels: {
-                        colors: labelColor
+                y: {
+
+                    formatter: function(val) {
+
+                        return val + " Unit";
+
                     }
-
-                },
-
-                dataLabels: {
-
-                    enabled: false
 
                 }
 
-            }).render()
+            }
 
+        };
 
-
-            /* =====================================
-               ANIMATION
-            ===================================== */
-
-            document.querySelectorAll(".fade-up").forEach((el, i) => {
-
-                setTimeout(() => {
-
-                    el.classList.add("show")
-
-                }, 150 * i)
-
-            })
-
-        })
+        new ApexCharts(
+            document.querySelector("#komposisiChart"),
+            donutOptions
+        ).render();
     </script>
-
 @endsection

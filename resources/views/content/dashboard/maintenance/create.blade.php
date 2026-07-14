@@ -49,6 +49,44 @@
                     <div class="card-body">
 
                         <div class="row">
+                            {{-- Perusahaan --}}
+                            @if (auth()->user()->role == 'super_admin')
+
+                                <div class="col-md-12 mb-3">
+
+                                    <label class="form-label">
+                                        Perusahaan
+                                        <span class="text-danger">*</span>
+                                    </label>
+
+                                    @if (isset($inventaris) && $inventaris)
+
+                                        {{-- Dari Mapping / Peminjaman --}}
+                                        <input type="hidden" name="perusahaan_id" value="{{ $inventaris->perusahaan_id }}">
+
+                                        <input type="text" class="form-control"
+                                            value="{{ $inventaris->perusahaan->nama_perusahaan }}" readonly>
+                                    @else
+                                        {{-- Manual --}}
+                                        <select name="perusahaan_id" id="perusahaan_id" class="form-select">
+
+                                            <option value="">
+                                                -- Pilih Perusahaan --
+                                            </option>
+
+                                            @foreach ($perusahaans as $perusahaan)
+                                                <option value="{{ $perusahaan->id }}">
+                                                    {{ $perusahaan->nama_perusahaan }}
+                                                </option>
+                                            @endforeach
+
+                                        </select>
+
+                                    @endif
+
+                                </div>
+
+                            @endif
 
                             {{-- Inventaris --}}
                             <div class="col-md-12 mb-3">
@@ -68,43 +106,51 @@
                                     <input type="hidden" name="inventaris_id" value="{{ $inventaris->id }}">
 
                                     <input type="text" class="form-control"
-                                        value="{{ $inventaris->kode_aset }} - {{ $inventaris->dataAset->nama_barang }} | {{ $inventaris->dataAset->merek }} {{ $inventaris->dataAset->type }} | {{ $inventaris->dataAset->warna }}"
+                                        value="{{ $inventaris->kode_aset }} - {{ $inventaris->dataAset->kategori->nama_barang }} | {{ $inventaris->dataAset->merek }} {{ $inventaris->dataAset->type }} | {{ $inventaris->dataAset->warna }}"
                                         readonly>
                                 @else
                                     {{-- Manual dari menu Service --}}
 
-                                    <select name="inventaris_id" id="inventaris_id" class="form-select">
+                                    @if (auth()->user()->role == 'super_admin' && !isset($inventaris))
 
-                                        <option value="">
-                                            -- Pilih Inventaris --
-                                        </option>
+                                        <select name="inventaris_id" id="inventaris_id" class="form-select">
 
-                                        @foreach ($inventarisList as $item)
-                                            <option value="{{ $item->id }}" data-kode-aset="{{ $item->kode_aset }}"
-                                                data-no-inventaris="{{ $item->no_inventaris }}"
-                                                data-barang="{{ $item->dataAset->nama_barang }}"
-                                                data-merek="{{ $item->dataAset->merek }}"
-                                                data-type="{{ $item->dataAset->type }}"
-                                                data-warna="{{ $item->dataAset->warna }}"
-                                                data-perusahaan="{{ $item->perusahaan->nama_perusahaan }}"
-                                                data-status="{{ $item->status }}">
-
-                                                {{ $item->kode_aset }}
-                                                -
-                                                {{ $item->dataAset->nama_barang }}
-                                                |
-                                                {{ $item->dataAset->merek }}
-                                                {{ $item->dataAset->type }}
-                                                |
-                                                {{ $item->dataAset->warna }}
-
+                                            <option value="">
+                                                -- Pilih Perusahaan Terlebih Dahulu --
                                             </option>
-                                        @endforeach
 
-                                    </select>
+                                        </select>
+                                    @else
+                                        <select name="inventaris_id" id="inventaris_id" class="form-select">
 
+                                            <option value="">
+                                                -- Pilih Inventaris --
+                                            </option>
+
+                                            @foreach ($inventarisList as $item)
+                                                <option value="{{ $item->id }}"
+                                                    data-kode-aset="{{ $item->kode_aset }}"
+                                                    data-no-inventaris="{{ $item->no_inventaris }}"
+                                                    data-barang="{{ $item->dataAset->kategori->nama_barang }}"
+                                                    data-merek="{{ $item->dataAset->merek }}"
+                                                    data-type="{{ $item->dataAset->type }}"
+                                                    data-warna="{{ $item->dataAset->warna }}"
+                                                    data-perusahaan="{{ $item->perusahaan->nama_perusahaan }}"
+                                                    data-status="{{ $item->status }}">
+
+                                                    {{ $item->kode_aset }}
+                                                    -
+                                                    {{ $item->dataAset->kategori->nama_barang }}
+                                                    |
+                                                    {{ $item->dataAset->merek }}
+                                                    {{ $item->dataAset->type }}
+
+                                                </option>
+                                            @endforeach
+
+                                        </select>
+                                    @endif
                                 @endif
-
                             </div>
 
                             {{-- Tanggal --}}
@@ -444,6 +490,7 @@
                                                 'DIPAKAI' => 'primary',
                                                 'DIPINJAM' => 'warning',
                                                 'RUSAK' => 'danger',
+                                                'AFKIR' => 'dark',
                                                 default => 'secondary',
                                             };
                                         @endphp
@@ -498,6 +545,60 @@
 
     <script>
         $(document).ready(function() {
+            $('#perusahaan_id').change(function() {
+
+                let perusahaan = $(this).val();
+
+                $('#inventaris_id').html('<option>Memuat...</option>');
+
+                if (perusahaan == '') {
+
+                    $('#inventaris_id').html(
+                        '<option>-- Pilih Perusahaan Terlebih Dahulu --</option>'
+                    );
+
+                    return;
+                }
+
+                $.get(
+                    '/dashboard/maintenance/inventaris/' + perusahaan,
+                    function(data) {
+
+                        let option =
+                            '<option value="">-- Pilih Inventaris --</option>';
+
+                        $.each(data, function(i, item) {
+
+                            option += `
+
+                <option
+                    value="${item.id}"
+                    data-kode-aset="${item.kode_aset}"
+                    data-no-inventaris="${item.no_inventaris}"
+                    data-barang="${item.data_aset.kategori.nama_barang}"
+                    data-merek="${item.data_aset.merek}"
+                    data-type="${item.data_aset.type}"
+                    data-warna="${item.data_aset.warna}"
+                    data-perusahaan="${item.perusahaan.nama_perusahaan}"
+                    data-status="${item.status}">
+
+                    ${item.kode_aset}
+                    -
+                    ${item.data_aset.kategori.nama_barang}
+                    |
+                    ${item.data_aset.merek}
+                    ${item.data_aset.type}
+
+                </option>`;
+
+                        });
+
+                        $('#inventaris_id').html(option);
+
+                    }
+                );
+
+            });
 
             //--------------------------------------------------
             // Pilih Inventaris (Manual)
@@ -541,6 +642,9 @@
 
                     case 'RUSAK':
                         badge = '<span class="badge bg-label-danger">RUSAK</span>';
+                        break;
+                    case 'AFKIR':
+                        badge = '<span class="badge bg-dark">AFKIR</span>';
                         break;
 
                     default:

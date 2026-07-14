@@ -17,6 +17,11 @@ class PencabutanController extends Controller
     if ($user->role != 'super_admin' && $maping->id_perusahaan != $user->id_perusahaan) {
       abort(403);
     }
+    if ($maping->status != 'aktif') {
+    return redirect()
+        ->route('maping.index')
+        ->with('error', 'Hak Akses hanya dapat dikelola pada mapping yang berstatus Aktif.');
+}
 
     $maping->load(['perusahaan', 'lokasi', 'keluar.karyawan', 'keluar.inventaris.dataAset.kategori']);
 

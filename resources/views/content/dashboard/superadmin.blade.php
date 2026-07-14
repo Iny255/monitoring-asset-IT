@@ -2,634 +2,768 @@
 
 @section('title', 'Dashboard Super Admin')
 
-{{-- ================= STYLE ================= --}}
+
 @section('vendor-style')
 
     <link rel="stylesheet" href="{{ asset('assets/vendor/libs/apex-charts/apex-charts.css') }}">
 
     <style>
-        .card-stat {
-            border-radius: 15px;
-            border: none;
-            overflow: hidden;
-            position: relative;
-            transition: .3s;
-            background: #fff;
-            height: 100%;
-        }
-
-        .card-stat:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, .08);
-        }
-
-        /* WAVE EFFECT */
-        .wave-box {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 0;
-            opacity: .12;
-            pointer-events: none;
-        }
-
-        .wave {
-            position: absolute;
-            bottom: -50%;
-            left: -25%;
-            width: 150%;
-            height: 150%;
-            background: currentColor;
-            border-radius: 38%;
-            animation: waveMove 10s infinite linear;
-        }
-
-        @keyframes waveMove {
-            from {
-                transform: rotate(0deg)
-            }
-
-            to {
-                transform: rotate(360deg)
-            }
-        }
-
-        .stat-label {
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: .8px;
-            font-size: .72rem;
-            color: #32475c;
-        }
-
-        .icon-box {
-            width: 48px;
-            height: 48px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 12px;
-            font-size: 22px;
-        }
-
-        .bg-soft-primary {
-            background: #e7f1ff;
-            color: #696cff
-        }
-
-        .bg-soft-success {
-            background: #e8f8f0;
-            color: #28c76f
-        }
-
-        .bg-soft-warning {
-            background: #fff4e5;
-            color: #ff9f43
-        }
-
-        .bg-soft-info {
-            background: #e6f7ff;
-            color: #03c3ec
-        }
-
         .dashboard-bg {
-            background: linear-gradient(135deg, #0d3b66, #1d5fa3);
-            color: white;
+
+            background:
+                linear-gradient(135deg,
+                    var(--primary-theme),
+                    var(--secondary-theme));
+
             border-radius: 18px;
+
+            overflow: hidden;
+
+            position: relative;
+
         }
 
-        .fade-up {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: .5s;
+        .dashboard-bg::before {
+
+            content: '';
+
+            position: absolute;
+
+            right: -70px;
+
+            top: -70px;
+
+            width: 220px;
+
+            height: 220px;
+
+            border-radius: 50%;
+
+            background: rgba(255, 255, 255, .08);
+
         }
 
-        .fade-up.show {
-            opacity: 1;
-            transform: translateY(0);
+        .dashboard-bg::after {
+
+            content: '';
+
+            position: absolute;
+
+            left: -60px;
+
+            bottom: -60px;
+
+            width: 180px;
+
+            height: 180px;
+
+            border-radius: 50%;
+
+            background: rgba(255, 255, 255, .05);
+
         }
 
-        .table-hover tbody tr:hover {
-            background: #f8fafc;
+        .dashboard-card {
+
+            border: none;
+
+            border-radius: 18px;
+
+            transition: .25s;
+
+            overflow: hidden;
+
         }
 
-        #chartTransaksiAset,
-        #chartDonutAset {
-            width: 100% !important;
+        .dashboard-card:hover {
+
+            transform: translateY(-5px);
+
+            box-shadow: 0 15px 35px rgba(0, 0, 0, .08);
+
+        }
+
+        .dashboard-label {
+
+            font-size: .80rem;
+
+            color: #7a7a7a;
+
+            font-weight: 600;
+
+        }
+
+        .dashboard-number {
+
+            font-size: 2rem;
+
+            font-weight: 700;
+
+            margin: 8px 0;
+
+        }
+
+        .dashboard-icon {
+
+            width: 60px;
+
+            height: 60px;
+
+            border-radius: 16px;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            color: #fff;
+
+            font-size: 1.6rem;
+
+        }
+
+        .master-item {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 15px;
+
+            padding: 15px;
+
+            border-radius: 14px;
+
+            transition: .25s;
+
+        }
+
+        .master-item:hover {
+
+            background: #f8f9fa;
+
+        }
+
+        .master-icon {
+
+            width: 52px;
+
+            height: 52px;
+
+            border-radius: 14px;
+
+            display: flex;
+
+            justify-content: center;
+
+            align-items: center;
+
+            font-size: 24px;
+
+        }
+
+
+
+        .monitoring-card {
+
+            background:
+                linear-gradient(135deg,
+                    var(--primary-theme),
+                    var(--secondary-theme));
+
+            border-radius: 20px;
+
+            overflow: hidden;
+
+            position: relative;
+
+        }
+
+        /* ==========================================
+                                                                                                                                   MONITORING CARD
+                                                                                                                                ========================================== */
+
+        .monitor-box {
+
+            background: rgba(255, 255, 255, .12);
+
+            border: 1px solid rgba(255, 255, 255, .15);
+
+            border-radius: 18px;
+
+            padding: 22px;
+
+            transition: .3s;
+
+            height: 100%;
+            position: relative;
+
+            overflow: hidden;
+
+
+        }
+
+        .monitor-box::after {
+
+            content: '';
+
+            position: absolute;
+
+            right: -40px;
+
+            top: -40px;
+
+            width: 120px;
+
+            height: 120px;
+
+            border-radius: 50%;
+
+            background: rgba(255, 255, 255, .05);
+
+        }
+
+        .monitor-box:hover {
+
+            transform: translateY(-6px);
+
+            background: rgba(255, 255, 255, .18);
+
+        }
+
+        .monitor-box h5 {
+
+            color: #fff;
+
+            font-weight: 700;
+
+        }
+
+        .monitor-list {
+
+            margin-top: 10px;
+
+        }
+
+        .monitor-list div {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            padding: 8px 0;
+
+            border-bottom: 1px dashed rgba(255, 255, 255, .15);
+
+        }
+
+        .monitor-list div:last-child {
+
+            border-bottom: none;
+
+        }
+
+        .monitor-list span {
+
+            color: rgba(255, 255, 255, .85);
+
+        }
+
+        .monitor-list strong {
+
+            color: #fff;
+
+            font-weight: 700;
+
+            font-size: 15px;
+
+        }
+
+        #mappingChart,
+        {
+        min-height: 140px;
+        }
+
+        #hakAksesChart,
+        {
+        min-height: 140px;
+
+        }
+
+        #maintenanceChart,
+        {
+        min-height: 140px;
+        }
+
+        #peminjamanChart {
+
+            min-height: 140px;
+
+        }
+
+        #transaksiChart {
+
             min-height: 320px;
+
+        }
+
+        #grafikBulanan {
+
+            min-height: 350px;
+
+        }
+
+        #komposisiChart {
+
+            min-height: 350px;
+
+        }
+
+        .timeline-custom {
+
+            position: relative;
+
+        }
+
+        .timeline-custom::before {
+
+            content: '';
+
+            position: absolute;
+
+            left: 18px;
+
+            top: 0;
+
+            bottom: 0;
+
+            width: 2px;
+
+            background: #e5e7eb;
+
+        }
+
+        .timeline-item {
+
+            display: flex;
+
+            margin-bottom: 30px;
+
+            position: relative;
+
+        }
+
+        .timeline-dot {
+
+            width: 38px;
+
+            height: 38px;
+
+            border-radius: 50%;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            color: #fff;
+
+            z-index: 2;
+
+            flex-shrink: 0;
+
+        }
+
+        .timeline-content {
+
+            margin-left: 20px;
+
+            width: 100%;
+
+            background: #fff;
+
+            border-radius: 12px;
+
+            padding: 14px 18px;
+
+            border: 1px solid #eef2f7;
+
+            transition: .25s;
+
+        }
+
+        .timeline-content:hover {
+
+            transform: translateX(5px);
+
+            box-shadow: 0 10px 20px rgba(0, 0, 0, .08);
+
+        }
+
+        .timeline-scroll {
+
+            max-height: 360px;
+
+            overflow-y: auto;
+
+        }
+
+        .timeline-mini {
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 15px;
+
+            padding: 14px 0;
+
+            border-bottom: 1px solid #eef2f7;
+
+        }
+
+        .timeline-mini:last-child {
+
+            border-bottom: none;
+
+        }
+
+        .timeline-icon {
+
+            width: 42px;
+
+            height: 42px;
+
+            border-radius: 50%;
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            color: #fff;
+
+            flex-shrink: 0;
+
+        }
+
+        .timeline-info {
+
+            flex: 1;
+
+        }
+
+        .company-card {
+
+            border-radius: 18px;
+
+            overflow: hidden;
+
+            background: #fff;
+
+            transition: .3s;
+
+            border: 1px solid #eef2f7;
+
+            height: 100%;
+
+        }
+
+        .company-card:hover {
+
+            transform: translateY(-6px);
+
+            box-shadow: 0 18px 35px rgba(0, 0, 0, .08);
+
+        }
+
+        .company-header {
+
+            padding: 20px;
+
+            display: flex;
+
+            align-items: center;
+
+            gap: 15px;
+
+        }
+
+        .company-icon {
+
+            width: 55px;
+
+            height: 55px;
+
+            border-radius: 14px;
+
+            background: rgba(255, 255, 255, .18);
+
+            display: flex;
+
+            align-items: center;
+
+            justify-content: center;
+
+            color: #fff;
+
+            font-size: 28px;
+
+        }
+
+        .company-body {
+
+            padding: 18px;
+
+        }
+
+        .company-item {
+
+            display: flex;
+
+            justify-content: space-between;
+
+            align-items: center;
+
+            padding: 10px 0;
+
+            border-bottom: 1px dashed #ececec;
+
+        }
+
+        .company-item:last-child {
+
+            border-bottom: none;
+
+        }
+
+        .timeline-scroll {
+            max-height: 420px;
+            overflow-y: auto;
+        }
+
+        .timeline-mini {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            padding: 16px 0;
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        .timeline-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #fff;
+            flex-shrink: 0;
+        }
+
+        .timeline-info {
+            flex: 1;
         }
     </style>
 
 @endsection
 
 
-{{-- ================= CONTENT ================= --}}
-@section('content')
 
-    <div class="container-xxl flex-grow-1 container-p-y">
-
-        {{-- HEADER --}}
-        <div class="card dashboard-bg shadow-sm border-0 mb-4 fade-up">
-
-            <div class="card-body d-flex align-items-center justify-content-between">
-
-                <div>
-
-                    <h3 class="text-white fw-bold mb-1">
-                        Super Admin Dashboard 👑
-                    </h3>
-
-                    <p class="mb-0 opacity-75">
-                        Monitoring seluruh aset IT dari
-                        {{ $perusahaanCount }} perusahaan
-                    </p>
-
-                </div>
-
-                <img src="{{ asset('assets/img/superadmin_logo.png') }}" height="120">
-
-            </div>
-
-        </div>
-
-
-        {{-- SUMMARY --}}
-        @php
-            $summary = [
-                [
-                    'title' => 'Total Aset',
-                    'count' => $totalAset ?? 0,
-                    'icon' => 'bx-box',
-                    'color' => '#696cff',
-                    'bg' => 'bg-soft-primary',
-                ],
-                [
-                    'title' => 'Dipinjam',
-                    'count' => $dipinjam ?? 0,
-                    'icon' => 'bx-transfer',
-                    'color' => '#ff9f43',
-                    'bg' => 'bg-soft-warning',
-                ],
-                [
-                    'title' => 'Kembali',
-                    'count' => $dikembalikan ?? 0,
-                    'icon' => 'bx-check-circle',
-                    'color' => '#28c76f',
-                    'bg' => 'bg-soft-success',
-                ],
-                [
-                    'title' => 'Total Mutasi',
-                    'count' => $totalMutasi ?? 0,
-                    'icon' => 'bx-git-compare',
-                    'color' => '#03c3ec',
-                    'bg' => 'bg-soft-info',
-                ],
-            ];
-        @endphp
-
-
-        <div class="row g-4 mb-4">
-
-            @foreach ($summary as $item)
-                <div class="col-xl-3 col-md-6 fade-up">
-
-                    <div class="card card-stat shadow-sm border-0" style="color:{{ $item['color'] }}">
-
-                        <div class="wave-box">
-                            <div class="wave"></div>
-                        </div>
-
-                        <div class="card-body d-flex align-items-center">
-
-                            <div class="icon-box {{ $item['bg'] }} me-3">
-                                <i class="bx {{ $item['icon'] }}"></i>
-                            </div>
-
-                            <div>
-                                <span class="stat-label">
-                                    {{ $item['title'] }}
-                                </span>
-
-                                <h4>
-                                    {{ number_format($item['count'], 0, ',', '.') }}
-                                </h4>
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-            @endforeach
-
-        </div>
-
-
-        {{-- CHART --}}
-        <div class="row g-4">
-
-            <div class="col-lg-8 fade-up">
-
-                <div class="card shadow-sm border-0" style="border-radius:15px">
-
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            Grafik Transaksi Global
-                        </h5>
-                    </div>
-
-                    <div class="card-body">
-                        <div id="chartTransaksiAset"></div>
-                    </div>
-
-                </div>
-
-            </div>
-
-
-            <div class="col-lg-4 fade-up">
-
-                <div class="card shadow-sm border-0" style="border-radius:15px">
-
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            Komposisi Aset
-                        </h5>
-                    </div>
-
-                    <div class="card-body d-flex align-items-center justify-content-center">
-
-                        <div id="chartDonutAset"></div>
-
-                    </div>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-    {{-- ========================================= --}}
-    {{-- KALKULASI ASET PERUSAHAAN --}}
-    {{-- ========================================= --}}
-    <div class="row mt-4">
-
-        <div class="col-12 fade-up">
-
-            <div class="card shadow-sm border-0" style="border-radius:15px">
-
-                <div class="card-header d-flex justify-content-between align-items-center">
-
-                    <div>
-
-                        <h5 class="mb-0 fw-bold">
-                            Kalkulasi Aset Perusahaan
-                        </h5>
-
-                        <small class="text-muted">
-                            Monitoring aset seluruh perusahaan
-                        </small>
-
-                    </div>
-
-                    <span class="badge bg-primary">
-                        {{ $perusahaanCount }} Perusahaan
-                    </span>
-
-                </div>
-
-                <div class="card-body table-responsive">
-
-                    <table class="table table-hover align-middle">
-
-                        <thead class="table-light">
-
-                            <tr class="text-center">
-
-                                <th width="60">
-                                    No
-                                </th>
-
-                                <th class="text-start">
-                                    Perusahaan
-                                </th>
-
-                                <th>
-                                    Aset Masuk
-                                </th>
-
-                                <th>
-                                    Aset Keluar
-                                </th>
-
-                                <th>
-                                    Stok Tersedia
-                                </th>
-
-                                <th>
-                                    Digunakan
-                                </th>
-
-                                <th>
-                                    Total Aset
-                                </th>
-
-                            </tr>
-
-                        </thead>
-
-                        <tbody>
-
-                            @forelse ($perusahaanList as $p)
-                                <tr>
-
-                                    <td class="text-center fw-semibold">
-
-                                        {{ $loop->iteration }}
-
-                                    </td>
-
-                                    <td class="fw-semibold">
-
-                                        {{ $p->nama_perusahaan }}
-
-                                    </td>
-
-                                    <td class="text-center">
-
-                                        <span class="badge bg-success px-3 py-2">
-
-                                            {{ number_format($p->aset_masuk) }}
-
-                                        </span>
-
-                                    </td>
-
-                                    <td class="text-center">
-
-                                        <span class="badge bg-danger px-3 py-2">
-
-                                            {{ number_format($p->aset_keluar) }}
-
-                                        </span>
-
-                                    </td>
-
-                                    {{-- STOK TERSEDIA --}}
-                                    <td class="text-center">
-
-                                        <span class="badge bg-success px-3 py-2">
-
-                                            {{ number_format($p->stok_tersedia) }}
-
-                                        </span>
-
-                                    </td>
-
-                                    <td class="text-center">
-
-                                        <span class="badge bg-info px-3 py-2">
-
-                                            {{ number_format($p->aset_digunakan) }}
-
-                                        </span>
-
-                                    </td>
-
-                                    <td class="text-center">
-
-                                        <span class="badge bg-primary px-3 py-2">
-
-                                            {{ number_format($p->total_aset) }}
-
-                                        </span>
-
-                                    </td>
-
-                                </tr>
-
-                            @empty
-
-                                <tr>
-
-                                    <td colspan="7" class="text-center py-4 text-muted">
-
-                                        Belum ada data perusahaan
-
-                                    </td>
-
-                                </tr>
-                            @endforelse
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-            </div>
-
-        </div>
-
-    </div>
-@endsection
-
-
-
-{{-- ================= SCRIPT ================= --}}
 @section('vendor-script')
     <script src="{{ asset('assets/vendor/libs/apex-charts/apexcharts.js') }}"></script>
 @endsection
 
+@section('content')
 
-@section('page-script')
+    <div class="container-xxl flex-grow-1 container-p-y">
+
+        {{-- Executive Header --}}
+        @include('content.dashboard.superadmin._header')
+
+        {{-- Executive Summary --}}
+        @include('content.dashboard.superadmin._summary')
+        {{-- Analisis Global --}}
+        @include('content.dashboard.superadmin._chart')
+
+        {{-- Monitoring Perusahaan --}}
+        @include('content.dashboard.superadmin._company')
+
+        <div class="row mb-4">
+
+            <div class="col-lg-8">
+
+                @include('content.dashboard.superadmin._timeline')
+
+            </div>
+
+            <div class="col-lg-4">
+
+                @include('content.dashboard.superadmin._transaksi')
+
+            </div>
+
+        </div>
+
+
+                {{-- Reminder --}}
+                @include('content.dashboard.superadmin._reminder')
+
+         
+
+
+
+        </div>
+
+    </div>
+
+@endsection
+@section('scripts')
+    @php
+
+        $kategori = collect($dashboard['komposisi'])->pluck('kategori');
+
+        $totalKategori = collect($dashboard['komposisi'])->pluck('total');
+
+    @endphp
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
-
-            const isDark =
-                document.documentElement.classList.contains("dark-style")
-
-            const labelColor =
-                isDark ? "#cbcbe2" : "#566a7f"
-
-
-            /* AREA CHART */
-
-            new ApexCharts(document.querySelector("#chartTransaksiAset"), {
+        const globalChart = new ApexCharts(
+            document.querySelector("#globalChart"), {
 
                 chart: {
-                    height: 350,
                     type: 'area',
-
+                    height: 350,
                     toolbar: {
                         show: false
                     },
-
-                    fontFamily: 'Public Sans'
-                },
-
-                series: [{
-                        name: 'Masuk',
-                        data: @json($dataMasuk ?? [])
-                    },
-                    {
-                        name: 'Keluar',
-                        data: @json($dataKeluar ?? [])
-                    }
-                ],
-
-                xaxis: {
-                    categories: @json($bulanLabel ?? []),
-
-                    labels: {
-                        style: {
-                            colors: labelColor
-                        }
+                    zoom: {
+                        enabled: false
                     }
                 },
-
-                yaxis: {
-                    labels: {
-                        style: {
-                            colors: labelColor
-                        }
-                    }
-                },
-
-                legend: {
-                    labels: {
-                        colors: labelColor
-                    },
-                    position: 'top',
-                    horizontalAlign: 'right'
-                },
-
-                colors: [
-                    '#696cff',
-                    '#8592a3'
-                ],
 
                 stroke: {
                     curve: 'smooth',
                     width: 3
                 },
 
+                dataLabels: {
+                    enabled: false
+                },
+
                 fill: {
                     type: 'gradient',
-
                     gradient: {
-                        opacityFrom: 0.6,
-                        opacityTo: 0.1
+                        opacityFrom: .35,
+                        opacityTo: .05
                     }
-                }
+                },
 
-            }).render()
+                series: [
 
+                    {
+                        name: 'Penerimaan',
+                        data: @json($dashboard['grafik']['masuk'])
+                    },
 
+                    {
+                        name: 'Pemakaian',
+                        data: @json($dashboard['grafik']['keluar'])
+                    },
 
-            /* DONUT */
+                    {
+                        name: 'Mutasi',
+                        data: @json($dashboard['grafik']['mutasi'])
+                    },
 
-            new ApexCharts(document.querySelector("#chartDonutAset"), {
+                    {
+                        name: 'Maintenance',
+                        data: @json($dashboard['grafik']['maintenance'])
+                    },
 
-                chart: {
+                    {
+                        name: 'Peminjaman',
+                        data: @json($dashboard['grafik']['peminjaman'])
+                    }
 
-                    type: 'donut',
+                ],
 
-                    height: 350,
+                xaxis: {
 
-                    width: '100%'
+                    categories: @json($dashboard['grafik']['bulan'])
 
                 },
 
-                series: @json($komposisiAset->pluck('total')->map(fn($v) => (int) $v)->values()),
+                legend: {
 
-                labels: @json($komposisiAset->pluck('nama_barang')),
+                    position: 'top'
+
+                },
 
                 colors: [
+
                     '#696cff',
-                    '#ff9f43',
-                    '#28c76f'
-                ],
+
+                    '#71dd37',
+
+                    '#03c3ec',
+
+                    '#ff3e1d',
+
+                    '#ffab00'
+
+                ]
+
+            });
+
+        globalChart.render();
+        const activityChart = new ApexCharts(
+            document.querySelector("#activityChart"), {
+
+                chart: {
+                    type: 'donut',
+                    height: 320
+                },
+
+                labels: @json($kategori),
+
+                series: @json($totalKategori),
+
+                legend: {
+                    position: 'bottom'
+                },
 
                 plotOptions: {
                     pie: {
                         donut: {
-                            size: '75%',
-
-                            labels: {
-                                show: true,
-
-                                name: {
-                                    show: true,
-                                    color: labelColor,
-                                    offsetY: -10
-                                },
-
-                                value: {
-                                    show: true,
-                                    color: labelColor,
-                                    offsetY: 10,
-                                    fontWeight: 700,
-
-                                    formatter: function(val) {
-
-                                        return parseInt(val)
-
-                                    }
-                                },
-
-                                total: {
-                                    show: true,
-                                    label: 'Total Stok',
-                                    color: labelColor,
-
-                                    formatter: function(w) {
-
-                                        return w.globals.seriesTotals.reduce(function(a, b) {
-
-                                            return parseInt(a) + parseInt(b);
-
-                                        }, 0);
-
-                                    }
-                                }
-                            }
+                            size: '68%'
                         }
                     }
                 },
 
-                legend: {
-                    position: 'bottom',
-
-                    labels: {
-                        colors: labelColor
-                    }
+                dataLabels: {
+                    enabled: true
                 },
 
-                dataLabels: {
-                    enabled: false
-                }
+                colors: [
+                    '#696cff',
+                    '#71dd37',
+                    '#03c3ec',
+                    '#ffab00',
+                    '#ff3e1d',
+                    '#8592a3',
+                    '#0d6efd',
+                    '#20c997'
+                ]
 
-            }).render()
+            });
 
-
-
-            /* ANIMATION */
-
-            document.querySelectorAll(".fade-up")
-                .forEach((el, i) => {
-
-                    setTimeout(() => {
-                        el.classList.add("show")
-                    }, 150 * i)
-
-                })
-
-        })
+        activityChart.render();
     </script>
 
 @endsection

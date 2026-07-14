@@ -100,6 +100,10 @@ class Maping extends Model
   {
     return $this->jenis_penerima ?? '-';
   }
+  public function isAktif(): bool
+{
+    return $this->status === 'aktif';
+}
   /*
     |--------------------------------------------------------------------------
     | AUTO FILTER PERUSAHAAN
