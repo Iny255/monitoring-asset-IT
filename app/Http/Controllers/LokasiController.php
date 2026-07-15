@@ -44,7 +44,7 @@ class LokasiController extends Controller
 
     $lokasis = $lokasis
       ->latest()
-      ->paginate(5)
+      ->paginate(10)
       ->appends(request()->query());
 
     return view('content.dashboard.lokasi.index', compact('lokasis', 'perusahaans'));

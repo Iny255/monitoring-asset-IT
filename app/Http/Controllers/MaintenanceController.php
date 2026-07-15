@@ -31,7 +31,7 @@ class MaintenanceController extends Controller
         $q->where('perusahaan_id', auth()->user()->id_perusahaan);
       });
     }
-    
+
     // Search
     if ($request->filled('search')) {
       $search = $request->search;
@@ -85,27 +85,26 @@ class MaintenanceController extends Controller
 
       $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
     } else {
-      $inventarisList = Inventaris::with(['dataAset.kategori', 'perusahaan', 'keluarTerakhir.maping'])
-        ->availableForMaintenance()
-        ->where('perusahaan_id', auth()->user()->id_perusahaan)
-        ->orderBy('kode_aset')
-        ->get();
+      $inventarisList = collect();
 
       $perusahaans = collect();
     }
+
+    $kategoris = \App\Models\Kategori::orderBy('nama_barang')->get();
 
     return view('content.dashboard.maintenance.create', [
       'inventaris' => null,
       'inventarisList' => $inventarisList,
       'perusahaans' => $perusahaans,
+      'kategoris' => $kategoris,
     ]);
   }
   public function createFromMapping(Maping $maping)
   {
     if ($maping->status != 'aktif') {
-        return redirect()
-            ->route('maping.index')
-            ->with('error', 'Mapping sudah tidak aktif sehingga tidak dapat dilakukan Service / Maintenance.');
+      return redirect()
+        ->route('maping.index')
+        ->with('error', 'Mapping sudah tidak aktif sehingga tidak dapat dilakukan Service / Maintenance.');
     }
 
     $maping->load(['keluar.inventaris.dataAset', 'keluar.inventaris.perusahaan']);
@@ -137,7 +136,6 @@ class MaintenanceController extends Controller
   }
   public function createFromPeminjaman(Peminjaman $peminjaman)
   {
-    
     $peminjaman->load(['inventaris.dataAset.kategori', 'inventaris.perusahaan']);
 
     $inventaris = $peminjaman->inventaris;
@@ -174,6 +172,24 @@ class MaintenanceController extends Controller
       ->where('perusahaan_id', $id)
       ->orderBy('kode_aset')
       ->get();
+  }
+  public function inventarisByKategori(Request $request, $kategori)
+  {
+    $query = Inventaris::with(['dataAset.kategori', 'perusahaan'])
+      ->availableForMaintenance()
+      ->whereHas('dataAset', function ($q) use ($kategori) {
+        $q->where('kategori_id', $kategori);
+      });
+
+    if (auth()->user()->role == 'super_admin') {
+      if ($request->filled('perusahaan')) {
+        $query->where('perusahaan_id', $request->perusahaan);
+      }
+    } else {
+      $query->where('perusahaan_id', auth()->user()->id_perusahaan);
+    }
+
+    return response()->json($query->orderBy('kode_aset')->get());
   }
 
   /**

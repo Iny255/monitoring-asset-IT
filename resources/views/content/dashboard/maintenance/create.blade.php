@@ -87,9 +87,35 @@
                                 </div>
 
                             @endif
+                            @if (!isset($inventaris))
+                                <div class="col-md-6 mb-3">
+
+                                    <label class="form-label">
+                                        Jenis Aset
+                                        <span class="text-danger">*</span>
+                                    </label>
+
+                                    <select id="kategori_id" class="form-select">
+
+                                        <option value="">
+                                            -- Pilih Jenis Aset --
+                                        </option>
+
+                                        @foreach ($kategoris as $kategori)
+                                            <option value="{{ $kategori->id }}">
+
+                                                {{ $kategori->nama_barang }}
+
+                                            </option>
+                                        @endforeach
+
+                                    </select>
+
+                                </div>
+                            @endif
 
                             {{-- Inventaris --}}
-                            <div class="col-md-12 mb-3">
+                            <div class="col-md-6 mb-3">
 
                                 <label class="form-label">
 
@@ -124,7 +150,7 @@
                                         <select name="inventaris_id" id="inventaris_id" class="form-select">
 
                                             <option value="">
-                                                -- Pilih Inventaris --
+                                                -- Pilih Jenis Aset Terlebih Dahulu --
                                             </option>
 
                                             @foreach ($inventarisList as $item)
@@ -547,148 +573,194 @@
         $(document).ready(function() {
             $('#perusahaan_id').change(function() {
 
-                let perusahaan = $(this).val();
+                $('#kategori_id').val('');
 
-                $('#inventaris_id').html('<option>Memuat...</option>');
-
-                if (perusahaan == '') {
-
-                    $('#inventaris_id').html(
-                        '<option>-- Pilih Perusahaan Terlebih Dahulu --</option>'
-                    );
-
-                    return;
-                }
-
-                $.get(
-                    '/dashboard/maintenance/inventaris/' + perusahaan,
-                    function(data) {
-
-                        let option =
-                            '<option value="">-- Pilih Inventaris --</option>';
-
-                        $.each(data, function(i, item) {
-
-                            option += `
-
-                <option
-                    value="${item.id}"
-                    data-kode-aset="${item.kode_aset}"
-                    data-no-inventaris="${item.no_inventaris}"
-                    data-barang="${item.data_aset.kategori.nama_barang}"
-                    data-merek="${item.data_aset.merek}"
-                    data-type="${item.data_aset.type}"
-                    data-warna="${item.data_aset.warna}"
-                    data-perusahaan="${item.perusahaan.nama_perusahaan}"
-                    data-status="${item.status}">
-
-                    ${item.kode_aset}
-                    -
-                    ${item.data_aset.kategori.nama_barang}
-                    |
-                    ${item.data_aset.merek}
-                    ${item.data_aset.type}
-
-                </option>`;
-
-                        });
-
-                        $('#inventaris_id').html(option);
-
-                    }
+                $('#inventaris_id').html(
+                    '<option value="">-- Pilih Jenis Aset Terlebih Dahulu --</option>'
                 );
 
+                $('#info_kode_aset').text('-');
+                $('#info_no_inventaris').text('-');
+                $('#info_barang').text('-');
+                $('#info_merek').text('-');
+                $('#info_type').text('-');
+                $('#info_warna').text('-');
+                $('#info_perusahaan').text('-');
+                $('#info_status').html('-');
+
             });
 
-            //--------------------------------------------------
-            // Pilih Inventaris (Manual)
-            //--------------------------------------------------
-            $('#inventaris_id').on('change', function() {
+         
 
-                let item = $(this).find(':selected');
+          
+        $('#kategori_id').change(function() {
 
-                $('#info_kode_aset').text(item.data('kode-aset') ?? '-');
+            let kategori = $(this).val();
 
-                $('#info_no_inventaris').text(item.data('no-inventaris') ?? '-');
+            let perusahaan = $('#perusahaan_id').length ?
+                $('#perusahaan_id').val() :
+                '';
 
-                $('#info_barang').text(item.data('barang') ?? '-');
+            if (kategori == '') {
 
-                $('#info_merek').text(item.data('merek') ?? '-');
+                $('#inventaris_id').html(
+                    '<option value="">-- Pilih Jenis Aset Terlebih Dahulu --</option>'
+                );
 
-                $('#info_type').text(item.data('type') ?? '-');
+                return;
 
-                $('#info_warna').text(item.data('warna') ?? '-');
+            }
 
-                $('#info_perusahaan').text(item.data('perusahaan') ?? '-');
+            $('#inventaris_id').html(
+                '<option>Memuat...</option>'
+            );
 
+            $.get(
+               "/dashboard/maintenance/inventaris-by-kategori/" + kategori, {
+                    perusahaan: perusahaan
+                },
+                function(data) {
 
-                let status = item.data('status');
+                    let option =
+                        '<option value="">-- Pilih Inventaris --</option>';
 
-                let badge = '-';
+                    $.each(data, function(i, item) {
 
-                switch (status) {
+                        option += `
+<option
 
-                    case 'TERSEDIA':
-                        badge = '<span class="badge bg-label-success">TERSEDIA</span>';
-                        break;
+value="${item.id}"
 
-                    case 'DIPAKAI':
-                        badge = '<span class="badge bg-label-primary">DIPAKAI</span>';
-                        break;
+data-kode-aset="${item.kode_aset}"
 
-                    case 'DIPINJAM':
-                        badge = '<span class="badge bg-label-warning">DIPINJAM</span>';
-                        break;
+data-no-inventaris="${item.no_inventaris}"
 
-                    case 'RUSAK':
-                        badge = '<span class="badge bg-label-danger">RUSAK</span>';
-                        break;
-                    case 'AFKIR':
-                        badge = '<span class="badge bg-dark">AFKIR</span>';
-                        break;
+data-barang="${item.data_aset.kategori.nama_barang}"
 
-                    default:
-                        badge = '-';
+data-merek="${item.data_aset.merek}"
+
+data-type="${item.data_aset.type}"
+
+data-warna="${item.data_aset.warna}"
+
+data-perusahaan="${item.perusahaan.nama_perusahaan}"
+
+data-status="${item.status}"
+
+>
+
+${item.kode_aset}
+
+-
+
+${item.data_aset.kategori.nama_barang}
+
+|
+
+${item.data_aset.merek}
+
+${item.data_aset.type}
+
+</option>`;
+                    });
+
+                    $('#inventaris_id').html(option);
 
                 }
 
-                $('#info_status').html(badge);
+            );
 
-            });
+        });
+
+        //--------------------------------------------------
+        // Pilih Inventaris (Manual)
+        //--------------------------------------------------
+        $('#inventaris_id').on('change', function() {
+
+            let item = $(this).find(':selected');
+
+            $('#info_kode_aset').text(item.data('kode-aset') ?? '-');
+
+            $('#info_no_inventaris').text(item.data('no-inventaris') ?? '-');
+
+            $('#info_barang').text(item.data('barang') ?? '-');
+
+            $('#info_merek').text(item.data('merek') ?? '-');
+
+            $('#info_type').text(item.data('type') ?? '-');
+
+            $('#info_warna').text(item.data('warna') ?? '-');
+
+            $('#info_perusahaan').text(item.data('perusahaan') ?? '-');
 
 
-            //--------------------------------------------------
-            // Format Biaya
-            //--------------------------------------------------
-            $('#biaya').on('keyup', function() {
+            let status = item.data('status');
 
-                let angka = this.value.replace(/\D/g, '');
+            let badge = '-';
 
-                this.value = angka;
+            switch (status) {
 
-            });
+                case 'TERSEDIA':
+                    badge = '<span class="badge bg-label-success">TERSEDIA</span>';
+                    break;
+
+                case 'DIPAKAI':
+                    badge = '<span class="badge bg-label-primary">DIPAKAI</span>';
+                    break;
+
+                case 'DIPINJAM':
+                    badge = '<span class="badge bg-label-warning">DIPINJAM</span>';
+                    break;
+
+                case 'RUSAK':
+                    badge = '<span class="badge bg-label-danger">RUSAK</span>';
+                    break;
+                case 'AFKIR':
+                    badge = '<span class="badge bg-dark">AFKIR</span>';
+                    break;
+
+                default:
+                    badge = '-';
+
+            }
+
+            $('#info_status').html(badge);
+
+        });
 
 
-            //--------------------------------------------------
-            // Validasi Inventaris
-            //--------------------------------------------------
-            $('form').submit(function() {
+        //--------------------------------------------------
+        // Format Biaya
+        //--------------------------------------------------
+        $('#biaya').on('keyup', function() {
 
-                if ($('#inventaris_id').length) {
+            let angka = this.value.replace(/\D/g, '');
 
-                    if ($('#inventaris_id').val() == '') {
+            this.value = angka;
 
-                        alert('Silakan pilih inventaris terlebih dahulu.');
+        });
 
-                        $('#inventaris_id').focus();
 
-                        return false;
+        //--------------------------------------------------
+        // Validasi Inventaris
+        //--------------------------------------------------
+        $('form').submit(function() {
 
-                    }
+        if ($('#inventaris_id').length) {
 
-                }
+            if ($('#inventaris_id').val() == '') {
 
-            });
+                alert('Silakan pilih inventaris terlebih dahulu.');
+
+                $('#inventaris_id').focus();
+
+                return false;
+
+            }
+
+        }
+
+        });
 
         });
     </script>

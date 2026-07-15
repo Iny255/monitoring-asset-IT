@@ -164,8 +164,13 @@ Route::middleware(['auth'])->group(function () {
       'hak-akses.filter'
     );
     Route::get('/dashboard/maintenance/inventaris/{id}', [MaintenanceController::class, 'inventarisPerusahaan'])->name(
-      'maintenance.inventaris'
+      'maintenance.inventarisPerusahaan'
     );
+
+    Route::get('/dashboard/maintenance/inventaris-by-kategori/{kategori}', [
+      MaintenanceController::class,
+      'inventarisByKategori',
+    ])->name('maintenance.inventarisKategori');
     Route::get('/dashboard/maping/{maping}/servis', [MaintenanceController::class, 'createFromMapping'])->name(
       'maping.servis'
     );
