@@ -4,7 +4,7 @@
 
 @section('content')
 
-    <form action="{{ route('maintenance.store') }}" method="POST">
+    <form action="{{ route('maintenance.store') }}" method="POST" enctype="multipart/form-data">
 
         @csrf
         {{-- Mapping --}}
@@ -346,6 +346,25 @@
 
                             </div>
 
+                            {{-- Upload Gambar --}}
+                            <div class="col-md-12 mb-3">
+
+                                <label class="form-label">
+
+                                    Upload Gambar / Foto Bukti
+
+                                </label>
+
+                                <input type="file" name="gambar" class="form-control @error('gambar') is-invalid @enderror" accept="image/*">
+
+                                @error('gambar')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+
+                                <small class="text-muted">Format: JPG, JPEG, PNG, WEBP, GIF. Maksimal 2MB.</small>
+
+                            </div>
+
                         </div>
 
                     </div>
@@ -573,12 +592,19 @@
         $(document).ready(function() {
             $('#perusahaan_id').change(function() {
 
-                $('#kategori_id').val('');
+                let perusahaan = $(this).val();
 
+                // Reset kategori
+                $('#kategori_id').html(
+                    '<option value="">-- Pilih Jenis Aset --</option>'
+                );
+
+                // Reset inventaris
                 $('#inventaris_id').html(
                     '<option value="">-- Pilih Jenis Aset Terlebih Dahulu --</option>'
                 );
 
+                // Reset informasi
                 $('#info_kode_aset').text('-');
                 $('#info_no_inventaris').text('-');
                 $('#info_barang').text('-');
@@ -588,45 +614,66 @@
                 $('#info_perusahaan').text('-');
                 $('#info_status').html('-');
 
-            });
+                if (!perusahaan) {
+                    return;
+                }
 
-         
+                $.get('/dashboard/get-kategori/' + perusahaan, function(data) {
 
-          
-        $('#kategori_id').change(function() {
-
-            let kategori = $(this).val();
-
-            let perusahaan = $('#perusahaan_id').length ?
-                $('#perusahaan_id').val() :
-                '';
-
-            if (kategori == '') {
-
-                $('#inventaris_id').html(
-                    '<option value="">-- Pilih Jenis Aset Terlebih Dahulu --</option>'
-                );
-
-                return;
-
-            }
-
-            $('#inventaris_id').html(
-                '<option>Memuat...</option>'
-            );
-
-            $.get(
-               "/dashboard/maintenance/inventaris-by-kategori/" + kategori, {
-                    perusahaan: perusahaan
-                },
-                function(data) {
-
-                    let option =
-                        '<option value="">-- Pilih Inventaris --</option>';
+                    let option = '<option value="">-- Pilih Jenis Aset --</option>';
 
                     $.each(data, function(i, item) {
 
                         option += `
+                <option value="${item.id}">
+                    ${item.nama_barang}
+                </option>
+            `;
+
+                    });
+
+                    $('#kategori_id').html(option);
+
+                });
+
+            });
+
+
+
+            $('#kategori_id').change(function() {
+
+                let kategori = $(this).val();
+
+                let perusahaan = $('#perusahaan_id').length ?
+                    $('#perusahaan_id').val() :
+                    '';
+
+                if (kategori == '') {
+
+                    $('#inventaris_id').html(
+                        '<option value="">-- Pilih Jenis Aset Terlebih Dahulu --</option>'
+                    );
+
+                    return;
+
+                }
+
+                $('#inventaris_id').html(
+                    '<option>Memuat...</option>'
+                );
+
+                $.get(
+                    "/dashboard/maintenance/inventaris-by-kategori/" + kategori, {
+                        perusahaan: perusahaan
+                    },
+                    function(data) {
+
+                        let option =
+                            '<option value="">-- Pilih Inventaris --</option>';
+
+                        $.each(data, function(i, item) {
+
+                            option += `
 <option
 
 value="${item.id}"
@@ -662,105 +709,105 @@ ${item.data_aset.merek}
 ${item.data_aset.type}
 
 </option>`;
-                    });
+                        });
 
-                    $('#inventaris_id').html(option);
+                        $('#inventaris_id').html(option);
+
+                    }
+
+                );
+
+            });
+
+            //--------------------------------------------------
+            // Pilih Inventaris (Manual)
+            //--------------------------------------------------
+            $('#inventaris_id').on('change', function() {
+
+                let item = $(this).find(':selected');
+
+                $('#info_kode_aset').text(item.data('kode-aset') ?? '-');
+
+                $('#info_no_inventaris').text(item.data('no-inventaris') ?? '-');
+
+                $('#info_barang').text(item.data('barang') ?? '-');
+
+                $('#info_merek').text(item.data('merek') ?? '-');
+
+                $('#info_type').text(item.data('type') ?? '-');
+
+                $('#info_warna').text(item.data('warna') ?? '-');
+
+                $('#info_perusahaan').text(item.data('perusahaan') ?? '-');
+
+
+                let status = item.data('status');
+
+                let badge = '-';
+
+                switch (status) {
+
+                    case 'TERSEDIA':
+                        badge = '<span class="badge bg-label-success">TERSEDIA</span>';
+                        break;
+
+                    case 'DIPAKAI':
+                        badge = '<span class="badge bg-label-primary">DIPAKAI</span>';
+                        break;
+
+                    case 'DIPINJAM':
+                        badge = '<span class="badge bg-label-warning">DIPINJAM</span>';
+                        break;
+
+                    case 'RUSAK':
+                        badge = '<span class="badge bg-label-danger">RUSAK</span>';
+                        break;
+                    case 'AFKIR':
+                        badge = '<span class="badge bg-dark">AFKIR</span>';
+                        break;
+
+                    default:
+                        badge = '-';
 
                 }
 
-            );
+                $('#info_status').html(badge);
 
-        });
-
-        //--------------------------------------------------
-        // Pilih Inventaris (Manual)
-        //--------------------------------------------------
-        $('#inventaris_id').on('change', function() {
-
-            let item = $(this).find(':selected');
-
-            $('#info_kode_aset').text(item.data('kode-aset') ?? '-');
-
-            $('#info_no_inventaris').text(item.data('no-inventaris') ?? '-');
-
-            $('#info_barang').text(item.data('barang') ?? '-');
-
-            $('#info_merek').text(item.data('merek') ?? '-');
-
-            $('#info_type').text(item.data('type') ?? '-');
-
-            $('#info_warna').text(item.data('warna') ?? '-');
-
-            $('#info_perusahaan').text(item.data('perusahaan') ?? '-');
+            });
 
 
-            let status = item.data('status');
+            //--------------------------------------------------
+            // Format Biaya
+            //--------------------------------------------------
+            $('#biaya').on('keyup', function() {
 
-            let badge = '-';
+                let angka = this.value.replace(/\D/g, '');
 
-            switch (status) {
+                this.value = angka;
 
-                case 'TERSEDIA':
-                    badge = '<span class="badge bg-label-success">TERSEDIA</span>';
-                    break;
-
-                case 'DIPAKAI':
-                    badge = '<span class="badge bg-label-primary">DIPAKAI</span>';
-                    break;
-
-                case 'DIPINJAM':
-                    badge = '<span class="badge bg-label-warning">DIPINJAM</span>';
-                    break;
-
-                case 'RUSAK':
-                    badge = '<span class="badge bg-label-danger">RUSAK</span>';
-                    break;
-                case 'AFKIR':
-                    badge = '<span class="badge bg-dark">AFKIR</span>';
-                    break;
-
-                default:
-                    badge = '-';
-
-            }
-
-            $('#info_status').html(badge);
-
-        });
+            });
 
 
-        //--------------------------------------------------
-        // Format Biaya
-        //--------------------------------------------------
-        $('#biaya').on('keyup', function() {
+            //--------------------------------------------------
+            // Validasi Inventaris
+            //--------------------------------------------------
+            $('form').submit(function() {
 
-            let angka = this.value.replace(/\D/g, '');
+                if ($('#inventaris_id').length) {
 
-            this.value = angka;
+                    if ($('#inventaris_id').val() == '') {
 
-        });
+                        alert('Silakan pilih inventaris terlebih dahulu.');
 
+                        $('#inventaris_id').focus();
 
-        //--------------------------------------------------
-        // Validasi Inventaris
-        //--------------------------------------------------
-        $('form').submit(function() {
+                        return false;
 
-        if ($('#inventaris_id').length) {
+                    }
 
-            if ($('#inventaris_id').val() == '') {
+                }
 
-                alert('Silakan pilih inventaris terlebih dahulu.');
-
-                $('#inventaris_id').focus();
-
-                return false;
-
-            }
-
-        }
-
-        });
+            });
 
         });
     </script>

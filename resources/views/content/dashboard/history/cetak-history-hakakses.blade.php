@@ -170,6 +170,9 @@
                     <td>
 
                         {{ optional($item->access)->nama_akses }}
+                        @if(!empty($item->email))
+                            <br><small style="color: #154b87;">({{ $item->email }})</small>
+                        @endif
 
                     </td>
 

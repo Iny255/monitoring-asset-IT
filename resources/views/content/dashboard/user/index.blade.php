@@ -1,43 +1,62 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'User')
+@section('title', 'Manajemen User Sistem')
 
 @section('content')
 
-    <!-- BOXICONS (WAJIB UNTUK ICON) -->
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <div class="container-xxl flex-grow-1 container-p-y">
 
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show">
-            {{ session('success') }}
-            <button class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div class="alert alert-danger alert-dismissible fade show">
-            {{ session('error') }}
-            <button class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
-    @if ($errors->any())
-        <div class="alert alert-danger">
-            <ul class="mb-0">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-    <div class="card">
-        <div class="card-header d-flex justify-content-between">
-            <h5 class="text-primary mb-0">Data User</h5>
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
-                Tambah User
-            </button>
+        {{-- HERO HEADER --}}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-md bg-label-primary me-3">
+                            <span class="avatar-initial rounded">
+                                <i class="bx bx-user-circle fs-3"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="fw-bold mb-0">Manajemen User Sistem</h3>
+                            <small class="text-muted">Kelola akun pengguna dan hak akses peran (Super Admin & Petugas)</small>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+                            <i class="bx bx-user-plus me-1"></i> Tambah User
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="card-body">
+        {{-- ALERT --}}
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show">
+                {{ session('success') }}
+                <button class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show">
+                {{ session('error') }}
+                <button class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
 
             <!-- SEARCH -->
             <form method="GET" action="{{ url('/dashboard/user') }}" class="row mb-3">
@@ -70,7 +89,22 @@
                                 <td>{{ $user->username }}</td>
                                 <td>{{ $user->email }}</td>
                                 <td>{{ $user->role }}</td>
-                                <td>{{ $user->perusahaan->nama_perusahaan ?? '-' }}</td>
+                                <td>
+                                    @if ($user->role === 'super_admin')
+                                        <span class="badge bg-label-primary">Semua Perusahaan</span>
+                                    @elseif ($user->perusahaan)
+                                        <strong>{{ $user->perusahaan->nama_perusahaan }}</strong>
+                                        @if ($user->perusahaan->tipe === 'Cabang' || $user->perusahaan->parent_id)
+                                            <br>
+                                            <small class="text-muted"><i class="bx bx-git-branch me-1"></i>Cabang {{ $user->perusahaan->parent->nama_perusahaan ?? '' }}</small>
+                                        @else
+                                            <br>
+                                            <small class="text-primary"><i class="bx bx-building-house me-1"></i>Holding / Induk</small>
+                                        @endif
+                                    @else
+                                        -
+                                    @endif
+                                </td>
 
                                 <td>
                                     <!-- EDIT -->
@@ -126,27 +160,27 @@
 
                             <div class="col-md-6 mb-3">
                                 <label>Username</label>
-                                <input type="text" name="username" class="form-control">
+                                <input type="text" name="username" class="form-control" required>
                             </div>
 
                             <div class="col-md-6 mb-3">
                                 <label>Nama</label>
-                                <input type="text" name="name" class="form-control">
+                                <input type="text" name="name" class="form-control" required>
                             </div>
 
                             <div class="col-md-6 mb-3">
                                 <label>Email</label>
-                                <input type="email" name="email" class="form-control">
+                                <input type="email" name="email" class="form-control" required>
                             </div>
 
                             <div class="col-md-6 mb-3">
                                 <label>Password</label>
-                                <input type="password" name="password" class="form-control">
+                                <input type="password" name="password" class="form-control" required>
                             </div>
 
                             <div class="col-md-6 mb-3">
                                 <label>Role</label>
-                                <select name="role" class="form-control">
+                                <select name="role" class="form-select" required>
                                     <option value="">Pilih Role</option>
                                     <option value="petugas">Petugas</option>
                                     <option value="super_admin">Super Admin</option>
@@ -154,10 +188,18 @@
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label>Perusahaan</label>
-                                <select name="id_perusahaan" class="form-control">
-                                    <option value="">Pilih Perusahaan</option>
-                                    @foreach ($perusahaans as $p)
+                                <label>Perusahaan / Cabang</label>
+                                <select name="id_perusahaan" class="form-select">
+                                    <option value="">Pilih Perusahaan / Cabang</option>
+                                    @foreach ($parentPerusahaans as $induk)
+                                        <optgroup label="{{ $induk->nama_perusahaan }} (Holding)">
+                                            <option value="{{ $induk->id }}">{{ $induk->nama_perusahaan }} (Induk / HO)</option>
+                                            @foreach ($induk->cabangs as $cabang)
+                                                <option value="{{ $cabang->id }}">&nbsp;&nbsp;↳ {{ $cabang->nama_perusahaan }} (Cabang)</option>
+                                            @endforeach
+                                        </optgroup>
+                                    @endforeach
+                                    @foreach ($perusahaans->whereNull('parent_id')->where('cabangs', '==', collect()) as $p)
                                         <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
                                     @endforeach
                                 </select>
@@ -197,37 +239,43 @@
 
                             <div class="col-md-6 mb-3">
                                 <label>Username</label>
-                                <input type="text" id="editUsername" name="username" class="form-control">
+                                <input type="text" id="editUsername" name="username" class="form-control" required>
                             </div>
 
                             <div class="col-md-6 mb-3">
                                 <label>Nama</label>
-                                <input type="text" id="editName" name="name" class="form-control">
+                                <input type="text" id="editName" name="name" class="form-control" required>
                             </div>
 
                             <div class="col-md-6 mb-3">
                                 <label>Email</label>
-                                <input type="email" id="editEmail" name="email" class="form-control">
+                                <input type="email" id="editEmail" name="email" class="form-control" required>
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label>Password</label>
+                                <label>Password (Kosongkan jika tidak diubah)</label>
                                 <input type="password" name="password" class="form-control">
                             </div>
 
                             <div class="col-md-6 mb-3">
                                 <label>Role</label>
-                                <select id="editRole" name="role" class="form-control">
+                                <select id="editRole" name="role" class="form-select" required>
                                     <option value="petugas">Petugas</option>
                                     <option value="super_admin">Super Admin</option>
                                 </select>
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label>Perusahaan</label>
-                                <select id="editPerusahaan" name="id_perusahaan" class="form-control">
-                                    @foreach ($perusahaans as $p)
-                                        <option value="{{ $p->id }}">{{ $p->nama_perusahaan }}</option>
+                                <label>Perusahaan / Cabang</label>
+                                <select id="editPerusahaan" name="id_perusahaan" class="form-select">
+                                    <option value="">Pilih Perusahaan / Cabang</option>
+                                    @foreach ($parentPerusahaans as $induk)
+                                        <optgroup label="{{ $induk->nama_perusahaan }} (Holding)">
+                                            <option value="{{ $induk->id }}">{{ $induk->nama_perusahaan }} (Induk / HO)</option>
+                                            @foreach ($induk->cabangs as $cabang)
+                                                <option value="{{ $cabang->id }}">&nbsp;&nbsp;↳ {{ $cabang->nama_perusahaan }} (Cabang)</option>
+                                            @endforeach
+                                        </optgroup>
                                     @endforeach
                                 </select>
                             </div>

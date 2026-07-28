@@ -5,7 +5,7 @@
 @section('content')
 
     <form action="{{ route('maintenance.update', is_object($maintenance) ? $maintenance->id : $maintenance) }}"
-        method="POST">
+        method="POST" enctype="multipart/form-data">
         @csrf
         @method('PUT')
         {{-- Mapping --}}
@@ -232,6 +232,32 @@
                                 </label>
 
                                 <textarea name="catatan" rows="3" class="form-control">{{ old('catatan', $maintenance->catatan) }}</textarea>
+
+                            </div>
+
+                            {{-- Upload Gambar --}}
+                            <div class="col-md-12 mb-3">
+
+                                <label class="form-label">
+                                    Upload Gambar / Foto Bukti
+                                </label>
+
+                                <input type="file" name="gambar" class="form-control @error('gambar') is-invalid @enderror" accept="image/*">
+
+                                @error('gambar')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
+
+                                <small class="text-muted">Format: JPG, JPEG, PNG, WEBP, GIF. Maksimal 2MB. Biarkan kosong jika tidak ingin mengubah gambar.</small>
+
+                                @if ($maintenance->gambar)
+                                    <div class="mt-2">
+                                        <small class="d-block text-muted mb-1">Gambar saat ini:</small>
+                                        <a href="{{ asset('storage/' . $maintenance->gambar) }}" target="_blank">
+                                            <img src="{{ asset('storage/' . $maintenance->gambar) }}" alt="Gambar Servis" class="img-thumbnail rounded" style="max-height: 150px;">
+                                        </a>
+                                    </div>
+                                @endif
 
                             </div>
 

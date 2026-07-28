@@ -30,29 +30,34 @@
         }
     </style>
 
-    <div class="row">
+    <div class="container-xxl flex-grow-1 container-p-y">
 
-        <div class="col-12">
-
-            <div class="card">
-
-                <div class="card-header d-flex justify-content-between align-items-center">
-
-                    <div>
-                        <h5 class="mb-0">Data Peminjaman Aset</h5>
-                        <small class="text-muted">
-                            Daftar transaksi peminjaman inventaris.
-                        </small>
+        {{-- HERO HEADER --}}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-md bg-label-primary me-3">
+                            <span class="avatar-initial rounded">
+                                <i class="bx bx-time-five fs-3"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="fw-bold mb-0">Peminjaman Aset</h3>
+                            <small class="text-muted">Kelola transaksi peminjaman aset sementara dan pengembalian</small>
+                        </div>
                     </div>
-
-                    <a href="{{ route('peminjaman.create') }}" class="btn btn-primary">
-                        <i class="bx bx-plus"></i>
-                        Tambah Peminjaman
-                    </a>
-
+                    <div>
+                        <a href="{{ route('peminjaman.create') }}" class="btn btn-primary">
+                            <i class="bx bx-plus me-1"></i> Input Peminjaman
+                        </a>
+                    </div>
                 </div>
+            </div>
+        </div>
 
-                <div class="card-body">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
 
                     {{-- Filter --}}
 
@@ -172,6 +177,12 @@
                                 <i class="bx bxs-file-pdf me-1"></i>
 
                                 Cetak PDF
+
+                            </a>
+                            <a href="{{ route('peminjaman.exportExcel', request()->query()) }}" class="btn btn-success">
+
+                                <i class="bx bxs-file-export"></i>
+                                Export Excel
 
                             </a>
                         </div>

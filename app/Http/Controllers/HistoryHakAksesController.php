@@ -7,6 +7,7 @@ use App\Models\HistoryHakAkses;
 use App\Models\Karyawan;
 use App\Models\Perusahaan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class HistoryHakAksesController extends Controller
@@ -130,15 +131,16 @@ class HistoryHakAksesController extends Controller
         */
 
     $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+    $selectedPerusahaanId = $user->role == 'super_admin' ? $request->perusahaan_id : $user->id_perusahaan;
 
-    $karyawans =
-      $user->role == 'super_admin'
-        ? Karyawan::orderBy('nama_karyawan')->get()
-        : Karyawan::where('id_perusahaan', $user->id_perusahaan)
-          ->orderBy('nama_karyawan')
-          ->get();
+    $karyawans = Karyawan::query()
+      ->when($selectedPerusahaanId, fn($q) => $q->where('id_perusahaan', $selectedPerusahaanId))
+      ->orderBy('nama_karyawan')
+      ->get();
 
     $accesses = Access::where('status', 'aktif')
+      ->when($selectedPerusahaanId, fn($q) => $q->where('id_perusahaan', $selectedPerusahaanId))
+      ->when($request->filled('jenis'), fn($q) => $q->where('jenis', $request->jenis))
       ->orderBy('nama_akses')
       ->get();
 
@@ -163,13 +165,14 @@ class HistoryHakAksesController extends Controller
     |--------------------------------------------------------------------------
     */
 
+    $perusahaanId = $request->get('perusahaan_id', $request->get('perusahaan'));
     if ($user->role != 'super_admin') {
       $query->whereHas('maping', function ($q) use ($user) {
         $q->where('id_perusahaan', $user->id_perusahaan);
       });
-    } elseif ($request->filled('perusahaan')) {
-      $query->whereHas('maping', function ($q) use ($request) {
-        $q->where('id_perusahaan', $request->perusahaan);
+    } elseif (!empty($perusahaanId)) {
+      $query->whereHas('maping', function ($q) use ($perusahaanId) {
+        $q->where('id_perusahaan', $perusahaanId);
       });
     }
 
@@ -257,6 +260,80 @@ class HistoryHakAksesController extends Controller
     'content.dashboard.history.cetak-history-hakakses',
     compact('histories', 'user')
 );
-    
+  }
+
+  public function exportExcel(Request $request)
+  {
+    $user = auth()->user();
+
+    $query = HistoryHakAkses::with([
+      'maping.keluar.inventaris.dataAset.kategori',
+      'maping.keluar.karyawan',
+      'access',
+      'user',
+      'maping.perusahaan',
+      'maping.lokasi',
+    ]);
+
+    $perusahaanId = $request->get('perusahaan_id', $request->get('perusahaan'));
+    if ($user->role != 'super_admin') {
+      $query->whereHas('maping', function ($q) use ($user) {
+        $q->where('id_perusahaan', $user->id_perusahaan);
+      });
+    } elseif (!empty($perusahaanId)) {
+      $query->whereHas('maping', function ($q) use ($perusahaanId) {
+        $q->where('id_perusahaan', $perusahaanId);
+      });
+    }
+
+    if ($request->filled('karyawan_id')) {
+      $query->whereHas('maping.keluar', function ($q) use ($request) {
+        $q->where('karyawan_id', $request->karyawan_id);
+      });
+    }
+
+    if ($request->filled('jenis')) {
+      $query->whereHas('access', function ($q) use ($request) {
+        $q->where('jenis', $request->jenis);
+      });
+    }
+
+    if ($request->filled('access_id')) {
+      $query->where('access_id', $request->access_id);
+    }
+
+    if ($request->filled('aksi')) {
+      $query->where('aksi', $request->aksi);
+    }
+
+    $tanggalAwal = $request->get('tanggal_awal', $request->get('tanggal_mulai'));
+    if ($tanggalAwal && $request->filled('tanggal_akhir')) {
+      $query->whereBetween('created_at', [$tanggalAwal, $request->tanggal_akhir]);
+    } elseif ($tanggalAwal) {
+      $query->whereDate('created_at', '>=', $tanggalAwal);
+    } elseif ($request->filled('tanggal_akhir')) {
+      $query->whereDate('created_at', '<=', $request->tanggal_akhir);
+    }
+
+    if ($request->filled('search')) {
+      $search = trim($request->search);
+
+      $query->where(function ($q) use ($search) {
+        $q->whereHas('access', function ($qq) use ($search) {
+          $qq->where('nama_akses', 'like', "%{$search}%");
+        })->orWhereHas('maping.keluar.inventaris', function ($qq) use ($search) {
+          $qq->where('no_inventaris', 'like', "%{$search}%")->orWhere('kode_aset', 'like', "%{$search}%");
+        })->orWhereHas('maping.keluar.karyawan', function ($qq) use ($search) {
+          $qq->where('nama_karyawan', 'like', "%{$search}%");
+        });
+      });
+    }
+
+    $histories = $query->latest()->get();
+
+    return \Maatwebsite\Excel\Facades\Excel::download(
+      new \App\Exports\HistoryHakAksesExport($histories),
+      'History_Hak_Akses.xlsx'
+    );
   }
 }

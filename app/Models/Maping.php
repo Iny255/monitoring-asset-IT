@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use App\Models\Lokasi;
 use App\Models\Keluar;
 use App\Models\Perusahaan;
@@ -15,6 +16,7 @@ class Maping extends Model
   use HasFactory;
 
   protected $fillable = [
+    'uuid',
     'id_keluar',
     'id_lokasi',
     'id_perusahaan',
@@ -113,6 +115,9 @@ class Maping extends Model
   protected static function booted()
   {
     static::creating(function ($model) {
+      if (empty($model->uuid)) {
+        $model->uuid = (string) Str::uuid();
+      }
       if (empty($model->id_perusahaan) && auth()->check() && auth()->user()->role !== 'super_admin') {
         $model->id_perusahaan = auth()->user()->id_perusahaan;
       }

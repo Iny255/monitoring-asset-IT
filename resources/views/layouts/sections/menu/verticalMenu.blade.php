@@ -42,9 +42,27 @@
 
 
     /* =====================================
+       DISABLE WHITE LINE COVERING LOGO
+    ===================================== */
+    .menu-inner-shadow,
+    .layout-menu .menu-inner-shadow {
+        display: none !important;
+        opacity: 0 !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        pointer-events: none !important;
+        background: none !important;
+        box-shadow: none !important;
+    }
+
+    /* =====================================
        BRAND AREA
     ===================================== */
     .layout-menu .app-brand {
+
+        position: relative;
+
+        z-index: 10;
 
         height: 110px !important;
 
@@ -56,7 +74,7 @@
 
         padding: 18px 0;
 
-        background: transparent !important;
+        background: #ffffff !important;
 
         border-bottom: 1px solid rgba(0, 0, 0, .05);
 

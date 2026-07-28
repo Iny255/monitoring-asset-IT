@@ -225,4 +225,63 @@ class HistoryMaintenanceController extends Controller
 
     return view('content.dashboard.history-maintenance.cetak', compact('laporan'));
   }
+
+  public function exportExcel(Request $request)
+  {
+    $query = Maintenance::with(['inventaris.dataAset', 'inventaris.perusahaan', 'creator']);
+
+    if (auth()->user()->role == 'super_admin') {
+      if ($request->filled('perusahaan_id')) {
+        $query->whereHas('inventaris', function ($q) use ($request) {
+          $q->where('perusahaan_id', $request->perusahaan_id);
+        });
+      }
+    } else {
+      $query->whereHas('inventaris', function ($q) {
+        $q->where('perusahaan_id', auth()->user()->id_perusahaan);
+      });
+    }
+
+    if ($request->filled('tanggal_awal')) {
+      $query->whereDate('tanggal', '>=', $request->tanggal_awal);
+    }
+
+    if ($request->filled('tanggal_akhir')) {
+      $query->whereDate('tanggal', '<=', $request->tanggal_akhir);
+    }
+
+    if ($request->filled('jenis')) {
+      $query->where('jenis', $request->jenis);
+    }
+
+    if ($request->filled('status')) {
+      $query->where('status', $request->status);
+    }
+
+    if ($request->filled('asal')) {
+      $query->where('asal', $request->asal);
+    }
+
+    if ($request->filled('search')) {
+      $search = $request->search;
+      $query->where(function ($q) use ($search) {
+        $q->where('kode_service', 'like', "%{$search}%")
+          ->orWhere('vendor', 'like', "%{$search}%")
+          ->orWhereHas('inventaris', function ($qq) use ($search) {
+            $qq->where('kode_aset', 'like', "%{$search}%")
+              ->orWhere('no_inventaris', 'like', "%{$search}%")
+              ->orWhereHas('dataAset', function ($q3) use ($search) {
+                $q3->where('nama_barang', 'like', "%{$search}%");
+              });
+          });
+      });
+    }
+
+    $laporan = $query->latest()->get();
+
+    return \Maatwebsite\Excel\Facades\Excel::download(
+      new \App\Exports\MaintenanceExport($laporan, 'History Servis & Maintenance'),
+      'History_Servis_Maintenance.xlsx'
+    );
+  }
 }

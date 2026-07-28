@@ -295,27 +295,29 @@
 
                     </div>
 
-                    <div class="mt-4">
+                    <div class="mt-3 d-flex align-items-center gap-2 flex-wrap">
 
-                        <button class="btn btn-primary">
+                        <button type="submit" class="btn btn-primary">
 
-                            <i class="bx bx-search-alt"></i>
-
-                            Filter
+                            <i class="bx bx-search-alt me-1"></i> Filter
 
                         </button>
 
                         <a href="{{ route('history.hak-akses.index') }}" class="btn btn-outline-secondary">
 
-                            Reset
+                            <i class="bx bx-reset me-1"></i> Reset
 
                         </a>
                         <a href="{{ route('history.hak-akses.cetak', request()->query()) }}" target="_blank"
+                            class="btn btn-danger">
+
+                            <i class="bx bxs-file-pdf me-1"></i> Cetak PDF
+
+                        </a>
+                        <a href="{{ route('history.hak-akses.export_excel', request()->query()) }}"
                             class="btn btn-success">
 
-                            <i class="bx bxs-file-pdf me-1"></i>
-
-                            Cetak PDF
+                            <i class="bx bxs-file-export me-1"></i> Export Excel
 
                         </a>
 
@@ -431,12 +433,11 @@
                                     </small>
 
                                 </td>
-
                                 <td>
 
                                     <div class="fw-semibold">
 
-                                        {{ $history->maping->keluar->karyawan->nama_karyawan ?? '-' }}
+                                        {{ $history->maping->penerima ?? '-' }}
 
                                     </div>
 
@@ -455,6 +456,9 @@
                                         {{ $history->access->nama_akses }}
 
                                     </div>
+                                    @if(!empty($history->email))
+                                        <small class="text-primary d-block font-monospace"><i class="bx bx-envelope me-1"></i>{{ $history->email }}</small>
+                                    @endif
 
                                 </td>
 
@@ -486,15 +490,15 @@
 
                                     @if ($history->aksi == 'tambah')
                                         <span class="badge bg-success">
-
                                             Ditambahkan
-
+                                        </span>
+                                    @elseif ($history->aksi == 'update')
+                                        <span class="badge bg-warning text-dark">
+                                            Diubah
                                         </span>
                                     @else
                                         <span class="badge bg-danger">
-
                                             Dihapus
-
                                         </span>
                                     @endif
 
@@ -592,68 +596,42 @@
 @section('page-script')
     <script>
         $(document).ready(function() {
-
-
-
-            function loadHakAkses(jenis, selected = null) {
-
-                console.log('loadHakAkses', jenis);
-
+            function loadHakAkses() {
+                let jenis = $('#jenis').val();
+                let perusahaanId = $('select[name="perusahaan_id"]').val();
                 let access = $('#access_id');
+                let selectedAccess = "{{ request('access_id') }}";
 
                 access.html('<option value="">Semua Hak Akses</option>');
 
-                if (!jenis) {
-                    return;
-                }
+                let targetJenis = jenis ? jenis : 'all';
+                let url = "{{ route('hak-akses.filter', ':jenis') }}".replace(':jenis', encodeURIComponent(targetJenis));
 
                 $.ajax({
-
-                    url: "{{ route('hak-akses.filter', ':jenis') }}"
-                        .replace(':jenis', encodeURIComponent(jenis)),
-
+                    url: url,
                     type: "GET",
-
+                    data: { perusahaan_id: perusahaanId },
                     dataType: "json",
-
-                    beforeSend: function() {
-
-                    },
-
                     success: function(response) {
-
-                        console.log(response);
-
                         $.each(response, function(i, item) {
-
-                            access.append(
-                                `<option value="${item.id}">
-                            ${item.nama_akses}
-                        </option>`
-                            );
-
+                            let isSelected = selectedAccess == item.id ? 'selected' : '';
+                            let labelKet = item.jenis ? ` (${item.jenis})` : (item.kategori ? ` (${item.kategori})` : '');
+                            access.append(`<option value="${item.id}" ${isSelected}>${item.nama_akses}${labelKet}</option>`);
                         });
-
                     },
-
                     error: function(xhr) {
-
                         console.log(xhr);
-
                     }
-
                 });
-
             }
 
-            $('#jenis').on('change', function() {
-
-
-
-                loadHakAkses($(this).val());
-
+            $('#jenis, select[name="perusahaan_id"]').on('change', function() {
+                loadHakAkses();
             });
 
+            if ($('#jenis').val() || $('select[name="perusahaan_id"]').val() || "{{ request('access_id') }}") {
+                loadHakAkses();
+            }
         });
     </script>
 @endsection

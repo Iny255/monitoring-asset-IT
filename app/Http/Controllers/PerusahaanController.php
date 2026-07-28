@@ -23,15 +23,17 @@ class PerusahaanController extends Controller
   {
     $search = $request->search;
 
-    $query = Perusahaan::query();
+    $query = Perusahaan::with(['parent', 'cabangs']);
 
     if ($search) {
       $query->where(function ($q) use ($search) {
-        $q->where('nama_perusahaan', 'like', "%{$search}%");
+        $q->where('nama_perusahaan', 'like', "%{$search}%")
+          ->orWhere('kode_perusahaan', 'like', "%{$search}%");
       });
     }
 
-    $perusahaans = $query->latest()->paginate(10);
+    $perusahaans = $query->orderByRaw('COALESCE(parent_id, id), parent_id IS NOT NULL, id')->paginate(15)->appends($request->query());
+    $parentPerusahaans = Perusahaan::whereNull('parent_id')->orderBy('nama_perusahaan')->get();
 
     $last = Perusahaan::latest('id')->first();
 
@@ -41,28 +43,37 @@ class PerusahaanController extends Controller
       $kodePerusahaan = '01';
     }
 
-    return view('content.dashboard.perusahaan.index', compact('perusahaans', 'kodePerusahaan'));
+    return view('content.dashboard.perusahaan.index', compact('perusahaans', 'parentPerusahaans', 'kodePerusahaan'));
   }
 
   public function store(Request $request)
   {
     $validated = $request->validate([
-      'kode_perusahaan' => 'required|max:2|unique:perusahaans,kode_perusahaan',
+      'kode_perusahaan' => 'required|max:10|unique:perusahaans,kode_perusahaan',
       'nama_perusahaan' => 'required|max:100',
+      'tipe' => 'required|in:Induk,Cabang',
+      'parent_id' => 'nullable|required_if:tipe,Cabang|exists:perusahaans,id',
       'primary_color' => 'required',
       'secondary_color' => 'required',
       'logo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
     ]);
 
+    $logoPath = null;
+    if ($request->hasFile('logo')) {
+      $logoPath = $request->file('logo')->store('perusahaan', 'public');
+    }
+
     Perusahaan::create([
       'kode_perusahaan' => $validated['kode_perusahaan'],
       'nama_perusahaan' => strtoupper($validated['nama_perusahaan']),
+      'tipe' => $validated['tipe'],
+      'parent_id' => $validated['tipe'] === 'Cabang' ? $validated['parent_id'] : null,
       'primary_color' => $validated['primary_color'],
       'secondary_color' => $validated['secondary_color'],
-      'logo' => $logoPath ?? null,
+      'logo' => $logoPath,
     ]);
 
-    return back()->with('success', 'Perusahaan berhasil ditambahkan');
+    return back()->with('success', 'Perusahaan/Cabang berhasil ditambahkan');
   }
 
   public function edit(Perusahaan $perusahaan)
@@ -74,19 +85,26 @@ class PerusahaanController extends Controller
   {
     $validated = $request->validate([
       'nama_perusahaan' => 'required|max:100',
-
+      'tipe' => 'required|in:Induk,Cabang',
+      'parent_id' => 'nullable|required_if:tipe,Cabang|exists:perusahaans,id',
       'primary_color' => 'required',
-
       'secondary_color' => 'required',
+      'logo' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
     ]);
 
-    $perusahaan->update([
+    $data = [
       'nama_perusahaan' => strtoupper($validated['nama_perusahaan']),
-
+      'tipe' => $validated['tipe'],
+      'parent_id' => $validated['tipe'] === 'Cabang' ? $validated['parent_id'] : null,
       'primary_color' => $validated['primary_color'],
-
       'secondary_color' => $validated['secondary_color'],
-    ]);
+    ];
+
+    if ($request->hasFile('logo')) {
+      $data['logo'] = $request->file('logo')->store('perusahaan', 'public');
+    }
+
+    $perusahaan->update($data);
 
     return back()->with('success', 'Data berhasil diperbarui');
   }

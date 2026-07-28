@@ -7,7 +7,6 @@
       "slug": "dashboard-superadmin",
       "roles": ["super_admin"]
     },
-
     {
       "url": "dashboard/petugas",
       "name": "Dashboard",
@@ -29,52 +28,38 @@
       "roles": ["petugas", "super_admin"],
       "submenu": [
         {
-          "name": "Kategori",
-          "icon": "menu-icon tf-icons bx bx-category",
-          "submenu": [
-            {
-              "url": "dashboard/aset",
-              "name": "Aset",
-              "icon": "menu-icon tf-icons bi bi-tags"
-            },
-            {
-              "url": "dashboard/lokasi",
-              "name": "Lokasi",
-              "icon": "menu-icon tf-icons bi bi-geo-alt"
-            },
-            {
-              "url": "dashboard/useraset",
-              "name": "User Aset",
-              "icon": "menu-icon tf-icons bi bi-people"
-            },
-            {
-              "url": "dashboard/supplier",
-              "name": "Supplier",
-              "icon": "menu-icon tf-icons bi bi-truck"
-            },
-            {
-              "url": "dashboard/perusahaan",
-              "name": "Perusahaan",
-              "icon": "menu-icon tf-icons bi bi-building",
-              "roles": ["super_admin"]
-            }
-          ]
+          "url": "dashboard/aset",
+          "name": "Kategori Barang",
+          "icon": "menu-icon tf-icons bi bi-tags"
         },
         {
           "url": "dashboard/data-aset",
-          "name": "Data Aset",
+          "name": "Master Merek & Type",
           "icon": "menu-icon tf-icons bx bx-package"
         },
         {
-          "url": "dashboard/hak-akses",
-          "name": "Hak Akses & Aplikasi",
-          "icon": "menu-icon tf-icons bi bi-shield-lock",
-          "slug": "hak-akses",
-          "roles": ["petugas", "super_admin"]
+          "url": "dashboard/useraset",
+          "name": "Data Karyawan",
+          "icon": "menu-icon tf-icons bi bi-people"
+        },
+        {
+          "url": "dashboard/lokasi",
+          "name": "Lokasi Penempatan",
+          "icon": "menu-icon tf-icons bi bi-geo-alt"
+        },
+        {
+          "url": "dashboard/supplier",
+          "name": "Supplier / Vendor",
+          "icon": "menu-icon tf-icons bi bi-truck"
+        },
+        {
+          "url": "dashboard/perusahaan",
+          "name": "Perusahaan",
+          "icon": "menu-icon tf-icons bi bi-building",
+          "roles": ["super_admin"]
         }
       ]
     },
-
     {
       "name": "Transaksi Aset",
       "icon": "menu-icon tf-icons bi bi-arrow-left-right",
@@ -87,9 +72,9 @@
           "icon": "menu-icon tf-icons bi bi-box-arrow-in-down"
         },
         {
-          "url": "dashboard/transaksi-keluar",
-          "name": "Pemakaian Aset",
-          "icon": "menu-icon tf-icons bi bi-box-arrow-up"
+          "url": "dashboard/maping",
+          "name": "Mapping Aset",
+          "icon": "menu-icon tf-icons bi bi-diagram-3"
         },
         {
           "url": "dashboard/peminjaman",
@@ -104,39 +89,11 @@
       ]
     },
     {
-      "url": "dashboard/maping",
-      "name": "Maping",
-      "icon": "menu-icon tf-icons bi bi-diagram-3",
-      "slug": "dashboard-maping",
-      "roles": ["petugas", "super_admin"]
-    },
-    {
-      "name": "History",
+      "url": "dashboard/history/perjalanan-aset",
+      "name": "History Perjalanan Aset",
       "icon": "menu-icon tf-icons bi bi-journal-text",
-      "slug": "dashboard-history",
-      "roles": ["manager", "petugas", "super_admin"],
-      "submenu": [
-        {
-          "url": "dashboard/history/hak-akses",
-          "name": "Hak Akses",
-          "icon": "menu-icon tf-icons bi bi-shield-lock"
-        },
-        {
-          "url": "dashboard/history/mutasi",
-          "name": "Mutasi",
-          "icon": "menu-icon tf-icons bi bi-arrow-left-right"
-        },
-        {
-          "url": "/dashboard/history/maintenance",
-          "name": "Service & Maintenance",
-          "icon": "menu-icon tf-icons bx bx-wrench"
-        },
-        {
-          "url": "dashboard/history/pencabutan",
-          "name": "Pencabutan",
-          "icon": "menu-icon tf-icons bi bi-power"
-        }
-      ]
+      "slug": "history-perjalanan",
+      "roles": ["manager", "petugas", "super_admin"]
     }
   ]
 }

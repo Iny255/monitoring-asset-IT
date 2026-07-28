@@ -43,7 +43,12 @@ class Lokasi extends Model
         // 🔥 AUTO FILTER DATA
         static::addGlobalScope('perusahaan', function ($query) {
             if (auth()->check() && auth()->user()->role != 'super_admin') {
-                $query->where('id_perusahaan', auth()->user()->id_perusahaan);
+                $accessibleIds = auth()->user()->getAccessibleCompanyIds();
+                if ($accessibleIds && count($accessibleIds) > 0) {
+                    $query->whereIn('id_perusahaan', $accessibleIds);
+                } else {
+                    $query->where('id_perusahaan', auth()->user()->id_perusahaan);
+                }
             }
         });
     }

@@ -10,6 +10,7 @@ use App\Models\Keluar;
 use App\Models\Perusahaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 class MaintenanceController extends Controller
 {
   /**
@@ -27,8 +28,9 @@ class MaintenanceController extends Controller
         });
       }
     } else {
-      $query->whereHas('inventaris', function ($q) {
-        $q->where('perusahaan_id', auth()->user()->id_perusahaan);
+      $accessibleIds = auth()->user()->getAccessibleCompanyIds();
+      $query->whereHas('inventaris', function ($q) use ($accessibleIds) {
+        $q->whereIn('perusahaan_id', $accessibleIds);
       });
     }
 
@@ -216,7 +218,14 @@ class MaintenanceController extends Controller
       'maping_id' => 'nullable|exists:mapings,id',
 
       'peminjaman_id' => 'nullable|exists:peminjamans,id',
+      'gambar' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:2048',
     ]);
+
+    $gambar = null;
+    if ($request->hasFile('gambar')) {
+      $gambar = $request->file('gambar')->store('maintenance', 'public');
+    }
+
     $serviceAktif = Maintenance::where('inventaris_id', $request->inventaris_id)
       ->whereIn('status', ['Pengajuan', 'Diproses'])
       ->exists();
@@ -285,6 +294,8 @@ class MaintenanceController extends Controller
 
       'catatan' => $request->catatan,
 
+      'gambar' => $gambar,
+
       'created_by' => Auth::id(),
     ]);
     /*
@@ -307,6 +318,18 @@ class MaintenanceController extends Controller
         'status' => $statusMaping,
       ]);
     }
+
+    $targetMaping = $maping ?? ($request->filled('maping_id') ? Maping::find($request->maping_id) : null);
+    if ($targetMaping) {
+      $targetMaping->loadMissing('keluar.inventaris');
+      $dataAsetId = $targetMaping->keluar?->inventaris?->data_aset_id;
+      if ($dataAsetId) {
+        return redirect()
+          ->route('history.perjalanan.show', $dataAsetId)
+          ->with('success', 'Data service berhasil ditambahkan.');
+      }
+    }
+
     return redirect()
       ->route('maintenance.index')
       ->with('success', 'Data service berhasil ditambahkan.');
@@ -532,7 +555,18 @@ class MaintenanceController extends Controller
       'tindakan' => 'nullable|string',
 
       'catatan' => 'nullable|string',
+
+      'gambar' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:2048',
     ]);
+
+    if ($request->hasFile('gambar')) {
+      if ($maintenance->gambar && Storage::disk('public')->exists($maintenance->gambar)) {
+        Storage::disk('public')->delete($maintenance->gambar);
+      }
+      $gambar = $request->file('gambar')->store('maintenance', 'public');
+    } else {
+      $gambar = $maintenance->gambar;
+    }
 
     $maintenance->update([
       'tanggal' => $request->tanggal,
@@ -552,6 +586,8 @@ class MaintenanceController extends Controller
       'tindakan' => $request->tindakan,
 
       'catatan' => $request->catatan,
+
+      'gambar' => $gambar,
     ]);
     $maping = Maping::whereHas('keluar', function ($q) use ($maintenance) {
       $q->where('inventaris_id', $maintenance->inventaris_id);
@@ -593,6 +629,10 @@ class MaintenanceController extends Controller
       }
     }
 
+    if ($maintenance->gambar && Storage::disk('public')->exists($maintenance->gambar)) {
+      Storage::disk('public')->delete($maintenance->gambar);
+    }
+
     $maintenance->delete();
 
     return redirect()
@@ -616,8 +656,9 @@ class MaintenanceController extends Controller
         });
       }
     } else {
-      $query->whereHas('inventaris', function ($q) {
-        $q->where('perusahaan_id', auth()->user()->id_perusahaan);
+      $accessibleIds = auth()->user()->getAccessibleCompanyIds();
+      $query->whereHas('inventaris', function ($q) use ($accessibleIds) {
+        $q->whereIn('perusahaan_id', $accessibleIds);
       });
     }
 
@@ -685,5 +726,55 @@ class MaintenanceController extends Controller
     }
 
     return view('content.dashboard.maintenance.cetak', compact('laporan', 'namaPerusahaan'));
+  }
+
+  public function exportExcel(Request $request)
+  {
+    $query = Maintenance::with(['inventaris.dataAset.kategori', 'inventaris.perusahaan', 'creator']);
+
+    if (auth()->user()->role == 'super_admin') {
+      if ($request->filled('perusahaan_id')) {
+        $query->whereHas('inventaris', function ($q) use ($request) {
+          $q->where('perusahaan_id', $request->perusahaan_id);
+        });
+      }
+    } else {
+      $accessibleIds = auth()->user()->getAccessibleCompanyIds();
+      $query->whereHas('inventaris', function ($q) use ($accessibleIds) {
+        $q->whereIn('perusahaan_id', $accessibleIds);
+      });
+    }
+
+    if ($request->filled('search')) {
+      $search = $request->search;
+      $query->where(function ($q) use ($search) {
+        $q->where('kode_service', 'like', "%{$search}%")->orWhereHas('inventaris', function ($qq) use ($search) {
+          $qq->where('kode_aset', 'like', "%{$search}%")->orWhere('no_inventaris', 'like', "%{$search}%");
+        });
+      });
+    }
+
+    if ($request->filled('status')) {
+      $query->where('status', $request->status);
+    }
+
+    if ($request->filled('jenis')) {
+      $query->where('jenis', $request->jenis);
+    }
+
+    if ($request->filled('tanggal_awal')) {
+      $query->whereDate('tanggal', '>=', $request->tanggal_awal);
+    }
+
+    if ($request->filled('tanggal_akhir')) {
+      $query->whereDate('tanggal', '<=', $request->tanggal_akhir);
+    }
+
+    $maintenances = $query->orderBy('tanggal', 'desc')->get();
+
+    return \Maatwebsite\Excel\Facades\Excel::download(
+      new \App\Exports\MaintenanceExport($maintenances, 'Laporan Servis & Maintenance'),
+      'Laporan_Servis_Maintenance.xlsx'
+    );
   }
 }

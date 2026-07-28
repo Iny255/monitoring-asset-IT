@@ -8,6 +8,7 @@ use App\Models\Perusahaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class AccessController extends Controller
 {
@@ -18,38 +19,35 @@ class AccessController extends Controller
   {
     $user = auth()->user();
 
-    $query = Access::with('perusahaan');
+    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
 
-    /*
-    |--------------------------------------------------------------------------
-    | SUPER ADMIN
-    |--------------------------------------------------------------------------
-    */
+    $perusahaan = $request->perusahaan;
 
     if ($user->role == 'super_admin') {
-      if ($request->filled('perusahaan')) {
-        $query->where('id_perusahaan', $request->perusahaan);
+      if ($perusahaan) {
+        $query = Access::with('perusahaan')->where('id_perusahaan', $perusahaan);
+      } else {
+        $query = Access::select(DB::raw('MIN(id) as id'), 'kategori', 'jenis', 'nama_akses', 'status')
+          ->selectRaw('COUNT(DISTINCT id_perusahaan) as total_perusahaan')
+          ->selectRaw('MAX(created_at) as created_at')
+          ->groupBy('kategori', 'jenis', 'nama_akses', 'status');
       }
-    } /*
-    |--------------------------------------------------------------------------
-    | PETUGAS
-    |--------------------------------------------------------------------------
-    */ else {
-      $query->where('id_perusahaan', $user->id_perusahaan);
+    } else {
+      $query = Access::with('perusahaan')->where('id_perusahaan', $user->id_perusahaan);
     }
 
     /*
-    |--------------------------------------------------------------------------
+    |----------------------------------------------------------
     | FILTER
-    |--------------------------------------------------------------------------
+    |----------------------------------------------------------
     */
-
-    if ($request->filled('jenis')) {
-      $query->where('jenis', $request->jenis);
-    }
 
     if ($request->filled('kategori')) {
       $query->where('kategori', $request->kategori);
+    }
+
+    if ($request->filled('jenis')) {
+      $query->where('jenis', $request->jenis);
     }
 
     if ($request->filled('status')) {
@@ -60,18 +58,31 @@ class AccessController extends Controller
       $search = $request->search;
 
       $query->where(function ($q) use ($search) {
-        $q->where('nama_akses', 'like', "%{$search}%")->orWhere('keterangan', 'like', "%{$search}%");
+        $q->where('nama_akses', 'like', "%{$search}%");
       });
     }
 
     $accesses = $query
-      ->orderBy('nama_akses')
-      ->paginate(15, ['*'], 'page', request()->input('page', 1))
-      ->appends(request()->query());
-
-    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+      ->latest()
+      ->paginate(15)
+      ->appends($request->query());
 
     return view('content.dashboard.hak_akses.index', compact('accesses', 'perusahaans'));
+  }
+  public function detailPerusahaan(Request $request)
+  {
+    $request->validate([
+      'kategori' => 'required',
+      'jenis' => 'required',
+      'nama_akses' => 'required',
+    ]);
+
+    return Access::with('perusahaan')
+      ->where('kategori', $request->kategori)
+      ->where('jenis', $request->jenis)
+      ->where('nama_akses', $request->nama_akses)
+      ->orderBy('id_perusahaan')
+      ->get();
   }
 
   /**
@@ -291,19 +302,23 @@ class AccessController extends Controller
     try {
       $user = auth()->user();
 
-      $query = Access::where('jenis', $jenis)->where('status', 'aktif');
+      $query = Access::where('status', 'aktif');
+
+      if ($jenis && $jenis !== 'all') {
+        $query->where('jenis', $jenis);
+      }
+
+      $perusahaanId = $request->get('perusahaan_id', $request->get('perusahaan'));
 
       if ($user->role == 'super_admin') {
-        if ($request->filled('perusahaan')) {
-          $query->where('id_perusahaan', $request->perusahaan);
-        } else {
-          return response()->json([]);
+        if (!empty($perusahaanId)) {
+          $query->where('id_perusahaan', $perusahaanId);
         }
       } else {
         $query->where('id_perusahaan', $user->id_perusahaan);
       }
 
-      return response()->json($query->orderBy('nama_akses')->get(['id', 'nama_akses']));
+      return response()->json($query->orderBy('nama_akses')->get(['id', 'nama_akses', 'jenis', 'kategori']));
     } catch (\Exception $e) {
       Log::error($e->getMessage());
 

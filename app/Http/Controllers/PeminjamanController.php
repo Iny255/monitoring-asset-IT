@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
+use App\Exports\PeminjamanExport;
+use Maatwebsite\Excel\Facades\Excel;
 class PeminjamanController extends Controller
 {
   /**
@@ -120,6 +122,13 @@ class PeminjamanController extends Controller
     $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
 
     return view('content.dashboard.peminjaman.index', compact('peminjamans', 'perusahaans'));
+  }
+  public function exportExcel(Request $request)
+  {
+    return Excel::download(
+      new PeminjamanExport($request),
+      'Laporan_Peminjaman_Aset_' . now()->format('Ymd_His') . '.xlsx'
+    );
   }
 
   /**

@@ -530,15 +530,21 @@
 
                     </div>
 
-                    <div class="card-body text-center">
+                    <div class="card-body text-center p-3">
+                        @php
+                            $gambarPath = $maping->keluar?->gambar;
+                            $hasGambar = $gambarPath && (file_exists(public_path('storage/' . $gambarPath)) || \Illuminate\Support\Facades\Storage::disk('public')->exists($gambarPath));
+                        @endphp
 
-                        @if ($maping->keluar->gambar)
-                            <img src="{{ asset('storage/' . $maping->keluar->gambar) }}"
+                        @if ($hasGambar)
+                            <img src="{{ asset('storage/' . $gambarPath) }}"
                                 class="img-fluid rounded border shadow-sm" style="max-height:260px;object-fit:contain;">
                         @else
-                            <img src="{{ asset('assets/img/no-image.png') }}" class="img-fluid rounded border shadow-sm">
+                            <div class="d-flex flex-column align-items-center justify-content-center bg-light rounded py-4 px-3 text-muted" style="min-height:180px; border: 2px dashed #cbd5e1;">
+                                <i class="bx bx-image-alt fs-1 text-secondary mb-2"></i>
+                                <span class="fw-semibold small">Tidak Ada Foto Perangkat</span>
+                            </div>
                         @endif
-
                     </div>
 
                 </div>
@@ -562,7 +568,7 @@
 
                         <div id="qr-code">
 
-                            {!! QrCode::size(220)->generate(route('maping.public_show', $maping->id)) !!}
+                            {!! QrCode::size(220)->generate(route('maping.public_show', $maping->uuid ?? $maping->id)) !!}
 
                         </div>
 

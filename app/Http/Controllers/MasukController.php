@@ -13,7 +13,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\DB;
-
+use App\Exports\MasukExport;
+use Maatwebsite\Excel\Facades\Excel;
 use Carbon\Carbon;
 class MasukController extends Controller
 {
@@ -64,13 +65,13 @@ class MasukController extends Controller
       ->paginate(10)
       ->appends($request->query());
 
-    $perusahaans = Perusahaan::all();
-    $suppliers =
-      $user->role == 'super_admin'
-        ? Supplier::orderBy('nama_supplier')->get()
-        : Supplier::where('perusahaan_id', $user->id_perusahaan)
-          ->orderBy('nama_supplier')
-          ->get();
+    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+    $selectedPerusahaanId = $user->role == 'super_admin' ? $request->perusahaan_id : $user->id_perusahaan;
+
+    $suppliers = Supplier::query()
+      ->when($selectedPerusahaanId, fn($q) => $q->where('perusahaan_id', $selectedPerusahaanId))
+      ->orderBy('nama_supplier')
+      ->get();
 
     return view('content.dashboard.transaksi-masuk.index', compact('masuks', 'perusahaans', 'suppliers'));
   }
@@ -148,60 +149,38 @@ class MasukController extends Controller
     $masuks = $query->orderBy('tanggal_pembelian')->get();
 
     /*
-    |--------------------------------------------------------------------------
-    | GABUNGKAN DATA YANG SAMA
-    |--------------------------------------------------------------------------
-    */
+|--------------------------------------------------------------------------
+| DATA LAPORAN (SETIAP TRANSAKSI = 1 BARIS)
+|--------------------------------------------------------------------------
+*/
 
     $laporan = $masuks
-      ->groupBy(function ($item) {
-        return ($item->perusahaan_id ?? '') .
-          '|' .
-          ($item->jenis_masuk ?? '') .
-          '|' .
-          ($item->dataAset->kategori->nama_barang ?? '') .
-          '|' .
-          ($item->dataAset->merek ?? '') .
-          '|' .
-          ($item->dataAset->type ?? '') .
-          '|' .
-          ($item->supplier_id ?? '') .
-          '|' .
-          ($item->perusahaan_asal ?? '');
-      })
-
-      ->map(function ($items) {
-        $first = $items->first();
-
+      ->map(function ($item) {
         return (object) [
-          'tanggal_pembelian' => $first->tanggal_pembelian,
+          'tanggal_pembelian' => $item->tanggal_pembelian,
 
-          'perusahaan' => $first->perusahaan,
-          'jenis_masuk' => $first->jenis_masuk,
+          'perusahaan' => $item->perusahaan,
 
-          'kategori' => $first->dataAset->kategori->nama_barang ?? '-',
+          'jenis_masuk' => $item->jenis_masuk,
 
-          'merek' => $first->dataAset->merek ?? '-',
+          'kategori' => $item->dataAset->kategori->nama_barang ?? '-',
 
-          'type' => $first->dataAset->type ?? '-',
+          'merek' => $item->dataAset->merek ?? '-',
+
+          'type' => $item->dataAset->type ?? '-',
 
           'asal' =>
-            $first->jenis_masuk == 'Pembelian'
-              ? $first->supplier->nama_supplier ?? '-'
-              : $first->perusahaanAsal->nama_perusahaan ?? '-',
-          'qty' => $items->sum('jumlah'),
+            $item->jenis_masuk == 'Pembelian'
+              ? $item->supplier->nama_supplier ?? '-'
+              : $item->perusahaanAsal->nama_perusahaan ?? '-',
 
-          'harga_satuan' => $first->harga_satuan,
+          'qty' => $item->jumlah,
 
-          'total' =>
-            $first->jenis_masuk == 'Pembelian'
-              ? $items->sum(function ($row) {
-                return $row->jumlah * $row->harga_satuan;
-              })
-              : 0,
+          'harga_satuan' => $item->harga_satuan,
+
+          'total' => $item->jenis_masuk == 'Pembelian' ? $item->jumlah * $item->harga_satuan : 0,
         ];
       })
-
       ->values();
 
     /*
@@ -260,6 +239,13 @@ class MasukController extends Controller
       compact('laporan', 'rekapKategori', 'totalUnit', 'grandTotal', 'namaPerusahaan')
     );
   }
+  public function exportExcel(Request $request)
+{
+    return Excel::download(
+        new MasukExport($request),
+        'Penerimaan_Aset_' . now()->format('Ymd_His') . '.xlsx'
+    );
+}
 
   public function create()
   {

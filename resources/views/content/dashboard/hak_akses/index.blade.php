@@ -4,7 +4,31 @@
 
 @section('content')
 
-    <div class="container-fluid">
+    <div class="container-xxl flex-grow-1 container-p-y">
+
+        {{-- HERO HEADER --}}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-md bg-label-primary me-3">
+                            <span class="avatar-initial rounded">
+                                <i class="bx bx-shield-quarter fs-3"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="fw-bold mb-0">Hak Akses & Aplikasi</h3>
+                            <small class="text-muted">Kelola master software, aplikasi, dan hak akses IT</small>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambah">
+                            <i class="bx bx-plus me-1"></i> Tambah Hak Akses
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         {{-- ALERT --}}
         @if (session('success'))
@@ -22,22 +46,7 @@
         @endif
 
         <div class="card shadow-sm border-0">
-
-            {{-- HEADER --}}
-            <div class="card-header d-flex justify-content-between align-items-center">
-
-                <h5 class="text-primary mb-0">
-                    Hak Akses & Aplikasi
-                </h5>
-
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambah">
-
-                    <i class="bx bx-plus"></i>
-                    Tambah Data
-
-                </button>
-
-            </div>
+            <div class="card-body">
 
             <div class="card-body">
 
@@ -181,36 +190,33 @@
 
                             <tr>
 
-                                <th width="60">
-                                    NO
-                                </th>
+                                <th width="60">NO</th>
+
                                 @if (auth()->user()->role == 'super_admin')
+
+                                    @if (request('perusahaan'))
+                                        <th width="220">PERUSAHAAN</th>
+                                    @else
+                                        <th width="180">DIGUNAKAN DI</th>
+                                    @endif
+                                @else
                                     <th width="220">PERUSAHAAN</th>
+
                                 @endif
 
-                                <th width="170">
-                                    KATEGORI
-                                </th>
-                                <th width="120">
+                                <th width="170">KATEGORI</th>
 
-                                    JENIS
+                                <th width="120">JENIS</th>
 
-                                </th>
+                                <th>NAMA HAK AKSES / APLIKASI</th>
 
-                                <th>
-                                    NAMA HAK AKSES / APLIKASI
-                                </th>
+                                <th width="130">STATUS</th>
 
-                                <th width="130">
-                                    STATUS
-                                </th>
-
-                                <th width="120">
-                                    ACTION
-                                </th>
+                                @if (!(auth()->user()->role == 'super_admin' && empty(request('perusahaan'))))
+                                    <th width="120">ACTION</th>
+                                @endif
 
                             </tr>
-
                         </thead>
 
                         <tbody>
@@ -223,6 +229,25 @@
                                         {{ ($accesses->currentPage() - 1) * $accesses->perPage() + $loop->iteration }}
                                     </td>
                                     @if (auth()->user()->role == 'super_admin')
+                                        @if (request('perusahaan'))
+                                            <td>
+                                                {{ $access->perusahaan->nama_perusahaan }}
+                                            </td>
+                                        @else
+                                            <td class="text-center">
+
+                                                <span class="badge bg-label-primary btn-detail-access"
+                                                    style="cursor:pointer" data-kategori="{{ $access->kategori }}"
+                                                    data-jenis="{{ $access->jenis }}"
+                                                    data-nama="{{ $access->nama_akses }}">
+
+                                                    {{ $access->total_perusahaan }} Perusahaan
+
+                                                </span>
+
+                                            </td>
+                                        @endif
+                                    @else
                                         <td>
                                             {{ $access->perusahaan->nama_perusahaan ?? '-' }}
                                         </td>
@@ -285,39 +310,43 @@
                                     </td>
 
                                     {{-- ACTION --}}
-                                    <td class="text-center">
+                                    @if (!(auth()->user()->role == 'super_admin' && empty(request('perusahaan'))))
+                                        <td class="text-center">
 
-                                        <div class="d-flex justify-content-center gap-2">
+                                            <div class="d-flex justify-content-center gap-2">
 
-                                            <button type="button" class="btn btn-warning btn-sm btn-edit"
-                                                data-id="{{ $access->id }}"
-                                                data-perusahaan="{{ $access->id_perusahaan }}"
-                                                data-kategori="{{ $access->kategori }}" data-jenis="{{ $access->jenis }}"
-                                                data-nama="{{ $access->nama_akses }}" data-status="{{ $access->status }}">
+                                                <button type="button" class="btn btn-warning btn-sm btn-edit"
+                                                    data-id="{{ $access->id }}"
+                                                    data-perusahaan="{{ $access->id_perusahaan }}"
+                                                    data-kategori="{{ $access->kategori }}"
+                                                    data-jenis="{{ $access->jenis }}"
+                                                    data-nama="{{ $access->nama_akses }}"
+                                                    data-status="{{ $access->status }}">
 
-                                                <i class="bx bx-edit-alt"></i>
+                                                    <i class="bx bx-edit-alt"></i>
 
-                                            </button>
+                                                </button>
 
-                                            <form id="delete-form-{{ $access->id }}"
-                                                action="{{ route('hak-akses.destroy', $access->id) }}" method="POST"
-                                                style="display:none">
+                                                <form id="delete-form-{{ $access->id }}"
+                                                    action="{{ route('hak-akses.destroy', $access->id) }}" method="POST"
+                                                    style="display:none">
 
-                                                @csrf
-                                                @method('DELETE')
+                                                    @csrf
+                                                    @method('DELETE')
 
-                                            </form>
+                                                </form>
 
-                                            <button type="button" class="btn btn-danger btn-sm btn-delete"
-                                                data-id="{{ $access->id }}">
+                                                <button type="button" class="btn btn-danger btn-sm btn-delete"
+                                                    data-id="{{ $access->id }}">
 
-                                                <i class="bx bx-trash"></i>
+                                                    <i class="bx bx-trash"></i>
 
-                                            </button>
+                                                </button>
 
-                                        </div>
+                                            </div>
 
-                                    </td>
+                                        </td>
+                                    @endif
 
                                 </tr>
 
@@ -325,7 +354,8 @@
 
                                 <tr>
 
-                                    <td colspan="6" class="text-center">
+                                    <td colspan="{{ auth()->user()->role == 'super_admin' && empty(request('perusahaan')) ? 5 : 6 }}"
+                                        class="text-center">
 
                                         Tidak ada data.
 
@@ -589,15 +619,72 @@
             </div>
         </div>
     </div>
+    {{-- modal detail --}}
+    <div class="modal fade" id="modalDetailAccess">
+
+        <div class="modal-dialog modal-lg">
+
+            <div class="modal-content">
+
+                <div class="modal-header bg-primary">
+
+                    <h5 class="modal-title text-white">
+
+                        Detail Hak Akses
+
+                    </h5>
+
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal">
+                    </button>
+
+                </div>
+
+                <div class="modal-body">
+
+                    <h5 id="judulAccess"></h5>
+
+                    <div class="table-responsive">
+
+                        <table class="table table-bordered">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>No</th>
+
+                                    <th>Perusahaan</th>
+
+                                    <th width="150">Aksi</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="listAccess">
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
 @endsection
 
 @section('scripts')
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // ==============================
+
+            //=========================================
             // KATEGORI -> JENIS (TAMBAH)
-            // ==============================
+            //=========================================
 
             const kategori = document.getElementById('kategori');
             const jenis = document.getElementById('jenis');
@@ -609,26 +696,21 @@
                     if (this.value === 'Aplikasi') {
 
                         jenis.innerHTML = `
-                <option value="Software" selected>Software</option>
-            `;
-
-                        jenis.setAttribute('readonly', true);
-                        jenis.setAttribute('disabled', true);
-
-                        // tetap terkirim ke server
-                        jenis.removeAttribute('disabled');
+                    <option value="Software">Software</option>
+                `;
 
                     } else if (this.value === 'Hak Akses') {
 
                         jenis.innerHTML = `
-                <option value="">Pilih Jenis</option>
-                <option value="PPN">PPN</option>
-                <option value="NON PPN">NON PPN</option>
-            `;
+                    <option value="">Pilih Jenis</option>
+                    <option value="PPN">PPN</option>
+                    <option value="NON PPN">NON PPN</option>
+                `;
 
                     } else {
 
-                        jenis.innerHTML = `<option value="">Pilih Jenis</option>`;
+                        jenis.innerHTML =
+                            `<option value="">Pilih Jenis</option>`;
 
                     }
 
@@ -636,9 +718,9 @@
 
             }
 
-            // ==========================
+            //=========================================
             // DELETE
-            // ==========================
+            //=========================================
 
             document.querySelectorAll('.btn-delete').forEach(btn => {
 
@@ -676,56 +758,246 @@
 
             });
 
-            // ==========================
+            //=========================================
             // EDIT
-            // ==========================
+            //=========================================
 
-            const modalEdit = document.getElementById('modalEdit');
+            const modalEdit =
+                new bootstrap.Modal(document.getElementById('modalEdit'));
 
-            const formEdit = document.getElementById('formEdit');
+            const formEdit =
+                document.getElementById('formEdit');
 
             document.querySelectorAll('.btn-edit').forEach(btn => {
 
                 btn.addEventListener('click', function() {
 
-                    let id = this.dataset.id;
+                    formEdit.action =
+                        `/dashboard/hak-akses/${this.dataset.id}`;
 
-                    formEdit.action = '/dashboard/hak-akses/' + id;
-                    let perusahaan = document.getElementById('edit_perusahaan');
+                    @if (auth()->user()->role == 'super_admin')
+                        document.getElementById('edit_perusahaan').value =
+                            this.dataset.perusahaan;
+                    @endif
 
-                    if (perusahaan) {
-                        perusahaan.value = this.dataset.perusahaan;
-                    }
-
-                    document.getElementById('edit_kategori').value = this.dataset.kategori;
+                    document.getElementById('edit_kategori').value =
+                        this.dataset.kategori;
 
                     loadJenisEdit(
                         this.dataset.kategori,
                         this.dataset.jenis
                     );
 
-                    document.getElementById('edit_nama').value = this.dataset.nama;
+                    document.getElementById('edit_nama').value =
+                        this.dataset.nama;
 
-                    document.getElementById('edit_status').value = this.dataset.status;
+                    document.getElementById('edit_status').value =
+                        this.dataset.status;
 
-                    new bootstrap.Modal(modalEdit).show();
+                    modalEdit.show();
 
                 });
 
             });
+
+            //=========================================
+            // DETAIL PERUSAHAAN
+            //=========================================
+
+            const modalDetail =
+                new bootstrap.Modal(document.getElementById('modalDetailAccess'));
+
+            document.querySelectorAll('.btn-detail-access').forEach(btn => {
+
+                btn.addEventListener('click', function() {
+
+                    fetch(
+                            `/dashboard/hak-akses/detail-perusahaan?kategori=${encodeURIComponent(this.dataset.kategori)}&jenis=${encodeURIComponent(this.dataset.jenis)}&nama_akses=${encodeURIComponent(this.dataset.nama)}`
+                        )
+
+                        .then(res => res.json())
+
+                        .then(data => {
+
+                            document.getElementById('judulAccess').innerHTML =
+                                data[0].nama_akses;
+
+                            let html = '';
+
+                            data.forEach((item, index) => {
+
+                                html += `
+                        <tr>
+
+                            <td>${index+1}</td>
+
+                            <td>${item.perusahaan.nama_perusahaan}</td>
+
+                            <td class="text-center">
+
+                                <button
+                                    class="btn btn-warning btn-sm btn-edit-modal"
+
+                                    data-id="${item.id}"
+                                    data-perusahaan="${item.id_perusahaan}"
+                                    data-kategori="${item.kategori}"
+                                    data-jenis="${item.jenis}"
+                                    data-nama="${item.nama_akses}"
+                                    data-status="${item.status}">
+
+                                    <i class="bx bx-edit-alt"></i>
+
+                                </button>
+
+                                <button
+                                    class="btn btn-danger btn-sm btn-delete-modal"
+                                    data-id="${item.id}">
+
+                                    <i class="bx bx-trash"></i>
+
+                                </button>
+
+                            </td>
+
+                        </tr>
+                    `;
+
+                            });
+
+                            document.getElementById('listAccess').innerHTML =
+                                html;
+
+                            //---------------------------------------
+                            // EDIT DARI MODAL
+                            //---------------------------------------
+
+                            document.querySelectorAll('.btn-edit-modal').forEach(btn => {
+
+                                btn.addEventListener('click', function() {
+
+                                    formEdit.action =
+                                        `/dashboard/hak-akses/${this.dataset.id}`;
+
+                                    @if (auth()->user()->role == 'super_admin')
+                                        document.getElementById(
+                                                'edit_perusahaan').value =
+                                            this.dataset.perusahaan;
+                                    @endif
+
+                                    document.getElementById('edit_kategori')
+                                        .value =
+                                        this.dataset.kategori;
+
+                                    loadJenisEdit(
+                                        this.dataset.kategori,
+                                        this.dataset.jenis
+                                    );
+
+                                    document.getElementById('edit_nama').value =
+                                        this.dataset.nama;
+
+                                    document.getElementById('edit_status')
+                                        .value =
+                                        this.dataset.status;
+
+                                    modalDetail.hide();
+
+                                    modalEdit.show();
+
+                                });
+
+                            });
+
+                            //---------------------------------------
+                            // DELETE DARI MODAL
+                            //---------------------------------------
+
+                            document.querySelectorAll('.btn-delete-modal').forEach(btn => {
+
+                                btn.addEventListener('click', function() {
+
+                                    let id = this.dataset.id;
+
+                                    modalDetail.hide();
+
+                                    Swal.fire({
+
+                                        title: 'Yakin?',
+
+                                        text: 'Data akan dihapus.',
+
+                                        icon: 'warning',
+
+                                        showCancelButton: true,
+
+                                        confirmButtonText: 'Ya',
+
+                                        cancelButtonText: 'Batal'
+
+                                    }).then((result) => {
+
+                                        if (result.isConfirmed) {
+
+                                            const form = document
+                                                .createElement('form');
+
+                                            form.method = 'POST';
+
+                                            form.action =
+                                                `/dashboard/hak-akses/${id}`;
+
+                                            form.innerHTML = `
+                                    @csrf
+                                    <input type="hidden"
+                                        name="_method"
+                                        value="DELETE">
+                                `;
+
+                                            document.body.appendChild(
+                                                form);
+
+                                            form.submit();
+
+                                        } else {
+
+                                            modalDetail.show();
+
+                                        }
+
+                                    });
+
+                                });
+
+                            });
+
+                            modalDetail.show();
+
+                        });
+
+                });
+
+            });
+
         });
+
+        //=========================================
+        // LOAD JENIS EDIT
+        //=========================================
 
         function loadJenisEdit(kategori, selectedJenis) {
 
-            let jenis = document.getElementById('edit_jenis');
+            let jenis =
+                document.getElementById('edit_jenis');
 
             if (kategori === 'Aplikasi') {
 
                 jenis.innerHTML = `
-            <option value="Software">Software</option>
+            <option value="Software">
+                Software
+            </option>
         `;
 
-                jenis.value = "Software";
+                jenis.value = 'Software';
 
             } else {
 
@@ -740,5 +1012,4 @@
 
         }
     </script>
-
 @endsection

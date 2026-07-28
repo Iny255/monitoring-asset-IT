@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
 use Illuminate\Support\Facades\Storage;
+use App\Exports\KeluarExport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class KeluarController extends Controller
 {
@@ -119,6 +121,13 @@ class KeluarController extends Controller
 
     return view('content.dashboard.transaksi-keluar.cetak', compact('keluars', 'namaPerusahaan'));
   }
+  public function exportExcel(Request $request)
+{
+    return Excel::download(
+        new KeluarExport($request),
+        'Pemakaian_Aset_' . now()->format('Ymd_His') . '.xlsx'
+    );
+}
 
   /**
    * Show the form for creating a new resource.
@@ -258,11 +267,13 @@ class KeluarController extends Controller
   {
     $user = auth()->user();
 
-    $perusahaanId = $user->role === 'super_admin' ? $request->perusahaan_id : $user->id_perusahaan;
+    $keluar = Keluar::findOrFail($id);
 
+    $perusahaanId = $user->role == 'super_admin' ? $keluar->perusahaan_id : $user->id_perusahaan;
     $request->validate([
       'tgl_keluar' => 'required|date',
       'jenis_penerima' => 'required|in:Perorangan,Perdivisi',
+      'lokasi_id' => 'required|exists:lokasis,id',
       'gambar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
     ]);
 
@@ -283,9 +294,7 @@ class KeluarController extends Controller
     DB::beginTransaction();
 
     try {
-      $keluar = Keluar::where('id', $id)
-        ->where('perusahaan_id', $perusahaanId)
-        ->firstOrFail();
+    
 
       $namaPerusahaan = Perusahaan::find($perusahaanId)?->nama_perusahaan;
 

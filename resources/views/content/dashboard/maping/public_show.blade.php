@@ -157,14 +157,21 @@
 
                             </div>
 
-                            <div class="card-body">
+                            <div class="card-body p-3">
+                                @php
+                                    $gambarPath = $maping->keluar?->gambar;
+                                    $hasGambar = $gambarPath && (file_exists(public_path('storage/' . $gambarPath)) || \Illuminate\Support\Facades\Storage::disk('public')->exists($gambarPath));
+                                @endphp
 
-                                @if ($maping->keluar->gambar)
-                                    <img src="{{ asset('storage/' . $maping->keluar->gambar) }}" class="asset-image">
+                                @if ($hasGambar)
+                                    <img src="{{ asset('storage/' . $gambarPath) }}" alt="Foto Asset" class="asset-image img-fluid rounded">
                                 @else
-                                    <img src="{{ asset('assets/img/no-image.png') }}" class="asset-image">
+                                    <div class="d-flex flex-column align-items-center justify-content-center bg-light rounded py-5 px-3 text-muted" style="min-height:220px; border: 2px dashed #cbd5e1;">
+                                        <i class="bx bx-image-alt fs-1 text-secondary mb-2"></i>
+                                        <span class="fw-semibold">Tidak Ada Foto Perangkat</span>
+                                        <small class="text-muted mt-1 text-center">Foto belum diunggah pada transaksi penyerahan aset</small>
+                                    </div>
                                 @endif
-
                             </div>
 
                         </div>

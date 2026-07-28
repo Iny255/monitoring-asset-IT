@@ -19,23 +19,26 @@ class DashboardUserController extends Controller
   {
     $search = $request->input('search');
 
-    // 🔥 ambil data user
-    $users = User::query();
+    // 🔥 ambil data user dengan relasi perusahaan
+    $users = User::with('perusahaan.parent');
 
     // 🔍 fitur search
     if ($search) {
       $users->where(function ($query) use ($search) {
-        $query->where('username', 'like', '%' . $search . '%')->orWhere('email', 'like', '%' . $search . '%');
+        $query->where('username', 'like', '%' . $search . '%')
+          ->orWhere('name', 'like', '%' . $search . '%')
+          ->orWhere('email', 'like', '%' . $search . '%');
       });
     }
 
     // 🔥 pagination
-    $users = $users->latest()->paginate(10);
+    $users = $users->latest()->paginate(10)->appends($request->query());
 
-    // 🔥 ambil semua perusahaan (untuk dropdown create & edit)
-    $perusahaans = Perusahaan::all();
+    // 🔥 ambil semua perusahaan & cabangnya (untuk dropdown create & edit)
+    $parentPerusahaans = Perusahaan::with('cabangs')->whereNull('parent_id')->orderBy('nama_perusahaan')->get();
+    $perusahaans = Perusahaan::with('parent')->orderBy('nama_perusahaan')->get();
 
-    return view('content.dashboard.user.index', compact('users', 'perusahaans'));
+    return view('content.dashboard.user.index', compact('users', 'perusahaans', 'parentPerusahaans'));
   }
 
   public function hapususer(int $id)

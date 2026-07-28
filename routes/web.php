@@ -26,6 +26,8 @@ use App\Http\Controllers\HistoryPencabutanController;
 use App\Http\Controllers\HistoryStokController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\HistoryMaintenanceController;
+use App\Http\Controllers\HistoryPemakaianController;
+use App\Http\Controllers\HistoryPerjalananAsetController;
 use App\Http\Controllers\main_dashboard\DashboardPetugasController;
 use App\Http\Controllers\main_dashboard\DashboardSuperAdminController;
 
@@ -40,7 +42,7 @@ Route::get('/login', [LoginController::class, 'index'])
 Route::post('/login', [LoginController::class, 'authenticate']);
 Route::post('/logout', [LoginController::class, 'logout'])->name('logout');
 Route::get('/maping/{id}', [MapingController::class, 'publicShow'])
-  ->where('id', '[0-9]+')
+  ->where('id', '[a-zA-Z0-9\-]+')
   ->name('maping.public_show');
 
 Route::middleware(['auth'])->group(function () {
@@ -71,6 +73,9 @@ Route::middleware(['auth'])->group(function () {
     */
   Route::middleware(['role:petugas,super_admin'])->group(function () {
     Route::get('/dashboard/petugas', [DashboardPetugasController::class, 'petugas'])->name('dashboard.petugas');
+    Route::get('/dashboard/aset/detail-perusahaan', [KategoriController::class, 'detailPerusahaan'])->name(
+      'aset.detailPerusahaan'
+    );
 
     Route::resource('/dashboard/aset', KategoriController::class)->names([
       'index' => 'aset.index',
@@ -81,12 +86,27 @@ Route::middleware(['auth'])->group(function () {
       'update' => 'aset.update',
       'destroy' => 'aset.destroy',
     ]);
+    Route::get('/dashboard/useraset/detail-perusahaan', [KaryawanController::class, 'detailPerusahaan'])->name(
+      'useraset.detailPerusahaan'
+    );
     Route::resource('/dashboard/useraset', KaryawanController::class)->except(['show']);
+    Route::get('/dashboard/lokasi/detail-perusahaan', [LokasiController::class, 'detailPerusahaan'])->name(
+      'lokasi.detailPerusahaan'
+    );
     Route::resource('/dashboard/lokasi', LokasiController::class);
+    Route::get('/dashboard/supplier/detail-perusahaan', [SupplierController::class, 'detailPerusahaan'])->name(
+      'supplier.detailPerusahaan'
+    );
     Route::resource('/dashboard/supplier', SupplierController::class);
     Route::resource('/dashboard/data-aset', DataAsetController::class);
+    Route::get('/dashboard/hak-akses/detail-perusahaan', [AccessController::class, 'detailPerusahaan'])->name(
+      'hak-akses.detailPerusahaan'
+    );
     Route::resource('/dashboard/hak-akses', AccessController::class)->names('hak-akses');
 
+    Route::get('/dashboard/transaksi-masuk/export-excel', [MasukController::class, 'exportExcel'])->name(
+      'transaksi-masuk.exportExcel'
+    );
     Route::get('/dashboard/transaksi-masuk/cetak', [MasukController::class, 'cetak'])->name('transaksi-masuk.cetak');
     Route::get('/dashboard/transaksi-masuk/stok', [MasukController::class, 'stok'])->name('transaksi-masuk.stok');
     Route::get('/stok/{dataAsetId}/history/cetak', [HistoryStokController::class, 'cetakHistoryStok'])->name(
@@ -100,11 +120,11 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/dashboard/get-data-aset/{id}', [MasukController::class, 'getDataAset']);
 
+    Route::get('/dashboard/transaksi-keluar/export-excel', [KeluarController::class, 'exportExcel'])->name(
+      'transaksi-keluar.exportExcel'
+    );
     Route::get('/dashboard/transaksi-keluar/cetak', [KeluarController::class, 'cetak'])->name('transaksi-keluar.cetak');
     Route::resource('/dashboard/transaksi-keluar', KeluarController::class);
-    Route::get('/dashboard/get-kategori/{perusahaan}', [KeluarController::class, 'getKategori'])->name(
-      'transaksi-keluar.getKategori'
-    );
     Route::get('/dashboard/get-kategori/{perusahaan}', [KeluarController::class, 'getKategori'])->name(
       'transaksi-keluar.getKategori'
     );
@@ -121,6 +141,9 @@ Route::middleware(['auth'])->group(function () {
       'transaksi-keluar.searchKaryawan'
     );
     Route::get('/dashboard/get-lokasi/{perusahaan}', [KeluarController::class, 'getLokasi']);
+    Route::get('/dashboard/peminjaman/export-excel', [PeminjamanController::class, 'exportExcel'])->name(
+      'peminjaman.exportExcel'
+    );
     Route::get('/dashboard/kategori/by-perusahaan/{id}', [PeminjamanController::class, 'kategoriByPerusahaan']);
     Route::get('/dashboard/peminjaman/search-karyawan', [PeminjamanController::class, 'searchKaryawan'])->name(
       'peminjaman.search'
@@ -147,10 +170,14 @@ Route::middleware(['auth'])->group(function () {
       'maping.searchUserMutasi'
     );
     Route::get('/dashboard/maping/print', [MapingController::class, 'print'])->name('maping.print');
-
     Route::get('/dashboard/maping/export-excel', [MapingController::class, 'exportExcel'])->name('maping.export.excel');
+    Route::get('/dashboard/maping/get-kategori', [MapingController::class, 'getKategori'])->name('maping.getKategori');
+    Route::get('/dashboard/maping/get-available-inventaris', [MapingController::class, 'getAvailableInventaris'])->name('maping.getAvailableInventaris');
+    Route::get('/dashboard/maping/get-filter-options', [MapingController::class, 'getFilterOptionsByPerusahaan'])->name('maping.getFilterOptions');
+    Route::get('/dashboard/maping/get-lokasi-by-perusahaan/{id}', [MapingController::class, 'getLokasiByPerusahaan'])->name('maping.getLokasiByPerusahaan');
+    Route::get('/dashboard/maping/search-karyawan', [MapingController::class, 'searchKaryawan'])->name('maping.searchKaryawan');
+    Route::get('/dashboard/maping/pemakaian', [MapingController::class, 'pemakaian'])->name('maping.pemakaian');
     Route::resource('/dashboard/maping', MapingController::class);
-    Route::get('/maping/get-kategori', [MapingController::class, 'getKategori'])->name('maping.getKategori');
 
     Route::get('/maping/get-aset', [MapingController::class, 'getAset'])->name('maping.getAset');
 
@@ -195,15 +222,23 @@ Route::middleware(['auth'])->group(function () {
     ])->name('maintenance.tidakDapatDiperbaiki');
 
     Route::get('/dashboard/maintenance/cetak', [MaintenanceController::class, 'cetak'])->name('maintenance.cetak');
+    Route::get('/dashboard/maintenance/export-excel', [MaintenanceController::class, 'exportExcel'])->name('maintenance.export_excel');
 
     Route::resource('/dashboard/maintenance', MaintenanceController::class);
     Route::prefix('dashboard/history')
       ->middleware(['role:petugas,super_admin'])
       ->group(function () {
-        // HISTORY HAK AKSES
-        Route::get('/hak-akses', [HistoryHakAksesController::class, 'index'])->name('history.hak-akses.index');
+        // HISTORY PERJALANAN ASET
+        Route::get('/perjalanan-aset', [HistoryPerjalananAsetController::class, 'index'])->name('history.perjalanan.index');
+        Route::get('/perjalanan-aset/export-excel', [HistoryPerjalananAsetController::class, 'exportExcelIndex'])->name('history.perjalanan.export_excel_index');
+        Route::get('/perjalanan-aset/{id}', [HistoryPerjalananAsetController::class, 'show'])->name('history.perjalanan.show');
+        Route::get('/perjalanan-aset/{id}/cetak', [HistoryPerjalananAsetController::class, 'cetak'])->name('history.perjalanan.cetak');
+        Route::get('/perjalanan-aset/{id}/export-excel', [HistoryPerjalananAsetController::class, 'exportExcel'])->name('history.perjalanan.export_excel');
 
-        Route::get('/hak-akses/cetak', [HistoryHakAksesController::class, 'cetak'])->name('history.hak-akses.cetak');
+        // HISTORY HAK AKSES (REDIRECT TO HISTORY PERJALANAN ASET)
+        Route::get('/hak-akses', function () {
+          return redirect()->route('history.perjalanan.index');
+        })->name('history.hak-akses.index');
 
         // HISTORY MUTASI
         Route::get('/mutasi', [HistoryMutasiController::class, 'index'])->name('history.mutasi.index');
@@ -228,12 +263,19 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/maintenance/cetak', [HistoryMaintenanceController::class, 'cetak'])->name(
           'history.maintenance.cetak'
         );
+        Route::get('/maintenance/export-excel', [HistoryMaintenanceController::class, 'exportExcel'])->name(
+          'history.maintenance.export_excel'
+        );
       });
 
     Route::prefix('dashboard/maping/{maping}')->group(function () {
       Route::get('/hak-akses', [MapingAccessController::class, 'index'])->name('maping.hak-akses');
 
       Route::post('/hak-akses', [MapingAccessController::class, 'store'])->name('maping.hak-akses.store');
+
+      Route::post('/hak-akses/bulk-update', [MapingAccessController::class, 'bulkUpdate'])->name('maping.hak-akses.bulk-update');
+
+      Route::put('/hak-akses/{access}', [MapingAccessController::class, 'update'])->name('maping.hak-akses.update');
 
       Route::delete('/hak-akses/{access}', [MapingAccessController::class, 'destroy'])->name(
         'maping.hak-akses.destroy'

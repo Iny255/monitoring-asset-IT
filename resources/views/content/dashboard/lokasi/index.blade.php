@@ -1,10 +1,34 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Lokasi')
+@section('title', 'Lokasi Penempatan')
 
 @section('content')
 
     <div class="container-xxl flex-grow-1 container-p-y">
+
+        {{-- HERO HEADER --}}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-md bg-label-primary me-3">
+                            <span class="avatar-initial rounded">
+                                <i class="bx bx-map-pin fs-3"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="fw-bold mb-0">Lokasi Penempatan</h3>
+                            <small class="text-muted">Kelola master lokasi gedung, ruangan, dan cabang penempatan aset</small>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahLokasi">
+                            <i class="bx bx-plus me-1"></i> Tambah Lokasi
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         {{-- ALERT --}}
         @if (session('success'))
@@ -21,17 +45,7 @@
             </div>
         @endif
 
-        <div class="card">
-
-            {{-- HEADER --}}
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <h5 class="text-primary mb-0">Data Lokasi Aset</h5>
-
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahLokasi">
-                    Tambah Data Lokasi
-                </button>
-            </div>
-
+        <div class="card border-0 shadow-sm">
             {{-- BODY --}}
             <div class="card-body">
 
@@ -80,11 +94,19 @@
 
                                 <th>NAMA LOKASI</th>
 
-                                @if (auth()->user()->role === 'super_admin')
-                                    <th>PERUSAHAAN</th>
+                                @if (auth()->user()->role == 'super_admin')
+
+                                    @if (request('perusahaan_id'))
+                                        <th>PERUSAHAAN</th>
+                                    @else
+                                        <th>DIGUNAKAN DI</th>
+                                    @endif
+
                                 @endif
 
-                                <th width="120">ACTION</th>
+                                @if (!(auth()->user()->role == 'super_admin' && empty(request('perusahaan_id'))))
+                                    <th width="120">ACTION</th>
+                                @endif
                             </tr>
                         </thead>
 
@@ -96,38 +118,52 @@
                                     </td>
                                     <td>{{ $lokasi->nama_lokasi }}</td>
 
-                                    @if (auth()->user()->role === 'super_admin')
-                                        <td>
-                                            {{ $lokasi->perusahaan->nama_perusahaan ?? '-' }}
-                                        </td>
+                                    @if (auth()->user()->role == 'super_admin')
+                                        @if (request('perusahaan_id'))
+                                            <td>
+                                                {{ $lokasi->perusahaan->nama_perusahaan }}
+                                            </td>
+                                        @else
+                                            <td>
+                                                <span class="badge bg-label-primary btn-detail-lokasi"
+                                                    style="cursor:pointer" data-nama="{{ $lokasi->nama_lokasi }}">
+
+                                                    {{ $lokasi->total_perusahaan }} Perusahaan
+
+                                                </span>
+                                            </td>
+                                        @endif
                                     @endif
 
-                                    <td class="text-center">
-                                        <div class="d-flex justify-content-center gap-2">
+                                    @if (!(auth()->user()->role == 'super_admin' && empty(request('perusahaan_id'))))
+                                        <td class="text-center">
+                                            <div class="d-flex justify-content-center gap-2">
 
-                                            {{-- EDIT --}}
-                                            <button class="btn btn-warning btn-sm btn-edit" data-id="{{ $lokasi->id }}"
-                                                data-kode="{{ $lokasi->kode_lokasi }}"
-                                                data-nama="{{ $lokasi->nama_lokasi }}"
-                                                data-perusahaan_id="{{ $lokasi->id_perusahaan }}">
-                                                <i class="bx bx-edit-alt"></i>
-                                            </button>
+                                                {{-- EDIT --}}
+                                                <button class="btn btn-warning btn-sm btn-edit"
+                                                    data-id="{{ $lokasi->id }}" data-kode="{{ $lokasi->kode_lokasi }}"
+                                                    data-nama="{{ $lokasi->nama_lokasi }}"
+                                                    data-perusahaan_id="{{ $lokasi->id_perusahaan }}">
+                                                    <i class="bx bx-edit-alt"></i>
+                                                </button>
 
-                                            {{-- DELETE --}}
+                                                {{-- DELETE --}}
 
-                                            <form id="delete-form-{{ $lokasi->id }}"
-                                                action="{{ route('lokasi.destroy', $lokasi->id) }}" method="POST"
-                                                style="display:none;">
-                                                @csrf
-                                                @method('DELETE')
-                                            </form>
+                                                <form id="delete-form-{{ $lokasi->id }}"
+                                                    action="{{ route('lokasi.destroy', $lokasi->id) }}" method="POST"
+                                                    style="display:none;">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                </form>
 
-                                            <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $lokasi->id }}">
-                                                <i class="bx bx-trash"></i>
-                                            </button>
+                                                <button class="btn btn-danger btn-sm btn-delete"
+                                                    data-id="{{ $lokasi->id }}">
+                                                    <i class="bx bx-trash"></i>
+                                                </button>
 
-                                        </div>
-                                    </td>
+                                            </div>
+                                        </td>
+                                    @endif
                                 </tr>
                             @empty
                                 <tr>
@@ -233,6 +269,45 @@
                         </div>
                     </div>
                 </div>
+                <div class="modal fade" id="modalDetailLokasi">
+                    <div class="modal-dialog modal-lg">
+                        <div class="modal-content">
+
+                            <div class="modal-header bg-primary">
+                                <h5 class="modal-title text-white">
+                                    Detail Lokasi
+                                </h5>
+
+                                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+
+                            <div class="modal-body">
+
+                                <h5 id="judulLokasi"></h5>
+
+                                <table class="table table-bordered">
+
+                                    <thead>
+
+                                        <tr>
+                                            <th>No</th>
+                                            <th>Perusahaan</th>
+                                            <th width="150">Aksi</th>
+                                        </tr>
+
+                                    </thead>
+
+                                    <tbody id="listLokasi">
+
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
                 {{-- PAGINATION --}}
                 <div class="mt-3">
                     {{ $lokasis->links('pagination::bootstrap-5') }}
@@ -291,5 +366,155 @@
                 new bootstrap.Modal(document.getElementById('modalEditLokasi')).show();
             }
         });
+        // ======================================
+// DETAIL PERUSAHAAN
+// ======================================
+
+const modalDetail = new bootstrap.Modal(
+    document.getElementById('modalDetailLokasi')
+);
+
+document.querySelectorAll('.btn-detail-lokasi').forEach(btn => {
+
+    btn.addEventListener('click', function () {
+
+        fetch(
+            `/dashboard/lokasi/detail-perusahaan?nama_lokasi=${encodeURIComponent(this.dataset.nama)}`
+        )
+
+        .then(res => res.json())
+
+        .then(data => {
+
+            document.getElementById('judulLokasi').innerHTML =
+                data[0].nama_lokasi;
+
+            let html = '';
+
+            data.forEach((item, index) => {
+
+                html += `
+                    <tr>
+
+                        <td>${index + 1}</td>
+
+                        <td>${item.perusahaan.nama_perusahaan}</td>
+
+                        <td class="text-center">
+
+                            <button
+                                type="button"
+                                class="btn btn-warning btn-sm btn-edit-modal me-1"
+                                data-id="${item.id}"
+                                data-nama="${item.nama_lokasi}"
+                                data-perusahaan_id="${item.id_perusahaan}">
+
+                                <i class="bx bx-edit-alt"></i>
+
+                            </button>
+
+                            <button
+                                type="button"
+                                class="btn btn-danger btn-sm btn-delete-modal"
+                                data-id="${item.id}">
+
+                                <i class="bx bx-trash"></i>
+
+                            </button>
+
+                        </td>
+
+                    </tr>
+                `;
+
+            });
+
+            document.getElementById('listLokasi').innerHTML = html;
+
+            // ==========================
+            // EDIT DARI MODAL
+            // ==========================
+            document.querySelectorAll('.btn-edit-modal').forEach(btn => {
+
+                btn.addEventListener('click', function () {
+
+                    document.getElementById('edit_nama').value =
+                        this.dataset.nama;
+
+                    @if(auth()->user()->role === 'super_admin')
+                        document.getElementById('edit_perusahaan').value =
+                            this.dataset.perusahaan_id;
+                    @endif
+
+                    document.getElementById('formEditLokasi').action =
+                        `/dashboard/lokasi/${this.dataset.id}`;
+
+                    modalDetail.hide();
+
+                    new bootstrap.Modal(
+                        document.getElementById('modalEditLokasi')
+                    ).show();
+
+                });
+
+            });
+
+            // ==========================hhh
+            // DELETE DARI MODAL
+            // ==========================
+            document.querySelectorAll('.btn-delete-modal').forEach(btn => {
+
+                btn.addEventListener('click', function () {
+
+                    let id = this.dataset.id;
+
+                    modalDetail.hide();
+
+                    Swal.fire({
+                        title: 'Yakin hapus?',
+                        text: 'Data tidak bisa dikembalikan!',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#696cff',
+                        cancelButtonColor: '#8592a3',
+                        confirmButtonText: 'Ya, hapus!',
+                        cancelButtonText: 'Batal'
+                    }).then((result) => {
+
+                        if (result.isConfirmed) {
+
+                            const form = document.createElement('form');
+
+                            form.method = 'POST';
+                            form.action = `/dashboard/lokasi/${id}`;
+
+                            form.innerHTML = `
+                                @csrf
+                                <input type="hidden" name="_method" value="DELETE">
+                            `;
+
+                            document.body.appendChild(form);
+
+                            form.submit();
+
+                        } else {
+
+                            modalDetail.show();
+
+                        }
+
+                    });
+
+                });
+
+            });
+
+            modalDetail.show();
+
+        });
+
+    });
+
+});
     </script>
 @endsection

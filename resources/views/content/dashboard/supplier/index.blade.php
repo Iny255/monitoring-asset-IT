@@ -1,84 +1,84 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Supplier')
+@section('title', 'Supplier / Vendor')
 
 @section('content')
 
-    <div class="container-fluid">
+    <div class="container-xxl flex-grow-1 container-p-y">
+
+        {{-- HERO HEADER --}}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-md bg-label-primary me-3">
+                            <span class="avatar-initial rounded">
+                                <i class="bx bx-store-alt fs-3"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="fw-bold mb-0">Supplier / Vendor</h3>
+                            <small class="text-muted">Kelola data vendor dan supplier penyedia aset</small>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahSupplier">
+                            <i class="bx bx-plus me-1"></i> Tambah Supplier
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         {{-- ALERT --}}
         @if (session('success'))
             <div class="alert alert-success alert-dismissible fade show">
                 {{ session('success') }}
+                <button class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         @endif
 
         @if (session('error'))
             <div class="alert alert-danger alert-dismissible fade show">
                 {{ session('error') }}
+                <button class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         @endif
 
         <div class="card shadow-sm border-0">
-
-            {{-- HEADER --}}
-            <div class="card-header bg-white d-flex justify-content-between align-items-center">
-                <h5 class="mb-0 fw-semibold text-primary">
-                    Data Supplier
-                </h5>
-
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahSupplier">
-
-                    <i class="bx bx-plus"></i>
-                    Tambah Data
-                </button>
-            </div>
-
             <div class="card-body p-4">
 
-                {{-- FILTER PERUSAHAAN --}}
-                @if (auth()->user()->role === 'super_admin')
-                    <form method="GET" class="row mb-3">
-
+                {{-- FILTER + SEARCH --}}
+                <form method="GET" class="row g-3 align-items-end mb-4">
+                    @if (auth()->user()->role === 'super_admin')
                         <div class="col-md-4">
-                            <select name="perusahaan_id" class="form-control">
-                                <option value="">
-                                    -- Semua Perusahaan --
-                                </option>
-
+                            <label class="form-label">Perusahaan</label>
+                            <select name="perusahaan_id" class="form-select">
+                                <option value="">Semua Perusahaan</option>
                                 @foreach ($perusahaans as $p)
                                     <option value="{{ $p->id }}"
                                         {{ request('perusahaan_id') == $p->id ? 'selected' : '' }}>
                                         {{ $p->nama_perusahaan }}
                                     </option>
                                 @endforeach
-
                             </select>
                         </div>
+                    @endif
 
-                        <div class="col-md-2">
-                            <button class="btn btn-primary">
-                                Filter
-                            </button>
-                        </div>
-
-                    </form>
-                @endif
-
-                {{-- SEARCH --}}
-                <form method="GET" class="row mb-4">
-
-                    <div class="col-md-6 d-flex">
-
-                        <input type="text" name="search" class="form-control me-2" placeholder="Cari supplier..."
+                    <div class="col-md-5">
+                        <label class="form-label">Pencarian</label>
+                        <input type="text" name="search" class="form-control" placeholder="Cari supplier..."
                             value="{{ request('search') }}">
-
-                        <button class="btn btn-primary">
-                            Cari
-                        </button>
-
                     </div>
 
+                    <div class="col-md-3 d-flex gap-2">
+                        <button class="btn btn-primary w-100">
+                            <i class="bx bx-search"></i> Cari
+                        </button>
+                        <a href="{{ route('supplier.index') }}" class="btn btn-secondary w-100">
+                            Reset
+                        </a>
+                    </div>
                 </form>
 
                 {{-- TABLE --}}
@@ -95,16 +95,25 @@
                                 <th width="150">NO HP</th>
                                 <th>ALAMAT</th>
 
-                                @if (auth()->user()->role === 'super_admin')
+                                @if (auth()->user()->role == 'super_admin')
+
+                                    @if (request('perusahaan_id'))
+                                        <th>PERUSAHAAN</th>
+                                    @else
+                                        <th>DIGUNAKAN DI</th>
+                                    @endif
+                                @else
                                     <th>PERUSAHAAN</th>
+
                                 @endif
 
-                                <th width="150">ACTION</th>
+                                @if (!(auth()->user()->role == 'super_admin' && empty(request('perusahaan_id'))))
+                                    <th width="150">ACTION</th>
+                                @endif
 
                             </tr>
 
                         </thead>
-
                         <tbody>
 
                             @forelse($suppliers as $index => $supplier)
@@ -125,46 +134,68 @@
                                     <td>
                                         {{ $supplier->alamat ?: '-' }}
                                     </td>
-                                    @if (auth()->user()->role === 'super_admin')
+                                    @if (auth()->user()->role == 'super_admin')
+                                        @if (request('perusahaan_id'))
+                                            <td>
+                                                {{ $supplier->perusahaan->nama_perusahaan }}
+                                            </td>
+                                        @else
+                                            <td>
+
+                                                <span class="badge bg-label-primary btn-detail-supplier"
+                                                    style="cursor:pointer" data-nama="{{ $supplier->nama_supplier }}">
+
+                                                    {{ $supplier->total_perusahaan }} Perusahaan
+
+                                                </span>
+
+                                            </td>
+                                        @endif
+                                    @else
                                         <td>
                                             {{ $supplier->perusahaan->nama_perusahaan ?? '-' }}
                                         </td>
                                     @endif
+                                    @if (!(auth()->user()->role == 'super_admin' && empty(request('perusahaan_id'))))
+                                        <td class="text-center">
 
-                                    <td class="text-center">
+                                            <button type="button" class="btn btn-warning btn-sm btn-edit"
+                                                data-id="{{ $supplier->id }}" data-nama="{{ $supplier->nama_supplier }}"
+                                                data-telepon="{{ $supplier->telepon }}"
+                                                data-alamat="{{ $supplier->alamat }}"
+                                                data-perusahaan="{{ $supplier->perusahaan->nama_perusahaan ?? '-' }}"
+                                                data-perusahaan_id="{{ $supplier->perusahaan_id }}">
 
-                                        <button type="button" class="btn btn-warning btn-sm btn-edit"
-                                            data-id="{{ $supplier->id }}" data-nama="{{ $supplier->nama_supplier }}"
-                                            data-telepon="{{ $supplier->telepon }}" data-alamat="{{ $supplier->alamat }}">
+                                                <i class="bx bx-edit-alt"></i>
 
-                                            <i class="bx bx-edit-alt"></i>
+                                            </button>
 
-                                        </button>
+                                            <form id="delete-form-{{ $supplier->id }}"
+                                                action="{{ route('supplier.destroy', $supplier->id) }}" method="POST"
+                                                style="display:none;">
 
-                                        <form id="delete-form-{{ $supplier->id }}"
-                                            action="{{ route('supplier.destroy', $supplier->id) }}" method="POST"
-                                            style="display:none;">
+                                                @csrf
+                                                @method('DELETE')
 
-                                            @csrf
-                                            @method('DELETE')
+                                            </form>
 
-                                        </form>
+                                            <button type="button" class="btn btn-danger btn-sm btn-delete"
+                                                data-id="{{ $supplier->id }}">
 
-                                        <button type="button" class="btn btn-danger btn-sm btn-delete"
-                                            data-id="{{ $supplier->id }}">
+                                                <i class="bx bx-trash"></i>
 
-                                            <i class="bx bx-trash"></i>
+                                            </button>
 
-                                        </button>
-
-                                    </td>
+                                        </td>
+                                    @endif
 
                                 </tr>
 
                             @empty
 
                                 <tr>
-                                    <td colspan="6" class="text-center">
+                                    <td colspan="{{ auth()->user()->role == 'super_admin' && empty(request('perusahaan_id')) ? 5 : 6 }}"
+                                        class="text-center">
                                         Data tidak ditemukan
                                     </td>
                                 </tr>
@@ -314,15 +345,65 @@
         </div>
 
     </div>
+    {{-- modal detail --}}
+    <div class="modal fade" id="modalDetailSupplier">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+
+                <div class="modal-header bg-primary">
+
+                    <h5 class="modal-title text-white">
+                        Detail Supplier
+                    </h5>
+
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal">
+                    </button>
+
+                </div>
+
+                <div class="modal-body">
+
+                    <h5 id="judulSupplier"></h5>
+
+                    <div class="table-responsive">
+
+                        <table class="table table-bordered">
+
+                            <thead>
+
+                                <tr>
+
+                                    <th>No</th>
+                                    <th>Perusahaan</th>
+                                    <th width="150">Aksi</th>
+
+                                </tr>
+
+                            </thead>
+
+                            <tbody id="listSupplier">
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </div>
 
 @endsection
 
 @section('scripts')
-
     <script>
         document.addEventListener('DOMContentLoaded', function() {
 
+            // ======================================
             // DELETE
+            // ======================================
             document.querySelectorAll('.btn-delete').forEach(btn => {
 
                 btn.addEventListener('click', function() {
@@ -334,6 +415,8 @@
                         text: 'Data tidak bisa dikembalikan!',
                         icon: 'warning',
                         showCancelButton: true,
+                        confirmButtonColor: '#696cff',
+                        cancelButtonColor: '#8592a3',
                         confirmButtonText: 'Ya, hapus!',
                         cancelButtonText: 'Batal'
                     }).then((result) => {
@@ -348,16 +431,30 @@
 
             });
 
+            // ======================================
             // EDIT
+            // ======================================
             document.querySelectorAll('.btn-edit').forEach(btn => {
 
                 btn.addEventListener('click', function() {
 
                     let id = this.dataset.id;
 
-                    document.getElementById('edit_nama').value = this.dataset.nama;
-                    document.getElementById('edit_telepon').value = this.dataset.telepon;
-                    document.getElementById('edit_alamat').value = this.dataset.alamat;
+                    document.getElementById('edit_nama').value =
+                        this.dataset.nama;
+
+                    document.getElementById('edit_telepon').value =
+                        this.dataset.telepon;
+
+                    document.getElementById('edit_alamat').value =
+                        this.dataset.alamat;
+
+                    @if (auth()->user()->role === 'super_admin')
+                        if (document.getElementById('edit_perusahaan')) {
+                            document.getElementById('edit_perusahaan').value =
+                                this.dataset.perusahaan_id;
+                        }
+                    @endif
 
                     document.getElementById('formEditSupplier').action =
                         `/dashboard/supplier/${id}`;
@@ -370,7 +467,175 @@
 
             });
 
+            // ======================================
+            // DETAIL SUPPLIER
+            // ======================================
+            const modalDetail = new bootstrap.Modal(
+                document.getElementById('modalDetailSupplier')
+            );
+
+            document.querySelectorAll('.btn-detail-supplier').forEach(btn => {
+
+                btn.addEventListener('click', function() {
+
+                    fetch(
+                            `/dashboard/supplier/detail-perusahaan?nama_supplier=${encodeURIComponent(this.dataset.nama)}`)
+
+                        .then(res => res.json())
+
+                        .then(data => {
+
+                            document.getElementById('judulSupplier').innerHTML =
+                                data[0].nama_supplier;
+
+                            let html = '';
+
+                            data.forEach((item, index) => {
+
+                                html += `
+                    <tr>
+
+                        <td>${index+1}</td>
+
+                        <td>${item.perusahaan.nama_perusahaan}</td>
+
+                        <td class="text-center">
+
+                            <button
+                                class="btn btn-warning btn-sm btn-edit-modal me-1"
+
+                                data-id="${item.id}"
+                                data-nama="${item.nama_supplier}"
+                                data-telepon="${item.telepon ?? ''}"
+                                data-alamat="${item.alamat ?? ''}"
+                                data-perusahaan="${item.perusahaan.nama_perusahaan}"
+                                data-perusahaan_id="${item.perusahaan_id}">
+
+                                <i class="bx bx-edit-alt"></i>
+
+                            </button>
+
+                            <button
+                                class="btn btn-danger btn-sm btn-delete-modal"
+                                data-id="${item.id}">
+
+                                <i class="bx bx-trash"></i>
+
+                            </button>
+
+                        </td>
+
+                    </tr>
+                    `;
+
+                            });
+
+                            document.getElementById('listSupplier').innerHTML = html;
+
+                            // ======================================
+                            // EDIT DARI MODAL
+                            // ======================================
+                            document.querySelectorAll('.btn-edit-modal').forEach(btn => {
+
+                                btn.addEventListener('click', function() {
+
+                                    document.getElementById('edit_nama').value =
+                                        this.dataset.nama;
+
+                                    document.getElementById('edit_telepon')
+                                        .value =
+                                        this.dataset.telepon;
+
+                                    document.getElementById('edit_alamat')
+                                        .value =
+                                        this.dataset.alamat;
+
+                                    @if (auth()->user()->role === 'super_admin')
+                                        if (document.getElementById(
+                                                'edit_perusahaan')) {
+                                            document.getElementById(
+                                                    'edit_perusahaan').value =
+                                                this.dataset.perusahaan_id;
+                                        }
+                                    @endif
+
+                                    document.getElementById('formEditSupplier')
+                                        .action =
+                                        `/dashboard/supplier/${this.dataset.id}`;
+
+                                    modalDetail.hide();
+
+                                    new bootstrap.Modal(
+                                        document.getElementById(
+                                            'modalEditSupplier')
+                                    ).show();
+
+                                });
+
+                            });
+
+                            // ======================================
+                            // DELETE DARI MODAL
+                            // ======================================
+                            document.querySelectorAll('.btn-delete-modal').forEach(btn => {
+
+                                btn.addEventListener('click', function() {
+
+                                    let id = this.dataset.id;
+
+                                    modalDetail.hide();
+
+                                    Swal.fire({
+                                        title: 'Yakin hapus?',
+                                        text: 'Data tidak bisa dikembalikan!',
+                                        icon: 'warning',
+                                        showCancelButton: true,
+                                        confirmButtonColor: '#696cff',
+                                        cancelButtonColor: '#8592a3',
+                                        confirmButtonText: 'Ya, hapus!',
+                                        cancelButtonText: 'Batal'
+
+                                    }).then((result) => {
+
+                                        if (result.isConfirmed) {
+
+                                            const form = document
+                                                .createElement('form');
+
+                                            form.method = 'POST';
+                                            form.action =
+                                                `/dashboard/supplier/${id}`;
+
+                                            form.innerHTML = `
+                                    @csrf
+                                    <input type="hidden" name="_method" value="DELETE">
+                                `;
+
+                                            document.body.appendChild(
+                                                form);
+
+                                            form.submit();
+
+                                        } else {
+
+                                            modalDetail.show();
+
+                                        }
+
+                                    });
+
+                                });
+
+                            });
+
+                            modalDetail.show();
+
+                        });
+
+                });
+
+            });
+
         });
     </script>
-
 @endsection

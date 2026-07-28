@@ -8,6 +8,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class KaryawanController extends Controller
 {
@@ -17,31 +18,48 @@ class KaryawanController extends Controller
   public function index(Request $request)
   {
     $user = auth()->user();
+
     $search = $request->search;
     $perusahaanId = $request->perusahaan_id;
 
-    // 🔥 ambil data perusahaan untuk dropdown
     $perusahaans = Perusahaan::all();
 
     if ($user->role === 'super_admin') {
-      $karyawans = Karyawan::with('perusahaan');
-
       if ($perusahaanId) {
-        $karyawans->where('id_perusahaan', $perusahaanId);
+        $karyawans = Karyawan::with('perusahaan')->where('id_perusahaan', $perusahaanId);
+      } else {
+        $karyawans = Karyawan::select(DB::raw('MIN(id) as id'), 'kode_karyawan', 'nama_karyawan', 'jabatan', 'divisi')
+          ->selectRaw('COUNT(DISTINCT id_perusahaan) as total_perusahaan')
+          ->selectRaw('MAX(created_at) as created_at')
+          ->groupBy('kode_karyawan', 'nama_karyawan', 'jabatan', 'divisi');
       }
     } else {
       $karyawans = Karyawan::with('perusahaan')->where('id_perusahaan', $user->id_perusahaan);
     }
 
     if ($search) {
-      $karyawans->where(function ($query) use ($search) {
-        $query->where('nama_karyawan', 'like', "%{$search}%")->orWhere('kode_karyawan', 'like', "%{$search}%");
+      $karyawans->where(function ($q) use ($search) {
+        $q->where('nama_karyawan', 'like', "%{$search}%")->orWhere('kode_karyawan', 'like', "%{$search}%");
       });
     }
 
-    $karyawans = $karyawans->latest()->paginate(10);
+    $karyawans = $karyawans
+      ->latest()
+      ->paginate(10)
+      ->appends($request->query());
 
-    return view('content.dashboard.useraset.index', compact('karyawans', 'perusahaans'));
+    return view('content.dashboard.useraset.index', compact('karyawans', 'perusahaans', 'perusahaanId'));
+  }
+  public function detailPerusahaan(Request $request)
+  {
+    $request->validate([
+      'kode_karyawan' => 'required',
+    ]);
+
+    return Karyawan::with('perusahaan')
+      ->where('kode_karyawan', $request->kode_karyawan)
+      ->orderBy('id_perusahaan')
+      ->get();
   }
 
   /**

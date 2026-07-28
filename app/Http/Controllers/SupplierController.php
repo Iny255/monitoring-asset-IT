@@ -6,6 +6,7 @@ use App\Models\Supplier;
 use App\Models\Perusahaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class SupplierController extends Controller
 {
@@ -19,11 +20,18 @@ class SupplierController extends Controller
     $search = $request->search;
     $perusahaanId = $request->perusahaan_id;
 
-    if ($user->role === 'super_admin') {
-      $suppliers = Supplier::with('perusahaan');
+    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
 
+    if ($user->role === 'super_admin') {
       if ($perusahaanId) {
-        $suppliers->where('perusahaan_id', $perusahaanId);
+        // Menampilkan supplier perusahaan tertentu
+        $suppliers = Supplier::with('perusahaan')->where('perusahaan_id', $perusahaanId);
+      } else {
+        // Menampilkan supplier unik semua perusahaan
+        $suppliers = Supplier::select(DB::raw('MIN(id) as id'), 'nama_supplier', 'telepon', 'alamat')
+          ->selectRaw('COUNT(DISTINCT perusahaan_id) as total_perusahaan')
+          ->selectRaw('MAX(created_at) as created_at')
+          ->groupBy('nama_supplier', 'telepon', 'alamat');
       }
     } else {
       $suppliers = Supplier::with('perusahaan')->where('perusahaan_id', $user->id_perusahaan);
@@ -42,9 +50,18 @@ class SupplierController extends Controller
       ->paginate(10)
       ->appends($request->query());
 
-    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+    return view('content.dashboard.supplier.index', compact('suppliers', 'perusahaans', 'perusahaanId'));
+  }
+  public function detailPerusahaan(Request $request)
+  {
+    $request->validate([
+      'nama_supplier' => 'required',
+    ]);
 
-    return view('content.dashboard.supplier.index', compact('suppliers', 'perusahaans'));
+    return Supplier::with('perusahaan')
+      ->where('nama_supplier', $request->nama_supplier)
+      ->orderBy('perusahaan_id')
+      ->get();
   }
 
   /**

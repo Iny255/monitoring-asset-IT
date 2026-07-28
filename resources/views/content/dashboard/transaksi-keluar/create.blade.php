@@ -297,9 +297,14 @@
                         '<option value="">Pilih Kode Aset</option>'
                     );
 
+                    $('#lokasi_id').html(
+                        '<option value="">Pilih Lokasi</option>'
+                    );
+
                     clearDetail();
 
                     loadKategori();
+                    loadLokasi();
 
                 });
             @endif

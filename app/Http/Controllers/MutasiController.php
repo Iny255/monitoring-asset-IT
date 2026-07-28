@@ -231,8 +231,11 @@ class MutasiController extends Controller
 
         DB::commit();
 
-        return redirect()
-          ->route('history.mutasi.index')
+        $maping->loadMissing('keluar.inventaris');
+        $dataAsetId = $maping->keluar?->inventaris?->data_aset_id;
+        $targetUrl = $dataAsetId ? route('history.perjalanan.show', $dataAsetId) : route('history.perjalanan.index');
+
+        return redirect($targetUrl)
           ->with('success', 'Mutasi internal berhasil disimpan.');
       }
 
@@ -606,8 +609,11 @@ class MutasiController extends Controller
         $message .= ' Sebagian hak akses belum tersedia di perusahaan tujuan.';
       }
 
-      return redirect()
-        ->route('history.mutasi.index')
+      $maping->loadMissing('keluar.inventaris');
+      $dataAsetId = $maping->keluar?->inventaris?->data_aset_id;
+      $targetUrl = $dataAsetId ? route('history.perjalanan.show', $dataAsetId) : route('history.perjalanan.index');
+
+      return redirect($targetUrl)
         ->with('success', $message)
         ->with('akses_gagal', $aksesGagal);
     } catch (\Throwable $e) {

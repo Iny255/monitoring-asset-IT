@@ -35,10 +35,6 @@
                     </a>
                 @endif
 
-                <a href="{{ url('/dashboard/transaksi-masuk/stok') }}" class="btn btn-primary px-4 py-2 fw-semibold">
-                    Cek Stok
-                </a>
-
             </div>
 
         </div>
@@ -161,6 +157,13 @@
                                 class="btn btn-danger">
 
                                 <i class="bx bx-printer"></i> Cetak PDF
+
+                            </a>
+                            <a href="{{ route('transaksi-keluar.exportExcel', request()->query()) }}"
+                                class="btn btn-success">
+
+                                <i class="bx bxs-file-export"></i>
+                                Export Excel
 
                             </a>
 
@@ -313,7 +316,7 @@
                                             @method('DELETE')
                                         </form>
 
-                    
+
 
                                     </div>
 

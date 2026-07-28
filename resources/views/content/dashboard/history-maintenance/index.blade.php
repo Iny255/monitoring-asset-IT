@@ -298,24 +298,20 @@
 
                     </div>
 
-                    <div class="d-flex justify-content-end">
+                    <div class="d-flex align-items-center justify-content-end gap-2 flex-wrap mt-2">
 
                         <button
                             type="submit"
-                            class="btn btn-primary me-2">
+                            class="btn btn-primary">
 
-                            <i class="bx bx-search"></i>
-
-                            Filter
+                            <i class="bx bx-search me-1"></i> Filter
 
                         </button>
 
                         <a href="{{ route('history.maintenance.index') }}"
-                            class="btn btn-outline-secondary me-2">
+                            class="btn btn-outline-secondary">
 
-                            <i class="bx bx-reset"></i>
-
-                            Reset
+                            <i class="bx bx-reset me-1"></i> Reset
 
                         </a>
 
@@ -323,9 +319,14 @@
                             target="_blank"
                             class="btn btn-danger">
 
-                            <i class="bx bxs-file-pdf"></i>
+                            <i class="bx bxs-file-pdf me-1"></i> Cetak PDF
 
-                            Cetak PDF
+                        </a>
+
+                        <a href="{{ route('history.maintenance.export_excel', request()->query()) }}"
+                            class="btn btn-success">
+
+                            <i class="bx bxs-file-export me-1"></i> Export Excel
 
                         </a>
 

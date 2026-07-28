@@ -114,8 +114,11 @@ class PencabutanController extends Controller
 
       DB::commit();
 
-      return redirect()
-        ->route('maping.index')
+      $maping->loadMissing('keluar.inventaris');
+      $dataAsetId = $maping->keluar?->inventaris?->data_aset_id;
+      $targetUrl = $dataAsetId ? route('history.perjalanan.show', $dataAsetId) : route('history.perjalanan.index');
+
+      return redirect($targetUrl)
         ->with('success', 'Pencabutan berhasil dilakukan.');
     } catch (\Exception $e) {
       DB::rollBack();

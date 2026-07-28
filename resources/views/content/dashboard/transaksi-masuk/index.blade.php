@@ -4,39 +4,53 @@
 
 @section('content')
 
-    {{-- ALERT --}}
-    @if (session('success'))
-        <div class="alert alert-success alert-dismissible fade show">
-            {{ session('success') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <div class="container-xxl flex-grow-1 container-p-y">
+
+        {{-- HERO HEADER --}}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-md bg-label-primary me-3">
+                            <span class="avatar-initial rounded">
+                                <i class="bx bx-log-in-circle fs-3"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="fw-bold mb-0">Penerimaan Aset</h3>
+                            <small class="text-muted">Kelola transaksi pengadaan dan barang masuk dari supplier</small>
+                        </div>
+                    </div>
+                    <div>
+                        @auth
+                            @if (auth()->user()->role === 'petugas' || auth()->user()->role === 'super_admin')
+                                <a href="{{ route('transaksi-masuk.create') }}" class="btn btn-primary">
+                                    <i class="bx bx-plus me-1"></i> Input Barang Masuk
+                                </a>
+                            @endif
+                        @endauth
+                    </div>
+                </div>
+            </div>
         </div>
-    @endif
 
-    @if (session('error'))
-        <div class="alert alert-danger alert-dismissible fade show">
-            {{ session('error') }}
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    @endif
+        {{-- ALERT --}}
+        @if (session('success'))
+            <div class="alert alert-success alert-dismissible fade show">
+                {{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
 
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
 
-    <div class="card">
-
-        {{-- HEADER --}}
-        <div class="card-header d-flex justify-content-between align-items-center">
-            <h5 class="text-primary mb-0">Data Penerimaan Aset</h5>
-
-            @auth
-                @if (auth()->user()->role === 'petugas' || auth()->user()->role === 'super_admin')
-                    <a href="{{ route('transaksi-masuk.create') }}"class="btn btn-primary px-4 py-2 fw-semibold">
-                        <i class="bx bx-plus"></i> Tambah Data
-                    </a>
-                @endif
-            @endauth
-        </div>
-
-
-        <div class="card-body">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
 
             {{-- SEARCH --}}
             {{-- FILTER LAPORAN --}}
@@ -175,6 +189,13 @@
 
                                 <i class="bx bx-printer"></i>
                                 Cetak PDF
+
+                            </a>
+                            <a href="{{ route('transaksi-masuk.exportExcel', request()->query()) }}"
+                                class="btn btn-success">
+
+                                <i class="bx bxs-file-export"></i>
+                                Export Excel
 
                             </a>
 
@@ -335,7 +356,8 @@
                                                 <i class="bx bx-edit-alt"></i>
 
                                             </button>
-                                            <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $masuk->id }}">
+                                            <button class="btn btn-danger btn-sm btn-delete"
+                                                data-id="{{ $masuk->id }}">
 
                                                 <i class="bx bx-trash"></i>
 
@@ -488,6 +510,28 @@
                         }
                     }
 
+                    const filterPerusahaanSelect = document.querySelector('form[action="{{ route('transaksi-masuk.index') }}"] select[name="perusahaan_id"]');
+                    const filterSupplierSelect = document.querySelector('form[action="{{ route('transaksi-masuk.index') }}"] select[name="supplier_id"]');
+
+                    if (filterPerusahaanSelect && filterSupplierSelect) {
+                        filterPerusahaanSelect.addEventListener('change', function() {
+                            const id = this.value;
+                            if (!id) {
+                                filterSupplierSelect.innerHTML = '<option value="">Semua Supplier</option>';
+                                return;
+                            }
+
+                            fetch('/dashboard/get-supplier/' + id)
+                                .then(res => res.json())
+                                .then(data => {
+                                    let html = '<option value="">Semua Supplier</option>';
+                                    data.forEach(item => {
+                                        html += `<option value="${item.id}">${item.nama_supplier}</option>`;
+                                    });
+                                    filterSupplierSelect.innerHTML = html;
+                                });
+                        });
+                    }
                 });
             </script>
         @endsection

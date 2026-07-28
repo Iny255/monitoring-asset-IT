@@ -1,10 +1,34 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Data Aset')
+@section('title', 'Master Merek & Type')
 
 @section('content')
 
-    <div class="container-fluid">
+    <div class="container-xxl flex-grow-1 container-p-y">
+
+        {{-- HERO HEADER --}}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-md bg-label-primary me-3">
+                            <span class="avatar-initial rounded">
+                                <i class="bx bx-package fs-3"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="fw-bold mb-0">Master Merek & Type</h3>
+                            <small class="text-muted">Kelola master merek, type, dan spesifikasi barang</small>
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahAset">
+                            <i class="bx bx-plus me-1"></i> Tambah Merek & Type
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         {{-- ALERT --}}
         @if (session('success'))
@@ -22,23 +46,6 @@
         @endif
 
         <div class="card shadow-sm border-0">
-
-            {{-- HEADER --}}
-            <div class="card-header d-flex justify-content-between align-items-center">
-
-                <h5 class="text-primary mb-0">
-                    Data Aset
-                </h5>
-
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahAset">
-
-                    <i class="bx bx-plus"></i>
-                    Tambah Data
-
-                </button>
-
-            </div>
-
             <div class="card-body">
 
                 {{-- FILTER --}}
@@ -52,7 +59,7 @@
                                 Perusahaan
                             </label>
 
-                            <select name="perusahaan_id" id="perusahaan_id" class="form-select" required>
+                            <select name="perusahaan_id" id="perusahaan_id" class="form-select">
 
                                 <option value="">
                                     Semua Perusahaan

@@ -4,31 +4,33 @@
 
 @section('content')
 
-    <div class="card">
+    <div class="container-xxl flex-grow-1 container-p-y">
 
-        <div class="card-header d-flex justify-content-between align-items-center">
-
-            <div>
-
-                <h4 class="mb-1">
-                    Data Service & Maintenance
-                </h4>
-
-                <small class="text-muted">
-                    Daftar transaksi service & maintenance inventaris.
-                </small>
-
+        {{-- HERO HEADER --}}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-md bg-label-primary me-3">
+                            <span class="avatar-initial rounded">
+                                <i class="bx bx-wrench fs-3"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="fw-bold mb-0">Service & Maintenance</h3>
+                            <small class="text-muted">Kelola transaksi perbaikan, klaim garansi, dan perawatan aset</small>
+                        </div>
+                    </div>
+                    <div>
+                        <a href="{{ route('maintenance.create') }}" class="btn btn-primary">
+                            <i class="bx bx-plus me-1"></i> Input Service
+                        </a>
+                    </div>
+                </div>
             </div>
-
-            <a href="{{ route('maintenance.create') }}" class="btn btn-primary">
-
-                <i class="bx bx-plus"></i>
-
-                Tambah Service
-
-            </a>
-
         </div>
+
+        <div class="card border-0 shadow-sm">
 
 
 
@@ -155,7 +157,7 @@
                     </div>
 
                     {{-- Search --}}
-                    <div class="col-md-5 mb-3">
+                    <div class="col-md-7 mb-3">
 
                         <label class="form-label text-uppercase fw-semibold">
 
@@ -169,30 +171,31 @@
                     </div>
 
                     {{-- Tombol --}}
-                    <div class="col-md-4 mb-3 d-flex align-items-end">
+                    <div class="col-12 d-flex align-items-center gap-2 flex-wrap mt-2">
 
-                        <button class="btn btn-primary me-2">
+                        <button type="submit" class="btn btn-primary">
 
-                            <i class="bx bx-search"></i>
-
-                            Filter
+                            <i class="bx bx-search me-1"></i> Filter
 
                         </button>
 
-                        <a href="{{ route('maintenance.index') }}" class="btn btn-outline-secondary me-2">
+                        <a href="{{ route('maintenance.index') }}" class="btn btn-outline-secondary">
 
-                            <i class="bx bx-reset"></i>
-
-                            Reset
+                            <i class="bx bx-reset me-1"></i> Reset
 
                         </a>
 
                         <a href="{{ route('maintenance.cetak', request()->query()) }}" target="_blank"
                             class="btn btn-danger">
 
-                            <i class="bx bxs-file-pdf"></i>
+                            <i class="bx bxs-file-pdf me-1"></i> Cetak PDF
 
-                            Cetak PDF
+                        </a>
+
+                        <a href="{{ route('maintenance.export_excel', request()->query()) }}"
+                            class="btn btn-success">
+
+                            <i class="bx bxs-file-export me-1"></i> Export Excel
 
                         </a>
 
@@ -245,6 +248,12 @@
 
                             <td>
                                 {{ $item->kode_service }}
+                                @if ($item->gambar)
+                                    <br>
+                                    <span class="badge bg-label-info text-info" title="Ada Foto Bukti Servis">
+                                        <i class="bx bx-image me-1"></i> Foto
+                                    </span>
+                                @endif
                             </td>
 
                             <td>

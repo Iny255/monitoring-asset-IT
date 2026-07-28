@@ -36,7 +36,7 @@ class DataAsetController extends Controller
       });
     }
 
-    $dataAsets = $query->latest()->paginate(10);
+    $dataAsets = $query->latest()->paginate(10)->appends($request->query());
 
     if ($user->role == 'super_admin') {
       // kosongkan dulu

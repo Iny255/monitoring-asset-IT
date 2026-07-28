@@ -295,7 +295,7 @@
 
                     </div>
 
-                    <div>
+                    <div class="mb-4">
 
                         <label class="fw-bold">
 
@@ -306,6 +306,60 @@
                         <div class="border rounded p-3 bg-light">
 
                             {{ $maintenance->catatan ?: '-' }}
+
+                        </div>
+
+                    </div>
+
+                    <div>
+
+                        <label class="fw-bold mb-2">
+
+                            Foto Bukti Servis
+
+                        </label>
+
+                        <div class="border rounded p-3 bg-light text-center">
+
+                            @if ($maintenance->gambar)
+                                <a href="#" data-bs-toggle="modal" data-bs-target="#modalGambarServis">
+                                    <img src="{{ asset('storage/' . $maintenance->gambar) }}" alt="Foto Bukti Servis" class="img-fluid rounded shadow-sm" style="max-height: 250px; object-fit: contain; cursor: pointer;">
+                                </a>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-primary me-1" data-bs-toggle="modal" data-bs-target="#modalGambarServis">
+                                        <i class="bx bx-zoom-in me-1"></i> Perbesar
+                                    </button>
+                                    <a href="{{ asset('storage/' . $maintenance->gambar) }}" target="_blank" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bx bx-open-with me-1"></i> Buka Tab Baru
+                                    </a>
+                                </div>
+
+                                <!-- Modal Zoom Gambar -->
+                                <div class="modal fade" id="modalGambarServis" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog modal-dialog-centered modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Foto Bukti Servis - {{ $maintenance->kode_service }}</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body text-center p-2 bg-dark">
+                                                <img src="{{ asset('storage/' . $maintenance->gambar) }}" alt="Foto Bukti Servis" class="img-fluid rounded" style="max-height: 75vh;">
+                                            </div>
+                                            <div class="modal-footer">
+                                                <a href="{{ asset('storage/' . $maintenance->gambar) }}" download class="btn btn-primary btn-sm">
+                                                    <i class="bx bx-download me-1"></i> Unduh Gambar
+                                                </a>
+                                                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="py-3 text-muted">
+                                    <i class="bx bx-image-alt fs-2 d-block mb-1 text-secondary"></i>
+                                    Tidak ada foto bukti servis yang diunggah.
+                                </div>
+                            @endif
 
                         </div>
 

@@ -15,34 +15,60 @@ class KategoriController extends Controller
   public function index(Request $request)
   {
     $user = auth()->user();
-    $search = $request->input('search');
+    $search = $request->search;
     $perusahaanId = $request->perusahaan_id;
 
-    // 🔥 QUERY UTAMA + RELASI
-    if ($user->role === 'super_admin') {
-      $query = Kategori::with('perusahaan');
-
-      // filter perusahaan (optional)
+    if ($user->role == 'super_admin') {
+      // ==========================
+      // FILTER PERUSAHAAN DIPILIH
+      // ==========================
       if ($perusahaanId) {
-        $query->where('perusahaan_id', $perusahaanId);
+        $query = Kategori::with('perusahaan')->where('perusahaan_id', $perusahaanId);
+
+        if ($search) {
+          $query->where('nama_barang', 'like', "%{$search}%");
+        }
+      } else {
+        // ==========================
+        // SEMUA PERUSAHAAN
+        // ==========================
+        $query = Kategori::select('kode_barang', 'nama_barang')
+          ->selectRaw('COUNT(DISTINCT perusahaan_id) as total_perusahaan')
+          ->groupBy('kode_barang', 'nama_barang');
+
+        if ($search) {
+          $query->where('nama_barang', 'like', "%{$search}%");
+        }
       }
     } else {
       $query = Kategori::with('perusahaan')->where('perusahaan_id', $user->id_perusahaan);
+
+      if ($search) {
+        $query->where('nama_barang', 'like', "%{$search}%");
+      }
     }
 
-    // 🔍 SEARCH (NAMA SAJA)
-    if ($search) {
-      $query->where('nama_barang', 'like', '%' . $search . '%');
-    }
+    $kategoris = $query->paginate(10)->appends($request->query());
 
-    // PAGINATION
-    $kategoris = $query->latest()->paginate(10);
-
-    // 🔥 AMBIL SEMUA PERUSAHAAN (UNTUK DROPDOWN)
     $perusahaans = Perusahaan::all();
 
-    return view('content.dashboard.aset.index', compact('kategoris', 'perusahaans'));
+    return view('content.dashboard.aset.index', compact('kategoris', 'perusahaans', 'perusahaanId'));
   }
+  public function detailPerusahaan(Request $request)
+{
+    $request->validate([
+        'kode_barang' => 'required',
+        'nama_barang' => 'required',
+    ]);
+
+    $data = Kategori::with('perusahaan')
+        ->where('kode_barang', $request->kode_barang)
+        ->where('nama_barang', $request->nama_barang)
+        ->orderBy('perusahaan_id')
+        ->get();
+
+    return response()->json($data);
+}
 
   /**
    * Store a newly created resource in storage.

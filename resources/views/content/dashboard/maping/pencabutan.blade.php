@@ -246,7 +246,7 @@
                 <input
                     class="form-control"
                     readonly
-                    value="Selesai">
+                    value="Non Aktif">
 
             </div>
 

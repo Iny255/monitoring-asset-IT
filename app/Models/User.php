@@ -57,6 +57,14 @@ class User extends Authenticatable
   {
     return $this->belongsTo(Perusahaan::class, 'id_perusahaan');
   }
+
+  public function getAccessibleCompanyIds()
+  {
+    if ($this->role === 'super_admin' || !$this->id_perusahaan) {
+      return null;
+    }
+    return $this->perusahaan ? $this->perusahaan->getAllCompanyIds() : collect([$this->id_perusahaan]);
+  }
   public function historyHakAkses()
   {
     return $this->hasMany(HistoryHakAkses::class, 'user_id');

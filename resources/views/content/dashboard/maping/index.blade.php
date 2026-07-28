@@ -59,90 +59,54 @@
             </div>
         @endif
 
-        <div class="card shadow-sm border-0">
-
-            {{-- HEADER --}}
-            <div class="card-header d-flex justify-content-between align-items-center">
-
-                <div>
-
-                    <h5 class="mb-1 text-primary">
-
-                        Mapping Inventaris
-
-                    </h5>
-
-                    <small class="text-muted">
-
-                        Kelola inventaris yang sedang digunakan
-
-                    </small>
-
-                </div>
-
-                <div class="d-flex gap-2">
-
-                    <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
-
-                        <i class="bx bx-filter-alt"></i>
-
-                        Filter
-
-                    </button>
-
-                    <div class="dropdown">
-
-                        <button class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">
-
-                            <i class="bx bx-export"></i>
-
-                            Export
-
-                        </button>
-
-                        <ul class="dropdown-menu">
-
-                            <li>
-
-                                <a class="dropdown-item" href="{{ route('maping.print', request()->query()) }}"
-                                    target="_blank">
-
-                                    <i class="bx bxs-file-pdf text-danger me-2"></i>
-
-                                    Export PDF
-
-                                </a>
-
-                            </li>
-
-                            <li>
-
-                                <a class="dropdown-item" href="{{ route('maping.export.excel', request()->query()) }}">
-
-                                    <i class="bx bxs-file-export text-success me-2"></i>
-
-                                    Export Excel
-
-                                </a>
-                            </li>
-
-
-                        </ul>
-
+        {{-- HERO HEADER --}}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-md bg-label-primary me-3">
+                            <span class="avatar-initial rounded">
+                                <i class="bx bx-sitemap fs-3"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="fw-bold mb-0">Mapping Aset</h3>
+                            <small class="text-muted">Kelola penyerahan aset dari stok gudang sekaligus pendaftaran spesifikasi perangkat</small>
+                        </div>
                     </div>
-
-                    <a href="{{ route('maping.create') }}" class="btn btn-primary">
-
-                        <i class="bx bx-plus"></i>
-
-                        Tambah Mapping
-
-                    </a>
-
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
+                            <i class="bx bx-filter-alt me-1"></i> Filter
+                        </button>
+                        <div class="dropdown">
+                            <button class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="bx bx-export me-1"></i> Export
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('maping.print', request()->query()) }}" target="_blank">
+                                        <i class="bx bxs-file-pdf text-danger me-2"></i> Export PDF
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('maping.export.excel', request()->query()) }}">
+                                        <i class="bx bxs-file-export text-success me-2"></i> Export Excel
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                        <a href="{{ route('maping.pemakaian') }}" class="btn btn-outline-info">
+                            <i class="bx bx-laptop me-1"></i> Pemakaian Aset
+                        </a>
+                        <a href="{{ route('maping.create') }}" class="btn btn-primary">
+                            <i class="bx bx-plus me-1"></i> Tambah Mapping Aset
+                        </a>
+                    </div>
                 </div>
-
             </div>
+        </div>
 
+        <div class="card shadow-sm border-0">
             <div class="card-body">
 
 
@@ -269,7 +233,7 @@
                                     <td class="text-center">
 
                                         @if ($maping->id)
-                                            <a href="{{ route('maping.public_show', $maping->id) }}" target="_blank"
+                                            <a href="{{ route('maping.public_show', $maping->uuid ?? $maping->id) }}" target="_blank"
                                                 class="btn btn-sm btn-outline-primary" title="Lihat QR Code">
 
                                                 <i class="bx bx-qr"></i>
@@ -771,6 +735,35 @@
 
                 });
 
+            });
+
+            $(document).ready(function() {
+                $('#modalFilter select[name="perusahaan_id"]').on('change', function() {
+                    let perusahaanId = $(this).val();
+                    let $lokasiSelect = $('#modalFilter select[name="lokasi_id"]');
+                    let $kategoriSelect = $('#modalFilter select[name="kategori_id"]');
+
+                    $.ajax({
+                        url: "{{ route('maping.getFilterOptions') }}",
+                        type: "GET",
+                        data: { perusahaan_id: perusahaanId },
+                        success: function(res) {
+                            $lokasiSelect.empty().append('<option value="">Semua Lokasi</option>');
+                            if (res.lokasis && res.lokasis.length > 0) {
+                                res.lokasis.forEach(function(item) {
+                                    $lokasiSelect.append('<option value="' + item.id + '">' + item.nama_lokasi.toUpperCase() + '</option>');
+                                });
+                            }
+
+                            $kategoriSelect.empty().append('<option value="">Semua Kategori</option>');
+                            if (res.kategoris && res.kategoris.length > 0) {
+                                res.kategoris.forEach(function(item) {
+                                    $kategoriSelect.append('<option value="' + item.id + '">' + item.nama_barang.toUpperCase() + '</option>');
+                                });
+                            }
+                        }
+                    });
+                });
             });
         </script>
 

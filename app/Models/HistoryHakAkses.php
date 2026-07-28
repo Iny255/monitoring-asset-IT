@@ -11,7 +11,7 @@ class HistoryHakAkses extends Model
 
   protected $table = 'history_hak_akses';
 
-  protected $fillable = ['maping_id', 'access_id', 'user_id', 'aksi', 'keterangan'];
+  protected $fillable = ['maping_id', 'access_id', 'nama_akses', 'kategori', 'jenis', 'user_id', 'aksi', 'keterangan', 'email'];
 
   /*
     |--------------------------------------------------------------------------

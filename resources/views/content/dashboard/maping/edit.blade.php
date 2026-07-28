@@ -21,7 +21,7 @@
                 </div>
             @endif
 
-            <form action="{{ route('maping.update', $maping->id) }}" method="POST">
+            <form action="{{ route('maping.update', $maping->id) }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
 
@@ -401,6 +401,34 @@
                     </div>
 
                     {{-- ====================================================== --}}
+                    {{-- FOTO PERANGKAT --}}
+                    {{-- ====================================================== --}}
+                    <div class="card border-0 shadow-sm mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0 fw-bold">
+                                <i class="bx bx-image text-primary me-2"></i>
+                                Foto Perangkat
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Unggah / Ganti Foto Perangkat <small class="text-danger">(Maksimal 1 MB - JPG, JPEG, PNG, WEBP)</small></label>
+                                <input type="file" name="gambar" id="input_gambar_edit" class="form-control" accept="image/jpeg,image/png,image/jpg,image/webp" onchange="validateFotoSizeEdit(this)">
+                            </div>
+                            @if($maping->keluar?->gambar)
+                                <div class="mt-2" id="existing_foto_box">
+                                    <small class="text-muted d-block mb-1">Foto Saat Ini:</small>
+                                    <img src="{{ asset('storage/' . $maping->keluar->gambar) }}" alt="Foto Perangkat" class="img-thumbnail rounded" style="max-height: 180px; object-fit: contain;">
+                                </div>
+                            @endif
+                            <div id="foto_edit_preview_box" class="mt-2 d-none">
+                                <small class="text-muted d-block mb-1">Preview Foto Baru:</small>
+                                <img id="foto_edit_preview" src="#" alt="Preview Foto Baru" class="img-thumbnail rounded" style="max-height: 180px; object-fit: contain;">
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- ====================================================== --}}
                     {{-- CATATAN --}}
                     {{-- ====================================================== --}}
 
@@ -546,5 +574,36 @@
             loadDetailAset(currentKeluar);
 
         });
+
+        // Validasi Ukuran Foto Edit Maksimal 1 MB (Client Side)
+        function validateFotoSizeEdit(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const maxSizeInBytes = 1048576; // 1 MB = 1024 * 1024 bytes
+                if (file.size > maxSizeInBytes) {
+                    let sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Ukuran File Terlalu Besar',
+                            text: 'Ukuran foto maksimal 1 MB. File yang Anda pilih berukuran ' + sizeInMB + ' MB.'
+                        });
+                    } else {
+                        alert('Ukuran foto maksimal 1 MB. File yang Anda pilih berukuran ' + sizeInMB + ' MB.');
+                    }
+                    input.value = '';
+                    document.getElementById('foto_edit_preview_box').classList.add('d-none');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('foto_edit_preview').src = e.target.result;
+                    document.getElementById('foto_edit_preview_box').classList.remove('d-none');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                document.getElementById('foto_edit_preview_box').classList.add('d-none');
+            }
+        }
     </script>
 @endsection

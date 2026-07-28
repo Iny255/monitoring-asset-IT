@@ -7,6 +7,7 @@ use App\Models\Perusahaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
 
 class LokasiController extends Controller
 {
@@ -24,30 +25,65 @@ class LokasiController extends Controller
     $search = $request->search;
     $perusahaanId = $request->perusahaan_id;
 
-    $perusahaans = $user->role === 'super_admin' ? Perusahaan::all() : [];
+    $perusahaans = $user->role === 'super_admin' ? Perusahaan::all() : collect();
 
-    $lokasis = Lokasi::with('perusahaan');
-
-    if ($user->role !== 'super_admin') {
-      $lokasis->where('id_perusahaan', $user->id_perusahaan);
-    } else {
+    if ($user->role === 'super_admin') {
+      // ==========================================
+      // SUPER ADMIN MEMILIH PERUSAHAAN
+      // ==========================================
       if ($perusahaanId) {
-        $lokasis->where('id_perusahaan', $perusahaanId);
+        $lokasis = Lokasi::with('perusahaan')->where('id_perusahaan', $perusahaanId);
+      } else {
+        // ==========================================
+        // SUPER ADMIN - SEMUA PERUSAHAAN
+        // ==========================================
+        $lokasis = Lokasi::select(DB::raw('MIN(id) as id'), 'nama_lokasi')
+          ->selectRaw('COUNT(DISTINCT id_perusahaan) as total_perusahaan')
+          ->groupBy('nama_lokasi');
       }
+    } else {
+      // ==========================================
+      // PETUGAS
+      // ==========================================
+      $lokasis = Lokasi::with('perusahaan')->where('id_perusahaan', $user->id_perusahaan);
     }
 
+    // ==========================================
+    // SEARCH
+    // ==========================================
     if ($search) {
-      $lokasis->where(function ($query) use ($search) {
-        $query->where('nama_lokasi', 'like', "%{$search}%");
-      });
+      $lokasis->where('nama_lokasi', 'like', "%{$search}%");
     }
 
-    $lokasis = $lokasis
-      ->latest()
-      ->paginate(10)
-      ->appends(request()->query());
+    // ==========================================
+    // PAGINATION
+    // ==========================================
+    if ($user->role === 'super_admin' && !$perusahaanId) {
+      $lokasis = $lokasis
+        ->orderBy('nama_lokasi')
+        ->paginate(10)
+        ->appends($request->query());
+    } else {
+      $lokasis = $lokasis
+        ->latest()
+        ->paginate(10)
+        ->appends($request->query());
+    }
 
-    return view('content.dashboard.lokasi.index', compact('lokasis', 'perusahaans'));
+    return view('content.dashboard.lokasi.index', compact('lokasis', 'perusahaans', 'perusahaanId'));
+  }
+  public function detailPerusahaan(Request $request)
+  {
+    $request->validate([
+      'nama_lokasi' => 'required',
+    ]);
+
+    $data = Lokasi::with('perusahaan')
+      ->where('nama_lokasi', $request->nama_lokasi)
+      ->orderBy('id_perusahaan')
+      ->get();
+
+    return response()->json($data);
   }
 
   /**
@@ -149,5 +185,4 @@ class LokasiController extends Controller
 
     return back()->with('success', 'Lokasi berhasil dihapus');
   }
-
 }

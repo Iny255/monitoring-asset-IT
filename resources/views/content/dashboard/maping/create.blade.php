@@ -1,962 +1,409 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Tambah Data Maping')
+@section('title', 'Tambah Mapping Aset')
 
 @section('content')
 
-    <div class="card shadow-sm">
+    <div class="container-xxl flex-grow-1 container-p-y">
 
-        <div class="card-header">
-            <h5 class="mb-0 fw-bold text-primary">
-                Tambah Data Maping
-            </h5>
+        {{-- HERO HEADER --}}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-md bg-label-primary me-3">
+                            <span class="avatar-initial rounded">
+                                <i class="bx bx-sitemap fs-3"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h3 class="fw-bold mb-0">Tambah Mapping Aset</h3>
+                            <small class="text-muted">Form terpadu penyerahan aset dari stok gudang sekaligus pendaftaran spesifikasi perangkat</small>
+                        </div>
+                    </div>
+                    <div>
+                        <a href="{{ route('maping.index') }}" class="btn btn-outline-secondary">
+                            <i class="bx bx-arrow-back me-1"></i> Kembali
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="card-body">
+        {{-- ALERT MESSAGES --}}
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
 
-            {{-- ERROR --}}
-            @if (session('error'))
-                <div class="alert alert-danger alert-dismissible fade show">
-                    {{ session('error') }}
+        @if ($errors->any())
+            <div class="alert alert-danger">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
 
-                    <button type="button" class="btn-close" data-bs-dismiss="alert">
-                    </button>
+        <form action="{{ route('maping.store') }}" method="POST" enctype="multipart/form-data">
+            @csrf
+
+            {{-- CARD 1: ALOKASI & PENERIMA --}}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="fw-bold text-primary mb-0">
+                        <i class="bx bx-package me-2"></i> 1. Informasi Alokasi & Penerima Aset
+                    </h5>
                 </div>
-            @endif
-
-            {{-- VALIDATION --}}
-            @if ($errors->any())
-                <div class="alert alert-danger">
-
-                    <ul class="mb-0">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-
-                </div>
-            @endif
-
-            <form action="{{ route('maping.store') }}" method="POST">
-                @csrf
-
-                <div class="card border-0 shadow-sm mb-4">
-
-                    <div class="card-header ">
-
-                        <h5 class="mb-0">
-
-                            <i class="bx bx-package me-2"></i>
-
-                            Informasi Inventaris
-
-                        </h5>
-
-                    </div>
-
-                    <div class="card-body">
-
-                        <div class="row g-3">
-
-                            {{-- PERUSAHAAN --}}
-                            @if (auth()->user()->role == 'super_admin')
-
-                                <div class="col-md-6">
-
-                                    <label class="form-label fw-semibold">
-
-                                        Perusahaan
-
-                                    </label>
-
-                                    <select name="id_perusahaan" id="id_perusahaan" class="form-select" required>
-
-                                        <option value="">
-                                            -- Pilih Perusahaan --
+                <div class="card-body py-4">
+                    <div class="row g-3">
+                        {{-- PERUSAHAAN --}}
+                        @if (auth()->user()->role == 'super_admin')
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Perusahaan <span class="text-danger">*</span></label>
+                                <select name="id_perusahaan" id="id_perusahaan" class="form-select" required>
+                                    <option value="">-- Pilih Perusahaan --</option>
+                                    @foreach ($perusahaans as $p)
+                                        <option value="{{ $p->id }}" {{ old('id_perusahaan') == $p->id ? 'selected' : '' }}>
+                                            {{ $p->nama_perusahaan }}
                                         </option>
-
-                                        @foreach ($perusahaans as $p)
-                                            <option value="{{ $p->id }}">
-
-                                                {{ $p->nama_perusahaan }}
-
-                                            </option>
-                                        @endforeach
-
-                                    </select>
-
-                                </div>
-                            @else
-                                <input type="hidden" id="id_perusahaan" name="id_perusahaan"
-                                    value="{{ auth()->user()->id_perusahaan }}">
-
-                            @endif
-
-                            {{-- KATEGORI --}}
-                            <div class="col-md-6">
-
-                                <label class="form-label fw-semibold">
-
-                                    Kategori Barang
-
-                                </label>
-
-                                <select id="id_kategori" class="form-select">
-
-                                    <option value="">
-                                        -- Pilih Kategori --
-                                    </option>
-
+                                    @endforeach
                                 </select>
-
                             </div>
+                        @else
+                            <input type="hidden" id="id_perusahaan" name="id_perusahaan" value="{{ auth()->user()->id_perusahaan }}">
+                        @endif
 
-                            {{-- KODE ASET --}}
-                            <div class="col-md-6">
+                        {{-- KATEGORI --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Filter Kategori Barang</label>
+                            <select id="id_kategori" class="form-select">
+                                <option value="">-- Semua Kategori --</option>
+                                @foreach ($kategoris as $kat)
+                                    <option value="{{ $kat->id }}">{{ $kat->nama_barang }}</option>
+                                @endforeach
+                            </select>
+                        </div>
 
-                                <label class="form-label fw-semibold">
+                        {{-- NOTIFIKASI SISA STOK TERSEDIA --}}
+                        <div class="col-12 d-none" id="box_stok_info">
+                            <div id="stok_info_alert" class="alert d-flex align-items-center py-2 px-3 mb-0 shadow-sm" role="alert">
+                                <i id="stok_info_icon" class="bx me-2 fs-4"></i>
+                                <div>
+                                    <span id="stok_info_text" class="fw-semibold"></span>
+                                </div>
+                            </div>
+                        </div>
 
-                                    Kode Inventaris
-
-                                </label>
-
-                                <select id="id_keluar_select" class="form-select">
-
-                                    <option value="">
-                                        -- Pilih Kode Inventaris --
+                        {{-- PILIH UNIT INVENTARIS --}}
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Pilih Unit Inventaris (Stok Tersedia) <span class="text-danger">*</span></label>
+                            <select name="inventaris_id" id="inventaris_id" class="form-select" required>
+                                <option value="">-- Pilih Unit Inventaris --</option>
+                                @foreach ($inventarisAvailable as $inv)
+                                    <option value="{{ $inv->id }}" {{ old('inventaris_id') == $inv->id ? 'selected' : '' }}>
+                                        [{{ $inv->no_inventaris }}] {{ $inv->kode_aset }} - {{ $inv->dataAset->kategori->nama_barang ?? '' }} {{ $inv->dataAset->merek ?? '' }} {{ $inv->dataAset->type ?? '' }}
                                     </option>
-
-                                </select>
-
-                                <input type="hidden" name="id_keluar" id="id_keluar">
-
-                            </div>
-
-                            {{-- USER ASET --}}
-                            <div class="col-md-6">
-
-                                <label class="form-label fw-semibold">
-
-                                    User Aset
-
-                                </label>
-
-                                <input type="text" id="nama_karyawan" class="form-control" readonly>
-
-                            </div>
-
-                            {{-- NAMA BARANG --}}
-                            <div class="col-md-6">
-
-                                <label class="form-label fw-semibold">
-
-                                    Nama Barang
-
-                                </label>
-
-                                <input type="text" id="nama_barang" class="form-control" readonly>
-
-                            </div>
-
-                            {{-- LOKASI --}}
-                            <div class="col-md-6">
-                                <label class="form-label">Lokasi</label>
-
-                                <input type="text" id="lokasi" class="form-control"
-                                    placeholder="Lokasi akan terisi otomatis" readonly>
-
-                                <input type="hidden" name="id_lokasi" id="id_lokasi">
-                            </div>
-                            {{-- TYPE --}}
-                            <div class="col-md-4">
-
-                                <label class="form-label fw-semibold">
-
-                                    Type
-
-                                </label>
-
-                                <input type="text" id="type" class="form-control" readonly>
-
-                            </div>
-
-                            {{-- MEREK --}}
-                            <div class="col-md-4">
-
-                                <label class="form-label fw-semibold">
-
-                                    Merek
-
-                                </label>
-
-                                <input type="text" id="merek" class="form-control" readonly>
-
-                            </div>
-
-                            {{-- WARNA --}}
-                            <div class="col-md-4">
-
-                                <label class="form-label fw-semibold">
-
-                                    Warna
-
-                                </label>
-
-                                <input type="text" id="warna" class="form-control" readonly>
-
-                            </div>
-
+                                @endforeach
+                            </select>
                         </div>
 
-                    </div>
+                        {{-- JENIS PENERIMA --}}
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Jenis Penerima <span class="text-danger">*</span></label>
+                            <select name="jenis_penerima" id="jenis_penerima" class="form-select" required>
+                                <option value="Perorangan" {{ old('jenis_penerima', 'Perorangan') == 'Perorangan' ? 'selected' : '' }}>Perorangan (Karyawan)</option>
+                                <option value="Per Divisi" {{ old('jenis_penerima') == 'Per Divisi' ? 'selected' : '' }}>Per Divisi</option>
+                            </select>
+                        </div>
 
+                        {{-- KARYAWAN AUTOCOMPLETE --}}
+                        <div class="col-md-4 position-relative" id="box_karyawan">
+                            <label class="form-label fw-semibold">Pilih Karyawan (Autocomplete)</label>
+                            <input type="hidden" name="karyawan_id" id="karyawan_id" value="{{ old('karyawan_id') }}">
+                            <input type="text" id="search_karyawan" class="form-control" placeholder="Ketik Nama Karyawan..." autocomplete="off">
+                            <div id="result_karyawan" class="list-group position-absolute w-100 shadow-lg z-3 mt-1" style="display:none; max-height: 220px; overflow-y: auto;"></div>
+                        </div>
+
+                        {{-- DIVISI --}}
+                        <div class="col-md-4 d-none" id="box_divisi">
+                            <label class="form-label fw-semibold">Nama Divisi</label>
+                            <input type="text" name="divisi" id="divisi" class="form-control" placeholder="Misal: IT, Finance, HR..." value="{{ old('divisi') }}">
+                        </div>
+
+                        {{-- LOKASI --}}
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Lokasi Penempatan <span class="text-danger">*</span></label>
+                            <select name="id_lokasi" id="id_lokasi" class="form-select" required>
+                                <option value="">-- Pilih Lokasi --</option>
+                                @foreach ($lokasis as $lok)
+                                    <option value="{{ $lok->id }}" {{ old('id_lokasi') == $lok->id ? 'selected' : '' }}>
+                                        {{ $lok->nama_lokasi }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        {{-- TANGGAL DIGUNAKAN --}}
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Tanggal Digunakan <span class="text-danger">*</span></label>
+                            <input type="date" name="tanggal_digunakan" class="form-control" value="{{ old('tanggal_digunakan', date('Y-m-d')) }}" required>
+                        </div>
+                    </div>
                 </div>
-
-                {{-- =============================================== --}}
-                {{-- SPESIFIKASI DEVICE --}}
-                {{-- =============================================== --}}
-
-                <div class="card border-0 shadow-sm mb-4">
-
-                    <div class="card-header ">
-
-                        <h5 class="mb-0">
-
-                            <i class="bx bx-desktop me-2"></i>
-
-                            Spesifikasi Device
-
-                        </h5>
-
-                    </div>
-
-                    <div class="card-body">
-
-                        <div class="row g-3">
-                            {{-- =============================== --}}
-                            {{-- PROCESSOR --}}
-                            {{-- =============================== --}}
-                            <div class="col-md-6">
-
-                                <label class="form-label fw-semibold">
-
-                                    Processor
-
-                                </label>
-
-                                <input type="text" name="processor" class="form-control" value="{{ old('processor') }}"
-                                    placeholder="Contoh : Intel Core i5-1240P">
-
-                            </div>
-
-                            {{-- =============================== --}}
-                            {{-- RAM --}}
-                            {{-- =============================== --}}
-                            <div class="col-md-6">
-
-                                <label class="form-label fw-semibold">
-
-                                    RAM
-
-                                </label>
-
-                                <div class="input-group">
-
-                                    <input type="text" name="ram" class="form-control" value="{{ old('ram') }}"
-                                        placeholder="8">
-
-                                    <span class="input-group-text">
-
-                                        GB
-
-                                    </span>
-
-                                </div>
-
-                            </div>
-
-                            {{-- =============================== --}}
-                            {{-- DEVICE ID --}}
-                            {{-- =============================== --}}
-                            <div class="col-md-6">
-
-                                <label class="form-label fw-semibold">
-
-                                    Device ID
-
-                                </label>
-
-                                <input type="text" name="device_id" class="form-control"
-                                    value="{{ old('device_id') }}" placeholder="Device ID">
-
-                            </div>
-
-                            {{-- =============================== --}}
-                            {{-- PRODUCT ID --}}
-                            {{-- =============================== --}}
-                            <div class="col-md-6">
-
-                                <label class="form-label fw-semibold">
-
-                                    Product ID
-
-                                </label>
-
-                                <input type="text" name="produk_id" class="form-control"
-                                    value="{{ old('produk_id') }}" placeholder="Product ID">
-
-                            </div>
-
-                            {{-- =============================== --}}
-                            {{-- SYSTEM --}}
-                            {{-- =============================== --}}
-                            <div class="col-md-3">
-
-                                <label class="form-label fw-semibold">
-
-                                    Operating System
-
-                                </label>
-
-                                <input type="text" name="system" class="form-control" value="{{ old('system') }}"
-                                    placeholder="Windows 11 Pro">
-
-                            </div>
-
-                            {{-- =============================== --}}
-                            {{-- VERSION --}}
-                            {{-- =============================== --}}
-                            <div class="col-md-3">
-
-                                <label class="form-label fw-semibold">
-
-                                    Version
-
-                                </label>
-
-                                <input type="text" name="version" class="form-control" value="{{ old('version') }}"
-                                    placeholder="24H2">
-
-                            </div>
-
-                            {{-- =============================== --}}
-                            {{-- INSTALL ON --}}
-                            {{-- =============================== --}}
-                            <div class="col-md-3">
-
-                                <label class="form-label fw-semibold">
-
-                                    Install On
-
-                                </label>
-
-                                <input type="date" name="instal_on" class="form-control"
-                                    value="{{ old('instal_on') }}">
-
-                            </div>
-
-                            {{-- =============================== --}}
-                            {{-- TANGGAL DIGUNAKAN --}}
-                            {{-- =============================== --}}
-                            <div class="col-md-3">
-
-                                <label class="form-label fw-semibold">
-
-                                    Tanggal Digunakan
-
-                                    <span class="text-danger">*</span>
-
-                                </label>
-
-                                <input type="date" name="tanggal_digunakan"
-                                    class="form-control @error('tanggal_digunakan') is-invalid @enderror"
-                                    value="{{ old('tanggal_digunakan', date('Y-m-d')) }}" required>
-
-                                @error('tanggal_digunakan')
-                                    <div class="invalid-feedback">
-
-                                        {{ $message }}
-
-                                    </div>
-                                @enderror
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                {{-- ======================================================= --}}
-                {{-- HAK AKSES & APLIKASI --}}
-                {{-- ======================================================= --}}
-
-                <div class="card border-0 shadow-sm mb-4">
-
-                    <div class="card-header ">
-
-                        <div class="d-flex justify-content-between align-items-center">
-
-                            <h5 class="mb-0">
-
-                                <i class="bx bx-lock-alt me-2"></i>
-
-                                Hak Akses & Aplikasi
-
-                            </h5>
-
-                            <button type="button" class="btn btn-primary btn-sm" data-bs-toggle="modal"
-                                data-bs-target="#modalHakAkses">
-
-                                <i class="bx bx-plus"></i>
-
-                                Tambah Hak Akses
-
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                    <div class="card-body">
-
-                        <div id="listHakAkses" class="border rounded bg-light p-3" style="min-height:120px;">
-
-                            <div class="text-center text-muted py-4">
-
-                                <i class="bx bx-lock-alt display-6"></i>
-
-                                <br>
-
-                                Belum ada Hak Akses & Aplikasi dipilih.
-
-                            </div>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
-                {{-- ======================================================= --}}
-                {{-- CATATAN --}}
-                {{-- ======================================================= --}}
-
-                <div class="card border-0 shadow-sm mb-4">
-
-                    <div class="card-header ">
-
-                        <h5 class="mb-0">
-
-                            <i class="bx bx-note me-2"></i>
-
-                            Catatan
-
-                        </h5>
-
-                    </div>
-
-                    <div class="card-body">
-
-                        <textarea name="catatan" rows="4" class="form-control" placeholder="Masukkan catatan apabila diperlukan...">{{ old('catatan') }}</textarea>
-
-                    </div>
-
-                </div>
-
-                {{-- ======================================================= --}}
-                {{-- ACTION --}}
-                {{-- ======================================================= --}}
-
-                <div class="d-flex justify-content-end gap-2 mb-3">
-
-                    <a href="{{ route('maping.index') }}" class="btn btn-secondary">
-
-                        <i class="bx bx-arrow-back"></i>
-
-                        Kembali
-
-                    </a>
-
-                    <button type="submit" class="btn btn-primary">
-
-                        <i class="bx bx-save"></i>
-
-                        Simpan Mapping
-
-                    </button>
-
-                </div>
-
-            </form>
-            <div class="modal fade" id="modalHakAkses">
-
-                <div class="modal-dialog modal-lg">
-
-                    <div class="modal-content">
-
-                        <div class="modal-header">
-
-                            <h5>
-
-                                Pilih Hak Akses & Aplikasi
-
-                            </h5>
-
-                            <button class="btn-close" data-bs-dismiss="modal">
-
-                            </button>
-
-                        </div>
-
-                        <div class="modal-body">
-
-                            {{-- ===================== --}}
-                            {{-- APLIKASI --}}
-                            {{-- ===================== --}}
-
-                            <h6 class="fw-bold text-primary mb-3">
-                                <i class="bx bx-desktop"></i>
-                                Aplikasi
-                            </h6>
-
-                            <div id="listAplikasi" class="row mb-4">
-
-                                <div class="col-12 text-center text-muted">
-                                    Belum ada data aplikasi.
-                                </div>
-
-                            </div>
-
-                            <hr>
-
-                            {{-- ===================== --}}
-                            {{-- HAK AKSES PPN --}}
-                            {{-- ===================== --}}
-
-                            <h6 class="fw-bold text-warning mb-3">
-                                <i class="bx bx-folder"></i>
-                                Hak Akses PPN
-                            </h6>
-
-                            <div id="listHakAksesPPN" class="row mb-4">
-
-                                <div class="col-12 text-center text-muted">
-                                    Belum ada data Hak Akses PPN.
-                                </div>
-
-                            </div>
-
-                            <hr>
-
-                            {{-- ===================== --}}
-                            {{-- HAK AKSES NON PPN --}}
-                            {{-- ===================== --}}
-
-                            <h6 class="fw-bold text-success mb-3">
-                                <i class="bx bx-folder-open"></i>
-                                Hak Akses NON PPN
-                            </h6>
-
-                            <div id="listHakAksesNonPPN" class="row">
-
-                                <div class="col-12 text-center text-muted">
-                                    Belum ada data Hak Akses NON PPN.
-                                </div>
-
-                            </div>
-
-                        </div>
-                        <div class="modal-footer">
-
-                            <button class="btn btn-primary" id="btnTambahHakAkses" type="button">
-
-                                Tambahkan
-
-                            </button>
-
-                        </div>
-
-                    </div>
-
-                </div>
-
             </div>
 
-        @endsection
-
-        @section('scripts')
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
-
-                    const perusahaanSelect = document.getElementById('id_perusahaan');
-                    const kategoriSelect = document.getElementById('id_kategori');
-                    const asetSelect = document.getElementById('id_keluar_select');
-                    const lokasiSelect = document.getElementById('id_lokasi');
-
-                    const isSuperAdmin = perusahaanSelect &&
-                        perusahaanSelect.tagName === 'SELECT';
-
-                    //--------------------------------------------------
-                    // RESET
-                    //--------------------------------------------------
-
-                    function resetDetailBarang() {
-
-                        document.getElementById('id_keluar').value = '';
-                        document.getElementById('nama_barang').value = '';
-                        document.getElementById('nama_karyawan').value = '';
-                        document.getElementById('type').value = '';
-                        document.getElementById('merek').value = '';
-                        document.getElementById('warna').value = '';
-
-                        document.getElementById('lokasi').value = '';
-                        document.getElementById('id_lokasi').value = '';
-                    }
-
-                    //--------------------------------------------------
-                    // LOAD KATEGORI
-                    //--------------------------------------------------
-
-                    function loadKategori(perusahaanId = '') {
-
-                        kategoriSelect.innerHTML =
-                            '<option value="">Loading...</option>';
-
-                        let url = '/maping/get-kategori';
-
-                        if (perusahaanId) {
-                            url += '?id_perusahaan=' + perusahaanId;
-                        }
-
-                        fetch(url)
-                            .then(res => res.json())
-                            .then(function(data) {
-
-                                kategoriSelect.innerHTML =
-                                    '<option value="">-- Pilih Kategori --</option>';
-
-                                data.forEach(function(item) {
-
-                                    kategoriSelect.innerHTML +=
-                                        `<option value="${item.id}">
-                    ${item.nama_barang}
-                </option>`;
-
-                                });
-
-                            })
-                            .catch(function(error) {
-                                console.log(error);
-                            });
-
-                    }
-
-
-
-                    //--------------------------------------------------
-                    // LOAD ASET
-                    //--------------------------------------------------
-
-                    function loadAset(kategoriId, perusahaanId) {
-
-                        asetSelect.innerHTML =
-                            '<option value="">-- Pilih Kode Inventaris --</option>';
-
-                        if (!kategoriId) return;
-
-                        let url =
-                            '/maping/get-aset?id_kategori=' + kategoriId;
-
-                        if (perusahaanId) {
-                            url += '&id_perusahaan=' + perusahaanId;
-                        }
-
-                        fetch(url)
-
-                            .then(res => res.json())
-
-                            .then(function(data) {
-
-                                data.forEach(function(item) {
-
-                                    asetSelect.innerHTML += `
-                                    <option value="${item.id_keluar}">
-                                        ${item.kode_aset}
-                                    </option>
-                                `;
-
-                                });
-                            });
-
-                    }
-
-                    //--------------------------------------------------
-                    // DETAIL ASET
-                    //--------------------------------------------------
-
-                    function loadDetailAset(idKeluar) {
-
-                        if (!idKeluar) {
-
-                            resetDetailBarang();
-                            return;
-
-                        }
-
-                        fetch('/maping/get-detail-aset/' + idKeluar)
-
-                            .then(res => res.json())
-
-                            .then(function(data) {
-
-                                document.getElementById('id_keluar').value =
-                                    data.id_keluar ?? '';
-
-                                document.getElementById('nama_barang').value =
-                                    data.nama_barang ?? '';
-                                document.getElementById('nama_karyawan').value =
-                                    data.user_aset ?? '';
-
-                                document.getElementById('type').value =
-                                    data.type ?? '';
-
-                                document.getElementById('merek').value =
-                                    data.merek ?? '';
-
-                                document.getElementById('warna').value =
-                                    data.warna ?? '';
-
-                                document.getElementById('lokasi').value =
-                                    data.nama_lokasi ?? '';
-
-                                document.getElementById('id_lokasi').value =
-                                    data.lokasi_id ?? '';
-
-                            })
-
-                            .catch(function(error) {
-
-                                console.log(error);
-
-                                resetDetailBarang();
-
-                            });
-
-                    }
-
-                    function renderAccess(data) {
-
-                        const aplikasi = document.getElementById('listAplikasi');
-                        const ppn = document.getElementById('listHakAksesPPN');
-                        const nonppn = document.getElementById('listHakAksesNonPPN');
-
-                        aplikasi.innerHTML = '';
-                        ppn.innerHTML = '';
-                        nonppn.innerHTML = '';
-
-                        function createCheckbox(item) {
-
-                            return `
-            <div class="col-md-4 mb-2">
-                <div class="form-check">
-
-                    <input
-                        class="form-check-input access-check"
-                        type="checkbox"
-                        value="${item.id}"
-                        data-nama="${item.nama_akses}"
-                        id="access${item.id}">
-
-                    <label class="form-check-label"
-                        for="access${item.id}">
-                        ${item.nama_akses}
-                    </label>
-
+            {{-- CARD 2: SPESIFIKASI DEVICE --}}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="fw-bold text-primary mb-0">
+                        <i class="bx bx-laptop me-2"></i> 2. Spesifikasi & Identitas Device
+                    </h5>
+                </div>
+                <div class="card-body py-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Processor</label>
+                            <input type="text" name="processor" class="form-control text-uppercase" placeholder="Misal: INTEL CORE I7-12700" value="{{ old('processor') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">RAM</label>
+                            <input type="text" name="ram" class="form-control text-uppercase" placeholder="Misal: 16 GB" value="{{ old('ram') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Device ID / Serial Number</label>
+                            <input type="text" name="device_id" class="form-control text-uppercase" placeholder="Masukkan Serial / Device ID" value="{{ old('device_id') }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Product ID</label>
+                            <input type="text" name="produk_id" class="form-control text-uppercase" placeholder="Masukkan Product ID" value="{{ old('produk_id') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Sistem Operasi (OS)</label>
+                            <input type="text" name="system" class="form-control text-uppercase" placeholder="Misal: WINDOWS 11 PRO" value="{{ old('system') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Versi OS</label>
+                            <input type="text" name="version" class="form-control text-uppercase" placeholder="Misal: 22H2" value="{{ old('version') }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Tanggal Instalasi</label>
+                            <input type="date" name="instal_on" class="form-control" value="{{ old('instal_on') }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Unggah Foto Perangkat / Aset <small class="text-danger">(Maksimal 1 MB - JPG, JPEG, PNG, WEBP)</small></label>
+                            <input type="file" name="gambar" id="input_gambar" class="form-control" accept="image/jpeg,image/png,image/jpg,image/webp" onchange="validateFotoSize(this)">
+                            <div id="foto_preview_box" class="mt-2 d-none">
+                                <img id="foto_preview" src="#" alt="Preview Foto" class="img-thumbnail rounded" style="max-height: 200px; object-fit: contain;">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Catatan Tambahan</label>
+                            <textarea name="catatan" class="form-control" rows="2" placeholder="Catatan kondisi fisik / kelengkapan unit...">{{ old('catatan') }}</textarea>
+                        </div>
+                    </div>
                 </div>
             </div>
-        `;
-                        }
 
-                        if (data.aplikasis.length > 0) {
+            {{-- TOMBOL SUBMIT --}}
+            <div class="d-flex justify-content-end gap-2 mb-4">
+                <a href="{{ route('maping.index') }}" class="btn btn-label-secondary">
+                    Batal
+                </a>
+                <button type="submit" class="btn btn-primary px-4 py-2">
+                    <i class="bx bx-save me-1"></i> Simpan Mapping Aset
+                </button>
+            </div>
+        </form>
 
-                            data.aplikasis.forEach(function(item) {
+    </div>
 
-                                aplikasi.innerHTML += createCheckbox(item);
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
 
-                            });
+            // 1. TOGGLE JENIS PENERIMA
+            $('#jenis_penerima').change(function() {
+                let jenis = $(this).val();
+                if (jenis === 'Perorangan') {
+                    $('#box_karyawan').removeClass('d-none').show();
+                    $('#box_divisi').addClass('d-none').hide();
+                } else {
+                    $('#box_karyawan').addClass('d-none').hide();
+                    $('#box_divisi').removeClass('d-none').show();
+                }
+            }).trigger('change');
 
-                        } else {
+            function getPerusahaanId() {
+                @if (auth()->user()->role == 'super_admin')
+                    return $('#id_perusahaan').val();
+                @else
+                    return {{ auth()->user()->id_perusahaan }};
+                @endif
+            }
 
-                            aplikasi.innerHTML =
-                                '<div class="col-12 text-center text-muted">Belum ada data.</div>';
+            // 2. FILTER MULTI PERUSAHAAN (FOR SUPER ADMIN)
+            @if (auth()->user()->role == 'super_admin')
+                $('#id_perusahaan').change(function() {
+                    let perusahaanId = $(this).val();
 
-                        }
+                    // Reset semua field turunan
+                    $('#id_kategori').html('<option value="">-- Semua Kategori --</option>');
+                    $('#inventaris_id').html('<option value="">-- Pilih Unit Inventaris --</option>');
+                    $('#id_lokasi').html('<option value="">-- Pilih Lokasi --</option>');
+                    $('#box_stok_info').addClass('d-none').hide();
+                    $('#karyawan_id').val('');
+                    $('#search_karyawan').val('');
 
-                        if (data.hakAksesPPN.length > 0) {
+                    if (!perusahaanId) return;
 
-                            data.hakAksesPPN.forEach(function(item) {
-
-                                ppn.innerHTML += createCheckbox(item);
-
-                            });
-
-                        } else {
-
-                            ppn.innerHTML =
-                                '<div class="col-12 text-center text-muted">Belum ada data.</div>';
-
-                        }
-
-                        if (data.hakAksesNonPPN.length > 0) {
-
-                            data.hakAksesNonPPN.forEach(function(item) {
-
-                                nonppn.innerHTML += createCheckbox(item);
-
-                            });
-
-                        } else {
-
-                            nonppn.innerHTML =
-                                '<div class="col-12 text-center text-muted">Belum ada data.</div>';
-
-                        }
-
-                    }
-
-                    function loadAccess(idPerusahaan) {
-
-                        if (!idPerusahaan) {
-
-                            document.getElementById('listAplikasi').innerHTML = '';
-                            document.getElementById('listHakAksesPPN').innerHTML = '';
-                            document.getElementById('listHakAksesNonPPN').innerHTML = '';
-
-                            return;
-                        }
-
-                        fetch('/maping/get-access?id_perusahaan=' + idPerusahaan)
-
-                            .then(response => response.json())
-
-                            .then(function(data) {
-
-                                renderAccess(data);
-
-                            })
-
-                            .catch(function(error) {
-
-                                console.log(error);
-
-                            });
-
-                    }
-
-
-                    //--------------------------------------------------
-                    // SUPER ADMIN
-                    //--------------------------------------------------
-
-                    if (isSuperAdmin) {
-
-                        perusahaanSelect.addEventListener('change', function() {
-
-                            resetDetailBarang();
-
-                            asetSelect.innerHTML =
-                                '<option value="">-- Pilih Kode Inventaris --</option>';
-
-                            loadKategori(this.value);
-
-                            loadAccess(this.value);
-
+                    // Load Kategori
+                    $.get('/dashboard/maping/get-kategori', { id_perusahaan: perusahaanId }, function(data) {
+                        let html = '<option value="">-- Semua Kategori --</option>';
+                        data.forEach(function(item) {
+                            html += `<option value="${item.id}">${item.nama_barang}</option>`;
                         });
+                        $('#id_kategori').html(html);
+                    });
 
+                    // Load Lokasi
+                    $.get('/dashboard/maping/get-lokasi-by-perusahaan/' + perusahaanId, function(data) {
+                        let html = '<option value="">-- Pilih Lokasi --</option>';
+                        data.forEach(function(item) {
+                            html += `<option value="${item.id}">${item.nama_lokasi}</option>`;
+                        });
+                        $('#id_lokasi').html(html);
+                    });
+                });
+            @endif
+
+            // 3. FILTER STOK INVENTARIS SESUAI KATEGORI BARANG
+            $('#id_kategori').change(function() {
+                let kategoriId = $(this).val();
+                let perusahaanId = getPerusahaanId();
+
+                if (!kategoriId) {
+                    $('#box_stok_info').addClass('d-none').hide();
+                    $('#inventaris_id').html('<option value="">-- Pilih Unit Inventaris --</option>');
+                    return;
+                }
+
+                loadAvailableInventaris(perusahaanId, kategoriId);
+            });
+
+            function loadAvailableInventaris(perusahaanId, kategoriId) {
+                $('#inventaris_id').html('<option value="">-- Loading Stok... --</option>');
+
+                $.get('/dashboard/maping/get-available-inventaris', {
+                    id_perusahaan: perusahaanId,
+                    id_kategori: kategoriId
+                }, function(data) {
+                    let html = '<option value="">-- Pilih Unit Inventaris --</option>';
+                    let count = data.length;
+
+                    if (count === 0) {
+                        html = '<option value="">-- Tidak ada stok tersedia --</option>';
+                        $('#stok_info_alert').removeClass('alert-success alert-info alert-primary').addClass('alert-danger');
+                        $('#stok_info_icon').attr('class', 'bx bx-x-circle me-2 fs-4 text-danger');
+                        $('#stok_info_text').html('⚠️ Stok Habis! Tidak ada unit yang berstatus TERSEDIA di gudang untuk kategori ini.');
                     } else {
-
-                        loadKategori("{{ auth()->user()->id_perusahaan }}");
-
-                        loadAccess("{{ auth()->user()->id_perusahaan }}");
-
+                        data.forEach(function(item) {
+                            html += `<option value="${item.id}">[${item.no_inventaris}] ${item.kode_aset} - ${item.nama_barang} ${item.merek} ${item.type}</option>`;
+                        });
+                        $('#stok_info_alert').removeClass('alert-danger alert-info alert-primary').addClass('alert-success');
+                        $('#stok_info_icon').attr('class', 'bx bx-check-circle me-2 fs-4 text-success');
+                        $('#stok_info_text').html(`✅ <strong>Stok Tersedia: ${count} Unit</strong> di gudang (Siap dialokasikan).`);
                     }
 
-                    //--------------------------------------------------
-                    // CHANGE KATEGORI
-                    //--------------------------------------------------
-
-                    kategoriSelect.addEventListener('change', function() {
-
-                        resetDetailBarang();
-
-                        let perusahaanId = isSuperAdmin ?
-                            perusahaanSelect.value :
-                            "{{ auth()->user()->id_perusahaan }}";
-
-                        loadAset(this.value, perusahaanId);
-
-                    });
-
-                    //--------------------------------------------------
-                    // CHANGE ASET
-                    //--------------------------------------------------
-
-                    asetSelect.addEventListener('change', function() {
-
-                        loadDetailAset(this.value);
-
-                    });
-
+                    $('#box_stok_info').removeClass('d-none').show();
+                    $('#inventaris_id').html(html);
                 });
-            </script>
+            }
 
-            <script>
-                document.addEventListener('DOMContentLoaded', function() {
+            // 4. AUTOCOMPLETE KARYAWAN
+            $('#search_karyawan').on('keyup input', function() {
+                let keyword = $(this).val();
+                let perusahaanId = getPerusahaanId();
 
-                    const btnTambah = document.getElementById('btnTambahHakAkses');
+                if (keyword.length < 1) {
+                    $('#result_karyawan').hide().html('');
+                    $('#karyawan_id').val('');
+                    return;
+                }
 
-                    if (!btnTambah) return;
-
-                    btnTambah.addEventListener('click', function() {
-
-                        let list = document.getElementById('listHakAkses');
-
-                        let checked = document.querySelectorAll('.access-check:checked');
-
-                        list.innerHTML = '';
-
-                        if (checked.length === 0) {
-
-                            list.innerHTML = '<div class="text-muted">Belum ada Hak Akses dipilih.</div>';
-
-                            return;
-
-                        }
-
-                        checked.forEach(function(item) {
-
-                            list.innerHTML +=
-                                `<div class="badge bg-label-primary me-2 mb-2 p-2">
-                ${item.dataset.nama}
-                <input type="hidden"
-                       name="accesses[]"
-                       value="${item.value}">
-            </div>`;
-
+                $.get('/dashboard/maping/search-karyawan', {
+                    q: keyword,
+                    id_perusahaan: perusahaanId
+                }, function(data) {
+                    let html = '';
+                    if (data.length === 0) {
+                        html = '<div class="list-group-item text-muted small py-2">Karyawan tidak ditemukan</div>';
+                    } else {
+                        data.forEach(function(item) {
+                            html += `
+                                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-2 select-karyawan-item" 
+                                   data-id="${item.id}" data-nama="${item.nama_karyawan}">
+                                    <div class="fw-bold text-dark">${item.nama_karyawan}</div>
+                                    <small class="text-muted">${item.kode_karyawan ?? '-'} • Divisi: ${item.divisi ?? '-'}</small>
+                                </a>
+                            `;
                         });
-
-                        const modal = bootstrap.Modal.getInstance(
-                            document.getElementById('modalHakAkses')
-                        );
-
-                        if (modal) {
-                            modal.hide();
-                        }
-
-                    });
-
+                    }
+                    $('#result_karyawan').html(html).show();
                 });
-            </script>
-        @endsection
+            });
+
+            // Handle Klik Item Autocomplete Karyawan
+            $(document).on('click', '.select-karyawan-item', function() {
+                let id = $(this).data('id');
+                let nama = $(this).data('nama');
+
+                $('#karyawan_id').val(id);
+                $('#search_karyawan').val(nama);
+                $('#result_karyawan').hide().html('');
+            });
+
+            // Sembunyikan dropdown autocomplete ketika diklik luar
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('#box_karyawan').length) {
+                    $('#result_karyawan').hide();
+                }
+            });
+
+        });
+
+        // Validasi Ukuran Foto Maksimal 1 MB (Client Side)
+        function validateFotoSize(input) {
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                const maxSizeInBytes = 1048576; // 1 MB = 1024 * 1024 bytes
+                if (file.size > maxSizeInBytes) {
+                    let sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Ukuran File Terlalu Besar',
+                            text: 'Ukuran foto maksimal 1 MB. File yang Anda pilih berukuran ' + sizeInMB + ' MB.'
+                        });
+                    } else {
+                        alert('Ukuran foto maksimal 1 MB. File yang Anda pilih berukuran ' + sizeInMB + ' MB.');
+                    }
+                    input.value = '';
+                    document.getElementById('foto_preview_box').classList.add('d-none');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('foto_preview').src = e.target.result;
+                    document.getElementById('foto_preview_box').classList.remove('d-none');
+                };
+                reader.readAsDataURL(file);
+            } else {
+                document.getElementById('foto_preview_box').classList.add('d-none');
+            }
+        }
+    </script>
+@endsection
