@@ -121,7 +121,7 @@
 
                                 <th width="60">NO</th>
 
-                                <th width="140">KODE INVENTARIS</th>
+                                <th width="140">KODE ASET</th>
 
                                 <th>DATA ASET</th>
 
@@ -163,12 +163,12 @@
 
                                     </td>
 
-                                    {{-- KODE INVENTARIS --}}
+                                    {{-- KODE ASET --}}
                                     <td>
 
                                         <strong>
 
-                                            {{ $maping->keluar->inventaris->no_inventaris ?? '-' }}
+                                            {{ $maping->keluar->inventaris->kode_aset ?? '-' }}
 
                                         </strong>
 
@@ -655,7 +655,7 @@
                                     </label>
 
                                     <input type="text" name="search" class="form-control"
-                                        placeholder="Kode Inventaris, User Aset, Merek, Type, Device ID, Product ID, Serial Number..."
+                                        placeholder="Kode Aset, User Aset, Merek, Type, Device ID, Product ID, Serial Number..."
                                         value="{{ request('search') }}">
 
                                 </div>

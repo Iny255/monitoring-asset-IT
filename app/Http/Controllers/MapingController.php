@@ -572,7 +572,7 @@ class MapingController extends Controller
       'inventaris_id' => 'nullable|exists:inventaris,id',
       'id_keluar' => 'nullable|exists:keluars,id',
       'id_lokasi' => 'required|exists:lokasis,id',
-      'jenis_penerima' => 'nullable|in:Perorangan,Per Divisi',
+      'jenis_penerima' => 'nullable|in:Perorangan,Per Divisi,Perdivisi',
       'karyawan_id' => 'nullable|exists:karyawans,id',
       'divisi' => 'nullable|string|max:100',
       'processor' => 'nullable|string|max:100',
@@ -597,6 +597,9 @@ class MapingController extends Controller
         $gambarPath = $request->file('gambar')->store('transaksi-keluar', 'public');
       }
 
+      $rawJenisInput = $request->jenis_penerima;
+      $jenisPenerimaDb = in_array($rawJenisInput, ['Per Divisi', 'Perdivisi']) ? 'Perdivisi' : 'Perorangan';
+
       if ($request->filled('id_keluar')) {
         $keluar = Keluar::with('inventaris')->findOrFail($request->id_keluar);
         $inventaris = $keluar->inventaris;
@@ -616,11 +619,11 @@ class MapingController extends Controller
         $keluar = Keluar::create([
           'inventaris_id' => $inventaris->id,
           'perusahaan_id' => $perusahaanIdInput,
-          'karyawan_id' => $request->jenis_penerima == 'Perorangan' ? $request->karyawan_id : null,
+          'karyawan_id' => $jenisPenerimaDb == 'Perorangan' ? $request->karyawan_id : null,
           'lokasi_id' => $request->id_lokasi,
           'tgl_keluar' => $request->tanggal_digunakan,
-          'jenis_penerima' => $request->jenis_penerima ?? 'Perorangan',
-          'divisi_klr' => $request->jenis_penerima == 'Per Divisi' ? $request->divisi : null,
+          'jenis_penerima' => $jenisPenerimaDb,
+          'divisi_klr' => $jenisPenerimaDb == 'Perdivisi' ? $request->divisi : null,
           'gambar' => $gambarPath,
           'created_by' => $user->id,
         ]);
@@ -663,9 +666,11 @@ class MapingController extends Controller
         }
       }
 
-      $jenisPenerima = $request->jenis_penerima ?? $keluar->jenis_penerima ?? 'Perorangan';
-      $karyawanId = $jenisPenerima == 'Perorangan' ? ($request->karyawan_id ?? $keluar->karyawan_id) : null;
-      $divisi = $jenisPenerima == 'Per Divisi' ? ($request->divisi ?? $keluar->divisi_klr) : null;
+      $jenisPenerimaRaw = $request->jenis_penerima ?? $keluar->jenis_penerima ?? 'Perorangan';
+      $jenisPenerimaFinal = in_array($jenisPenerimaRaw, ['Per Divisi', 'Perdivisi']) ? 'Perdivisi' : 'Perorangan';
+
+      $karyawanId = $jenisPenerimaFinal == 'Perorangan' ? ($request->karyawan_id ?? $keluar->karyawan_id) : null;
+      $divisi = $jenisPenerimaFinal == 'Perdivisi' ? ($request->divisi ?? $keluar->divisi_klr) : null;
 
       $maping = Maping::create([
         'uuid' => (string) Str::uuid(),
@@ -673,7 +678,7 @@ class MapingController extends Controller
         'id_lokasi' => $request->id_lokasi,
         'id_perusahaan' => $perusahaanId,
         'karyawan_id' => $karyawanId,
-        'jenis_penerima' => $jenisPenerima,
+        'jenis_penerima' => $jenisPenerimaFinal,
         'divisi' => $divisi,
         'processor' => strtoupper($request->processor),
         'ram' => strtoupper($request->ram),
@@ -698,11 +703,8 @@ class MapingController extends Controller
 
       DB::commit();
 
-      $maping->loadMissing('keluar.inventaris');
-      $dataAsetId = $maping->keluar?->inventaris?->data_aset_id;
-      $targetUrl = $dataAsetId ? route('history.perjalanan.show', $dataAsetId) : route('history.perjalanan.index');
-
-      return redirect($targetUrl)
+      return redirect()
+        ->route('maping.index')
         ->with('success', 'Mapping Aset berhasil disimpan dan barang telah dikeluarkan dari stok.');
     } catch (\Throwable $e) {
       DB::rollBack();
@@ -934,19 +936,21 @@ class MapingController extends Controller
       $query->where('status', 'aktif');
     }
 
-    $mapings = $query->orderBy('id', 'desc')->get();
+    $mapings = $query->get()->sortBy(function ($item) {
+      return $item->keluar?->inventaris?->kode_aset ?? '';
+    }, SORT_NATURAL)->values();
 
     foreach ($mapings as $maping) {
       $maping->aplikasis = $maping->mapingAccesses->filter(function ($item) {
-        return $item->access && $item->access->kategori == 'Aplikasi';
+        return strtoupper($item->kategori) === 'APLIKASI';
       });
 
       $maping->hakAksesPPN = $maping->mapingAccesses->filter(function ($item) {
-        return $item->access && $item->access->kategori == 'Hak Akses' && $item->access->jenis == 'PPN';
+        return strtoupper($item->kategori) === 'HAK AKSES' && strtoupper($item->jenis) === 'PPN';
       });
 
       $maping->hakAksesNonPPN = $maping->mapingAccesses->filter(function ($item) {
-        return $item->access && $item->access->kategori == 'Hak Akses' && $item->access->jenis == 'NON PPN';
+        return strtoupper($item->kategori) === 'HAK AKSES' && strtoupper($item->jenis) !== 'PPN';
       });
     }
 
@@ -1019,19 +1023,21 @@ class MapingController extends Controller
       $query->where('status', 'aktif');
     }
 
-    $mapings = $query->orderBy('id', 'desc')->get();
+    $mapings = $query->get()->sortBy(function ($item) {
+      return $item->keluar?->inventaris?->kode_aset ?? '';
+    }, SORT_NATURAL)->values();
 
     foreach ($mapings as $maping) {
       $maping->aplikasis = $maping->mapingAccesses->filter(function ($item) {
-        return $item->access && $item->access->kategori == 'Aplikasi';
+        return strtoupper($item->kategori) === 'APLIKASI';
       });
 
       $maping->hakAksesPPN = $maping->mapingAccesses->filter(function ($item) {
-        return $item->access && $item->access->kategori == 'Hak Akses' && $item->access->jenis == 'PPN';
+        return strtoupper($item->kategori) === 'HAK AKSES' && strtoupper($item->jenis) === 'PPN';
       });
 
       $maping->hakAksesNonPPN = $maping->mapingAccesses->filter(function ($item) {
-        return $item->access && $item->access->kategori == 'Hak Akses' && $item->access->jenis == 'NON PPN';
+        return strtoupper($item->kategori) === 'HAK AKSES' && strtoupper($item->jenis) !== 'PPN';
       });
     }
 

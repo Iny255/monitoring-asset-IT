@@ -613,7 +613,7 @@
         {{-- ========================= --}}
         <div class="card border-0 shadow-sm mt-4">
 
-            <div class="card-header bg-white">
+            <div class="card-header bg-white py-3">
 
                 <h5 class="mb-0 fw-bold">
 
@@ -625,91 +625,127 @@
 
             </div>
 
-            <div class="card-body">
+            <div class="card-body p-0">
 
-                <div class="row g-3">
+                <div class="table-responsive">
 
-                    @forelse($maping->mapingAccesses as $item)
-                        <div class="col-lg-4 col-md-6">
+                    <table class="table table-hover align-middle mb-0">
 
-                            <div class="card border h-100 shadow-sm">
+                        <thead class="table-light">
 
-                                <div class="card-body">
+                            <tr>
 
-                                    <div class="fw-bold">
+                                <th width="60" class="text-center">NO</th>
 
-                                        {{ $item->access->nama_akses }}
+                                <th>NAMA HAK AKSES / APLIKASI</th>
 
-                                    </div>
+                                <th width="160" class="text-center">KATEGORI</th>
 
-                                    <div class="mt-3">
+                                <th width="160" class="text-center">JENIS</th>
 
-                                        @if ($item->access->kategori == 'Aplikasi')
-                                            <span class="badge bg-label-primary">
+                            </tr>
 
-                                                Aplikasi
+                        </thead>
+
+                        <tbody>
+
+                            @forelse($maping->mapingAccesses as $item)
+
+                                <tr>
+
+                                    <td class="text-center fw-medium">{{ $loop->iteration }}</td>
+
+                                    <td>
+
+                                        <span class="fw-semibold text-dark">{{ $item->nama_akses }}</span>
+
+                                    </td>
+
+                                    <td class="text-center">
+
+                                        @if ($item->kategori == 'Aplikasi')
+
+                                            <span class="badge bg-label-primary px-3 py-2">
+
+                                                <i class="bx bx-grid-alt me-1"></i> Aplikasi
 
                                             </span>
+
                                         @else
-                                            <span class="badge bg-label-success">
 
-                                                Hak Akses
+                                            <span class="badge bg-label-success px-3 py-2">
+
+                                                <i class="bx bx-key me-1"></i> Hak Akses
 
                                             </span>
+
                                         @endif
 
+                                    </td>
 
-                                        @switch($item->access->jenis)
+                                    <td class="text-center">
+
+                                        @switch($item->jenis)
+
                                             @case('Software')
-                                                <span class="badge bg-label-info">
+
+                                                <span class="badge bg-label-info px-3 py-2">
 
                                                     Software
 
                                                 </span>
+
                                             @break
 
                                             @case('PPN')
-                                                <span class="badge bg-label-warning">
+
+                                                <span class="badge bg-label-warning px-3 py-2">
 
                                                     PPN
 
                                                 </span>
+
                                             @break
 
                                             @default
-                                                <span class="badge bg-label-secondary">
+
+                                                <span class="badge bg-label-secondary px-3 py-2">
 
                                                     NON PPN
 
                                                 </span>
+
                                         @endswitch
 
-                                    </div>
+                                    </td>
 
-                                </div>
+                                </tr>
 
-                            </div>
+                            @empty
 
-                        </div>
+                                <tr>
 
-                        @empty
+                                    <td colspan="4" class="text-center text-muted py-4">
 
-                            <div class="col-12">
+                                        <i class="bx bx-info-circle fs-4 d-block mb-1"></i>
 
-                                <div class="alert alert-warning mb-0">
+                                        Belum ada Hak Akses maupun Aplikasi.
 
-                                    Belum ada Hak Akses maupun Aplikasi.
+                                    </td>
 
-                                </div>
+                                </tr>
 
-                            </div>
-                        @endforelse
+                            @endforelse
 
-                    </div>
+                        </tbody>
+
+                    </table>
 
                 </div>
 
             </div>
+
+        </div>
 
 
             {{-- BUTTON --}}

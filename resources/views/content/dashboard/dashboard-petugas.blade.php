@@ -123,6 +123,8 @@
 
             font-size: 1.6rem;
 
+            flex-shrink: 0;
+
         }
 
         .master-item {

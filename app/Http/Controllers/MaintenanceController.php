@@ -82,17 +82,29 @@ class MaintenanceController extends Controller
    */
   public function create()
   {
-    if (auth()->user()->role == 'super_admin') {
-      $inventarisList = collect();
+    $user = auth()->user();
 
+    if ($user->role == 'super_admin') {
+      $inventarisList = collect();
       $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+      $kategoris = collect();
     } else {
       $inventarisList = collect();
-
       $perusahaans = collect();
-    }
 
-    $kategoris = \App\Models\Kategori::orderBy('nama_barang')->get();
+      $accessibleIds = $user->getAccessibleCompanyIds();
+      if ($accessibleIds) {
+        $kategoris = \App\Models\Kategori::whereIn('perusahaan_id', $accessibleIds)
+          ->orderBy('nama_barang')
+          ->get();
+      } elseif ($user->id_perusahaan) {
+        $kategoris = \App\Models\Kategori::where('perusahaan_id', $user->id_perusahaan)
+          ->orderBy('nama_barang')
+          ->get();
+      } else {
+        $kategoris = collect();
+      }
+    }
 
     return view('content.dashboard.maintenance.create', [
       'inventaris' => null,
@@ -169,6 +181,16 @@ class MaintenanceController extends Controller
   }
   public function inventarisPerusahaan($id)
   {
+    $user = auth()->user();
+    if ($user->role != 'super_admin') {
+      $accessibleIds = $user->getAccessibleCompanyIds();
+      if ($accessibleIds && !$accessibleIds->contains($id)) {
+        return response()->json([], 403);
+      } elseif (!$accessibleIds && $user->id_perusahaan != $id) {
+        return response()->json([], 403);
+      }
+    }
+
     return Inventaris::with(['dataAset.kategori', 'perusahaan'])
       ->availableForMaintenance()
       ->where('perusahaan_id', $id)
@@ -188,7 +210,12 @@ class MaintenanceController extends Controller
         $query->where('perusahaan_id', $request->perusahaan);
       }
     } else {
-      $query->where('perusahaan_id', auth()->user()->id_perusahaan);
+      $accessibleIds = auth()->user()->getAccessibleCompanyIds();
+      if ($accessibleIds) {
+        $query->whereIn('perusahaan_id', $accessibleIds);
+      } elseif (auth()->user()->id_perusahaan) {
+        $query->where('perusahaan_id', auth()->user()->id_perusahaan);
+      }
     }
 
     return response()->json($query->orderBy('kode_aset')->get());
@@ -220,6 +247,27 @@ class MaintenanceController extends Controller
       'peminjaman_id' => 'nullable|exists:peminjamans,id',
       'gambar' => 'nullable|image|mimes:jpeg,png,jpg,webp,gif|max:2048',
     ]);
+
+    $user = auth()->user();
+    if ($user->role != 'super_admin') {
+      $inventaris = Inventaris::find($request->inventaris_id);
+      $accessibleIds = $user->getAccessibleCompanyIds();
+      $isAllowed = false;
+
+      if ($inventaris) {
+        if ($accessibleIds) {
+          $isAllowed = $accessibleIds->contains($inventaris->perusahaan_id);
+        } else {
+          $isAllowed = ($inventaris->perusahaan_id == $user->id_perusahaan);
+        }
+      }
+
+      if (!$inventaris || !$isAllowed) {
+        return back()
+          ->withInput()
+          ->with('error', 'Anda tidak memiliki akses ke inventaris dari perusahaan ini.');
+      }
+    }
 
     $gambar = null;
     if ($request->hasFile('gambar')) {
@@ -605,6 +653,44 @@ class MaintenanceController extends Controller
     return redirect()
       ->route('maintenance.index')
       ->with('success', 'Data Service & Maintenance berhasil diperbarui.');
+  }
+
+  /**
+   * Update unggah foto bukti servis dari halaman detail (berlaku sampai status Tidak Dapat Diperbaiki).
+   */
+  public function updateGambar(Request $request, Maintenance $maintenance)
+  {
+    if ($maintenance->status == 'Dibatalkan') {
+      return back()->with('error', 'Foto tidak dapat diubah untuk transaksi yang telah dibatalkan.');
+    }
+
+    $user = auth()->user();
+    if ($user->role != 'super_admin') {
+      $accessibleIds = $user->getAccessibleCompanyIds();
+      $isAllowed = $accessibleIds
+        ? $accessibleIds->contains($maintenance->inventaris->perusahaan_id)
+        : ($maintenance->inventaris->perusahaan_id == $user->id_perusahaan);
+      if (!$isAllowed) {
+        return back()->with('error', 'Anda tidak memiliki akses ke data service ini.');
+      }
+    }
+
+    $request->validate([
+      'gambar' => 'required|image|mimes:jpeg,png,jpg,webp,gif|max:2048',
+    ]);
+
+    if ($request->hasFile('gambar')) {
+      if ($maintenance->gambar && Storage::disk('public')->exists($maintenance->gambar)) {
+        Storage::disk('public')->delete($maintenance->gambar);
+      }
+      $gambar = $request->file('gambar')->store('maintenance', 'public');
+
+      $maintenance->update([
+        'gambar' => $gambar,
+      ]);
+    }
+
+    return back()->with('success', 'Foto bukti servis berhasil diperbarui.');
   }
 
   /**

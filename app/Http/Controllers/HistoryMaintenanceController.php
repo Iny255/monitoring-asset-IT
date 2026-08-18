@@ -25,8 +25,13 @@ class HistoryMaintenanceController extends Controller
         });
       }
     } else {
-      $query->whereHas('inventaris', function ($q) {
-        $q->where('perusahaan_id', auth()->user()->id_perusahaan);
+      $accessibleIds = auth()->user()->getAccessibleCompanyIds();
+      $query->whereHas('inventaris', function ($q) use ($accessibleIds) {
+        if ($accessibleIds) {
+          $q->whereIn('perusahaan_id', $accessibleIds);
+        } else {
+          $q->where('perusahaan_id', auth()->user()->id_perusahaan);
+        }
       });
     }
 
@@ -145,8 +150,13 @@ class HistoryMaintenanceController extends Controller
         });
       }
     } else {
-      $query->whereHas('inventaris', function ($q) {
-        $q->where('perusahaan_id', auth()->user()->id_perusahaan);
+      $accessibleIds = auth()->user()->getAccessibleCompanyIds();
+      $query->whereHas('inventaris', function ($q) use ($accessibleIds) {
+        if ($accessibleIds) {
+          $q->whereIn('perusahaan_id', $accessibleIds);
+        } else {
+          $q->where('perusahaan_id', auth()->user()->id_perusahaan);
+        }
       });
     }
 
@@ -237,8 +247,13 @@ class HistoryMaintenanceController extends Controller
         });
       }
     } else {
-      $query->whereHas('inventaris', function ($q) {
-        $q->where('perusahaan_id', auth()->user()->id_perusahaan);
+      $accessibleIds = auth()->user()->getAccessibleCompanyIds();
+      $query->whereHas('inventaris', function ($q) use ($accessibleIds) {
+        if ($accessibleIds) {
+          $q->whereIn('perusahaan_id', $accessibleIds);
+        } else {
+          $q->where('perusahaan_id', auth()->user()->id_perusahaan);
+        }
       });
     }
 

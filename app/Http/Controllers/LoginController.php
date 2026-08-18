@@ -211,6 +211,10 @@ class LoginController extends Controller
       case 'petugas':
         return redirect()->route('dashboard.petugas');
 
+      case 'user':
+      case 'karyawan':
+        return redirect()->route('aset-saya.index');
+
       default:
         Auth::logout();
 

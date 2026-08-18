@@ -27,11 +27,28 @@
 
                     </div>
 
-                    <span class="badge bg-label-primary">
-
-                        {{ now()->year }}
-
-                    </span>
+                    <form method="GET" action="" class="d-inline-block mb-0">
+                        @foreach(request()->except('tahun') as $key => $val)
+                            @if(is_array($val))
+                                @foreach($val as $v)
+                                    <input type="hidden" name="{{ $key }}[]" value="{{ $v }}">
+                                @endforeach
+                            @elseif($val !== null)
+                                <input type="hidden" name="{{ $key }}" value="{{ $val }}">
+                            @endif
+                        @endforeach
+                        <select name="tahun" onchange="this.form.submit()" class="form-select form-select-sm fw-bold border-primary text-primary">
+                            @php
+                                $selectedTahun = $dashboard['grafik']['tahun'] ?? request('tahun', now()->year);
+                                $years = $dashboard['grafik']['available_years'] ?? [now()->year];
+                            @endphp
+                            @foreach($years as $y)
+                                <option value="{{ $y }}" {{ $selectedTahun == $y ? 'selected' : '' }}>
+                                    Tahun {{ $y }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </form>
 
                 </div>
 

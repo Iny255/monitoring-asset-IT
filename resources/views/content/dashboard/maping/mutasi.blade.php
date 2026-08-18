@@ -865,7 +865,7 @@
                                 @forelse($maping->mapingAccesses as $akses)
                                     @php
 
-                                        $kategori = strtoupper($akses->access->kategori ?? '');
+                                        $kategori = strtoupper($akses->kategori ?? '');
 
                                         switch ($kategori) {
                                             case 'APLIKASI':
@@ -907,20 +907,20 @@
 
                                                         <h6 class="fw-bold mb-3">
 
-                                                            {{ strtoupper($akses->access->nama_akses) }}
+                                                            {{ strtoupper($akses->nama_akses) }}
 
                                                         </h6>
 
                                                         <span class="badge bg-label-success me-1">
 
-                                                            {{ $akses->access->kategori }}
+                                                            {{ $akses->kategori }}
 
                                                         </span>
 
-                                                        @if ($akses->access->jenis)
+                                                        @if ($akses->jenis)
                                                             <span class="badge bg-label-warning">
 
-                                                                {{ $akses->access->jenis }}
+                                                                {{ $akses->jenis }}
 
                                                             </span>
                                                         @endif

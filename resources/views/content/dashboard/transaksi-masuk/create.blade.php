@@ -235,6 +235,42 @@
                                     </div>
 
 
+                                    {{-- KATEGORI ASET --}}
+                                    <div class="col-md-6 mb-3">
+
+                                        <label class="form-label fw-medium">
+                                            Kategori Aset
+                                        </label>
+
+                                        <select name="kategori_id" id="kategori_id"
+                                            class="form-select @error('kategori_id') is-invalid @enderror" required>
+
+                                            <option value="">
+                                                -- Pilih Kategori Aset --
+                                            </option>
+
+                                            @if (auth()->user()->role !== 'super_admin')
+
+                                                @foreach ($kategoris as $kategori)
+                                                    <option value="{{ $kategori->id }}"
+                                                        {{ old('kategori_id') == $kategori->id ? 'selected' : '' }}>
+                                                        {{ $kategori->nama_barang }} ({{ $kategori->kode_barang }})
+                                                    </option>
+                                                @endforeach
+
+                                            @endif
+
+                                        </select>
+
+                                        @error('kategori_id')
+                                            <div class="invalid-feedback">
+                                                {{ $message }}
+                                            </div>
+                                        @enderror
+
+                                    </div>
+
+
                                     {{-- DATA ASET --}}
                                     <div class="col-md-6 mb-3">
 
@@ -246,22 +282,8 @@
                                             class="form-select @error('data_aset_id') is-invalid @enderror" required>
 
                                             <option value="">
-                                                -- Pilih Data Aset --
+                                                -- Pilih Kategori Terlebih Dahulu --
                                             </option>
-
-                                            @if (auth()->user()->role !== 'super_admin')
-
-                                                @foreach ($dataAsets as $aset)
-                                                    <option value="{{ $aset->id }}">
-                                                        {{ $aset->kategori->nama_barang }}
-                                                        -
-                                                        {{ $aset->merek }}
-                                                        -
-                                                        {{ $aset->type }}
-                                                    </option>
-                                                @endforeach
-
-                                            @endif
 
                                         </select>
 
@@ -440,125 +462,120 @@
 
             const perusahaan = document.getElementById('perusahaan');
             const supplier = document.getElementById('supplier');
+            const kategori = document.getElementById('kategori_id');
             const dataAset = document.getElementById('data_aset');
 
-            if (!perusahaan) return;
+            const selectedDataAsetId = "{{ old('data_aset_id') }}";
 
-            perusahaan.addEventListener('change', function() {
+            function loadDataAset(targetDataAsetId = null) {
+                let perusahaanId = perusahaan ? perusahaan.value : "{{ auth()->user()->id_perusahaan ?? '' }}";
+                let kategoriId = kategori ? kategori.value : '';
 
-                let perusahaanId = this.value;
-
-                // RESET
-                supplier.innerHTML =
-                    '<option value="">Loading Supplier...</option>';
-
-                dataAset.innerHTML =
-                    '<option value="">Loading Data Aset...</option>';
-
-                if (!perusahaanId) {
-
-                    supplier.innerHTML =
-                        '<option value="">-- Pilih Supplier --</option>';
-
-                    dataAset.innerHTML =
-                        '<option value="">-- Pilih Data Aset --</option>';
-
+                if (!kategoriId) {
+                    dataAset.innerHTML = '<option value="">-- Pilih Kategori Terlebih Dahulu --</option>';
                     return;
                 }
 
-                // ==========================
-                // LOAD SUPPLIER
-                // ==========================
+                if (perusahaan && !perusahaanId) {
+                    dataAset.innerHTML = '<option value="">-- Pilih Perusahaan Terlebih Dahulu --</option>';
+                    return;
+                }
 
-                fetch('/dashboard/get-supplier/' + perusahaanId)
+                dataAset.innerHTML = '<option value="">Loading Data Aset...</option>';
 
+                let url = `/dashboard/get-data-aset/${perusahaanId}?kategori_id=${kategoriId}`;
+
+                fetch(url)
                     .then(response => response.json())
-
                     .then(data => {
-
-                        let html =
-                            '<option value="">-- Pilih Supplier --</option>';
+                        let html = '<option value="">-- Pilih Data Aset --</option>';
 
                         if (data.length === 0) {
-
-                            html =
-                                '<option value="">Supplier tidak tersedia</option>';
-
+                            html = '<option value="">Data aset tidak tersedia untuk kategori ini</option>';
                         } else {
-
                             data.forEach(item => {
-
+                                let warna = item.warna ? ` - ${item.warna}` : '';
+                                let kategoriNama = item.kategori ? item.kategori.nama_barang : '';
+                                let isSelected = (targetDataAsetId && targetDataAsetId == item.id) ? 'selected' : '';
                                 html += `
-                            <option value="${item.id}">
-                                ${item.nama_supplier}
-                            </option>
-                        `;
-
+                                    <option value="${item.id}" ${isSelected}>
+                                        ${kategoriNama} - ${item.merek} - ${item.type}${warna}
+                                    </option>
+                                `;
                             });
-
-                        }
-
-                        supplier.innerHTML = html;
-
-                    })
-
-                    .catch(error => {
-
-                        console.log(error);
-
-                        supplier.innerHTML =
-                            '<option value="">Gagal memuat supplier</option>';
-
-                    });
-
-                // ==========================
-                // LOAD DATA ASET
-                // ==========================
-
-                fetch('/dashboard/get-data-aset/' + perusahaanId)
-
-                    .then(response => response.json())
-
-                    .then(data => {
-
-                        let html =
-                            '<option value="">-- Pilih Data Aset --</option>';
-
-                        if (data.length === 0) {
-
-                            html =
-                                '<option value="">Data aset tidak tersedia</option>';
-
-                        } else {
-
-                            data.forEach(item => {
-
-                                html += `
-                            <option value="${item.id}">
-                                ${item.kategori.nama_barang}
-                                - ${item.merek}
-                                - ${item.type}
-                            </option>
-                        `;
-
-                            });
-
                         }
 
                         dataAset.innerHTML = html;
-
                     })
-
                     .catch(error => {
-
-                        console.log(error);
-
-                        dataAset.innerHTML =
-                            '<option value="">Gagal memuat data aset</option>';
-
+                        console.error(error);
+                        dataAset.innerHTML = '<option value="">Gagal memuat data aset</option>';
                     });
+            }
 
-            });
+            if (kategori) {
+                kategori.addEventListener('change', function() {
+                    loadDataAset();
+                });
+
+                if (kategori.value) {
+                    loadDataAset(selectedDataAsetId);
+                }
+            }
+
+            if (perusahaan) {
+                perusahaan.addEventListener('change', function() {
+                    let perusahaanId = this.value;
+
+                    supplier.innerHTML = '<option value="">Loading Supplier...</option>';
+                    kategori.innerHTML = '<option value="">Loading Kategori...</option>';
+                    dataAset.innerHTML = '<option value="">-- Pilih Kategori Terlebih Dahulu --</option>';
+
+                    if (!perusahaanId) {
+                        supplier.innerHTML = '<option value="">-- Pilih Supplier --</option>';
+                        kategori.innerHTML = '<option value="">-- Pilih Kategori Aset --</option>';
+                        return;
+                    }
+
+                    // LOAD SUPPLIER
+                    fetch('/dashboard/get-supplier/' + perusahaanId)
+                        .then(response => response.json())
+                        .then(data => {
+                            let html = '<option value="">-- Pilih Supplier --</option>';
+                            if (data.length === 0) {
+                                html = '<option value="">Supplier tidak tersedia</option>';
+                            } else {
+                                data.forEach(item => {
+                                    html += `<option value="${item.id}">${item.nama_supplier}</option>`;
+                                });
+                            }
+                            supplier.innerHTML = html;
+                        })
+                        .catch(error => {
+                            console.error(error);
+                            supplier.innerHTML = '<option value="">Gagal memuat supplier</option>';
+                        });
+
+                    // LOAD KATEGORI
+                    fetch('/dashboard/get-kategori-masuk/' + perusahaanId)
+                        .then(response => response.json())
+                        .then(data => {
+                            let html = '<option value="">-- Pilih Kategori Aset --</option>';
+                            if (data.length === 0) {
+                                html = '<option value="">Kategori tidak tersedia</option>';
+                            } else {
+                                data.forEach(item => {
+                                    html += `<option value="${item.id}">${item.nama_barang} (${item.kode_barang})</option>`;
+                                });
+                            }
+                            kategori.innerHTML = html;
+                        })
+                        .catch(error => {
+                            console.error(error);
+                            kategori.innerHTML = '<option value="">Gagal memuat kategori</option>';
+                        });
+                });
+            }
 
         });
     </script>

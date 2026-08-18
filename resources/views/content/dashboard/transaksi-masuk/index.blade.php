@@ -162,7 +162,7 @@
                                 </label>
 
                                 <input type="text" name="search" class="form-control"
-                                    placeholder="Nama barang / merek / type" value="{{ request('search') }}">
+                                    placeholder="Nama barang / merek / type / kode aset" value="{{ request('search') }}">
 
                             </div>
 
@@ -253,7 +253,31 @@
                                 {{-- DATA ASET --}}
                                 <td>
 
-                                    {{ $masuk->dataAset->kategori->nama_barang ?? '-' }}
+                                    @if ($masuk->inventaris && $masuk->inventaris->isNotEmpty())
+                                        <div class="mb-1">
+                                            @if ($masuk->inventaris->count() == 1)
+                                                <span class="badge bg-label-primary">
+                                                    {{ $masuk->inventaris->first()->kode_aset }}
+                                                </span>
+                                            @elseif ($masuk->inventaris->count() <= 3)
+                                                @foreach ($masuk->inventaris as $inv)
+                                                    <span class="badge bg-label-primary me-1 mb-1">
+                                                        {{ $inv->kode_aset }}
+                                                    </span>
+                                                @endforeach
+                                            @else
+                                                <span class="badge bg-label-primary mb-1"
+                                                    title="{{ $masuk->inventaris->pluck('kode_aset')->implode(', ') }}">
+                                                    {{ $masuk->inventaris->first()->kode_aset }} - {{ $masuk->inventaris->last()->kode_aset }}
+                                                    ({{ $masuk->inventaris->count() }} Aset)
+                                                </span>
+                                            @endif
+                                        </div>
+                                    @endif
+
+                                    <span class="fw-semibold">
+                                        {{ $masuk->dataAset->kategori->nama_barang ?? '-' }}
+                                    </span>
                                     <br>
 
                                     <small class="text-muted">

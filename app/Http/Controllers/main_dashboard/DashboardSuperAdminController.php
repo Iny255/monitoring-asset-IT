@@ -81,6 +81,8 @@ class DashboardSuperAdminController extends Controller
   private function inventarisGlobal()
   {
     return [
+      'total' => Inventaris::count(),
+
       'tersedia' => Inventaris::where('status', 'TERSEDIA')->count(),
 
       'dipakai' => Inventaris::where('status', 'DIPAKAI')->count(),
@@ -136,6 +138,38 @@ class DashboardSuperAdminController extends Controller
   }
   private function grafikGlobal()
   {
+    $tahun = request('tahun', now()->year);
+
+    $masukData = Masuk::whereYear('tanggal_pembelian', $tahun)
+      ->selectRaw('MONTH(tanggal_pembelian) bulan, COUNT(*) total')
+      ->groupBy('bulan')
+      ->pluck('total', 'bulan')
+      ->toArray();
+
+    $keluarData = Keluar::whereYear('tgl_keluar', $tahun)
+      ->selectRaw('MONTH(tgl_keluar) bulan, COUNT(*) total')
+      ->groupBy('bulan')
+      ->pluck('total', 'bulan')
+      ->toArray();
+
+    $mutasiData = HistoryMutasi::whereYear('tanggal_mutasi', $tahun)
+      ->selectRaw('MONTH(tanggal_mutasi) bulan, COUNT(*) total')
+      ->groupBy('bulan')
+      ->pluck('total', 'bulan')
+      ->toArray();
+
+    $maintenanceData = Maintenance::whereYear('tanggal', $tahun)
+      ->selectRaw('MONTH(tanggal) bulan, COUNT(*) total')
+      ->groupBy('bulan')
+      ->pluck('total', 'bulan')
+      ->toArray();
+
+    $peminjamanData = Peminjaman::whereYear('tanggal_pinjam', $tahun)
+      ->selectRaw('MONTH(tanggal_pinjam) bulan, COUNT(*) total')
+      ->groupBy('bulan')
+      ->pluck('total', 'bulan')
+      ->toArray();
+
     $bulan = [];
     $masuk = [];
     $keluar = [];
@@ -148,26 +182,25 @@ class DashboardSuperAdminController extends Controller
         ->month($i)
         ->translatedFormat('M');
 
-      $masuk[] = Masuk::whereMonth('created_at', $i)
-        ->whereYear('created_at', now()->year)
-        ->count();
+      $masuk[] = $masukData[$i] ?? 0;
 
-      $keluar[] = Keluar::whereMonth('created_at', $i)
-        ->whereYear('created_at', now()->year)
-        ->count();
+      $keluar[] = $keluarData[$i] ?? 0;
 
-      $mutasi[] = HistoryMutasi::whereMonth('created_at', $i)
-        ->whereYear('created_at', now()->year)
-        ->count();
+      $mutasi[] = $mutasiData[$i] ?? 0;
 
-      $maintenance[] = Maintenance::whereMonth('created_at', $i)
-        ->whereYear('created_at', now()->year)
-        ->count();
+      $maintenance[] = $maintenanceData[$i] ?? 0;
 
-      $peminjaman[] = Peminjaman::whereMonth('created_at', $i)
-        ->whereYear('created_at', now()->year)
-        ->count();
+      $peminjaman[] = $peminjamanData[$i] ?? 0;
     }
+
+    $tahunMasuk = Masuk::selectRaw('YEAR(tanggal_pembelian) y')->whereNotNull('tanggal_pembelian')->pluck('y');
+    $tahunKeluar = Keluar::selectRaw('YEAR(tgl_keluar) y')->whereNotNull('tgl_keluar')->pluck('y');
+    $availableYears = $tahunMasuk->merge($tahunKeluar)
+      ->push(now()->year)
+      ->unique()
+      ->sortDesc()
+      ->values()
+      ->toArray();
 
     return [
       'bulan' => $bulan,
@@ -181,6 +214,10 @@ class DashboardSuperAdminController extends Controller
       'maintenance' => $maintenance,
 
       'peminjaman' => $peminjaman,
+
+      'tahun' => (int) $tahun,
+
+      'available_years' => $availableYears,
     ];
   }
   private function timelineGlobal()

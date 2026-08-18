@@ -102,6 +102,8 @@ class DashboardPetugasController extends Controller
       'dipinjam' => (clone $inventaris)->where('status', 'DIPINJAM')->count(),
 
       'rusak' => (clone $inventaris)->where('status', 'RUSAK')->count(),
+
+      'afkir' => (clone $inventaris)->where('status', 'AFKIR')->count(),
     ];
   }
 
@@ -158,13 +160,17 @@ class DashboardPetugasController extends Controller
 
   private function grafik($user)
   {
+    $tahun = request('tahun', now()->year);
+
     $masuk = $this->filterPerusahaan(Masuk::query(), $user)
+      ->whereYear('tanggal_pembelian', $tahun)
       ->selectRaw('MONTH(tanggal_pembelian) bulan, COUNT(*) total')
       ->groupBy('bulan')
       ->pluck('total', 'bulan')
       ->toArray();
 
     $keluar = $this->filterPerusahaan(Keluar::query(), $user)
+      ->whereYear('tgl_keluar', $tahun)
       ->selectRaw('MONTH(tgl_keluar) bulan, COUNT(*) total')
       ->groupBy('bulan')
       ->pluck('total', 'bulan')
@@ -184,12 +190,33 @@ class DashboardPetugasController extends Controller
       $dataKeluar[] = $keluar[$i] ?? 0;
     }
 
+    $tahunMasuk = $this->filterPerusahaan(Masuk::query(), $user)
+      ->selectRaw('YEAR(tanggal_pembelian) y')
+      ->whereNotNull('tanggal_pembelian')
+      ->pluck('y');
+
+    $tahunKeluar = $this->filterPerusahaan(Keluar::query(), $user)
+      ->selectRaw('YEAR(tgl_keluar) y')
+      ->whereNotNull('tgl_keluar')
+      ->pluck('y');
+
+    $availableYears = $tahunMasuk->merge($tahunKeluar)
+      ->push(now()->year)
+      ->unique()
+      ->sortDesc()
+      ->values()
+      ->toArray();
+
     return [
       'label' => $label,
 
       'masuk' => $dataMasuk,
 
       'keluar' => $dataKeluar,
+
+      'tahun' => (int) $tahun,
+
+      'available_years' => $availableYears,
     ];
   }
   private function mapping($user)

@@ -215,16 +215,25 @@
         </div>
 
         @php
-            $lastAccessWithEmail = $maping->mapingAccesses->first(function($item) {
+            $sortedAccesses = $maping->mapingAccesses->sortByDesc(function($item) {
+                return $item->updated_at ? $item->updated_at->timestamp : $item->id;
+            });
+
+            $lastEmailItem = $sortedAccesses->first(function($item) {
                 return !empty($item->email);
             });
-            $defaultEmail = $lastAccessWithEmail ? $lastAccessWithEmail->email : '';
+
+            $lastPassItem = $sortedAccesses->first(function($item) {
+                return !empty($item->password);
+            });
+
+            $defaultEmail = $lastEmailItem ? $lastEmailItem->email : '';
             $defaultPassword = '';
-            if ($lastAccessWithEmail && !empty($lastAccessWithEmail->password)) {
+            if ($lastPassItem && !empty($lastPassItem->password)) {
                 try {
-                    $defaultPassword = \Illuminate\Support\Facades\Crypt::decryptString($lastAccessWithEmail->password);
+                    $defaultPassword = \Illuminate\Support\Facades\Crypt::decryptString($lastPassItem->password);
                 } catch (\Exception $e) {
-                    $defaultPassword = $lastAccessWithEmail->password;
+                    $defaultPassword = $lastPassItem->password;
                 }
             }
         @endphp
@@ -247,7 +256,7 @@
                                 <div class="alert alert-primary py-2 px-3 mb-3 small d-flex align-items-center">
                                     <i class="bx bx-check-shield me-2 fs-5"></i>
                                     <div>
-                                        <strong>Auto-Fill Kredensial Unit:</strong> Email & Password telah otomatis diisi dari data unit ini (dapat disesuaikan jika berbeda).
+                                        <strong>Auto-Fill Kredensial Unit:</strong> Email & Password otomatis terisi dari kredensial terakhir unit ini (dapat Anda hapus jika ingin kosong).
                                     </div>
                                 </div>
                             @endif

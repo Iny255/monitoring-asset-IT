@@ -116,7 +116,7 @@
                             <label class="form-label fw-semibold">Jenis Penerima <span class="text-danger">*</span></label>
                             <select name="jenis_penerima" id="jenis_penerima" class="form-select" required>
                                 <option value="Perorangan" {{ old('jenis_penerima', 'Perorangan') == 'Perorangan' ? 'selected' : '' }}>Perorangan (Karyawan)</option>
-                                <option value="Per Divisi" {{ old('jenis_penerima') == 'Per Divisi' ? 'selected' : '' }}>Per Divisi</option>
+                                <option value="Perdivisi" {{ in_array(old('jenis_penerima'), ['Per Divisi', 'Perdivisi']) ? 'selected' : '' }}>Per Divisi</option>
                             </select>
                         </div>
 

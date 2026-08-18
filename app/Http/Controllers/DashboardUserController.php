@@ -34,11 +34,12 @@ class DashboardUserController extends Controller
     // 🔥 pagination
     $users = $users->latest()->paginate(10)->appends($request->query());
 
-    // 🔥 ambil semua perusahaan & cabangnya (untuk dropdown create & edit)
+    // 🔥 ambil semua perusahaan & cabangs & karyawans
     $parentPerusahaans = Perusahaan::with('cabangs')->whereNull('parent_id')->orderBy('nama_perusahaan')->get();
     $perusahaans = Perusahaan::with('parent')->orderBy('nama_perusahaan')->get();
+    $karyawans = \App\Models\Karyawan::orderBy('nama_karyawan')->get();
 
-    return view('content.dashboard.user.index', compact('users', 'perusahaans', 'parentPerusahaans'));
+    return view('content.dashboard.user.index', compact('users', 'perusahaans', 'parentPerusahaans', 'karyawans'));
   }
 
   public function hapususer(int $id)
@@ -50,13 +51,7 @@ class DashboardUserController extends Controller
       return redirect('/dashboard/user')->with('error', 'Gagal menghapus data user.');
     }
   }
-  /**
-   * Show the form for creating a new resource.
-   */
 
-  /**
-   * Store a newly created resource in storage.
-   */
   public function store(Request $request)
   {
     $validatedData = $request->validate([
@@ -64,17 +59,15 @@ class DashboardUserController extends Controller
       'name' => ['required', 'min:3', 'max:100'],
       'email' => 'required|email|unique:users',
       'password' => 'required|min:5|max:100',
-      'role' => 'required|in:petugas,super_admin',
+      'role' => 'required|in:user,karyawan,petugas,super_admin',
 
-      // 🔥 kalau bukan super_admin wajib perusahaan
       'id_perusahaan' => 'nullable|exists:perusahaans,id',
+      'karyawan_id' => 'nullable|exists:karyawans,id',
     ]);
 
     $validatedData['name'] = strtoupper($validatedData['name']);
-
     $validatedData['email'] = strtolower($validatedData['email']);
 
-    // 🔥 kalau super_admin → perusahaan null
     if ($request->role === 'super_admin') {
       $validatedData['id_perusahaan'] = null;
     }
@@ -86,26 +79,20 @@ class DashboardUserController extends Controller
     return redirect('/dashboard/user')->with('success', 'Data user berhasil disimpan.');
   }
 
-  /**
-   * Display the specified resource.
-   */
   public function show(string $id)
   {
     $authUser = auth()->user();
 
-    // 🔥 HANYA SUPER ADMIN BOLEH AKSES
     if ($authUser->role !== 'super_admin') {
-      abort(404); // langsung not found
+      abort(404);
     }
 
     $user = User::find($id);
 
-    // 🔥 kalau data tidak ada
     if (!$user) {
       abort(404);
     }
 
-    // 🔥 OPTIONAL: super admin tidak boleh lihat dirinya sendiri
     if ($authUser->id == $user->id) {
       abort(404);
     }
@@ -113,13 +100,6 @@ class DashboardUserController extends Controller
     return view('content.dashboard.user.detail', compact('user'));
   }
 
-  /**
-   * Show the form for editing the specified resource.
-   */
-
-  /**
-   * Update the specified resource in storage.
-   */
   public function update(Request $request, string $id)
   {
     $request->validate([
@@ -127,15 +107,15 @@ class DashboardUserController extends Controller
       'name' => 'required|string|max:100',
       'email' => 'required|email|max:100',
       'password' => 'nullable|string|min:8',
-      'role' => 'required|in:petugas,super_admin',
+      'role' => 'required|in:user,karyawan,petugas,super_admin',
       'id_perusahaan' => 'nullable|exists:perusahaans,id',
+      'karyawan_id' => 'nullable|exists:karyawans,id',
     ]);
 
     $user = User::findOrFail($id);
 
     $user->username = $request->username;
     $user->name = strtoupper($request->name);
-
     $user->email = strtolower($request->email);
 
     if ($request->filled('password')) {
@@ -143,8 +123,8 @@ class DashboardUserController extends Controller
     }
 
     $user->role = $request->role;
+    $user->karyawan_id = $request->karyawan_id;
 
-    // 🔥 kalau super_admin → null
     if ($request->role === 'super_admin') {
       $user->id_perusahaan = null;
     } else {

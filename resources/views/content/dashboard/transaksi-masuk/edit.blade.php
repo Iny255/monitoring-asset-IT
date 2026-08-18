@@ -91,7 +91,7 @@
                                         </label>
 
                                         <input type="text" class="form-control"
-                                            value="{{ $masuk->dataAset->kategori->nama_barang }} - {{ $masuk->dataAset->merek }} - {{ $masuk->dataAset->type }}"
+                                            value="{{ $masuk->dataAset->kategori->nama_barang }} - {{ $masuk->dataAset->merek }} - {{ $masuk->dataAset->type }}{{ $masuk->dataAset->warna ? ' - ' . $masuk->dataAset->warna : '' }}"
                                             readonly>
 
                                     </div>
@@ -209,12 +209,12 @@
                                 '<option value="">-- Pilih Data Aset --</option>';
 
                             data.forEach(item => {
-
+                                let warna = item.warna ? ` - ${item.warna}` : '';
                                 html += `
                             <option value="${item.id}">
                                 ${item.kategori.nama_barang}
                                 - ${item.merek}
-                                - ${item.type}
+                                - ${item.type}${warna}
                             </option>
                         `;
 

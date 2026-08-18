@@ -27,7 +27,7 @@ class HistoryPerjalananAsetController extends Controller
 
     // FILTER PERUSAHAAN
     if ($user->role != 'super_admin') {
-      $accessibleIds = $user->getAccessibleCompanyIds();
+      $accessibleIds = $this->getAccessibleCompanyIds($user);
       if ($accessibleIds) {
         $query->whereIn('perusahaan_id', $accessibleIds);
       }
@@ -101,7 +101,7 @@ class HistoryPerjalananAsetController extends Controller
     }
 
     if ($user->role != 'super_admin') {
-      $accessibleIds = $user->getAccessibleCompanyIds();
+      $accessibleIds = $this->getAccessibleCompanyIds($user);
       if ($accessibleIds) {
         $query->whereIn('perusahaan_id', $accessibleIds);
       }
@@ -161,7 +161,7 @@ class HistoryPerjalananAsetController extends Controller
     }
 
     if ($user->role != 'super_admin') {
-      $accessibleIds = $user->getAccessibleCompanyIds();
+      $accessibleIds = $this->getAccessibleCompanyIds($user);
       if ($accessibleIds) {
         $query->whereIn('perusahaan_id', $accessibleIds);
       }
@@ -198,7 +198,7 @@ class HistoryPerjalananAsetController extends Controller
     }
 
     if ($user->role != 'super_admin') {
-      $accessibleIds = $user->getAccessibleCompanyIds();
+      $accessibleIds = $this->getAccessibleCompanyIds($user);
       if ($accessibleIds) {
         $query->whereIn('perusahaan_id', $accessibleIds);
       }
@@ -228,7 +228,7 @@ class HistoryPerjalananAsetController extends Controller
     $query = Inventaris::with(['dataAset.kategori', 'perusahaan', 'keluarTerakhir.karyawan', 'keluarTerakhir.lokasi']);
 
     if ($user->role != 'super_admin') {
-      $accessibleIds = $user->getAccessibleCompanyIds();
+      $accessibleIds = $this->getAccessibleCompanyIds($user);
       if ($accessibleIds) {
         $query->whereIn('perusahaan_id', $accessibleIds);
       }
@@ -263,6 +263,27 @@ class HistoryPerjalananAsetController extends Controller
       new \App\Exports\HistoryPerjalananIndexExport($inventarisList, $user),
       'Daftar_Perjalanan_Aset.xlsx'
     );
+  }
+
+  /**
+   * Get accessible company IDs for the current user.
+   */
+  private function getAccessibleCompanyIds($user)
+  
+  {
+    if ($user->role === 'super_admin') {
+      return null;
+    }
+
+    if (!empty($user->id_perusahaan)) {
+      return [$user->id_perusahaan];
+    }
+
+    if (!empty($user->perusahaan_id)) {
+      return [$user->perusahaan_id];
+    }
+
+    return null;
   }
 
   /**
@@ -389,10 +410,27 @@ class HistoryPerjalananAsetController extends Controller
 
     foreach ($historyHakAkses as $hakAkses) {
       $inv = $inventaris->firstWhere('id', $hakAkses->maping?->keluar?->inventaris_id);
-      $aksiLabel = strtoupper($hakAkses->aksi ?? 'UPDATE');
-      $aksesNama = $hakAkses->access?->nama_akses ?? '-';
-      $emailInfo = $hakAkses->email ? " (Email: {$hakAkses->email})" : '';
-      $ket = $hakAkses->keterangan ? " - {$hakAkses->keterangan}" : '';
+
+      $namaAkses = $hakAkses->nama_akses ?? $hakAkses->access?->nama_akses ?? '-';
+      $kategori  = $hakAkses->kategori ?? $hakAkses->access?->kategori ?? 'Hak Akses';
+      $jenis     = $hakAkses->jenis ?? $hakAkses->access?->jenis ?? 'NON PPN';
+      $email     = $hakAkses->email;
+
+      $aksi = strtolower($hakAkses->aksi ?? 'tambah');
+      if ($aksi === 'tambah') {
+        $aksiText = 'Menambahkan';
+      } elseif ($aksi === 'update') {
+        $aksiText = 'Memperbarui';
+      } elseif ($aksi === 'hapus') {
+        $aksiText = 'Menghapus';
+      } else {
+        $aksiText = ucfirst($aksi);
+      }
+
+      $jenisLabel = ($kategori === 'Aplikasi') ? 'Aplikasi' : "Hak Akses {$jenis}";
+      $emailText  = !empty($email) ? ", {$email}" : '';
+
+      $keteranganFormat = "{$aksiText} {$jenisLabel} ({$namaAkses}){$emailText}";
 
       $timeline->push([
         'tanggal' => Carbon::parse($hakAkses->created_at),
@@ -403,8 +441,8 @@ class HistoryPerjalananAsetController extends Controller
         'user_baru' => $hakAkses->maping?->penerima ?? '-',
         'lokasi_lama' => null,
         'lokasi_baru' => $hakAkses->maping?->lokasi?->nama_lokasi ?? '-',
-        'hak_akses' => $aksesNama . ($hakAkses->email ? " ({$hakAkses->email})" : ''),
-        'keterangan' => "[{$aksiLabel}] Hak Akses: {$aksesNama}{$emailInfo}{$ket}",
+        'hak_akses' => $namaAkses . ($email ? " ({$email})" : ''),
+        'keterangan' => $keteranganFormat,
         'petugas' => $hakAkses->user?->name ?? 'Petugas',
       ]);
     }

@@ -8,10 +8,17 @@
 
 <body>
 
+    @php
+        $hasLaptop = $mapings->contains(function ($m) {
+            $kategori = strtolower($m->keluar?->inventaris?->dataAset?->kategori?->nama_barang ?? '');
+            return str_contains($kategori, 'laptop');
+        });
+    @endphp
+
     <table>
 
         <tr>
-            <td colspan="6" align="center">
+            <td colspan="{{ $hasLaptop ? '6' : '5' }}" align="center">
                 <strong style="font-size:18px">
                     LAPORAN MAPPING INVENTARIS
                 </strong>
@@ -19,7 +26,7 @@
         </tr>
 
         <tr>
-            <td colspan="6" align="center">
+            <td colspan="{{ $hasLaptop ? '6' : '5' }}" align="center">
                 <strong>{{ strtoupper($namaPerusahaan) }}</strong>
             </td>
         </tr>
@@ -44,7 +51,9 @@
 
                 <th>Data Aset</th>
 
+                @if($hasLaptop)
                 <th>Hak Akses</th>
+                @endif
 
             </tr>
 
@@ -60,7 +69,7 @@
                     {{-- NO --}}
                     {{-- ===================== --}}
                     <td>
-                        {{ $i + 1 }}
+                        {{ sprintf('%02d', $i + 1) }}
                     </td>
 
                     {{-- ===================== --}}
@@ -156,14 +165,23 @@
                     {{-- ===================== --}}
                     {{-- HAK AKSES --}}
                     {{-- ===================== --}}
+                    @if($hasLaptop)
                     <td>
 
                         <strong>Aplikasi</strong>
 
                         <br>
 
-                        @forelse($m->aplikasis as $akses)
-                            • {{ $akses->access->nama_akses }}<br>
+                        @php
+                            $appGroups = $m->aplikasis->groupBy(function($item) { return $item->email ?? ''; });
+                        @endphp
+                        @forelse($appGroups as $email => $items)
+                            @if(!empty($email))
+                                Email: {{ $email }}<br>
+                            @endif
+                            @foreach($items as $akses)
+                                • {{ $akses->nama_akses }}<br>
+                            @endforeach
                         @empty
                             -
                         @endforelse
@@ -174,8 +192,16 @@
 
                         <br>
 
-                        @forelse($m->hakAksesPPN as $akses)
-                            • {{ $akses->access->nama_akses }}<br>
+                        @php
+                            $ppnGroups = $m->hakAksesPPN->groupBy(function($item) { return $item->email ?? ''; });
+                        @endphp
+                        @forelse($ppnGroups as $email => $items)
+                            @if(!empty($email))
+                                Email: {{ $email }}<br>
+                            @endif
+                            @foreach($items as $akses)
+                                • {{ $akses->nama_akses }}<br>
+                            @endforeach
                         @empty
                             -
                         @endforelse
@@ -186,13 +212,22 @@
 
                         <br>
 
-                        @forelse($m->hakAksesNonPPN as $akses)
-                            • {{ $akses->access->nama_akses }}<br>
+                        @php
+                            $nonPpnGroups = $m->hakAksesNonPPN->groupBy(function($item) { return $item->email ?? ''; });
+                        @endphp
+                        @forelse($nonPpnGroups as $email => $items)
+                            @if(!empty($email))
+                                Email: {{ $email }}<br>
+                            @endif
+                            @foreach($items as $akses)
+                                • {{ $akses->nama_akses }}<br>
+                            @endforeach
                         @empty
                             -
                         @endforelse
 
                     </td>
+                    @endif
 
                 </tr>
 
@@ -200,7 +235,7 @@
 
                 <tr>
 
-                    <td colspan="6" align="center">
+                    <td colspan="{{ $hasLaptop ? '6' : '5' }}" align="center">
 
                         Tidak ada data
 

@@ -21,7 +21,7 @@ class User extends Authenticatable
 
   const ROLE_PETUGAS = 'petugas';
 
-  protected $fillable = ['username', 'name', 'email', 'password', 'role', 'id_perusahaan'];
+  protected $fillable = ['username', 'name', 'email', 'password', 'role', 'id_perusahaan', 'karyawan_id'];
 
   /**
    * The attributes that should be hidden for serialization.
@@ -48,9 +48,16 @@ class User extends Authenticatable
   public function getDashboardUrl()
   {
     return match ($this->role) {
+      'super_admin' => '/dashboard/superadmin',
       'petugas' => '/dashboard/petugas',
-      default => '/login',
+      'user' => '/dashboard/e-ticket',
+      default => '/dashboard/e-ticket',
     };
+  }
+
+  public function karyawan()
+  {
+    return $this->belongsTo(Karyawan::class, 'karyawan_id');
   }
 
   public function perusahaan()
@@ -76,5 +83,13 @@ class User extends Authenticatable
   public function peminjamans()
   {
     return $this->hasMany(Peminjaman::class);
+  }
+  public function tickets()
+  {
+    return $this->hasMany(Ticket::class, 'user_id');
+  }
+  public function assignedTickets()
+  {
+    return $this->hasMany(Ticket::class, 'assigned_to');
   }
 }

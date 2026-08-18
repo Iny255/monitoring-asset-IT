@@ -6,6 +6,7 @@
 
 <!-- Icons -->
 <link rel="stylesheet" href="{{ asset(mix('assets/vendor/fonts/boxicons.css')) }}" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.11.3/font/bootstrap-icons.min.css" />
 
 <!-- Core CSS -->
 <link rel="stylesheet" href="{{ asset(mix('assets/vendor/css/core.css')) }}" />

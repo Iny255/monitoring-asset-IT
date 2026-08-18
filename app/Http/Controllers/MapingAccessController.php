@@ -60,19 +60,6 @@ class MapingAccessController extends Controller
       $emailVal  = $request->filled('email') ? trim($request->email) : null;
       $passEnc   = $request->filled('password') ? Crypt::encryptString(trim($request->password)) : null;
 
-      // Fallback: Auto-Inherit email & password dari kredensial unit jika dikosongkan
-      if (empty($emailVal) || empty($passEnc)) {
-        $lastAccess = MapingAccess::where('maping_id', $maping->id)->whereNotNull('email')->latest()->first();
-        if ($lastAccess) {
-          if (empty($emailVal)) {
-            $emailVal = $lastAccess->email;
-          }
-          if (empty($passEnc)) {
-            $passEnc = $lastAccess->password;
-          }
-        }
-      }
-
       $mapingAccess = MapingAccess::create([
         'maping_id'  => $maping->id,
         'nama_akses' => $namaAkses,

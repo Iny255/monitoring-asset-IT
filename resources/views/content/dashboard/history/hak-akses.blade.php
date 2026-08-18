@@ -453,7 +453,7 @@
 
                                     <div class="fw-semibold">
 
-                                        {{ $history->access->nama_akses }}
+                                        {{ $history->access?->nama_akses ?? $history->nama_akses ?? '-' }}
 
                                     </div>
                                     @if(!empty($history->email))
@@ -464,13 +464,13 @@
 
                                 <td>
 
-                                    @if ($history->access->kategori == 'Aplikasi')
+                                    @if (($history->access?->kategori ?? $history->kategori) == 'Aplikasi')
                                         <span class="badge bg-label-info">
 
                                             Aplikasi
 
                                         </span>
-                                    @elseif($history->access->jenis == 'PPN')
+                                    @elseif(($history->access?->jenis ?? $history->jenis) == 'PPN')
                                         <span class="badge bg-label-warning">
 
                                             Hak Akses PPN

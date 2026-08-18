@@ -18,7 +18,7 @@
                         </div>
                         <div>
                             <h3 class="fw-bold mb-0">Manajemen User Sistem</h3>
-                            <small class="text-muted">Kelola akun pengguna dan hak akses peran (Super Admin & Petugas)</small>
+                            <small class="text-muted">Kelola akun pengguna dan hak akses peran (Super Admin, Petugas, User/Karyawan)</small>
                         </div>
                     </div>
                     <div>
@@ -78,6 +78,7 @@
                             <th>Username</th>
                             <th>Email</th>
                             <th>Role</th>
+                            <th>Profil Karyawan</th>
                             <th>Perusahaan</th>
                             <th>Action</th>
                         </tr>
@@ -88,7 +89,25 @@
                                 <td>{{ $loop->iteration }}</td>
                                 <td>{{ $user->username }}</td>
                                 <td>{{ $user->email }}</td>
-                                <td>{{ $user->role }}</td>
+                                <td>
+                                    @switch($user->role)
+                                        @case('super_admin')
+                                            <span class="badge bg-danger">Super Admin</span>
+                                            @break
+                                        @case('petugas')
+                                            <span class="badge bg-primary">Petugas IT</span>
+                                            @break
+                                        @default
+                                            <span class="badge bg-info">User / Karyawan</span>
+                                    @endswitch
+                                </td>
+                                <td>
+                                    @if ($user->karyawan)
+                                        <strong>{{ $user->karyawan->nama_karyawan }}</strong>
+                                    @else
+                                        <span class="text-muted small">-</span>
+                                    @endif
+                                </td>
                                 <td>
                                     @if ($user->role === 'super_admin')
                                         <span class="badge bg-label-primary">Semua Perusahaan</span>
@@ -115,7 +134,8 @@
                                     @json($user->name),
                                     @json($user->email),
                                     @json($user->role),
-                                    {{ $user->id_perusahaan ?? 'null' }}
+                                    {{ $user->id_perusahaan ?? 'null' }},
+                                    {{ $user->karyawan_id ?? 'null' }}
                                 )'>
                                         <i class="bx bx-edit-alt"></i>
                                     </button>
@@ -151,7 +171,7 @@
                 <div class="modal-content">
 
                     <div class="modal-header">
-                        <h5>Tambah User</h5>
+                        <h5 class="modal-title fw-bold">Tambah User Baru</h5>
                         <button class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
 
@@ -159,35 +179,46 @@
                         <div class="row">
 
                             <div class="col-md-6 mb-3">
-                                <label>Username</label>
+                                <label>Username <span class="text-danger">*</span></label>
                                 <input type="text" name="username" class="form-control" required>
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label>Nama</label>
+                                <label>Nama Lengkap <span class="text-danger">*</span></label>
                                 <input type="text" name="name" class="form-control" required>
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label>Email</label>
+                                <label>Email <span class="text-danger">*</span></label>
                                 <input type="email" name="email" class="form-control" required>
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label>Password</label>
+                                <label>Password <span class="text-danger">*</span></label>
                                 <input type="password" name="password" class="form-control" required>
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label>Role</label>
+                                <label>Role Access <span class="text-danger">*</span></label>
                                 <select name="role" class="form-select" required>
                                     <option value="">Pilih Role</option>
-                                    <option value="petugas">Petugas</option>
+                                    <option value="user">User / Karyawan (Pelapor Tiket)</option>
+                                    <option value="petugas">Petugas IT Support</option>
                                     <option value="super_admin">Super Admin</option>
                                 </select>
                             </div>
 
                             <div class="col-md-6 mb-3">
+                                <label>Profil Karyawan (Opsional)</label>
+                                <select name="karyawan_id" class="form-select">
+                                    <option value="">-- Tidak Terhubung ke Karyawan --</option>
+                                    @foreach ($karyawans as $kary)
+                                        <option value="{{ $kary->id }}">{{ $kary->nama_karyawan }} ({{ $kary->kode_karyawan ?? 'NIK: -' }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-12 mb-3">
                                 <label>Perusahaan / Cabang</label>
                                 <select name="id_perusahaan" class="form-select">
                                     <option value="">Pilih Perusahaan / Cabang</option>
@@ -212,7 +243,7 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                             Batal
                         </button>
-                        <button class="btn btn-primary">Simpan</button>
+                        <button class="btn btn-primary">Simpan User</button>
                     </div>
 
                 </div>
@@ -230,7 +261,7 @@
                 <div class="modal-content">
 
                     <div class="modal-header">
-                        <h5>Edit User</h5>
+                        <h5 class="modal-title fw-bold">Edit User</h5>
                         <button class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
 
@@ -258,14 +289,25 @@
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label>Role</label>
+                                <label>Role Access</label>
                                 <select id="editRole" name="role" class="form-select" required>
-                                    <option value="petugas">Petugas</option>
+                                    <option value="user">User / Karyawan (Pelapor Tiket)</option>
+                                    <option value="petugas">Petugas IT Support</option>
                                     <option value="super_admin">Super Admin</option>
                                 </select>
                             </div>
 
                             <div class="col-md-6 mb-3">
+                                <label>Profil Karyawan (Opsional)</label>
+                                <select id="editKaryawan" name="karyawan_id" class="form-select">
+                                    <option value="">-- Tidak Terhubung ke Karyawan --</option>
+                                    @foreach ($karyawans as $kary)
+                                        <option value="{{ $kary->id }}">{{ $kary->nama_karyawan }} ({{ $kary->kode_karyawan ?? 'NIK: -' }})</option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-12 mb-3">
                                 <label>Perusahaan / Cabang</label>
                                 <select id="editPerusahaan" name="id_perusahaan" class="form-select">
                                     <option value="">Pilih Perusahaan / Cabang</option>
@@ -287,7 +329,7 @@
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
                             Batal
                         </button>
-                        <button class="btn btn-primary">Update</button>
+                        <button class="btn btn-primary">Update User</button>
                     </div>
 
                 </div>
@@ -297,7 +339,7 @@
 
     <!-- ================= SCRIPT ================= -->
     <script>
-        function openEditModal(id, username, name, email, role, perusahaan_id) {
+        function openEditModal(id, username, name, email, role, perusahaan_id, karyawan_id) {
 
             document.getElementById('editForm').action = '/dashboard/user/' + id;
 
@@ -308,6 +350,14 @@
 
             if (perusahaan_id) {
                 document.getElementById('editPerusahaan').value = perusahaan_id;
+            } else {
+                document.getElementById('editPerusahaan').value = '';
+            }
+
+            if (karyawan_id) {
+                document.getElementById('editKaryawan').value = karyawan_id;
+            } else {
+                document.getElementById('editKaryawan').value = '';
             }
 
             new bootstrap.Modal(document.getElementById('editUserModal')).show();

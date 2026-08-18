@@ -3,21 +3,28 @@
     {
       "url": "dashboard/superadmin",
       "name": "Dashboard",
-      "icon": "menu-icon tf-icons bi bi-house-door",
+      "icon": "menu-icon tf-icons bx bx-home-circle",
       "slug": "dashboard-superadmin",
       "roles": ["super_admin"]
     },
     {
       "url": "dashboard/petugas",
       "name": "Dashboard",
-      "icon": "menu-icon tf-icons bi bi-house-door",
+      "icon": "menu-icon tf-icons bx bx-home-circle",
       "slug": "dashboard-petugas",
       "roles": ["petugas"]
     },
     {
+      "url": "dashboard/aset-saya",
+      "name": "Aset Saya",
+      "icon": "menu-icon tf-icons bx bx-laptop",
+      "slug": "aset-saya",
+      "roles": ["user", "karyawan"]
+    },
+    {
       "url": "dashboard/user",
       "name": "Users",
-      "icon": "menu-icon tf-icons bi bi-people",
+      "icon": "menu-icon tf-icons bx bx-user",
       "slug": "user",
       "roles": ["super_admin"]
     },
@@ -30,7 +37,7 @@
         {
           "url": "dashboard/aset",
           "name": "Kategori Barang",
-          "icon": "menu-icon tf-icons bi bi-tags"
+          "icon": "menu-icon tf-icons bx bx-purchase-tag"
         },
         {
           "url": "dashboard/data-aset",
@@ -40,46 +47,46 @@
         {
           "url": "dashboard/useraset",
           "name": "Data Karyawan",
-          "icon": "menu-icon tf-icons bi bi-people"
+          "icon": "menu-icon tf-icons bx bx-group"
         },
         {
           "url": "dashboard/lokasi",
           "name": "Lokasi Penempatan",
-          "icon": "menu-icon tf-icons bi bi-geo-alt"
+          "icon": "menu-icon tf-icons bx bx-map-pin"
         },
         {
           "url": "dashboard/supplier",
           "name": "Supplier / Vendor",
-          "icon": "menu-icon tf-icons bi bi-truck"
+          "icon": "menu-icon tf-icons bx bx-store-alt"
         },
         {
           "url": "dashboard/perusahaan",
           "name": "Perusahaan",
-          "icon": "menu-icon tf-icons bi bi-building",
+          "icon": "menu-icon tf-icons bx bx-building",
           "roles": ["super_admin"]
         }
       ]
     },
     {
       "name": "Transaksi Aset",
-      "icon": "menu-icon tf-icons bi bi-arrow-left-right",
+      "icon": "menu-icon tf-icons bx bx-transfer",
       "slug": "transaksi",
       "roles": ["petugas", "super_admin"],
       "submenu": [
         {
           "url": "dashboard/transaksi-masuk",
           "name": "Penerimaan Aset",
-          "icon": "menu-icon tf-icons bi bi-box-arrow-in-down"
+          "icon": "menu-icon tf-icons bx bx-log-in-circle"
         },
         {
           "url": "dashboard/maping",
           "name": "Mapping Aset",
-          "icon": "menu-icon tf-icons bi bi-diagram-3"
+          "icon": "menu-icon tf-icons bx bx-git-repo-forked"
         },
         {
           "url": "dashboard/peminjaman",
           "name": "Peminjaman Aset",
-          "icon": "menu-icon tf-icons bi bi-clipboard-check"
+          "icon": "menu-icon tf-icons bx bx-clipboard"
         },
         {
           "url": "/dashboard/maintenance",
@@ -90,10 +97,29 @@
     },
     {
       "url": "dashboard/history/perjalanan-aset",
-      "name": "History Perjalanan Aset",
-      "icon": "menu-icon tf-icons bi bi-journal-text",
+      "name": "History Tracking Device",
+      "icon": "menu-icon tf-icons bx bx-history",
       "slug": "history-perjalanan",
-      "roles": ["manager", "petugas", "super_admin"]
+      "roles": [ "petugas", "super_admin"]
+    },
+    {
+      "name": "Helpdesk E-Ticket",
+      "icon": "menu-icon tf-icons bx bx-support",
+      "slug": "e-ticket",
+      "roles": ["user", "karyawan", "petugas", "super_admin"],
+      "submenu": [
+        {
+          "url": "dashboard/e-ticket",
+          "name": "Daftar Tiket",
+          "icon": "menu-icon tf-icons bx bx-receipt"
+        },
+        {
+          "url": "dashboard/ticket-categories",
+          "name": "Kategori & SLA",
+          "icon": "menu-icon tf-icons bx bx-slider-alt",
+          "roles": ["petugas", "super_admin"]
+        }
+      ]
     }
   ]
 }

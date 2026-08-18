@@ -123,6 +123,13 @@
 
     </div>
 
+    @php
+        $hasLaptop = $mapings->contains(function ($m) {
+            $kategori = strtolower($m->keluar?->inventaris?->dataAset?->kategori?->nama_barang ?? '');
+            return str_contains($kategori, 'laptop');
+        });
+    @endphp
+
     {{-- ===================================== --}}
     {{-- TABLE --}}
     {{-- ===================================== --}}
@@ -133,29 +140,31 @@
 
             <tr>
 
-                <th style="width:4%">
+                <th style="width:{{ $hasLaptop ? '4%' : '5%' }}">
                     No
                 </th>
 
-                <th style="width:12%">
+                <th style="width:{{ $hasLaptop ? '12%' : '15%' }}">
                     Kode Aset
                 </th>
 
-                <th style="width:16%">
+                <th style="width:{{ $hasLaptop ? '16%' : '20%' }}">
                     Nama Pengguna
                 </th>
 
-                <th style="width:26%">
+                <th style="width:{{ $hasLaptop ? '26%' : '35%' }}">
                     Spesifikasi
                 </th>
 
-                <th style="width:18%">
+                <th style="width:{{ $hasLaptop ? '18%' : '25%' }}">
                     Data Aset
                 </th>
 
+                @if($hasLaptop)
                 <th style="width:24%">
                     Hak Akses
                 </th>
+                @endif
 
             </tr>
 
@@ -171,7 +180,7 @@
                     {{-- NO --}}
                     {{-- ===================== --}}
                     <td class="center">
-                        {{ $i + 1 }}
+                        {{ sprintf('%02d', $i + 1) }}
                     </td>
 
                     {{-- ===================== --}}
@@ -267,14 +276,23 @@
                     {{-- ===================== --}}
                     {{-- HAK AKSES --}}
                     {{-- ===================== --}}
+                    @if($hasLaptop)
                     <td>
 
                         <strong>Aplikasi</strong>
 
                         <br>
 
-                        @forelse($m->aplikasis as $akses)
-                            • {{ $akses->access->nama_akses }}<br>
+                        @php
+                            $appGroups = $m->aplikasis->groupBy(function($item) { return $item->email ?? ''; });
+                        @endphp
+                        @forelse($appGroups as $email => $items)
+                            @if(!empty($email))
+                                <span class="nowrap">Email: {{ $email }}</span><br>
+                            @endif
+                            @foreach($items as $akses)
+                                • {{ $akses->nama_akses }}<br>
+                            @endforeach
                         @empty
                             -<br>
                         @endforelse
@@ -285,8 +303,16 @@
 
                         <br>
 
-                        @forelse($m->hakAksesPPN as $akses)
-                            • {{ $akses->access->nama_akses }}<br>
+                        @php
+                            $ppnGroups = $m->hakAksesPPN->groupBy(function($item) { return $item->email ?? ''; });
+                        @endphp
+                        @forelse($ppnGroups as $email => $items)
+                            @if(!empty($email))
+                                <span class="nowrap">Email: {{ $email }}</span><br>
+                            @endif
+                            @foreach($items as $akses)
+                                • {{ $akses->nama_akses }}<br>
+                            @endforeach
                         @empty
                             -<br>
                         @endforelse
@@ -297,13 +323,22 @@
 
                         <br>
 
-                        @forelse($m->hakAksesNonPPN as $akses)
-                            • {{ $akses->access->nama_akses }}<br>
+                        @php
+                            $nonPpnGroups = $m->hakAksesNonPPN->groupBy(function($item) { return $item->email ?? ''; });
+                        @endphp
+                        @forelse($nonPpnGroups as $email => $items)
+                            @if(!empty($email))
+                                <span class="nowrap">Email: {{ $email }}</span><br>
+                            @endif
+                            @foreach($items as $akses)
+                                • {{ $akses->nama_akses }}<br>
+                            @endforeach
                         @empty
                             -
                         @endforelse
 
                     </td>
+                    @endif
 
                 </tr>
 
@@ -311,7 +346,7 @@
 
                 <tr>
 
-                    <td colspan="6" class="center">
+                    <td colspan="{{ $hasLaptop ? '6' : '5' }}" class="center">
 
                         Tidak ada data
 

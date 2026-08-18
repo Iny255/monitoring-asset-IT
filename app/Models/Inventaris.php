@@ -61,6 +61,10 @@ class Inventaris extends Model
   {
     return $this->hasMany(Maintenance::class);
   }
+  public function tickets()
+  {
+    return $this->hasMany(Ticket::class);
+  }
   /*
 |--------------------------------------------------------------------------
 | MAINTENANCE

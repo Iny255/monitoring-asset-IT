@@ -8,6 +8,7 @@ use App\Models\Perusahaan;
 use Illuminate\Http\Request;
 use App\Models\Inventaris;
 use App\Models\DataAset;
+use App\Models\Kategori;
 use App\Models\Supplier;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -22,7 +23,7 @@ class MasukController extends Controller
   {
     $user = auth()->user();
 
-    $query = Masuk::with(['dataAset.kategori', 'supplier', 'perusahaan', 'perusahaanAsal']);
+    $query = Masuk::with(['dataAset.kategori', 'supplier', 'perusahaan', 'perusahaanAsal', 'inventaris']);
     // FILTER PERUSAHAAN
     if ($user->role != 'super_admin') {
       $query->where('perusahaan_id', $user->id_perusahaan);
@@ -56,6 +57,8 @@ class MasukController extends Controller
           $sub->where('nama_barang', 'like', "%{$search}%");
         })->orWhereHas('dataAset', function ($sub) use ($search) {
           $sub->where('merek', 'like', "%{$search}%")->orWhere('type', 'like', "%{$search}%");
+        })->orWhereHas('inventaris', function ($sub) use ($search) {
+          $sub->where('kode_aset', 'like', "%{$search}%")->orWhere('no_inventaris', 'like', "%{$search}%");
         });
       });
     }
@@ -255,16 +258,20 @@ class MasukController extends Controller
 
     if ($user->role == 'super_admin') {
       $suppliers = collect();
-
+      $kategoris = collect();
       $dataAsets = collect();
     } else {
       $suppliers = Supplier::where('perusahaan_id', $user->id_perusahaan)->get();
+
+      $kategoris = Kategori::where('perusahaan_id', $user->id_perusahaan)
+        ->orderBy('nama_barang')
+        ->get();
 
       $dataAsets = DataAset::with('kategori')
         ->where('perusahaan_id', $user->id_perusahaan)
         ->get();
     }
-    return view('content.dashboard.transaksi-masuk.create', compact('perusahaans', 'suppliers', 'dataAsets'));
+    return view('content.dashboard.transaksi-masuk.create', compact('perusahaans', 'suppliers', 'kategoris', 'dataAsets'));
   }
 
   public function store(Request $request)
@@ -272,6 +279,7 @@ class MasukController extends Controller
     $user = auth()->user();
 
     $request->validate([
+      'kategori_id' => 'required|exists:kategoris,id',
       'data_aset_id' => 'required|exists:data_asets,id',
 
       'jenis_masuk' => 'required|in:Pembelian,Mutasi',
@@ -315,34 +323,58 @@ class MasukController extends Controller
       ]);
 
       $dataAset = DataAset::with('kategori')->findOrFail($request->data_aset_id);
-
       $perusahaan = Perusahaan::findOrFail($perusahaanId);
+
+      $prefixKode = strtoupper($dataAset->kategori->kode_barang) . '.' . strtoupper($perusahaan->kode_perusahaan) . '-';
+
+      // Hitung urutan tertinggi no_inventaris untuk perusahaan ini
+      $existingInvs = Inventaris::where('perusahaan_id', $perusahaanId)
+        ->where('no_inventaris', 'like', 'INV-%')
+        ->pluck('no_inventaris');
+
+      $maxInvUrut = 0;
+      foreach ($existingInvs as $inv) {
+        $numStr = str_replace('INV-', '', $inv);
+        if (is_numeric($numStr)) {
+          $val = (int) $numStr;
+          if ($val > $maxInvUrut) {
+            $maxInvUrut = $val;
+          }
+        }
+      }
+
+      // Hitung urutan tertinggi kode_aset untuk prefix kategori & perusahaan ini
+      $existingKodes = Inventaris::where('perusahaan_id', $perusahaanId)
+        ->where('kode_aset', 'like', $prefixKode . '%')
+        ->pluck('kode_aset');
+
+      $maxKodeUrut = 0;
+      foreach ($existingKodes as $k) {
+        $numStr = substr($k, strlen($prefixKode));
+        if (is_numeric($numStr)) {
+          $val = (int) $numStr;
+          if ($val > $maxKodeUrut) {
+            $maxKodeUrut = $val;
+          }
+        }
+      }
 
       for ($i = 1; $i <= $request->jumlah; $i++) {
         // NO INVENTARIS
-
-        $lastInventaris = Inventaris::where('perusahaan_id', $perusahaanId)
-          ->latest('id')
-          ->first();
-
-        $urutInv = $lastInventaris ? (int) str_replace('INV-', '', $lastInventaris->no_inventaris) + 1 : 1;
-
-        $noInventaris = 'INV-' . str_pad($urutInv, 3, '0', STR_PAD_LEFT);
+        $maxInvUrut++;
+        $noInventaris = 'INV-' . str_pad($maxInvUrut, 3, '0', STR_PAD_LEFT);
+        while (Inventaris::where('perusahaan_id', $perusahaanId)->where('no_inventaris', $noInventaris)->exists()) {
+          $maxInvUrut++;
+          $noInventaris = 'INV-' . str_pad($maxInvUrut, 3, '0', STR_PAD_LEFT);
+        }
 
         // KODE ASET
-
-        $lastKode = Inventaris::where('perusahaan_id', $perusahaanId)
-          ->where('data_aset_id', $dataAset->id)
-          ->latest('id')
-          ->first();
-        $urutKode = $lastKode ? (int) substr($lastKode->kode_aset, -3) + 1 : 1;
-
-        $kodeAset =
-          strtoupper($dataAset->kategori->kode_barang) .
-          '.' .
-          $perusahaan->kode_perusahaan .
-          '-' .
-          str_pad($urutKode, 3, '0', STR_PAD_LEFT);
+        $maxKodeUrut++;
+        $kodeAset = $prefixKode . str_pad($maxKodeUrut, 3, '0', STR_PAD_LEFT);
+        while (Inventaris::where('perusahaan_id', $perusahaanId)->where('kode_aset', $kodeAset)->exists()) {
+          $maxKodeUrut++;
+          $kodeAset = $prefixKode . str_pad($maxKodeUrut, 3, '0', STR_PAD_LEFT);
+        }
 
         Inventaris::create([
           'masuk_id' => $masuk->id,
@@ -362,11 +394,11 @@ class MasukController extends Controller
     } catch (\Exception $e) {
       DB::rollBack();
 
-      dd($e->getMessage());
+      Log::error('Gagal menyimpan data penerimaan aset: ' . $e->getMessage());
 
       return back()
         ->withInput()
-        ->with('error', 'Gagal menyimpan data penerimaan aset.');
+        ->with('error', 'Gagal menyimpan data penerimaan aset: ' . $e->getMessage());
     }
   }
 
@@ -521,11 +553,32 @@ class MasukController extends Controller
 
     return response()->json($suppliers);
   }
-  public function getDataAset(string $id)
+
+  public function getKategori(string $id)
   {
-    $dataAsets = DataAset::with('kategori')
-      ->where('perusahaan_id', $id)
+    $kategoris = Kategori::where('perusahaan_id', $id)
+      ->orderBy('nama_barang')
       ->get();
+
+    return response()->json($kategoris);
+  }
+
+  public function getDataAset(Request $request, string $id = null)
+  {
+    $perusahaanId = $id ?? $request->perusahaan_id;
+    $kategoriId = $request->kategori_id;
+
+    $query = DataAset::with('kategori');
+
+    if ($perusahaanId) {
+      $query->where('perusahaan_id', $perusahaanId);
+    }
+
+    if ($kategoriId) {
+      $query->where('kategori_id', $kategoriId);
+    }
+
+    $dataAsets = $query->get();
 
     return response()->json($dataAsets);
   }

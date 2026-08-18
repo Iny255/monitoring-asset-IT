@@ -76,6 +76,12 @@
                         </td>
                     </tr>
                     <tr>
+                        <th>Warna</th>
+                        <td>
+                            {{ $masuk->dataAset->warna ?? '-' }}
+                        </td>
+                    </tr>
+                    <tr>
                         <th>Tanggal Pembelian</th>
                         <td>
                             {{ \Carbon\Carbon::parse($masuk->tanggal_pembelian)->format('d-m-Y') }}

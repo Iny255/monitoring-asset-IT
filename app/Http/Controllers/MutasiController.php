@@ -327,46 +327,51 @@ class MutasiController extends Controller
 |--------------------------------------------------------------------------
 */
 
-      $lastInventaris = Inventaris::withoutGlobalScopes()
+      $prefixKodeMutasi = strtoupper($kategoriTujuan->kode_barang) . '.' . strtoupper($perusahaanTujuan->kode_perusahaan) . '-';
+
+      $existingInvsTujuan = Inventaris::withoutGlobalScopes()
         ->where('perusahaan_id', $perusahaanTujuan->id)
-        ->orderByDesc('id')
-        ->first();
+        ->where('no_inventaris', 'like', 'INV-%')
+        ->pluck('no_inventaris');
 
-      $urutInventaris = 1;
-
-      if ($lastInventaris) {
-        $urutInventaris = (int) preg_replace('/[^0-9]/', '', $lastInventaris->no_inventaris) + 1;
-      }
-
-      $noInventarisBaru = 'INV-' . str_pad($urutInventaris, 3, '0', STR_PAD_LEFT);
-
-      /*
-|--------------------------------------------------------------------------
-| GENERATE KODE ASET BARU
-|--------------------------------------------------------------------------
-*/
-
-      $lastKode = Inventaris::withoutGlobalScopes()
-        ->where('perusahaan_id', $perusahaanTujuan->id)
-        ->orderByDesc('id')
-        ->first();
-
-      $urutKode = 1;
-
-      if ($lastKode) {
-        preg_match('/(\d+)$/', $lastKode->kode_aset, $match);
-
-        if (isset($match[1])) {
-          $urutKode = intval($match[1]) + 1;
+      $maxInvUrutMutasi = 0;
+      foreach ($existingInvsTujuan as $inv) {
+        $numStr = str_replace('INV-', '', $inv);
+        if (is_numeric($numStr)) {
+          $val = (int) $numStr;
+          if ($val > $maxInvUrutMutasi) {
+            $maxInvUrutMutasi = $val;
+          }
         }
       }
+      $maxInvUrutMutasi++;
+      $noInventarisBaru = 'INV-' . str_pad($maxInvUrutMutasi, 3, '0', STR_PAD_LEFT);
+      while (Inventaris::withoutGlobalScopes()->where('perusahaan_id', $perusahaanTujuan->id)->where('no_inventaris', $noInventarisBaru)->exists()) {
+        $maxInvUrutMutasi++;
+        $noInventarisBaru = 'INV-' . str_pad($maxInvUrutMutasi, 3, '0', STR_PAD_LEFT);
+      }
 
-      $kodeAsetBaru =
-        strtoupper($kategoriTujuan->kode_barang) .
-        '.' .
-        strtoupper($perusahaanTujuan->kode_perusahaan) .
-        '-' .
-        str_pad($urutKode, 3, '0', STR_PAD_LEFT);
+      $existingKodesTujuan = Inventaris::withoutGlobalScopes()
+        ->where('perusahaan_id', $perusahaanTujuan->id)
+        ->where('kode_aset', 'like', $prefixKodeMutasi . '%')
+        ->pluck('kode_aset');
+
+      $maxKodeUrutMutasi = 0;
+      foreach ($existingKodesTujuan as $k) {
+        $numStr = substr($k, strlen($prefixKodeMutasi));
+        if (is_numeric($numStr)) {
+          $val = (int) $numStr;
+          if ($val > $maxKodeUrutMutasi) {
+            $maxKodeUrutMutasi = $val;
+          }
+        }
+      }
+      $maxKodeUrutMutasi++;
+      $kodeAsetBaru = $prefixKodeMutasi . str_pad($maxKodeUrutMutasi, 3, '0', STR_PAD_LEFT);
+      while (Inventaris::withoutGlobalScopes()->where('perusahaan_id', $perusahaanTujuan->id)->where('kode_aset', $kodeAsetBaru)->exists()) {
+        $maxKodeUrutMutasi++;
+        $kodeAsetBaru = $prefixKodeMutasi . str_pad($maxKodeUrutMutasi, 3, '0', STR_PAD_LEFT);
+      }
       /*
 |--------------------------------------------------------------------------
 | BUAT INVENTARIS BARU

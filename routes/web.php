@@ -30,6 +30,9 @@ use App\Http\Controllers\HistoryPemakaianController;
 use App\Http\Controllers\HistoryPerjalananAsetController;
 use App\Http\Controllers\main_dashboard\DashboardPetugasController;
 use App\Http\Controllers\main_dashboard\DashboardSuperAdminController;
+use App\Http\Controllers\TicketController;
+use App\Http\Controllers\TicketCategoryController;
+use App\Http\Controllers\UserAssetController;
 
 Route::get('/', function () {
   return redirect('/login');
@@ -117,6 +120,8 @@ Route::middleware(['auth'])->group(function () {
     ]);
 
     Route::get('/dashboard/get-supplier/{id}', [MasukController::class, 'getSupplier']);
+
+    Route::get('/dashboard/get-kategori-masuk/{id}', [MasukController::class, 'getKategori']);
 
     Route::get('/dashboard/get-data-aset/{id}', [MasukController::class, 'getDataAset']);
 
@@ -224,6 +229,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/maintenance/cetak', [MaintenanceController::class, 'cetak'])->name('maintenance.cetak');
     Route::get('/dashboard/maintenance/export-excel', [MaintenanceController::class, 'exportExcel'])->name('maintenance.export_excel');
 
+    Route::post('/dashboard/maintenance/{maintenance}/update-gambar', [
+      MaintenanceController::class,
+      'updateGambar',
+    ])->name('maintenance.update_gambar');
+
     Route::resource('/dashboard/maintenance', MaintenanceController::class);
     Route::prefix('dashboard/history')
       ->middleware(['role:petugas,super_admin'])
@@ -297,5 +307,29 @@ Route::middleware(['auth'])->group(function () {
 
         Route::post('{maping}', [PencabutanController::class, 'store'])->name('store');
       });
+  });
+
+  Route::get('/dashboard/aset-saya', [UserAssetController::class, 'index'])->name('aset-saya.index')->middleware(['role:user,karyawan']);
+
+  /*
+  |--------------------------------------------------------------------------
+  | E-TICKETING HELPDESK IT SUPPORT
+  |--------------------------------------------------------------------------
+  */
+  Route::prefix('dashboard/e-ticket')->name('e-ticket.')->middleware(['role:user,karyawan,petugas,super_admin'])->group(function () {
+    Route::get('/', [TicketController::class, 'index'])->name('index');
+    Route::get('/create', [TicketController::class, 'create'])->name('create');
+    Route::post('/', [TicketController::class, 'store'])->name('store');
+    Route::get('/{id}', [TicketController::class, 'show'])->name('show');
+    Route::post('/{id}/reply', [TicketController::class, 'storeReply'])->name('reply');
+    Route::put('/{id}/status', [TicketController::class, 'updateStatus'])->name('update-status');
+    Route::post('/{id}/convert-maintenance', [TicketController::class, 'convertToMaintenance'])->name('convert-maintenance');
+  });
+
+  Route::prefix('dashboard/ticket-categories')->name('ticket-categories.')->middleware(['role:petugas,super_admin'])->group(function () {
+    Route::get('/', [TicketCategoryController::class, 'index'])->name('index');
+    Route::post('/', [TicketCategoryController::class, 'store'])->name('store');
+    Route::put('/{id}', [TicketCategoryController::class, 'update'])->name('update');
+    Route::delete('/{id}', [TicketCategoryController::class, 'destroy'])->name('destroy');
   });
 });
