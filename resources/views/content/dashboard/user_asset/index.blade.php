@@ -1,6 +1,6 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Aset Saya - Monitoring Aset IT')
+@section('title', 'Dashboard Aset Saya - Monitoring Aset IT')
 
 @section('content')
 <div class="container-xxl flex-grow-1 container-p-y">
@@ -10,14 +10,14 @@
         <div class="card-body py-3 py-sm-4">
             <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                 <div class="d-flex align-items-center">
-                    <div class="avatar avatar-md bg-label-primary me-3 flex-shrink-0">
+                    <div class="avatar avatar-md me-3 flex-shrink-0 category-theme-icon">
                         <span class="avatar-initial rounded">
-                            <i class="bi bi-laptop fs-3"></i>
+                            <i class="bi bi-person-workspace fs-3 text-white"></i>
                         </span>
                     </div>
                     <div>
-                        <h4 class="fw-bold mb-1 fs-5 fs-sm-4">Aset & Perangkat Saya</h4>
-                        <small class="text-muted">Daftar perangkat IT dan inventaris yang sedang Anda gunakan atau pinjam</small>
+                        <h4 class="fw-bold mb-1 fs-5 fs-sm-4" style="color: var(--primary-theme, #0b2f57) !important;">Dashboard & Aset Saya</h4>
+                        <small class="text-muted">Ringkasan matriks inventaris perangkat IT yang Anda gunakan dan pinjam</small>
                     </div>
                 </div>
                 <div>
@@ -48,47 +48,131 @@
         </div>
     @endif
 
-    {{-- STATS CARDS --}}
+    {{-- SUMMARY CARDS PER KATEGORI (SESUAI TEMA PERUSAHAAN) --}}
     <div class="row g-3 mb-4">
-        <div class="col-12 col-sm-6 col-md-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center justify-content-between">
+        {{-- Total Semua Aset --}}
+        <div class="col-12 col-sm-6 col-md-4 col-xl">
+            <div class="card border-0 shadow-sm h-100 category-theme-card cursor-pointer active-filter" onclick="filterByCategory('all')" id="card-filter-all">
+                <div class="card-body p-3 d-flex align-items-center justify-content-between">
                     <div>
-                        <span class="text-muted fw-semibold d-block mb-1 small">Aset Utama (Mapping)</span>
-                        <h3 class="card-title fw-bold mb-0 text-primary">{{ $mapings->count() }}</h3>
-                        <small class="text-muted">Perangkat tetap dialokasikan</small>
+                        <span class="dashboard-label text-uppercase d-block mb-1 small" style="font-size: 0.75rem; letter-spacing: 0.5px; color: #697a8d;">Total Semua Aset</span>
+                        <h3 class="dashboard-number mb-0" style="color: var(--primary-theme, #0b2f57); font-weight: 700;">
+                            {{ $totalAset }} <span class="fs-6 fw-normal text-muted">Unit</span>
+                        </h3>
+                        <small class="text-muted" style="font-size: 0.75rem;">{{ $mapings->count() }} Tetap · {{ $peminjamans->where('status', 'dipinjam')->count() }} Pinjam</small>
                     </div>
-                    <div class="avatar avatar-md bg-label-primary flex-shrink-0">
-                        <span class="avatar-initial rounded fs-4"><i class="bi bi-pc-display"></i></span>
+                    <div class="dashboard-icon category-theme-icon">
+                        <i class="bi bi-layers-fill"></i>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-12 col-sm-6 col-md-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center justify-content-between">
+
+        {{-- Laptop --}}
+        <div class="col-12 col-sm-6 col-md-4 col-xl">
+            <div class="card border-0 shadow-sm h-100 category-theme-card cursor-pointer" onclick="filterByCategory('laptop')" id="card-filter-laptop">
+                <div class="card-body p-3 d-flex align-items-center justify-content-between">
                     <div>
-                        <span class="text-muted fw-semibold d-block mb-1 small">Pinjaman Sementara</span>
-                        <h3 class="card-title fw-bold mb-0 text-info">{{ $peminjamans->where('status', 'dipinjam')->count() }}</h3>
-                        <small class="text-muted">Aset sedang dipinjam</small>
+                        <span class="dashboard-label text-uppercase d-block mb-1 small" style="font-size: 0.75rem; letter-spacing: 0.5px; color: #697a8d;">Laptop / Notebook</span>
+                        <h3 class="dashboard-number mb-0" style="color: var(--primary-theme, #0b2f57); font-weight: 700;">
+                            {{ $totalLaptop }} <span class="fs-6 fw-normal text-muted">Unit</span>
+                        </h3>
+                        <small class="text-muted" style="font-size: 0.75rem;">Perangkat Mobile</small>
                     </div>
-                    <div class="avatar avatar-md bg-label-info flex-shrink-0">
-                        <span class="avatar-initial rounded fs-4"><i class="bi bi-clipboard-check"></i></span>
+                    <div class="dashboard-icon category-theme-icon">
+                        <i class="bi bi-laptop"></i>
                     </div>
                 </div>
             </div>
         </div>
-        <div class="col-12 col-sm-12 col-md-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-body d-flex align-items-center justify-content-between">
+
+        {{-- Printer --}}
+        <div class="col-12 col-sm-6 col-md-4 col-xl">
+            <div class="card border-0 shadow-sm h-100 category-theme-card cursor-pointer" onclick="filterByCategory('printer')" id="card-filter-printer">
+                <div class="card-body p-3 d-flex align-items-center justify-content-between">
                     <div>
-                        <span class="text-muted fw-semibold d-block mb-1 small">Divisi & Perusahaan</span>
-                        <h6 class="fw-bold mb-0 text-dark">{{ $karyawan->divisi ?? '-' }}</h6>
-                        <small class="text-muted">{{ $user->perusahaan->nama_perusahaan ?? 'Holding / HO' }}</small>
+                        <span class="dashboard-label text-uppercase d-block mb-1 small" style="font-size: 0.75rem; letter-spacing: 0.5px; color: #697a8d;">Printer & Scanner</span>
+                        <h3 class="dashboard-number mb-0" style="color: var(--primary-theme, #0b2f57); font-weight: 700;">
+                            {{ $totalPrinter }} <span class="fs-6 fw-normal text-muted">Unit</span>
+                        </h3>
+                        <small class="text-muted" style="font-size: 0.75rem;">Perangkat Cetak</small>
                     </div>
-                    <div class="avatar avatar-md bg-label-success flex-shrink-0">
-                        <span class="avatar-initial rounded fs-4"><i class="bi bi-building"></i></span>
+                    <div class="dashboard-icon category-theme-icon">
+                        <i class="bi bi-printer"></i>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- HP / Smartphone --}}
+        <div class="col-12 col-sm-6 col-md-4 col-xl">
+            <div class="card border-0 shadow-sm h-100 category-theme-card cursor-pointer" onclick="filterByCategory('hp')" id="card-filter-hp">
+                <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="dashboard-label text-uppercase d-block mb-1 small" style="font-size: 0.75rem; letter-spacing: 0.5px; color: #697a8d;">Smartphone / HP</span>
+                        <h3 class="dashboard-number mb-0" style="color: var(--primary-theme, #0b2f57); font-weight: 700;">
+                            {{ $totalHp }} <span class="fs-6 fw-normal text-muted">Unit</span>
+                        </h3>
+                        <small class="text-muted" style="font-size: 0.75rem;">Gadget & Komunikasi</small>
+                    </div>
+                    <div class="dashboard-icon category-theme-icon">
+                        <i class="bi bi-phone"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {{-- PC / Lainnya --}}
+        <div class="col-12 col-sm-6 col-md-4 col-xl">
+            <div class="card border-0 shadow-sm h-100 category-theme-card cursor-pointer" onclick="filterByCategory('lainnya')" id="card-filter-lainnya">
+                <div class="card-body p-3 d-flex align-items-center justify-content-between">
+                    <div>
+                        <span class="dashboard-label text-uppercase d-block mb-1 small" style="font-size: 0.75rem; letter-spacing: 0.5px; color: #697a8d;">PC & Lainnya</span>
+                        <h3 class="dashboard-number mb-0" style="color: var(--primary-theme, #0b2f57); font-weight: 700;">
+                            {{ $totalPc + $totalLainnya }} <span class="fs-6 fw-normal text-muted">Unit</span>
+                        </h3>
+                        <small class="text-muted" style="font-size: 0.75rem;">PC, Monitor & Aksesoris</small>
+                    </div>
+                    <div class="dashboard-icon category-theme-icon">
+                        <i class="bi bi-pc-display"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- FILTER TABS / PILLS BAR --}}
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-3">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="d-flex align-items-center flex-wrap gap-2">
+                    <span class="fw-bold small text-muted me-1"><i class="bi bi-funnel me-1"></i>Filter Kategori:</span>
+                    <button type="button" class="btn btn-sm btn-primary active category-filter-btn" data-filter="all" onclick="filterByCategory('all')">
+                        Semua Kategori ({{ $totalAset }})
+                    </button>
+                    @if ($totalLaptop > 0)
+                        <button type="button" class="btn btn-sm btn-outline-theme category-filter-btn" data-filter="laptop" onclick="filterByCategory('laptop')">
+                            <i class="bi bi-laptop me-1"></i> Laptop ({{ $totalLaptop }})
+                        </button>
+                    @endif
+                    @if ($totalPrinter > 0)
+                        <button type="button" class="btn btn-sm btn-outline-theme category-filter-btn" data-filter="printer" onclick="filterByCategory('printer')">
+                            <i class="bi bi-printer me-1"></i> Printer ({{ $totalPrinter }})
+                        </button>
+                    @endif
+                    @if ($totalHp > 0)
+                        <button type="button" class="btn btn-sm btn-outline-theme category-filter-btn" data-filter="hp" onclick="filterByCategory('hp')">
+                            <i class="bi bi-phone me-1"></i> HP ({{ $totalHp }})
+                        </button>
+                    @endif
+                    @if (($totalPc + $totalLainnya) > 0)
+                        <button type="button" class="btn btn-sm btn-outline-theme category-filter-btn" data-filter="lainnya" onclick="filterByCategory('lainnya')">
+                            <i class="bi bi-box-seam me-1"></i> Lainnya ({{ $totalPc + $totalLainnya }})
+                        </button>
+                    @endif
+                </div>
+                <div id="filter-active-status" class="small text-muted">
+                    Menampilkan <strong>semua aset</strong>
                 </div>
             </div>
         </div>
@@ -99,16 +183,16 @@
         <div class="card-header bg-transparent border-bottom py-3">
             <div class="d-flex justify-content-between align-items-center">
                 <h5 class="card-title fw-bold mb-0 fs-6 fs-sm-5">
-                    <i class="bi bi-laptop text-primary me-2"></i> Perangkat & Aset Utama Dipakai
+                    <i class="bi bi-laptop me-2" style="color: var(--primary-theme, #0b2f57);"></i> Perangkat & Aset Utama Dipakai
                 </h5>
-                <span class="badge bg-label-primary">{{ $mapings->count() }} Perangkat</span>
+                <span class="badge" style="background: linear-gradient(135deg, var(--primary-theme, #0b2f57), var(--secondary-theme, #154b87)); color: #fff;" id="badge-count-mapping">{{ $mapings->count() }} Perangkat</span>
             </div>
         </div>
         
         {{-- DESKTOP TABLE VIEW (d-none d-md-block) --}}
         <div class="card-body p-0 d-none d-md-block">
             <div class="table-responsive text-nowrap">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0" id="table-mapping-assets">
                     <thead class="table-light">
                         <tr>
                             <th style="width: 50px;">No</th>
@@ -121,25 +205,28 @@
                             <th class="text-center" style="width: 140px;">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tbody-mapping">
                         @forelse ($mapings as $maping)
                             @php
                                 $inventaris = $maping->keluar?->inventaris;
                                 $dataAset = $inventaris?->dataAset;
+                                $catName = $dataAset?->kategori?->nama_barang ?? $inventaris?->kategori?->nama_barang ?? 'Lainnya';
+                                $catKey = strtolower($catName);
                             @endphp
-                            <tr>
+                            <tr class="asset-item-row" data-category="{{ $catKey }}" data-nama="{{ strtolower($dataAset->nama_barang ?? '') }}">
                                 <td>{{ $loop->iteration }}</td>
                                 <td>
-                                    <strong class="text-primary">{{ $inventaris->no_inventaris ?? '-' }}</strong>
+                                    <strong style="color: var(--primary-theme, #0b2f57);">{{ $inventaris->no_inventaris ?? '-' }}</strong>
                                     @if ($inventaris?->kode_aset)
                                         <br><small class="text-muted">Kode: {{ $inventaris->kode_aset }}</small>
                                     @endif
                                 </td>
                                 <td>
                                     <strong class="text-dark">{{ $dataAset->nama_barang ?? 'Perangkat IT' }}</strong>
-                                    @if ($dataAset?->kategori)
-                                        <br><span class="badge bg-label-secondary"><i class="bi bi-tag me-1"></i>{{ $dataAset->kategori->nama_kategori }}</span>
-                                    @endif
+                                    <br>
+                                    <span class="badge bg-label-secondary">
+                                        <i class="bi bi-tag me-1"></i>{{ $catName }}
+                                    </span>
                                 </td>
                                 <td>
                                     @if ($maping->processor || $maping->ram || $maping->system)
@@ -172,26 +259,34 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr>
+                            <tr id="empty-row-mapping">
                                 <td colspan="8" class="text-center py-4">
                                     <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
                                     <span class="text-muted">Belum ada perangkat atau aset utama yang terdaftar atas nama Anda.</span>
                                 </td>
                             </tr>
                         @endforelse
+                        <tr id="no-match-row-mapping" style="display: none;">
+                            <td colspan="8" class="text-center py-4">
+                                <i class="bi bi-search fs-2 d-block mb-2 text-muted"></i>
+                                <span class="text-muted">Tidak ada perangkat aset utama pada kategori ini.</span>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
         {{-- MOBILE CARD VIEW (d-block d-md-none) --}}
-        <div class="card-body p-3 d-block d-md-none">
+        <div class="card-body p-3 d-block d-md-none" id="mobile-mapping-container">
             @forelse ($mapings as $maping)
                 @php
                     $inventaris = $maping->keluar?->inventaris;
                     $dataAset = $inventaris?->dataAset;
+                    $catName = $dataAset?->kategori?->nama_barang ?? $inventaris?->kategori?->nama_barang ?? 'Lainnya';
+                    $catKey = strtolower($catName);
                 @endphp
-                <div class="card border shadow-none mb-3 rounded-3 bg-body">
+                <div class="card border shadow-none mb-3 rounded-3 bg-body asset-item-card" data-category="{{ $catKey }}" data-nama="{{ strtolower($dataAset->nama_barang ?? '') }}">
                     <div class="card-body p-3">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div>
@@ -204,7 +299,7 @@
                         <div class="row g-2 mb-3">
                             <div class="col-6">
                                 <small class="text-muted d-block mb-1">Kategori:</small>
-                                <span class="badge bg-label-secondary text-truncate max-w-100"><i class="bi bi-tag me-1"></i>{{ $dataAset->kategori->nama_kategori ?? '-' }}</span>
+                                <span class="badge bg-label-secondary text-truncate max-w-100"><i class="bi bi-tag me-1"></i>{{ $catName }}</span>
                             </div>
                             <div class="col-6">
                                 <small class="text-muted d-block mb-1">Penempatan:</small>
@@ -229,11 +324,15 @@
                     </div>
                 </div>
             @empty
-                <div class="text-center py-4 text-muted">
+                <div class="text-center py-4 text-muted" id="mobile-empty-mapping">
                     <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
                     Belum ada perangkat atau aset utama yang terdaftar.
                 </div>
             @endforelse
+            <div class="text-center py-4 text-muted" id="mobile-no-match-mapping" style="display: none;">
+                <i class="bi bi-search fs-2 d-block mb-2 text-muted"></i>
+                Tidak ada perangkat aset utama pada kategori ini.
+            </div>
         </div>
     </div>
 
@@ -242,41 +341,49 @@
         <div class="card-header bg-transparent border-bottom py-3">
             <div class="d-flex justify-content-between align-items-center">
                 <h5 class="card-title fw-bold mb-0 fs-6 fs-sm-5">
-                    <i class="bi bi-clipboard-check text-info me-2"></i> Peminjaman Aset Sementara
+                    <i class="bi bi-clipboard-check me-2" style="color: var(--primary-theme, #0b2f57);"></i> Peminjaman Aset Sementara
                 </h5>
-                <span class="badge bg-label-info">{{ $peminjamans->count() }} Transaksi</span>
+                <span class="badge" style="background: linear-gradient(135deg, var(--primary-theme, #0b2f57), var(--secondary-theme, #154b87)); color: #fff;" id="badge-count-loan">{{ $peminjamans->count() }} Transaksi</span>
             </div>
         </div>
         
         {{-- DESKTOP TABLE VIEW --}}
         <div class="card-body p-0 d-none d-md-block">
             <div class="table-responsive text-nowrap">
-                <table class="table table-hover align-middle mb-0">
+                <table class="table table-hover align-middle mb-0" id="table-loan-assets">
                     <thead class="table-light">
                         <tr>
                             <th style="width: 50px;">No</th>
                             <th>Kode Pinjam</th>
                             <th>Nama Aset & Inventaris</th>
+                            <th>Kategori</th>
                             <th>Tgl Pinjam</th>
                             <th>Tgl Rencana Kembali</th>
                             <th>Keperluan</th>
                             <th>Status</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="tbody-loan">
                         @forelse ($peminjamans as $pinjam)
                             @php
                                 $inventaris = $pinjam->inventaris;
                                 $dataAset = $inventaris?->dataAset;
+                                $catName = $dataAset?->kategori?->nama_barang ?? $inventaris?->kategori?->nama_barang ?? 'Lainnya';
+                                $catKey = strtolower($catName);
                             @endphp
-                            <tr>
+                            <tr class="loan-item-row" data-category="{{ $catKey }}" data-nama="{{ strtolower($dataAset->nama_barang ?? '') }}">
                                 <td>{{ $loop->iteration }}</td>
-                                <td><strong class="text-primary">{{ $pinjam->kode_peminjaman }}</strong></td>
+                                <td><strong style="color: var(--primary-theme, #0b2f57);">{{ $pinjam->kode_peminjaman }}</strong></td>
                                 <td>
                                     <strong class="text-dark">{{ $dataAset->nama_barang ?? '-' }}</strong>
                                     @if ($inventaris?->no_inventaris)
                                         <br><small class="text-muted">No: {{ $inventaris->no_inventaris }}</small>
                                     @endif
+                                </td>
+                                <td>
+                                    <span class="badge bg-label-secondary">
+                                        <i class="bi bi-tag me-1"></i>{{ $catName }}
+                                    </span>
                                 </td>
                                 <td>{{ $pinjam->tanggal_pinjam ? \Carbon\Carbon::parse($pinjam->tanggal_pinjam)->format('d/m/Y') : '-' }}</td>
                                 <td>{{ $pinjam->tanggal_rencana_kembali ? \Carbon\Carbon::parse($pinjam->tanggal_rencana_kembali)->format('d/m/Y') : '-' }}</td>
@@ -292,30 +399,38 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr>
-                                <td colspan="7" class="text-center py-4">
+                            <tr id="empty-row-loan">
+                                <td colspan="8" class="text-center py-4">
                                     <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
                                     <span class="text-muted">Tidak ada data peminjaman aset sementara.</span>
                                 </td>
                             </tr>
                         @endforelse
+                        <tr id="no-match-row-loan" style="display: none;">
+                            <td colspan="8" class="text-center py-4">
+                                <i class="bi bi-search fs-2 d-block mb-2 text-muted"></i>
+                                <span class="text-muted">Tidak ada peminjaman aset pada kategori ini.</span>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>
         </div>
 
         {{-- MOBILE CARD VIEW --}}
-        <div class="card-body p-3 d-block d-md-none">
+        <div class="card-body p-3 d-block d-md-none" id="mobile-loan-container">
             @forelse ($peminjamans as $pinjam)
                 @php
                     $inventaris = $pinjam->inventaris;
                     $dataAset = $inventaris?->dataAset;
+                    $catName = $dataAset?->kategori?->nama_barang ?? $inventaris?->kategori?->nama_barang ?? 'Lainnya';
+                    $catKey = strtolower($catName);
                 @endphp
-                <div class="card border shadow-none mb-3 rounded-3 bg-body">
+                <div class="card border shadow-none mb-3 rounded-3 bg-body loan-item-card" data-category="{{ $catKey }}" data-nama="{{ strtolower($dataAset->nama_barang ?? '') }}">
                     <div class="card-body p-3">
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div>
-                                <small class="text-primary fw-bold d-block">{{ $pinjam->kode_peminjaman }}</small>
+                                <small class="fw-bold d-block" style="color: var(--primary-theme, #0b2f57);">{{ $pinjam->kode_peminjaman }}</small>
                                 <h6 class="fw-bold text-dark mb-0 fs-6">{{ $dataAset->nama_barang ?? '-' }}</h6>
                             </div>
                             @if ($pinjam->status === 'dipinjam')
@@ -328,6 +443,10 @@
                         </div>
                         <hr class="my-2">
                         <div class="row g-2">
+                            <div class="col-6">
+                                <small class="text-muted d-block">Kategori:</small>
+                                <span class="badge bg-label-secondary text-truncate max-w-100"><i class="bi bi-tag me-1"></i>{{ $catName }}</span>
+                            </div>
                             <div class="col-6">
                                 <small class="text-muted d-block">Tgl Pinjam:</small>
                                 <small class="fw-semibold text-dark">{{ $pinjam->tanggal_pinjam ? \Carbon\Carbon::parse($pinjam->tanggal_pinjam)->format('d/m/Y') : '-' }}</small>
@@ -344,13 +463,185 @@
                     </div>
                 </div>
             @empty
-                <div class="text-center py-4 text-muted">
+                <div class="text-center py-4 text-muted" id="mobile-empty-loan">
                     <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
                     Tidak ada data peminjaman aset sementara.
                 </div>
             @endforelse
+            <div class="text-center py-4 text-muted" id="mobile-no-match-loan" style="display: none;">
+                <i class="bi bi-search fs-2 d-block mb-2 text-muted"></i>
+                Tidak ada peminjaman aset pada kategori ini.
+            </div>
         </div>
     </div>
 
 </div>
+
+<style>
+.category-theme-icon {
+    background: linear-gradient(135deg, var(--primary-theme, #0b2f57), var(--secondary-theme, #154b87)) !important;
+    color: #fff !important;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    font-size: 1.35rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(11, 47, 87, 0.16);
+    flex-shrink: 0;
+}
+.category-theme-card {
+    border-radius: 16px !important;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+    border: 1px solid #eef2f7 !important;
+}
+.category-theme-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08) !important;
+}
+.category-theme-card.active-filter {
+    border: 2px solid var(--primary-theme, #0b2f57) !important;
+    background-color: rgba(11, 47, 87, 0.02) !important;
+}
+.btn-outline-theme {
+    border: 1px solid var(--primary-theme, #0b2f57) !important;
+    color: var(--primary-theme, #0b2f57) !important;
+    background: transparent;
+    transition: all 0.2s ease;
+}
+.btn-outline-theme:hover {
+    background: linear-gradient(135deg, var(--primary-theme, #0b2f57), var(--secondary-theme, #154b87)) !important;
+    color: #fff !important;
+}
+.cursor-pointer {
+    cursor: pointer;
+}
+</style>
+
+<script>
+function filterByCategory(categoryKey) {
+    const key = categoryKey.toLowerCase();
+    
+    // Update summary card active styling
+    document.querySelectorAll('.category-theme-card').forEach(c => c.classList.remove('active-filter'));
+    const activeCard = document.getElementById('card-filter-' + key);
+    if (activeCard) {
+        activeCard.classList.add('active-filter');
+    }
+
+    // Update Filter Buttons state
+    document.querySelectorAll('.category-filter-btn').forEach(btn => {
+        if (btn.getAttribute('data-filter') === key) {
+            btn.classList.add('active', 'btn-primary');
+            btn.classList.remove('btn-outline-theme');
+        } else {
+            btn.classList.remove('active', 'btn-primary');
+            btn.classList.add('btn-outline-theme');
+        }
+    });
+
+    // Update Status text
+    const statusEl = document.getElementById('filter-active-status');
+    if (statusEl) {
+        if (key === 'all') {
+            statusEl.innerHTML = 'Menampilkan <strong>semua aset</strong>';
+        } else {
+            statusEl.innerHTML = `Filter aktif: <span class="badge" style="background: var(--primary-theme, #0b2f57); color: #fff;">${key.toUpperCase()}</span> <a href="javascript:void(0)" onclick="filterByCategory('all')" class="text-danger ms-1 small text-decoration-underline">Reset</a>`;
+        }
+    }
+
+    // Helper matcher
+    function isMatch(itemCategory, itemNama) {
+        if (key === 'all') return true;
+        const cat = (itemCategory || '').toLowerCase();
+        const nama = (itemNama || '').toLowerCase();
+        
+        if (key === 'laptop') {
+            return cat.includes('laptop') || cat.includes('notebook') || cat.includes('macbook') || nama.includes('laptop') || nama.includes('thinkpad');
+        }
+        if (key === 'printer') {
+            return cat.includes('printer') || cat.includes('scanner') || cat.includes('cetak') || nama.includes('printer') || nama.includes('epson') || nama.includes('canon');
+        }
+        if (key === 'hp') {
+            return cat.includes('hp') || cat.includes('handphone') || cat.includes('smartphone') || cat.includes('phone') || cat.includes('ponsel') || cat.includes('tablet') || cat.includes('ipad') || nama.includes('samsung') || nama.includes('iphone') || nama.includes('redmi') || nama.includes('oppo');
+        }
+        if (key === 'lainnya') {
+            const isLap = cat.includes('laptop') || cat.includes('notebook') || cat.includes('macbook');
+            const isPrin = cat.includes('printer') || cat.includes('scanner') || cat.includes('cetak');
+            const isPhone = cat.includes('hp') || cat.includes('handphone') || cat.includes('smartphone') || cat.includes('phone') || cat.includes('ponsel') || cat.includes('tablet') || cat.includes('ipad');
+            return !isLap && !isPrin && !isPhone;
+        }
+        return cat.includes(key);
+    }
+
+    // Filter Mapping Desktop Table
+    let visibleMapping = 0;
+    document.querySelectorAll('.asset-item-row').forEach(row => {
+        const cat = row.getAttribute('data-category');
+        const nama = row.getAttribute('data-nama');
+        if (isMatch(cat, nama)) {
+            row.style.display = '';
+            visibleMapping++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    const noMatchMapping = document.getElementById('no-match-row-mapping');
+    if (noMatchMapping) {
+        noMatchMapping.style.display = (visibleMapping === 0 && document.querySelectorAll('.asset-item-row').length > 0) ? '' : 'none';
+    }
+
+    // Filter Mapping Mobile Cards
+    let visibleMobileMapping = 0;
+    document.querySelectorAll('.asset-item-card').forEach(card => {
+        const cat = card.getAttribute('data-category');
+        const nama = card.getAttribute('data-nama');
+        if (isMatch(cat, nama)) {
+            card.style.display = '';
+            visibleMobileMapping++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    const mobileNoMatchMapping = document.getElementById('mobile-no-match-mapping');
+    if (mobileNoMatchMapping) {
+        mobileNoMatchMapping.style.display = (visibleMobileMapping === 0 && document.querySelectorAll('.asset-item-card').length > 0) ? '' : 'none';
+    }
+
+    // Filter Loan Desktop Table
+    let visibleLoan = 0;
+    document.querySelectorAll('.loan-item-row').forEach(row => {
+        const cat = row.getAttribute('data-category');
+        const nama = row.getAttribute('data-nama');
+        if (isMatch(cat, nama)) {
+            row.style.display = '';
+            visibleLoan++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    const noMatchLoan = document.getElementById('no-match-row-loan');
+    if (noMatchLoan) {
+        noMatchLoan.style.display = (visibleLoan === 0 && document.querySelectorAll('.loan-item-row').length > 0) ? '' : 'none';
+    }
+
+    // Filter Loan Mobile Cards
+    let visibleMobileLoan = 0;
+    document.querySelectorAll('.loan-item-card').forEach(card => {
+        const cat = card.getAttribute('data-category');
+        const nama = card.getAttribute('data-nama');
+        if (isMatch(cat, nama)) {
+            card.style.display = '';
+            visibleMobileLoan++;
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    const mobileNoMatchLoan = document.getElementById('mobile-no-match-loan');
+    if (mobileNoMatchLoan) {
+        mobileNoMatchLoan.style.display = (visibleMobileLoan === 0 && document.querySelectorAll('.loan-item-card').length > 0) ? '' : 'none';
+    }
+}
+</script>
 @endsection

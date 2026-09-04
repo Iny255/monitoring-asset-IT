@@ -71,6 +71,10 @@ class SupplierController extends Controller
   {
     $user = auth()->user();
 
+    if (!$request->filled('telepon') && $request->filled('no_hp')) {
+      $request->merge(['telepon' => $request->no_hp]);
+    }
+
     $validated = $request->validate([
       'nama_supplier' => 'required|max:100',
       'telepon' => 'nullable|max:30',
@@ -78,7 +82,7 @@ class SupplierController extends Controller
     ]);
 
     $validated['nama_supplier'] = strtoupper($validated['nama_supplier']);
-    $validated['telepon'] = !empty($validated['telepon']) ? strtoupper($validated['telepon']) : null;
+    $validated['telepon'] = !empty($validated['telepon']) ? trim($validated['telepon']) : null;
     $validated['alamat'] = !empty($validated['alamat']) ? strtoupper($validated['alamat']) : null;
     try {
       if ($user->role === 'super_admin') {
@@ -110,6 +114,10 @@ class SupplierController extends Controller
 
     $supplier = Supplier::findOrFail($id);
 
+    if (!$request->filled('telepon') && $request->filled('no_hp')) {
+      $request->merge(['telepon' => $request->no_hp]);
+    }
+
     $validated = $request->validate([
       'nama_supplier' => 'required|max:100',
       'telepon' => 'nullable|max:30',
@@ -117,7 +125,7 @@ class SupplierController extends Controller
     ]);
 
     $validated['nama_supplier'] = strtoupper($validated['nama_supplier']);
-    $validated['telepon'] = !empty($validated['telepon']) ? strtoupper($validated['telepon']) : null;
+    $validated['telepon'] = !empty($validated['telepon']) ? trim($validated['telepon']) : null;
     $validated['alamat'] = !empty($validated['alamat']) ? strtoupper($validated['alamat']) : null;
 
     if ($user->role === 'super_admin' && $request->filled('perusahaan_id')) {

@@ -756,10 +756,23 @@
                     Kembali
                 </a>
 
-                <a href="{{ route('maping.edit', $maping->id) }}" class="btn btn-warning">
-                    <i class="bx bx-edit"></i>
-                    Edit Data
-                </a>
+                <div class="d-flex gap-2">
+                    @if ($maping->status != 'aktif')
+                        <form action="{{ route('maping.reactivate', $maping->id) }}" method="POST" class="d-inline">
+                            @csrf
+                            <button type="submit" class="btn btn-success"
+                                onclick="return confirm('Apakah Anda yakin ingin mengaktifkan kembali mapping dan unit aset ini?')">
+                                <i class="bx bx-check-circle me-1"></i>
+                                Aktifkan Kembali
+                            </button>
+                        </form>
+                    @endif
+
+                    <a href="{{ route('maping.edit', $maping->id) }}" class="btn btn-warning">
+                        <i class="bx bx-edit"></i>
+                        Edit Data
+                    </a>
+                </div>
 
             </div>
 

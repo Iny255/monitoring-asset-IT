@@ -10,6 +10,7 @@ use App\Models\HistoryMutasi;
 use App\Models\HistoryPencabutan;
 use App\Models\Maintenance;
 use App\Models\HistoryHakAkses;
+use App\Models\Masuk;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Collection;
 use Carbon\Carbon;
@@ -84,30 +85,7 @@ class HistoryPerjalananAsetController extends Controller
   public function show(Request $request, $id)
   {
     $user = auth()->user();
-
-    $query = Inventaris::withoutGlobalScopes()->with([
-      'dataAset.kategori',
-      'perusahaan',
-      'masuk.supplier',
-      'keluars.karyawan',
-      'keluars.lokasi',
-      'keluars.user',
-    ]);
-
-    if (Inventaris::withoutGlobalScopes()->where('id', $id)->exists()) {
-      $query->where('id', $id);
-    } else {
-      $query->where('data_aset_id', $id);
-    }
-
-    if ($user->role != 'super_admin') {
-      $accessibleIds = $this->getAccessibleCompanyIds($user);
-      if ($accessibleIds) {
-        $query->whereIn('perusahaan_id', $accessibleIds);
-      }
-    }
-
-    $inventaris = $query->orderBy('kode_aset')->get();
+    $inventaris = $this->resolveInventaris($id, $user);
 
     if ($inventaris->isEmpty()) {
       abort(404, 'Data aset tidak ditemukan.');
@@ -144,30 +122,7 @@ class HistoryPerjalananAsetController extends Controller
   public function cetak(Request $request, $id)
   {
     $user = auth()->user();
-
-    $query = Inventaris::withoutGlobalScopes()->with([
-      'dataAset.kategori',
-      'perusahaan',
-      'masuk.supplier',
-      'keluars.karyawan',
-      'keluars.lokasi',
-      'keluars.user',
-    ]);
-
-    if (Inventaris::withoutGlobalScopes()->where('id', $id)->exists()) {
-      $query->where('id', $id);
-    } else {
-      $query->where('data_aset_id', $id);
-    }
-
-    if ($user->role != 'super_admin') {
-      $accessibleIds = $this->getAccessibleCompanyIds($user);
-      if ($accessibleIds) {
-        $query->whereIn('perusahaan_id', $accessibleIds);
-      }
-    }
-
-    $inventaris = $query->get();
+    $inventaris = $this->resolveInventaris($id, $user);
 
     if ($inventaris->isEmpty()) {
       abort(404, 'Data aset tidak ditemukan.');
@@ -181,30 +136,7 @@ class HistoryPerjalananAsetController extends Controller
   public function exportExcel(Request $request, $id)
   {
     $user = auth()->user();
-
-    $query = Inventaris::withoutGlobalScopes()->with([
-      'dataAset.kategori',
-      'perusahaan',
-      'masuk.supplier',
-      'keluars.karyawan',
-      'keluars.lokasi',
-      'keluars.user',
-    ]);
-
-    if (Inventaris::withoutGlobalScopes()->where('id', $id)->exists()) {
-      $query->where('id', $id);
-    } else {
-      $query->where('data_aset_id', $id);
-    }
-
-    if ($user->role != 'super_admin') {
-      $accessibleIds = $this->getAccessibleCompanyIds($user);
-      if ($accessibleIds) {
-        $query->whereIn('perusahaan_id', $accessibleIds);
-      }
-    }
-
-    $inventaris = $query->get();
+    $inventaris = $this->resolveInventaris($id, $user);
 
     if ($inventaris->isEmpty()) {
       abort(404, 'Data aset tidak ditemukan.');
@@ -266,10 +198,74 @@ class HistoryPerjalananAsetController extends Controller
   }
 
   /**
+   * Resolve inventaris record by either inventaris ID or data_aset ID, handling multi-company and transfer permissions.
+   */
+  private function resolveInventaris($id, $user)
+  {
+    $baseQuery = Inventaris::withoutGlobalScopes()->with([
+      'dataAset.kategori',
+      'perusahaan',
+      'masuk' => function ($q) {
+        $q->withoutGlobalScopes()->with('supplier', 'perusahaanAsal');
+      },
+      'keluars' => function ($q) {
+        $q->withoutGlobalScopes()->with(['karyawan', 'lokasi', 'user']);
+      },
+    ]);
+
+    $accessibleIds = $this->getAccessibleCompanyIds($user);
+
+    // 1. Cek Inventaris berdasarkan ID langsung milik perusahaan user (atau yang pernah dimutasi dari/ke perusahaan user)
+    $invQuery = (clone $baseQuery)->where('id', $id);
+    if ($accessibleIds) {
+      $invQuery->where(function ($q) use ($accessibleIds, $id) {
+        $q->whereIn('perusahaan_id', $accessibleIds)
+          ->orWhereHas('masuk', function ($mq) use ($accessibleIds) {
+            $mq->withoutGlobalScopes()->whereIn('perusahaan_asal', $accessibleIds);
+          })
+          ->orWhereIn('id', function ($sub) use ($accessibleIds) {
+            $sub->select('inventaris_id')
+              ->from('history_mutasis')
+              ->whereIn('id_perusahaan_asal', $accessibleIds)
+              ->orWhereIn('id_perusahaan_tujuan', $accessibleIds);
+          });
+      });
+    }
+    $inventaris = $invQuery->orderBy('kode_aset')->get();
+
+    // 2. Jika belum ditemukan, coba cari berdasarkan data_aset_id
+    if ($inventaris->isEmpty()) {
+      $dataAsetQuery = (clone $baseQuery)->where('data_aset_id', $id);
+      if ($accessibleIds) {
+        $dataAsetQuery->whereIn('perusahaan_id', $accessibleIds);
+      }
+      $inventaris = $dataAsetQuery->orderBy('kode_aset')->get();
+    }
+
+    // 3. Fallback: jika super admin atau aset mutasi antar perusahaan yang tercatat di history mutasi
+    if ($inventaris->isEmpty()) {
+      if ($user->role === 'super_admin') {
+        $inventaris = (clone $baseQuery)->where('id', $id)->orWhere('data_aset_id', $id)->orderBy('kode_aset')->get();
+      } elseif ($accessibleIds) {
+        $hasMutasi = HistoryMutasi::where('inventaris_id', $id)
+          ->where(function ($mq) use ($accessibleIds) {
+            $mq->whereIn('id_perusahaan_asal', $accessibleIds)
+              ->orWhereIn('id_perusahaan_tujuan', $accessibleIds);
+          })->exists();
+
+        if ($hasMutasi) {
+          $inventaris = (clone $baseQuery)->where('id', $id)->orderBy('kode_aset')->get();
+        }
+      }
+    }
+
+    return $inventaris;
+  }
+
+  /**
    * Get accessible company IDs for the current user.
    */
   private function getAccessibleCompanyIds($user)
-  
   {
     if ($user->role === 'super_admin') {
       return null;
@@ -293,9 +289,67 @@ class HistoryPerjalananAsetController extends Controller
   {
     $timeline = collect();
 
-    // 1. ASET MASUK (PROCUREMENT)
-    foreach ($inventaris as $item) {
+    // Dapatkan semua ID inventaris terkait (termasuk sebelum/sesudah mutasi antar perusahaan)
+    $invIds = $inventaris->pluck('id')->filter()->unique()->toArray();
+    $mutasiTerkait = HistoryMutasi::with('creator')
+      ->where(function ($q) use ($inventaris, $invIds) {
+        $q->whereIn('inventaris_id', $invIds)
+          ->orWhereIn('no_inventaris_lama', $inventaris->pluck('no_inventaris'))
+          ->orWhereIn('no_inventaris_baru', $inventaris->pluck('no_inventaris'))
+          ->orWhereIn('kode_aset_lama', $inventaris->pluck('kode_aset'))
+          ->orWhereIn('kode_aset_baru', $inventaris->pluck('kode_aset'));
+      })
+      ->orderBy('tanggal_mutasi')
+      ->get();
+
+    // Cari inventaris turunan/asal dari mutasi jika belum masuk di $inventaris
+    $additionalInvIds = collect();
+    foreach ($mutasiTerkait as $m) {
+      if ($m->inventaris_id && !in_array($m->inventaris_id, $invIds)) {
+        $additionalInvIds->push($m->inventaris_id);
+      }
+    }
+
+    // Cari inventaris baru yang tercipta dari transaksi mutasi masuk
+    if ($mutasiTerkait->isNotEmpty()) {
+      $masukIds = Masuk::withoutGlobalScopes()
+        ->whereIn('history_mutasi_id', $mutasiTerkait->pluck('id'))
+        ->pluck('id');
+      $invBaruIds = Inventaris::withoutGlobalScopes()
+        ->whereIn('masuk_id', $masukIds)
+        ->pluck('id');
+      foreach ($invBaruIds as $ibId) {
+        if (!in_array($ibId, $invIds)) {
+          $additionalInvIds->push($ibId);
+        }
+      }
+    }
+
+    $allInventaris = $inventaris;
+    if ($additionalInvIds->isNotEmpty()) {
+      $extraInvs = Inventaris::withoutGlobalScopes()->with([
+        'dataAset.kategori',
+        'perusahaan',
+        'masuk' => function ($q) {
+          $q->withoutGlobalScopes()->with('supplier', 'perusahaanAsal');
+        },
+        'keluars' => function ($q) {
+          $q->withoutGlobalScopes()->with(['karyawan', 'lokasi', 'user']);
+        },
+      ])->whereIn('id', $additionalInvIds->unique())->get();
+
+      $allInventaris = $inventaris->concat($extraInvs)->unique('id');
+    }
+    $allInvIds = $allInventaris->pluck('id')->filter()->unique()->toArray();
+
+    // 1. ASET MASUK (PROCUREMENT / MUTASI MASUK)
+    foreach ($allInventaris as $item) {
       if ($item->masuk) {
+        $isMutasiMasuk = $item->masuk->jenis_masuk === 'Mutasi' || !empty($item->masuk->history_mutasi_id);
+        $keteranganMasuk = $isMutasiMasuk
+          ? 'Barang diterima hasil mutasi dari perusahaan: ' . ($item->masuk->perusahaanAsal?->nama_perusahaan ?? 'Perusahaan Asal')
+          : 'Barang diterima dari supplier: ' . ($item->masuk->supplier?->nama_supplier ?? 'Vendor');
+
         $timeline->push([
           'tanggal' => Carbon::parse($item->masuk->tanggal_pembelian ?? $item->created_at),
           'aktivitas' => 'MASUK',
@@ -305,41 +359,38 @@ class HistoryPerjalananAsetController extends Controller
           'user_baru' => 'Stok Gudang',
           'lokasi_lama' => null,
           'lokasi_baru' => 'Gudang / Stock',
-          'keterangan' => 'Barang diterima dari supplier: ' . ($item->masuk->supplier?->nama_supplier ?? 'Vendor'),
+          'keterangan' => $keteranganMasuk,
           'petugas' => 'Sistem',
         ]);
       }
     }
 
     // 2. TRANSAKSI KELUAR (PEMAKAIAN)
-    foreach ($inventaris as $item) {
-      foreach ($item->keluars->sortBy('tgl_keluar') as $index => $keluar) {
-        $penerima = $keluar->jenis_penerima == 'Perorangan' 
-          ? ($keluar->karyawan?->nama_karyawan ?? '-') 
-          : ($keluar->divisi_klr ?? '-');
+    foreach ($allInventaris as $item) {
+      if ($item->keluars) {
+        foreach ($item->keluars->sortBy('tgl_keluar') as $index => $keluar) {
+          $penerima = $keluar->jenis_penerima == 'Perorangan' 
+            ? ($keluar->karyawan?->nama_karyawan ?? '-') 
+            : ($keluar->divisi_klr ?? '-');
 
-        $timeline->push([
-          'tanggal' => Carbon::parse($keluar->tgl_keluar),
-          'aktivitas' => 'KELUAR',
-          'kode_aset' => $item->kode_aset,
-          'inventaris' => $item->no_inventaris,
-          'user_lama' => null,
-          'user_baru' => $penerima,
-          'lokasi_lama' => null,
-          'lokasi_baru' => $keluar->lokasi?->nama_lokasi ?? '-',
-          'keterangan' => $index == 0 ? 'Aset pertama kali digunakan' : 'Aset digunakan kembali setelah pencabutan',
-          'petugas' => $keluar->user?->name ?? 'Petugas',
-        ]);
+          $timeline->push([
+            'tanggal' => Carbon::parse($keluar->tgl_keluar),
+            'aktivitas' => 'KELUAR',
+            'kode_aset' => $item->kode_aset,
+            'inventaris' => $item->no_inventaris,
+            'user_lama' => null,
+            'user_baru' => $penerima,
+            'lokasi_lama' => null,
+            'lokasi_baru' => $keluar->lokasi?->nama_lokasi ?? '-',
+            'keterangan' => $index == 0 ? 'Aset pertama kali digunakan' : 'Aset digunakan kembali setelah pencabutan / mutasi',
+            'petugas' => $keluar->user?->name ?? 'Petugas',
+          ]);
+        }
       }
     }
 
     // 3. HISTORY MUTASI
-    $historyMutasi = HistoryMutasi::with('creator')
-      ->whereIn('inventaris_id', $inventaris->pluck('id'))
-      ->orderBy('tanggal_mutasi')
-      ->get();
-
-    foreach ($historyMutasi as $item) {
+    foreach ($mutasiTerkait as $item) {
       $timeline->push([
         'tanggal' => Carbon::parse($item->tanggal_mutasi),
         'aktivitas' => 'MUTASI',
@@ -357,8 +408,9 @@ class HistoryPerjalananAsetController extends Controller
     }
 
     // 4. MAINTENANCE / SERVIS
-    $maintenances = Maintenance::with('creator')
-      ->whereIn('inventaris_id', $inventaris->pluck('id'))
+    $maintenances = Maintenance::withoutGlobalScopes()
+      ->with('creator')
+      ->whereIn('inventaris_id', $allInvIds)
       ->orderBy('created_at')
       ->get();
 
@@ -366,8 +418,8 @@ class HistoryPerjalananAsetController extends Controller
       $timeline->push([
         'tanggal' => Carbon::parse($maint->created_at),
         'aktivitas' => 'MAINTENANCE',
-        'kode_aset' => $inventaris->firstWhere('id', $maint->inventaris_id)?->kode_aset ?? '-',
-        'inventaris' => $inventaris->firstWhere('id', $maint->inventaris_id)?->no_inventaris ?? '-',
+        'kode_aset' => $allInventaris->firstWhere('id', $maint->inventaris_id)?->kode_aset ?? '-',
+        'inventaris' => $allInventaris->firstWhere('id', $maint->inventaris_id)?->no_inventaris ?? '-',
         'user_lama' => null,
         'user_baru' => null,
         'lokasi_lama' => null,
@@ -381,7 +433,7 @@ class HistoryPerjalananAsetController extends Controller
 
     // 5. HISTORY PENCABUTAN
     $historyCabut = HistoryPencabutan::with('creator')
-      ->whereIn('inventaris_id', $inventaris->pluck('id'))
+      ->whereIn('inventaris_id', $allInvIds)
       ->orderBy('tanggal_pencabutan')
       ->get();
 
@@ -402,14 +454,14 @@ class HistoryPerjalananAsetController extends Controller
 
     // 6. HISTORY HAK AKSES
     $historyHakAkses = HistoryHakAkses::with(['access', 'user', 'maping.keluar', 'maping.lokasi'])
-      ->whereHas('maping.keluar', function ($q) use ($inventaris) {
-        $q->whereIn('inventaris_id', $inventaris->pluck('id'));
+      ->whereHas('maping.keluar', function ($q) use ($allInvIds) {
+        $q->withoutGlobalScopes()->whereIn('inventaris_id', $allInvIds);
       })
       ->orderBy('created_at')
       ->get();
 
     foreach ($historyHakAkses as $hakAkses) {
-      $inv = $inventaris->firstWhere('id', $hakAkses->maping?->keluar?->inventaris_id);
+      $inv = $allInventaris->firstWhere('id', $hakAkses->maping?->keluar?->inventaris_id);
 
       $namaAkses = $hakAkses->nama_akses ?? $hakAkses->access?->nama_akses ?? '-';
       $kategori  = $hakAkses->kategori ?? $hakAkses->access?->kategori ?? 'Hak Akses';

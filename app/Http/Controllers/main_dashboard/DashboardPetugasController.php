@@ -33,6 +33,8 @@ class DashboardPetugasController extends Controller
 
       'inventaris' => $this->inventaris($user),
 
+      'matriks_kategori' => $this->matriksKategori($user),
+
       'penerimaan' => $this->penerimaan($user),
 
       'pemakaian' => $this->pemakaian($user),
@@ -801,5 +803,167 @@ class DashboardPetugasController extends Controller
 
       'pencabutan_hari_ini' => $this->pencabutan($user)['hari_ini'],
     ];
+  }
+
+  /**
+   * Menghitung rincian dan matriks aset per kategori untuk Petugas
+   */
+  private function matriksKategori($user)
+  {
+    $inventarisQuery = $this->filterPerusahaan(Inventaris::with(['dataAset.kategori', 'kategori']), $user);
+    $inventarisList = $inventarisQuery->get();
+    $totalAset = $inventarisList->count();
+
+    $kategoriMap = [];
+    $summary = [
+      'laptop' => ['total' => 0, 'tersedia' => 0, 'dipakai' => 0, 'dipinjam' => 0, 'rusak' => 0, 'afkir' => 0],
+      'printer' => ['total' => 0, 'tersedia' => 0, 'dipakai' => 0, 'dipinjam' => 0, 'rusak' => 0, 'afkir' => 0],
+      'hp' => ['total' => 0, 'tersedia' => 0, 'dipakai' => 0, 'dipinjam' => 0, 'rusak' => 0, 'afkir' => 0],
+      'pc' => ['total' => 0, 'tersedia' => 0, 'dipakai' => 0, 'dipinjam' => 0, 'rusak' => 0, 'afkir' => 0],
+      'lainnya' => ['total' => 0, 'tersedia' => 0, 'dipakai' => 0, 'dipinjam' => 0, 'rusak' => 0, 'afkir' => 0],
+    ];
+
+    foreach ($inventarisList as $item) {
+      $catName = $item->dataAset?->kategori?->nama_barang 
+              ?? $item->kategori?->nama_barang 
+              ?? 'Lainnya';
+      $catName = trim($catName);
+      if ($catName === '') {
+        $catName = 'Lainnya';
+      }
+
+      $key = strtolower($catName);
+      $status = strtoupper($item->status ?? 'TERSEDIA');
+
+      if (!isset($kategoriMap[$key])) {
+        $kategoriMap[$key] = [
+          'nama' => $catName,
+          'key' => $key,
+          'total' => 0,
+          'tersedia' => 0,
+          'dipakai' => 0,
+          'dipinjam' => 0,
+          'rusak' => 0,
+          'afkir' => 0,
+          'icon' => $this->getCategoryIcon($catName),
+          'color' => $this->getCategoryColor($catName),
+          'bg_class' => $this->getCategoryBgClass($catName),
+        ];
+      }
+
+      $kategoriMap[$key]['total']++;
+      if ($status === 'TERSEDIA') {
+        $kategoriMap[$key]['tersedia']++;
+      } elseif ($status === 'DIPAKAI') {
+        $kategoriMap[$key]['dipakai']++;
+      } elseif ($status === 'DIPINJAM') {
+        $kategoriMap[$key]['dipinjam']++;
+      } elseif ($status === 'RUSAK') {
+        $kategoriMap[$key]['rusak']++;
+      } elseif ($status === 'AFKIR') {
+        $kategoriMap[$key]['afkir']++;
+      } else {
+        $kategoriMap[$key]['tersedia']++;
+      }
+
+      // Klasifikasi grup summary (laptop, printer, hp, pc, lainnya)
+      $group = $this->classifyCategoryGroup($key);
+      $summary[$group]['total']++;
+      if ($status === 'TERSEDIA') {
+        $summary[$group]['tersedia']++;
+      } elseif ($status === 'DIPAKAI') {
+        $summary[$group]['dipakai']++;
+      } elseif ($status === 'DIPINJAM') {
+        $summary[$group]['dipinjam']++;
+      } elseif ($status === 'RUSAK') {
+        $summary[$group]['rusak']++;
+      } elseif ($status === 'AFKIR') {
+        $summary[$group]['afkir']++;
+      }
+    }
+
+    $kategoriBreakdown = collect($kategoriMap)->map(function ($item) use ($totalAset) {
+      $item['persentase'] = $totalAset > 0 ? round(($item['total'] / $totalAset) * 100, 1) : 0;
+      return (object) $item;
+    })->sortByDesc('total')->values();
+
+    return [
+      'total_aset' => $totalAset,
+      'summary' => $summary,
+      'kategori_breakdown' => $kategoriBreakdown,
+    ];
+  }
+
+  private function classifyCategoryGroup($key)
+  {
+    if (str_contains($key, 'laptop') || str_contains($key, 'notebook') || str_contains($key, 'macbook')) {
+      return 'laptop';
+    }
+    if (str_contains($key, 'printer') || str_contains($key, 'scanner') || str_contains($key, 'cetak')) {
+      return 'printer';
+    }
+    if (str_contains($key, 'hp') || str_contains($key, 'handphone') || str_contains($key, 'smartphone') || str_contains($key, 'phone') || str_contains($key, 'ponsel') || str_contains($key, 'tablet') || str_contains($key, 'ipad')) {
+      return 'hp';
+    }
+    if (str_contains($key, 'pc') || str_contains($key, 'komputer') || str_contains($key, 'desktop') || str_contains($key, 'all in one') || str_contains($key, 'aio')) {
+      return 'pc';
+    }
+    return 'lainnya';
+  }
+
+  private function getCategoryIcon($catName)
+  {
+    $k = strtolower($catName);
+    if (str_contains($k, 'laptop') || str_contains($k, 'notebook') || str_contains($k, 'macbook')) {
+      return 'bi-laptop';
+    }
+    if (str_contains($k, 'printer') || str_contains($k, 'scanner') || str_contains($k, 'cetak')) {
+      return 'bi-printer';
+    }
+    if (str_contains($k, 'hp') || str_contains($k, 'handphone') || str_contains($k, 'smartphone') || str_contains($k, 'phone') || str_contains($k, 'ponsel') || str_contains($k, 'tablet') || str_contains($k, 'ipad')) {
+      return 'bi-phone';
+    }
+    if (str_contains($k, 'pc') || str_contains($k, 'komputer') || str_contains($k, 'desktop') || str_contains($k, 'aio')) {
+      return 'bi-pc-display';
+    }
+    if (str_contains($k, 'monitor') || str_contains($k, 'display') || str_contains($k, 'screen') || str_contains($k, 'layar') || str_contains($k, 'tv')) {
+      return 'bi-display';
+    }
+    if (str_contains($k, 'network') || str_contains($k, 'jaringan') || str_contains($k, 'router') || str_contains($k, 'switch') || str_contains($k, 'modem') || str_contains($k, 'access point') || str_contains($k, 'wifi') || str_contains($k, 'server')) {
+      return 'bi-hdd-network';
+    }
+    if (str_contains($k, 'keyboard') || str_contains($k, 'mouse') || str_contains($k, 'headset') || str_contains($k, 'headphone') || str_contains($k, 'aksesoris') || str_contains($k, 'audio') || str_contains($k, 'speaker')) {
+      return 'bi-headphones';
+    }
+    return 'bi-box-seam';
+  }
+
+  private function getCategoryColor($catName)
+  {
+    $k = strtolower($catName);
+    if (str_contains($k, 'laptop') || str_contains($k, 'notebook') || str_contains($k, 'macbook')) {
+      return 'primary';
+    }
+    if (str_contains($k, 'printer') || str_contains($k, 'scanner') || str_contains($k, 'cetak')) {
+      return 'warning';
+    }
+    if (str_contains($k, 'hp') || str_contains($k, 'handphone') || str_contains($k, 'smartphone') || str_contains($k, 'phone') || str_contains($k, 'ponsel') || str_contains($k, 'tablet') || str_contains($k, 'ipad')) {
+      return 'success';
+    }
+    if (str_contains($k, 'pc') || str_contains($k, 'komputer') || str_contains($k, 'desktop') || str_contains($k, 'aio')) {
+      return 'info';
+    }
+    if (str_contains($k, 'monitor') || str_contains($k, 'display') || str_contains($k, 'screen') || str_contains($k, 'layar')) {
+      return 'primary';
+    }
+    if (str_contains($k, 'network') || str_contains($k, 'jaringan') || str_contains($k, 'router') || str_contains($k, 'switch') || str_contains($k, 'server')) {
+      return 'danger';
+    }
+    return 'secondary';
+  }
+
+  private function getCategoryBgClass($catName)
+  {
+    return 'bg-label-' . $this->getCategoryColor($catName);
   }
 }

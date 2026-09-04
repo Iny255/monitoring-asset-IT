@@ -265,8 +265,8 @@
                         </div>
 
                         <div class="mb-3">
-                            <label>Telepon</label>
-                            <input type="text" name="telepon" class="form-control">
+                            <label>No HP / Telepon</label>
+                            <input type="text" name="telepon" class="form-control" placeholder="Contoh: 081234567890">
                         </div>
 
                         <div class="mb-3">
@@ -315,8 +315,8 @@
                         </div>
 
                         <div class="mb-3">
-                            <label>Telepon</label>
-                            <input type="text" id="edit_telepon" name="telepon" class="form-control">
+                            <label>No HP / Telepon</label>
+                            <input type="text" id="edit_telepon" name="telepon" class="form-control" placeholder="Contoh: 081234567890">
                         </div>
 
                         <div class="mb-3">

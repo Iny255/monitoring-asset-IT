@@ -33,4 +33,9 @@ class Kategori extends Model
   {
     return $this->hasMany(DataAset::class, 'kategori_id');
   }
+
+  public function getNamaKategoriAttribute()
+  {
+    return $this->nama_barang;
+  }
 }

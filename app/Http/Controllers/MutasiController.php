@@ -232,8 +232,8 @@ class MutasiController extends Controller
         DB::commit();
 
         $maping->loadMissing('keluar.inventaris');
-        $dataAsetId = $maping->keluar?->inventaris?->data_aset_id;
-        $targetUrl = $dataAsetId ? route('history.perjalanan.show', $dataAsetId) : route('history.perjalanan.index');
+        $inventarisId = $inventaris->id ?? $maping->keluar?->inventaris_id;
+        $targetUrl = $inventarisId ? route('history.perjalanan.show', $inventarisId) : route('history.perjalanan.index');
 
         return redirect($targetUrl)
           ->with('success', 'Mutasi internal berhasil disimpan.');
@@ -327,8 +327,6 @@ class MutasiController extends Controller
 |--------------------------------------------------------------------------
 */
 
-      $prefixKodeMutasi = strtoupper($kategoriTujuan->kode_barang) . '.' . strtoupper($perusahaanTujuan->kode_perusahaan) . '-';
-
       $existingInvsTujuan = Inventaris::withoutGlobalScopes()
         ->where('perusahaan_id', $perusahaanTujuan->id)
         ->where('no_inventaris', 'like', 'INV-%')
@@ -351,27 +349,9 @@ class MutasiController extends Controller
         $noInventarisBaru = 'INV-' . str_pad($maxInvUrutMutasi, 3, '0', STR_PAD_LEFT);
       }
 
-      $existingKodesTujuan = Inventaris::withoutGlobalScopes()
-        ->where('perusahaan_id', $perusahaanTujuan->id)
-        ->where('kode_aset', 'like', $prefixKodeMutasi . '%')
-        ->pluck('kode_aset');
+      // Kode aset tetap menggunakan kode aset dari perusahaan sebelumnya
+      $kodeAsetBaru = $inventaris->kode_aset;
 
-      $maxKodeUrutMutasi = 0;
-      foreach ($existingKodesTujuan as $k) {
-        $numStr = substr($k, strlen($prefixKodeMutasi));
-        if (is_numeric($numStr)) {
-          $val = (int) $numStr;
-          if ($val > $maxKodeUrutMutasi) {
-            $maxKodeUrutMutasi = $val;
-          }
-        }
-      }
-      $maxKodeUrutMutasi++;
-      $kodeAsetBaru = $prefixKodeMutasi . str_pad($maxKodeUrutMutasi, 3, '0', STR_PAD_LEFT);
-      while (Inventaris::withoutGlobalScopes()->where('perusahaan_id', $perusahaanTujuan->id)->where('kode_aset', $kodeAsetBaru)->exists()) {
-        $maxKodeUrutMutasi++;
-        $kodeAsetBaru = $prefixKodeMutasi . str_pad($maxKodeUrutMutasi, 3, '0', STR_PAD_LEFT);
-      }
       /*
 |--------------------------------------------------------------------------
 | BUAT INVENTARIS BARU
@@ -386,7 +366,6 @@ class MutasiController extends Controller
         'data_aset_id' => $dataAsetTujuan->id,
 
         'kode_aset' => $kodeAsetBaru,
-        
 
         'no_inventaris' => $noInventarisBaru,
 
@@ -615,8 +594,8 @@ class MutasiController extends Controller
       }
 
       $maping->loadMissing('keluar.inventaris');
-      $dataAsetId = $maping->keluar?->inventaris?->data_aset_id;
-      $targetUrl = $dataAsetId ? route('history.perjalanan.show', $dataAsetId) : route('history.perjalanan.index');
+      $inventarisId = $inventaris->id ?? $maping->keluar?->inventaris_id;
+      $targetUrl = $inventarisId ? route('history.perjalanan.show', $inventarisId) : route('history.perjalanan.index');
 
       return redirect($targetUrl)
         ->with('success', $message)

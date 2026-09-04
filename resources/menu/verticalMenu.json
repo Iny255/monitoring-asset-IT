@@ -18,6 +18,7 @@
       "url": "dashboard/aset-saya",
       "name": "Aset Saya",
       "icon": "menu-icon tf-icons bx bx-laptop",
+      
       "slug": "aset-saya",
       "roles": ["user", "karyawan"]
     },

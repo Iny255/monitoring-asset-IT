@@ -18,6 +18,34 @@ class Perusahaan extends Model
     'tipe',
   ];
 
+  public function getLogoUrlAttribute(): string
+  {
+    $logo = $this->logo;
+
+    // Jika cabang tidak memiliki logo sendiri, warisi dari perusahaan induk jika ada
+    if (!$logo && $this->parent_id && $this->parent) {
+      $logo = $this->parent->logo;
+    }
+
+    if (!$logo) {
+      return asset('assets/img/logo_sembilan.png');
+    }
+
+    if (str_starts_with($logo, 'http://') || str_starts_with($logo, 'https://')) {
+      return $logo;
+    }
+
+    if (str_starts_with($logo, 'assets/')) {
+      return asset($logo);
+    }
+
+    if (str_starts_with($logo, 'storage/')) {
+      return asset($logo);
+    }
+
+    return asset('storage/' . $logo);
+  }
+
   public function parent()
   {
     return $this->belongsTo(Perusahaan::class, 'parent_id');

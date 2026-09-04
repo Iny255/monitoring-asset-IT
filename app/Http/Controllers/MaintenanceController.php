@@ -370,10 +370,10 @@ class MaintenanceController extends Controller
     $targetMaping = $maping ?? ($request->filled('maping_id') ? Maping::find($request->maping_id) : null);
     if ($targetMaping) {
       $targetMaping->loadMissing('keluar.inventaris');
-      $dataAsetId = $targetMaping->keluar?->inventaris?->data_aset_id;
-      if ($dataAsetId) {
+      $inventarisId = $targetMaping->keluar?->inventaris?->id ?? $maintenance->inventaris_id;
+      if ($inventarisId) {
         return redirect()
-          ->route('history.perjalanan.show', $dataAsetId)
+          ->route('history.perjalanan.show', $inventarisId)
           ->with('success', 'Data service berhasil ditambahkan.');
       }
     }

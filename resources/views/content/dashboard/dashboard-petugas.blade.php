@@ -127,6 +127,24 @@
 
         }
 
+        .category-theme-icon,
+        .dashboard-icon.category-theme-icon {
+            background: linear-gradient(135deg, var(--primary-theme, #0b2f57), var(--secondary-theme, #154b87)) !important;
+            color: #fff !important;
+            box-shadow: 0 4px 12px rgba(11, 47, 87, 0.18);
+        }
+
+        .category-theme-card {
+            border-radius: 18px !important;
+            transition: .25s ease;
+            border: 1px solid #eef2f7 !important;
+        }
+
+        .category-theme-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, .08) !important;
+        }
+
         .master-item {
 
             display: flex;
@@ -472,6 +490,8 @@
         @include('content.dashboard.partials._header')
 
         @include('content.dashboard.partials._summary')
+
+        @include('content.dashboard.partials._matriks_kategori')
 
         {{-- @include('content.dashboard.partials._master') --}}
         @include('content.dashboard.partials._chart')

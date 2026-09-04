@@ -83,13 +83,18 @@
 
                                 {{-- NAMA --}}
                                 <td>
-                                    <strong class="text-dark">{{ $perusahaan->nama_perusahaan }}</strong>
-                                    @if($perusahaan->cabangs->count() > 0)
-                                        <br>
-                                        <small class="text-muted">
-                                            <i class="bx bx-git-branch me-1"></i>{{ $perusahaan->cabangs->count() }} Cabang Terdaftar
-                                        </small>
-                                    @endif
+                                    <div class="d-flex align-items-center gap-2">
+                                        <img src="{{ $perusahaan->logo_url }}" alt="Logo" class="rounded border p-1" style="width: 58px; height: 58px; object-fit: contain; background: #ffffff; flex-shrink: 0;" onerror="this.onerror=null; this.src='{{ asset('assets/img/logo_sembilan.png') }}';">
+                                        <div>
+                                            <strong class="text-dark">{{ $perusahaan->nama_perusahaan }}</strong>
+                                            @if($perusahaan->cabangs->count() > 0)
+                                                <br>
+                                                <small class="text-muted">
+                                                    <i class="bx bx-git-branch me-1"></i>{{ $perusahaan->cabangs->count() }} Cabang Terdaftar
+                                                </small>
+                                            @endif
+                                        </div>
+                                    </div>
                                 </td>
 
                                 {{-- TIPE & INDUK --}}
@@ -126,7 +131,8 @@
                                             data-tipe="{{ $perusahaan->tipe ?? 'Induk' }}"
                                             data-parent-id="{{ $perusahaan->parent_id ?? '' }}"
                                             data-primary="{{ $perusahaan->primary_color }}"
-                                            data-secondary="{{ $perusahaan->secondary_color }}">
+                                            data-secondary="{{ $perusahaan->secondary_color }}"
+                                            data-logo="{{ $perusahaan->logo_url }}">
                                             <i class="bx bx-edit-alt"></i>
                                         </button>
 
@@ -281,7 +287,12 @@
 
                         <div class="mb-3">
                             <label class="form-label">Logo</label>
+                            <div id="wrapper_edit_logo" class="mb-2" style="display: none;">
+                                <small class="text-muted d-block mb-1">Logo saat ini:</small>
+                                <img id="edit_logo_preview" src="" alt="Logo saat ini" class="rounded border p-1" style="max-height: 80px; max-width: 200px; object-fit: contain; background: #fff;" onerror="this.onerror=null; this.src='{{ asset('assets/img/logo_sembilan.png') }}';">
+                            </div>
                             <input type="file" name="logo" class="form-control" accept="image/*">
+                            <small class="text-muted">Biarkan kosong jika tidak ingin mengubah logo</small>
                         </div>
                     </div>
 
@@ -359,6 +370,18 @@
 
                     if (groupEditParent) {
                         groupEditParent.style.display = (tipe === 'Cabang') ? 'block' : 'none';
+                    }
+
+                    const logoUrl = this.dataset.logo;
+                    const wrapperLogo = document.getElementById('wrapper_edit_logo');
+                    const imgLogo = document.getElementById('edit_logo_preview');
+                    if (wrapperLogo && imgLogo) {
+                        if (logoUrl) {
+                            imgLogo.src = logoUrl;
+                            wrapperLogo.style.display = 'block';
+                        } else {
+                            wrapperLogo.style.display = 'none';
+                        }
                     }
 
                     document.getElementById('formEditPerusahaan').action = `/dashboard/perusahaan/${id}`;

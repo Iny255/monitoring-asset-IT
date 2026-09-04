@@ -7,12 +7,25 @@ use Illuminate\Database\Eloquent\Model;
 
 class Supplier extends Model
 {
-   protected $fillable = [
+    use HasFactory;
+
+    protected $fillable = [
         'perusahaan_id',
         'nama_supplier',
         'alamat',
-        'no_hp'
+        'telepon',
+        'no_hp',
     ];
+
+    public function getNoHpAttribute()
+    {
+        return $this->telepon;
+    }
+
+    public function setNoHpAttribute($value)
+    {
+        $this->attributes['telepon'] = $value;
+    }
 
     public function perusahaan()
     {

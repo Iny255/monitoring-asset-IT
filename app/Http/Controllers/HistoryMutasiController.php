@@ -22,7 +22,11 @@ class HistoryMutasiController extends Controller
         */
 
     if (auth()->user()->role != 'super_admin') {
-      $query->where('id_perusahaan_asal', auth()->user()->id_perusahaan);
+      $userPerusahaanId = auth()->user()->id_perusahaan ?? auth()->user()->perusahaan_id;
+      $query->where(function ($q) use ($userPerusahaanId) {
+        $q->where('id_perusahaan_asal', $userPerusahaanId)
+          ->orWhere('id_perusahaan_tujuan', $userPerusahaanId);
+      });
     }
 
     /*
@@ -99,7 +103,11 @@ class HistoryMutasiController extends Controller
     $summary = HistoryMutasi::query();
 
     if (auth()->user()->role != 'super_admin') {
-      $summary->where('id_perusahaan_asal', auth()->user()->id_perusahaan);
+      $userPerusahaanId = auth()->user()->id_perusahaan ?? auth()->user()->perusahaan_id;
+      $summary->where(function ($q) use ($userPerusahaanId) {
+        $q->where('id_perusahaan_asal', $userPerusahaanId)
+          ->orWhere('id_perusahaan_tujuan', $userPerusahaanId);
+      });
     }
 
     $totalMutasi = (clone $summary)->count();
@@ -158,7 +166,11 @@ class HistoryMutasiController extends Controller
     */
 
     if (auth()->user()->role != 'super_admin') {
-      $query->where('id_perusahaan_asal', auth()->user()->id_perusahaan);
+      $userPerusahaanId = auth()->user()->id_perusahaan ?? auth()->user()->perusahaan_id;
+      $query->where(function ($q) use ($userPerusahaanId) {
+        $q->where('id_perusahaan_asal', $userPerusahaanId)
+          ->orWhere('id_perusahaan_tujuan', $userPerusahaanId);
+      });
     }
 
     /*

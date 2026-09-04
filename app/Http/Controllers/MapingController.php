@@ -926,6 +926,44 @@ class MapingController extends Controller
     }
   }
 
+  /**
+   * Mengaktifkan kembali mapping yang berstatus non-aktif (selesai/pencabutan/mutasi yang dibatalkan).
+   */
+  public function reactivate(int $id)
+  {
+    $user = auth()->user();
+    $maping = Maping::withoutGlobalScopes()->with(['keluar.inventaris'])->findOrFail($id);
+
+    if ($user->role != 'super_admin' && $maping->id_perusahaan != $user->id_perusahaan) {
+      abort(403);
+    }
+
+    DB::beginTransaction();
+    try {
+      $maping->update([
+        'status' => 'aktif',
+      ]);
+
+      if ($maping->keluar && $maping->keluar->inventaris) {
+        $maping->keluar->inventaris->update([
+          'is_transfer' => false,
+          'status' => 'DIPAKAI',
+        ]);
+      }
+
+      DB::commit();
+
+      return redirect()
+        ->route('maping.index')
+        ->with('success', 'Mapping aset dan unit inventaris berhasil diaktifkan kembali.');
+    } catch (\Throwable $e) {
+      DB::rollBack();
+      Log::error('Error reactivating mapping: ' . $e->getMessage());
+
+      return back()->with('error', 'Gagal mengaktifkan kembali mapping: ' . $e->getMessage());
+    }
+  }
+
   public function print(Request $request)
   {
     $user = auth()->user();

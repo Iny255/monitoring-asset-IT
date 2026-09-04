@@ -403,15 +403,23 @@
                                                     </li>
 
                                                     <li>
+                                                        <form action="{{ route('maping.reactivate', $maping->id) }}"
+                                                            method="POST" class="d-inline">
+                                                            @csrf
+                                                            <button type="submit" class="dropdown-item text-success"
+                                                                onclick="return confirm('Apakah Anda yakin ingin mengaktifkan kembali mapping dan unit aset ini?')">
+                                                                <i class="bx bx-check-circle me-2"></i>
+                                                                Aktifkan Kembali
+                                                            </button>
+                                                        </form>
+                                                    </li>
 
-                                                        <span class="dropdown-item text-muted">
-
-                                                            <i class="bx bx-lock-alt me-2"></i>
-
-                                                            Mapping {{ ucfirst($maping->status) }}
-
-                                                        </span>
-
+                                                    <li>
+                                                        <a class="dropdown-item"
+                                                            href="{{ route('maping.edit', $maping->id) }}">
+                                                            <i class="bx bx-edit me-2"></i>
+                                                            Edit
+                                                        </a>
                                                     </li>
                                                 @endif
 

@@ -64,7 +64,9 @@
 
         z-index: 10;
 
-        height: 110px !important;
+        min-height: 150px !important;
+
+        height: auto !important;
 
         display: flex;
 
@@ -72,7 +74,7 @@
 
         justify-content: center;
 
-        padding: 18px 0;
+        padding: 15px 12px;
 
         background: #ffffff !important;
 
@@ -105,7 +107,11 @@
     ===================================== */
     .layout-menu .logo-sembilan {
 
-        width: 250px;
+        max-width: 255px;
+
+        max-height: 125px;
+
+        width: 100%;
 
         height: auto;
 
@@ -324,7 +330,7 @@
 
         <div class="app-brand-logo-wrapper">
 
-            <img src="{{ $menuLogo }}" alt="Company Logo" class="logo-sembilan">
+            <img src="{{ $menuLogo }}" alt="Company Logo" class="logo-sembilan" onerror="this.onerror=null; this.src='{{ asset('assets/img/logo_sembilan.png') }}';">
 
         </div>
 

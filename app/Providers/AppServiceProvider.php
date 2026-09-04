@@ -52,23 +52,24 @@ class AppServiceProvider extends ServiceProvider
         $user = Auth::user();
 
         // =====================================
-        // JIKA BUKAN SUPER ADMIN
+        // JIKA USER MEMILIKI PERUSAHAAN
         // =====================================
 
-        if ($user->role !== 'super_admin') {
-          $perusahaan = $user->perusahaan;
+        $perusahaan = $user->perusahaan;
 
-          if ($perusahaan) {
-            $theme = [
-              'company_name' => $perusahaan->nama_perusahaan,
+        if ($perusahaan && ($user->role !== 'super_admin' || $user->id_perusahaan)) {
+          $primaryColor = $perusahaan->primary_color ?? ($perusahaan->parent?->primary_color ?? '#0b2f57');
+          $secondaryColor = $perusahaan->secondary_color ?? ($perusahaan->parent?->secondary_color ?? '#154b87');
 
-              'primary_color' => $perusahaan->primary_color ?? '#0b2f57',
+          $theme = [
+            'company_name' => $perusahaan->nama_perusahaan,
 
-              'secondary_color' => $perusahaan->secondary_color ?? '#154b87',
+            'primary_color' => $primaryColor,
 
-              'logo' => $perusahaan->logo ? asset($perusahaan->logo) : asset('assets/img/logo_sembilan.png'),
-            ];
-          }
+            'secondary_color' => $secondaryColor,
+
+            'logo' => $perusahaan->logo_url,
+          ];
         }
       }
 

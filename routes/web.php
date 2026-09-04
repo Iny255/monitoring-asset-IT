@@ -179,9 +179,9 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/maping/get-kategori', [MapingController::class, 'getKategori'])->name('maping.getKategori');
     Route::get('/dashboard/maping/get-available-inventaris', [MapingController::class, 'getAvailableInventaris'])->name('maping.getAvailableInventaris');
     Route::get('/dashboard/maping/get-filter-options', [MapingController::class, 'getFilterOptionsByPerusahaan'])->name('maping.getFilterOptions');
-    Route::get('/dashboard/maping/get-lokasi-by-perusahaan/{id}', [MapingController::class, 'getLokasiByPerusahaan'])->name('maping.getLokasiByPerusahaan');
     Route::get('/dashboard/maping/search-karyawan', [MapingController::class, 'searchKaryawan'])->name('maping.searchKaryawan');
     Route::get('/dashboard/maping/pemakaian', [MapingController::class, 'pemakaian'])->name('maping.pemakaian');
+    Route::post('/dashboard/maping/{id}/reactivate', [MapingController::class, 'reactivate'])->name('maping.reactivate');
     Route::resource('/dashboard/maping', MapingController::class);
 
     Route::get('/maping/get-aset', [MapingController::class, 'getAset'])->name('maping.getAset');
