@@ -101,8 +101,8 @@
     <div class="title">
         <h2>Laporan History Perjalanan Aset</h2>
         <p>
-            {{ $first->dataAset->kategori->nama_barang ?? '-' }} • {{ $first->dataAset->merek ?? '-' }} • {{ $first->dataAset->type ?? '-' }}
-            • {{ $user->role == 'super_admin' ? 'SEMBILAN GROUP' : strtoupper($user->perusahaan->nama_perusahaan ?? 'PERUSAHAAN') }}
+            <strong>Kode Aset: {{ $first->kode_aset ?? '-' }}</strong> • No. Inventaris: {{ $first->no_inventaris ?? '-' }} • {{ $first->dataAset->kategori->nama_barang ?? '-' }} • {{ $first->dataAset->merek ?? '-' }} {{ $first->dataAset->type ?? '' }}
+            • {{ $user->role == 'super_admin' ? 'SEMBILAN GROUP' : strtoupper($first->perusahaan->nama_perusahaan ?? $user->perusahaan->nama_perusahaan ?? 'PERUSAHAAN') }}
         </p>
     </div>
 
@@ -123,7 +123,13 @@
             @forelse($timeline as $item)
                 <tr>
                     <td class="text-center">{{ $item['tanggal']->format('d-m-Y') }}</td>
-                    <td><strong>{{ $item['kode_aset'] }}</strong></td>
+                    <td>
+                        @if ($item['aktivitas'] == 'MUTASI' && !empty($item['kode_aset_lama']) && $item['kode_aset_lama'] != $item['kode_aset_baru'])
+                            {{ $item['kode_aset_lama'] }} &rarr; {{ $item['kode_aset_baru'] }}
+                        @else
+                            <strong>{{ $item['kode_aset'] }}</strong>
+                        @endif
+                    </td>
                     <td class="text-center"><span class="badge">{{ $item['aktivitas'] }}</span></td>
                     <td>{{ $item['user_baru'] ?? '-' }}</td>
                     <td>{{ $item['lokasi_baru'] ?? '-' }}</td>
