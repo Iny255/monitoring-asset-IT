@@ -269,7 +269,7 @@
 
                             <td>
 
-                                {{ $peminjaman->inventaris->perusahaan->nama_perusahaan }}
+                                {{ $peminjaman->inventaris?->perusahaan?->nama_perusahaan ?? '-' }}
 
                             </td>
 

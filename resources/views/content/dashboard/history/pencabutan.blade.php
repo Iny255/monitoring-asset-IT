@@ -292,7 +292,7 @@
 
                                 <td>
 
-                                    {{ $history->user_lama }}
+                                    {{ $history->user_lama ?: (($history->maping?->penerima && $history->maping->penerima !== '-') ? $history->maping->penerima : ($history->maping?->keluar?->karyawan?->nama_karyawan ?: ($history->maping?->divisi ?: '-'))) }}
 
                                 </td>
 
@@ -302,7 +302,7 @@
 
                                         <strong>
 
-                                            {{ $history->lokasi_lama }}
+                                            {{ $history->lokasi_lama ?: ($history->maping?->lokasi?->nama_lokasi ?: ($history->maping?->keluar?->lokasi?->nama_lokasi ?: '-')) }}
 
                                         </strong>
 
@@ -472,7 +472,7 @@
 
                                 <div>
 
-                                    {{ $history->user_lama }}
+                                    {{ $history->user_lama ?: (($history->maping?->penerima && $history->maping->penerima !== '-') ? $history->maping->penerima : ($history->maping?->keluar?->karyawan?->nama_karyawan ?: ($history->maping?->divisi ?: '-'))) }}
 
                                 </div>
 
@@ -486,7 +486,7 @@
 
                                 <div>
 
-                                    {{ $history->lokasi_lama }}
+                                    {{ $history->lokasi_lama ?: ($history->maping?->lokasi?->nama_lokasi ?: ($history->maping?->keluar?->lokasi?->nama_lokasi ?: '-')) }}
 
                                 </div>
 

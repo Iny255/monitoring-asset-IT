@@ -18,7 +18,6 @@
       "url": "dashboard/aset-saya",
       "name": "Aset Saya",
       "icon": "menu-icon tf-icons bx bx-laptop",
-      
       "slug": "aset-saya",
       "roles": ["user", "karyawan"]
     },
@@ -97,11 +96,34 @@
       ]
     },
     {
+      "name": "Checklist Device",
+      "icon": "menu-icon tf-icons bx bx-calendar-check",
+      "slug": "checklist-device",
+      "roles": ["petugas", "super_admin"],
+      "submenu": [
+        {
+          "url": "dashboard/checklist/jadwal",
+          "name": "Jadwal Mingguan",
+          "icon": "menu-icon tf-icons bx bx-calendar"
+        },
+        {
+          "url": "dashboard/checklist/pemeriksaan",
+          "name": "Pelaksanaan Checklist",
+          "icon": "menu-icon tf-icons bx bx-check-square"
+        },
+        {
+          "url": "dashboard/checklist/item",
+          "name": "Master Item Cek",
+          "icon": "menu-icon tf-icons bx bx-list-check"
+        }
+      ]
+    },
+    {
       "url": "dashboard/history/perjalanan-aset",
       "name": "History Tracking Device",
       "icon": "menu-icon tf-icons bx bx-history",
       "slug": "history-perjalanan",
-      "roles": [ "petugas", "super_admin"]
+      "roles": ["petugas", "super_admin"]
     },
     {
       "name": "Helpdesk E-Ticket",
@@ -119,6 +141,26 @@
           "name": "Kategori & SLA",
           "icon": "menu-icon tf-icons bx bx-slider-alt",
           "roles": ["petugas", "super_admin"]
+        }
+      ]
+    },
+    {
+      "name": "Pengaturan Sistem",
+      "icon": "menu-icon tf-icons bx bx-cog",
+      "slug": "settings",
+      "roles": ["super_admin"],
+      "submenu": [
+        {
+          "url": "dashboard/settings/modules",
+          "name": "Setting Modul",
+          "icon": "menu-icon tf-icons bx bx-slider",
+          "roles": ["super_admin"]
+        },
+        {
+          "url": "dashboard/settings/roles",
+          "name": "Manajemen Role",
+          "icon": "menu-icon tf-icons bx bx-shield-quarter",
+          "roles": ["super_admin"]
         }
       ]
     }

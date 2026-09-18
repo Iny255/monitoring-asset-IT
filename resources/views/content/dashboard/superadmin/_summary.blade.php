@@ -82,6 +82,15 @@ $cards = [
 
 </small>
 
+@if($card['title'] === 'Inventaris' && ($dashboard['inventaris']['mutasi_keluar'] ?? 0) > 0)
+    <div class="mt-1">
+        <span class="badge bg-label-warning" style="font-size: 0.68rem; padding: 2px 5px;"
+            title="Total Tercatat: {{ number_format($dashboard['inventaris']['total_tercatat'] ?? 0) }} unit | Telah Dimutasi: {{ number_format($dashboard['inventaris']['mutasi_keluar']) }} unit">
+            <i class="bx bx-transfer me-1"></i>{{ number_format($dashboard['inventaris']['mutasi_keluar']) }} Dimutasi
+        </span>
+    </div>
+@endif
+
 </div>
 
 </div>

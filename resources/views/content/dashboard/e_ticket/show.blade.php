@@ -315,7 +315,7 @@
                             </tr>
                             <tr>
                                 <td class="text-muted">Perusahaan:</td>
-                                <td>{{ $ticket->inventaris->perusahaan->nama_perusahaan ?? '-' }}</td>
+                                <td>{{ $ticket->inventaris?->perusahaan?->nama_perusahaan ?? '-' }}</td>
                             </tr>
                             <tr>
                                 <td class="text-muted">Status Aset:</td>

@@ -13,6 +13,7 @@ use App\Models\HistoryHakAkses;
 use App\Models\Masuk;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class HistoryPerjalananAsetController extends Controller
@@ -24,7 +25,15 @@ class HistoryPerjalananAsetController extends Controller
   {
     $user = auth()->user();
 
-    $query = Inventaris::with(['dataAset.kategori', 'perusahaan', 'keluarTerakhir.karyawan', 'keluarTerakhir.lokasi']);
+    $query = Inventaris::with([
+      'dataAset.kategori',
+      'perusahaan',
+      'keluarTerakhir.karyawan',
+      'keluarTerakhir.lokasi',
+      'keluarTerakhir.maping.karyawan',
+      'peminjamanTerakhir.karyawan',
+      'peminjamanTerakhir.karyawanTujuan',
+    ]);
 
     // FILTER PERUSAHAAN
     if ($user->role != 'super_admin') {
@@ -38,12 +47,24 @@ class HistoryPerjalananAsetController extends Controller
 
     // FILTER KATEGORI
     if ($request->filled('kategori_id')) {
-      $query->whereHas('dataAset', function ($q) use ($request) {
-        $q->where('kategori_id', $request->kategori_id);
-      });
+      $isPerusahaanFiltered = ($user->role != 'super_admin') || $request->filled('perusahaan_id');
+      if ($isPerusahaanFiltered) {
+        $query->whereHas('dataAset', function ($q) use ($request) {
+          $q->where('kategori_id', $request->kategori_id);
+        });
+      } else {
+        // Super admin tanpa filter perusahaan (Semua Perusahaan):
+        // Filter berdasarkan nama_barang agar kategori dengan nama sama di seluruh perusahaan tercakup
+        $kategori = Kategori::find($request->kategori_id);
+        if ($kategori) {
+          $query->whereHas('dataAset.kategori', function ($q) use ($kategori) {
+            $q->where('nama_barang', $kategori->nama_barang);
+          });
+        }
+      }
     }
 
-    // SEARCH
+    // SEARCH (Kode Aset, No Inventaris, Kategori, Merek, Type, dan Nama Pemakai / Divisi)
     if ($request->filled('search')) {
       $search = trim($request->search);
       $query->where(function ($q) use ($search) {
@@ -55,6 +76,28 @@ class HistoryPerjalananAsetController extends Controller
           ->orWhereHas('dataAset', function ($qq) use ($search) {
             $qq->where('merek', 'like', "%{$search}%")
               ->orWhere('type', 'like', "%{$search}%");
+          })
+          // Pemakai via Transaksi Keluar (Karyawan / Divisi)
+          ->orWhereHas('keluars.karyawan', function ($qq) use ($search) {
+            $qq->where('nama_karyawan', 'like', "%{$search}%")
+              ->orWhere('kode_karyawan', 'like', "%{$search}%");
+          })
+          ->orWhereHas('keluars', function ($qq) use ($search) {
+            $qq->where('divisi_klr', 'like', "%{$search}%");
+          })
+          // Pemakai via Mapping
+          ->orWhereHas('keluars.maping.karyawan', function ($qq) use ($search) {
+            $qq->where('nama_karyawan', 'like', "%{$search}%");
+          })
+          ->orWhereHas('keluars.maping', function ($qq) use ($search) {
+            $qq->where('divisi', 'like', "%{$search}%");
+          })
+          // Pemakai via Peminjaman
+          ->orWhereHas('peminjamans.karyawan', function ($qq) use ($search) {
+            $qq->where('nama_karyawan', 'like', "%{$search}%");
+          })
+          ->orWhereHas('peminjamans.karyawanTujuan', function ($qq) use ($search) {
+            $qq->where('nama_karyawan', 'like', "%{$search}%");
           });
       });
     }
@@ -65,11 +108,25 @@ class HistoryPerjalananAsetController extends Controller
 
     $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
 
-    $selectedPerusahaanId = $user->role == 'super_admin' ? $request->perusahaan_id : $user->id_perusahaan;
-    $kategoris = Kategori::query()
-      ->when($selectedPerusahaanId, fn($q) => $q->where('perusahaan_id', $selectedPerusahaanId))
-      ->orderBy('nama_barang')
-      ->get();
+    // Kategori untuk dropdown filter:
+    // Jika super admin telah memilih perusahaan, tampilkan kategori milik perusahaan tsb.
+    // Jika super admin belum memilih perusahaan (Semua Perusahaan), tampilkan kategori unik berdasarkan nama_barang agar tidak dobel.
+    if ($user->role == 'super_admin') {
+      if ($request->filled('perusahaan_id')) {
+        $kategoris = Kategori::where('perusahaan_id', $request->perusahaan_id)
+          ->orderBy('nama_barang')
+          ->get();
+      } else {
+        $kategoris = Kategori::select('nama_barang', DB::raw('MIN(id) as id'))
+          ->groupBy('nama_barang')
+          ->orderBy('nama_barang')
+          ->get();
+      }
+    } else {
+      $kategoris = Kategori::where('perusahaan_id', $user->id_perusahaan)
+        ->orderBy('nama_barang')
+        ->get();
+    }
 
     return view('content.dashboard.history.perjalanan-aset', compact(
       'inventarisList',
@@ -160,12 +217,24 @@ class HistoryPerjalananAsetController extends Controller
     );
   }
 
-  public function exportExcelIndex(Request $request)
+  /**
+   * Cetak PDF Laporan Daftar Tracking Device / History Perjalanan Aset (Index List)
+   */
+  public function cetakIndex(Request $request)
   {
     $user = auth()->user();
 
-    $query = Inventaris::with(['dataAset.kategori', 'perusahaan', 'keluarTerakhir.karyawan', 'keluarTerakhir.lokasi']);
+    $query = Inventaris::with([
+      'dataAset.kategori',
+      'perusahaan',
+      'keluarTerakhir.karyawan',
+      'keluarTerakhir.lokasi',
+      'keluarTerakhir.maping.karyawan',
+      'peminjamanTerakhir.karyawan',
+      'peminjamanTerakhir.karyawanTujuan',
+    ]);
 
+    // FILTER PERUSAHAAN
     if ($user->role != 'super_admin') {
       $accessibleIds = $this->getAccessibleCompanyIds($user);
       if ($accessibleIds) {
@@ -175,12 +244,24 @@ class HistoryPerjalananAsetController extends Controller
       $query->where('perusahaan_id', $request->perusahaan_id);
     }
 
+    // FILTER KATEGORI
     if ($request->filled('kategori_id')) {
-      $query->whereHas('dataAset', function ($q) use ($request) {
-        $q->where('kategori_id', $request->kategori_id);
-      });
+      $isPerusahaanFiltered = ($user->role != 'super_admin') || $request->filled('perusahaan_id');
+      if ($isPerusahaanFiltered) {
+        $query->whereHas('dataAset', function ($q) use ($request) {
+          $q->where('kategori_id', $request->kategori_id);
+        });
+      } else {
+        $kategori = Kategori::find($request->kategori_id);
+        if ($kategori) {
+          $query->whereHas('dataAset.kategori', function ($q) use ($kategori) {
+            $q->where('nama_barang', $kategori->nama_barang);
+          });
+        }
+      }
     }
 
+    // SEARCH (Kode Aset, No Inventaris, Kategori, Merek, Type, dan Nama Pemakai / Divisi)
     if ($request->filled('search')) {
       $search = trim($request->search);
       $query->where(function ($q) use ($search) {
@@ -192,6 +273,135 @@ class HistoryPerjalananAsetController extends Controller
           ->orWhereHas('dataAset', function ($qq) use ($search) {
             $qq->where('merek', 'like', "%{$search}%")
               ->orWhere('type', 'like', "%{$search}%");
+          })
+          // Pemakai via Transaksi Keluar (Karyawan / Divisi)
+          ->orWhereHas('keluars.karyawan', function ($qq) use ($search) {
+            $qq->where('nama_karyawan', 'like', "%{$search}%")
+              ->orWhere('kode_karyawan', 'like', "%{$search}%");
+          })
+          ->orWhereHas('keluars', function ($qq) use ($search) {
+            $qq->where('divisi_klr', 'like', "%{$search}%");
+          })
+          // Pemakai via Mapping
+          ->orWhereHas('keluars.maping.karyawan', function ($qq) use ($search) {
+            $qq->where('nama_karyawan', 'like', "%{$search}%");
+          })
+          ->orWhereHas('keluars.maping', function ($qq) use ($search) {
+            $qq->where('divisi', 'like', "%{$search}%");
+          })
+          // Pemakai via Peminjaman
+          ->orWhereHas('peminjamans.karyawan', function ($qq) use ($search) {
+            $qq->where('nama_karyawan', 'like', "%{$search}%");
+          })
+          ->orWhereHas('peminjamans.karyawanTujuan', function ($qq) use ($search) {
+            $qq->where('nama_karyawan', 'like', "%{$search}%");
+          });
+      });
+    }
+
+    $inventarisList = $query->latest()->get();
+
+    // Nama Perusahaan untuk Header Laporan
+    $namaPerusahaan = 'SEMBILAN GROUP';
+    if ($user->role == 'super_admin') {
+      if ($request->filled('perusahaan_id')) {
+        $namaPerusahaan = Perusahaan::find($request->perusahaan_id)?->nama_perusahaan ?? 'SEMBILAN GROUP';
+      }
+    } else {
+      $namaPerusahaan = Perusahaan::find($user->id_perusahaan)?->nama_perusahaan ?? 'SEMBILAN GROUP';
+    }
+
+    // Nama Kategori Terpilih
+    $namaKategori = 'Semua Kategori';
+    if ($request->filled('kategori_id')) {
+      $kategori = Kategori::find($request->kategori_id);
+      if ($kategori) {
+        $namaKategori = $kategori->nama_barang;
+      }
+    }
+
+    return view('content.dashboard.history.cetak-perjalanan-index', compact(
+      'inventarisList',
+      'user',
+      'namaPerusahaan',
+      'namaKategori'
+    ));
+  }
+
+  public function exportExcelIndex(Request $request)
+  {
+    $user = auth()->user();
+
+    $query = Inventaris::with([
+      'dataAset.kategori',
+      'perusahaan',
+      'keluarTerakhir.karyawan',
+      'keluarTerakhir.lokasi',
+      'keluarTerakhir.maping.karyawan',
+      'peminjamanTerakhir.karyawan',
+      'peminjamanTerakhir.karyawanTujuan',
+    ]);
+
+    if ($user->role != 'super_admin') {
+      $accessibleIds = $this->getAccessibleCompanyIds($user);
+      if ($accessibleIds) {
+        $query->whereIn('perusahaan_id', $accessibleIds);
+      }
+    } elseif ($request->filled('perusahaan_id')) {
+      $query->where('perusahaan_id', $request->perusahaan_id);
+    }
+
+    // FILTER KATEGORI
+    if ($request->filled('kategori_id')) {
+      $isPerusahaanFiltered = ($user->role != 'super_admin') || $request->filled('perusahaan_id');
+      if ($isPerusahaanFiltered) {
+        $query->whereHas('dataAset', function ($q) use ($request) {
+          $q->where('kategori_id', $request->kategori_id);
+        });
+      } else {
+        $kategori = Kategori::find($request->kategori_id);
+        if ($kategori) {
+          $query->whereHas('dataAset.kategori', function ($q) use ($kategori) {
+            $q->where('nama_barang', $kategori->nama_barang);
+          });
+        }
+      }
+    }
+
+    // SEARCH (Kode Aset, No Inventaris, Kategori, Merek, Type, dan Nama Pemakai / Divisi)
+    if ($request->filled('search')) {
+      $search = trim($request->search);
+      $query->where(function ($q) use ($search) {
+        $q->where('no_inventaris', 'like', "%{$search}%")
+          ->orWhere('kode_aset', 'like', "%{$search}%")
+          ->orWhereHas('dataAset.kategori', function ($qq) use ($search) {
+            $qq->where('nama_barang', 'like', "%{$search}%");
+          })
+          ->orWhereHas('dataAset', function ($qq) use ($search) {
+            $qq->where('merek', 'like', "%{$search}%")
+              ->orWhere('type', 'like', "%{$search}%");
+          })
+          // Pemakai via Transaksi Keluar (Karyawan / Divisi)
+          ->orWhereHas('keluars.karyawan', function ($qq) use ($search) {
+            $qq->where('nama_karyawan', 'like', "%{$search}%")
+              ->orWhere('kode_karyawan', 'like', "%{$search}%");
+          })
+          ->orWhereHas('keluars', function ($qq) use ($search) {
+            $qq->where('divisi_klr', 'like', "%{$search}%");
+          })
+          // Pemakai via Mapping
+          ->orWhereHas('keluars.maping.karyawan', function ($qq) use ($search) {
+            $qq->where('nama_karyawan', 'like', "%{$search}%");
+          })
+          ->orWhereHas('keluars.maping', function ($qq) use ($search) {
+            $qq->where('divisi', 'like', "%{$search}%");
+          })
+          // Pemakai via Peminjaman
+          ->orWhereHas('peminjamans.karyawan', function ($qq) use ($search) {
+            $qq->where('nama_karyawan', 'like', "%{$search}%");
+          })
+          ->orWhereHas('peminjamans.karyawanTujuan', function ($qq) use ($search) {
+            $qq->where('nama_karyawan', 'like', "%{$search}%");
           });
       });
     }
@@ -484,21 +694,45 @@ class HistoryPerjalananAsetController extends Controller
 
     // 5. HISTORY PENCABUTAN
     $historyCabut = HistoryPencabutan::withoutGlobalScopes()
-      ->with('creator')
+      ->with([
+        'creator',
+        'maping.karyawan',
+        'maping.keluar.karyawan',
+        'inventaris.keluarTerakhir.karyawan',
+      ])
       ->whereIn('inventaris_id', $allInvIds)
       ->orderBy('tanggal_pencabutan')
       ->get();
 
     foreach ($historyCabut as $item) {
       $inv = $allInventaris->firstWhere('id', $item->inventaris_id);
+
+      // Cari nama user yang memegang aset saat pencabutan
+      $userPencabutan = $item->user_lama;
+      if (empty($userPencabutan) || $userPencabutan === '-') {
+        $userPencabutan = $item->maping?->penerima
+          ?? $item->maping?->karyawan?->nama_karyawan
+          ?? $item->maping?->keluar?->karyawan?->nama_karyawan
+          ?? $item->maping?->divisi
+          ?? $item->maping?->keluar?->divisi_klr
+          ?? $item->inventaris?->keluarTerakhir?->karyawan?->nama_karyawan
+          ?? $item->inventaris?->keluarTerakhir?->divisi_klr;
+      }
+
+      $lokasiLama = $item->lokasi_lama;
+      if (empty($lokasiLama) || $lokasiLama === '-') {
+        $lokasiLama = $item->maping?->lokasi?->nama_lokasi
+          ?? $item->maping?->keluar?->lokasi?->nama_lokasi;
+      }
+
       $timeline->push([
         'tanggal' => Carbon::parse($item->tanggal_pencabutan),
         'aktivitas' => 'PENCABUTAN',
         'kode_aset' => $inv?->kode_aset ?? $item->kode_aset ?? $target->kode_aset,
         'inventaris' => $inv?->no_inventaris ?? $item->no_inventaris ?? $target->no_inventaris,
-        'user_lama' => $item->user_lama,
-        'user_baru' => null,
-        'lokasi_lama' => $item->lokasi_lama,
+        'user_lama' => $userPencabutan,
+        'user_baru' => $userPencabutan,
+        'lokasi_lama' => $lokasiLama,
         'lokasi_baru' => $item->lokasi_baru ?? 'Gudang',
         'keterangan' => 'Pencabutan: ' . ($item->alasan ?? 'Penarikan unit dari pengguna'),
         'petugas' => $item->creator?->name ?? 'Petugas',

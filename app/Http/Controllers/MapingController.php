@@ -641,28 +641,36 @@ class MapingController extends Controller
         return back()->withInput()->with('error', 'Inventaris tersebut sudah pernah dimapping.');
       }
 
-      // Cek Device ID & Product ID unik jika diisi
-      if ($request->filled('device_id')) {
-        $deviceExists = Maping::where('device_id', strtoupper($request->device_id))
-          ->where('id_perusahaan', $perusahaanId)
-          ->whereIn('status', ['aktif', 'dipinjam', 'servis', 'maintenance'])
-          ->exists();
+      // Cek Device ID & Product ID unik jika diisi (abaikan placeholder umum)
+      $placeholders = ['-', 'N/A', 'NA', 'NONE', 'TIDAK ADA', '0'];
 
-        if ($deviceExists) {
-          DB::rollBack();
-          return back()->withInput()->withErrors(['device_id' => 'Device ID sudah digunakan oleh aset aktif lainnya.']);
+      if ($request->filled('device_id')) {
+        $cleanDeviceId = strtoupper(trim($request->device_id));
+        if (!in_array($cleanDeviceId, $placeholders)) {
+          $deviceExists = Maping::where('device_id', $cleanDeviceId)
+            ->where('id_perusahaan', $perusahaanId)
+            ->whereIn('status', ['aktif', 'dipinjam', 'servis', 'maintenance'])
+            ->exists();
+
+          if ($deviceExists) {
+            DB::rollBack();
+            return back()->withInput()->withErrors(['device_id' => 'Device ID sudah digunakan oleh aset aktif lainnya.']);
+          }
         }
       }
 
       if ($request->filled('produk_id')) {
-        $produkExists = Maping::where('produk_id', strtoupper($request->produk_id))
-          ->where('id_perusahaan', $perusahaanId)
-          ->whereIn('status', ['aktif', 'dipinjam', 'servis', 'maintenance'])
-          ->exists();
+        $cleanProdukId = strtoupper(trim($request->produk_id));
+        if (!in_array($cleanProdukId, $placeholders)) {
+          $produkExists = Maping::where('produk_id', $cleanProdukId)
+            ->where('id_perusahaan', $perusahaanId)
+            ->whereIn('status', ['aktif', 'dipinjam', 'servis', 'maintenance'])
+            ->exists();
 
-        if ($produkExists) {
-          DB::rollBack();
-          return back()->withInput()->withErrors(['produk_id' => 'Product ID sudah digunakan oleh aset aktif lainnya.']);
+          if ($produkExists) {
+            DB::rollBack();
+            return back()->withInput()->withErrors(['produk_id' => 'Product ID sudah digunakan oleh aset aktif lainnya.']);
+          }
         }
       }
 
@@ -680,12 +688,12 @@ class MapingController extends Controller
         'karyawan_id' => $karyawanId,
         'jenis_penerima' => $jenisPenerimaFinal,
         'divisi' => $divisi,
-        'processor' => strtoupper($request->processor),
-        'ram' => strtoupper($request->ram),
-        'device_id' => strtoupper($request->device_id),
-        'produk_id' => strtoupper($request->produk_id),
-        'system' => strtoupper($request->system),
-        'version' => strtoupper($request->version),
+        'processor' => $request->filled('processor') ? strtoupper(trim($request->processor)) : null,
+        'ram' => $request->filled('ram') ? strtoupper(trim($request->ram)) : null,
+        'device_id' => $request->filled('device_id') ? strtoupper(trim($request->device_id)) : null,
+        'produk_id' => $request->filled('produk_id') ? strtoupper(trim($request->produk_id)) : null,
+        'system' => $request->filled('system') ? strtoupper(trim($request->system)) : null,
+        'version' => $request->filled('version') ? strtoupper(trim($request->version)) : null,
         'instal_on' => $request->instal_on,
         'tanggal_digunakan' => $request->tanggal_digunakan,
         'catatan' => $request->catatan,
@@ -754,22 +762,44 @@ class MapingController extends Controller
       abort(403);
     }
 
-    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+    $perusahaanId = $maping->id_perusahaan;
 
-    $lokasis = Lokasi::where('id_perusahaan', $maping->id_perusahaan)
+    $perusahaans = $user->role == 'super_admin'
+      ? Perusahaan::orderBy('nama_perusahaan')->get()
+      : collect();
+
+    $lokasis = Lokasi::where('id_perusahaan', $perusahaanId)
       ->orderBy('nama_lokasi')
       ->get();
 
-    if (auth()->user()->role == 'super_admin') {
-      $kategoris = Kategori::where('perusahaan_id', $maping->perusahaan_id)
-        ->orderBy('nama_barang')
-        ->get();
-    } else {
-      $kategoris = Kategori::where('perusahaan_id', auth()->user()->perusahaan_id)
-        ->orderBy('nama_barang')
-        ->get();
-    }
-    return view('content.dashboard.maping.edit', compact('maping', 'perusahaans', 'lokasis', 'kategoris'));
+    $karyawans = Karyawan::where('id_perusahaan', $perusahaanId)
+      ->orderBy('nama_karyawan')
+      ->get();
+
+    $kategoris = Kategori::where('perusahaan_id', $perusahaanId)
+      ->orderBy('nama_barang')
+      ->get();
+
+    // Unit inventaris saat ini
+    $currentInventaris = $maping->keluar?->inventaris;
+
+    // Unit inventaris yang tersedia jika ingin tukar unit (status TERSEDIA dari perusahaan yang sama)
+    $availableInventaris = Inventaris::with(['dataAset.kategori'])
+      ->where('perusahaan_id', $perusahaanId)
+      ->where('is_transfer', false)
+      ->where('status', 'TERSEDIA')
+      ->orderBy('kode_aset')
+      ->get();
+
+    return view('content.dashboard.maping.edit', compact(
+      'maping',
+      'perusahaans',
+      'lokasis',
+      'karyawans',
+      'kategoris',
+      'currentInventaris',
+      'availableInventaris'
+    ));
   }
 
   /**
@@ -777,25 +807,38 @@ class MapingController extends Controller
    */
   public function update(Request $request, string $id)
   {
-    $maping = Maping::findOrFail($id);
+    $user = auth()->user();
+    $maping = Maping::with(['keluar.inventaris'])->findOrFail($id);
+
+    if ($user->role != 'super_admin' && $maping->id_perusahaan != $user->id_perusahaan) {
+      abort(403);
+    }
 
     $request->validate([
       'id_lokasi' => 'required|exists:lokasis,id',
-
+      'jenis_penerima' => 'required|in:Perorangan,Per Divisi,Perdivisi',
+      'karyawan_id' => 'nullable|exists:karyawans,id',
+      'divisi' => 'nullable|string|max:100',
       'processor' => 'nullable|string|max:100',
       'ram' => 'nullable|string|max:20',
-
       'device_id' => 'nullable|string|max:100',
       'produk_id' => 'nullable|string|max:100',
-
       'system' => 'nullable|string|max:100',
       'version' => 'nullable|string|max:100',
-
       'instal_on' => 'nullable|date',
       'tanggal_digunakan' => 'required|date',
       'catatan' => 'nullable|string',
       'gambar' => 'nullable|image|mimes:jpeg,png,jpg,webp|max:1024',
+      'inventaris_id' => 'nullable|exists:inventaris,id',
     ]);
+
+    if ($request->jenis_penerima === 'Perorangan' && !$request->filled('karyawan_id')) {
+      return back()->withInput()->with('error', 'Silakan pilih karyawan penerima aset.');
+    }
+
+    if (in_array($request->jenis_penerima, ['Per Divisi', 'Perdivisi']) && !$request->filled('divisi')) {
+      return back()->withInput()->with('error', 'Silakan isi nama divisi penerima aset.');
+    }
 
     DB::beginTransaction();
 
@@ -807,69 +850,119 @@ class MapingController extends Controller
         $gambarPath = $request->file('gambar')->store('transaksi-keluar', 'public');
         $maping->keluar->update(['gambar' => $gambarPath]);
       }
+
       /*
         |--------------------------------------------------------------------------
-        | VALIDASI DEVICE ID
+        | VALIDASI DEVICE ID & PRODUCT ID (KECUALIKAN MAPPING INI & DATA TIDAK BERUBAH)
         |--------------------------------------------------------------------------
         */
+      $placeholders = ['-', 'N/A', 'NA', 'NONE', 'TIDAK ADA', '0'];
+      $currentInventarisId = $maping->keluar?->inventaris_id;
+      $targetInventarisId = $request->filled('inventaris_id') ? $request->inventaris_id : $currentInventarisId;
 
       if ($request->filled('device_id')) {
-        $cek = Maping::where('device_id', $request->device_id)
-          ->where('id_perusahaan', $maping->id_perusahaan)
-          ->where('id', '!=', $maping->id)
-          ->exists();
+        $newDeviceId = strtoupper(trim($request->device_id));
+        $oldDeviceId = strtoupper(trim($maping->device_id ?? ''));
 
-        if ($cek) {
-          return back()
-            ->withInput()
-            ->with('error', 'Device ID sudah digunakan.');
+        // Hanya validasi jika Device ID diubah dan bukan placeholder umum
+        if ($newDeviceId !== $oldDeviceId && !in_array($newDeviceId, $placeholders)) {
+          $cek = Maping::where('device_id', $newDeviceId)
+            ->where('id_perusahaan', $maping->id_perusahaan)
+            ->where('id', '!=', $maping->id)
+            ->whereIn('status', ['aktif', 'dipinjam', 'servis', 'maintenance'])
+            ->when($targetInventarisId, function ($q) use ($targetInventarisId) {
+              $q->whereDoesntHave('keluar', function ($sub) use ($targetInventarisId) {
+                $sub->where('inventaris_id', $targetInventarisId);
+              });
+            })
+            ->exists();
+
+          if ($cek) {
+            return back()
+              ->withInput()
+              ->with('error', 'Device ID sudah digunakan oleh aset aktif lainnya.')
+              ->withErrors(['device_id' => 'Device ID sudah digunakan oleh aset aktif lainnya.']);
+          }
         }
       }
-
-      /*
-        |--------------------------------------------------------------------------
-        | VALIDASI PRODUCT ID
-        |--------------------------------------------------------------------------
-        */
 
       if ($request->filled('produk_id')) {
-        $cek = Maping::where('produk_id', $request->produk_id)
-          ->where('id_perusahaan', $maping->id_perusahaan)
-          ->where('id', '!=', $maping->id)
-          ->exists();
+        $newProdukId = strtoupper(trim($request->produk_id));
+        $oldProdukId = strtoupper(trim($maping->produk_id ?? ''));
 
-        if ($cek) {
-          return back()
-            ->withInput()
-            ->with('error', 'Product ID sudah digunakan.');
+        // Hanya validasi jika Product ID diubah dan bukan placeholder umum
+        if ($newProdukId !== $oldProdukId && !in_array($newProdukId, $placeholders)) {
+          $cek = Maping::where('produk_id', $newProdukId)
+            ->where('id_perusahaan', $maping->id_perusahaan)
+            ->where('id', '!=', $maping->id)
+            ->whereIn('status', ['aktif', 'dipinjam', 'servis', 'maintenance'])
+            ->when($targetInventarisId, function ($q) use ($targetInventarisId) {
+              $q->whereDoesntHave('keluar', function ($sub) use ($targetInventarisId) {
+                $sub->where('inventaris_id', $targetInventarisId);
+              });
+            })
+            ->exists();
+
+          if ($cek) {
+            return back()
+              ->withInput()
+              ->with('error', 'Product ID sudah digunakan oleh aset aktif lainnya.')
+              ->withErrors(['produk_id' => 'Product ID sudah digunakan oleh aset aktif lainnya.']);
+          }
         }
       }
 
-      /*
-        |--------------------------------------------------------------------------
-        | UPDATE MAPING
-        |--------------------------------------------------------------------------
-        */
+      $rawJenisInput = $request->jenis_penerima;
+      $jenisPenerimaDb = in_array($rawJenisInput, ['Per Divisi', 'Perdivisi']) ? 'Perdivisi' : 'Perorangan';
+      $karyawanId = $jenisPenerimaDb === 'Perorangan' ? $request->karyawan_id : null;
+      $divisi = $jenisPenerimaDb === 'Perdivisi' ? $request->divisi : null;
 
+      // Jika user memilih untuk menukar unit inventaris
+      if ($request->filled('inventaris_id') && $maping->keluar && $request->inventaris_id != $maping->keluar->inventaris_id) {
+        $oldInventaris = Inventaris::find($maping->keluar->inventaris_id);
+        $newInventaris = Inventaris::findOrFail($request->inventaris_id);
+
+        if ($newInventaris->status !== 'TERSEDIA') {
+          return back()->withInput()->with('error', 'Unit inventaris yang dipilih tidak tersedia.');
+        }
+
+        // Kembalikan status inventaris lama ke TERSEDIA
+        if ($oldInventaris) {
+          $oldInventaris->update(['status' => 'TERSEDIA']);
+        }
+
+        // Ubah inventaris baru ke DIPAKAI
+        $newInventaris->update(['status' => 'DIPAKAI']);
+
+        // Update di keluar
+        $maping->keluar->update(['inventaris_id' => $newInventaris->id]);
+      }
+
+      // Update di keluar agar sinkron
+      if ($maping->keluar) {
+        $maping->keluar->update([
+          'karyawan_id' => $karyawanId,
+          'lokasi_id' => $request->id_lokasi,
+          'tgl_keluar' => $request->tanggal_digunakan,
+          'jenis_penerima' => $jenisPenerimaDb,
+          'divisi_klr' => $divisi,
+        ]);
+      }
+
+      // Update di Maping
       $maping->update([
         'id_lokasi' => $request->id_lokasi,
-
-        'processor' => strtoupper($request->processor),
-
-        'ram' => strtoupper($request->ram),
-
-        'device_id' => strtoupper($request->device_id),
-
-        'produk_id' => strtoupper($request->produk_id),
-
-        'system' => strtoupper($request->system),
-
-        'version' => strtoupper($request->version),
-
+        'karyawan_id' => $karyawanId,
+        'jenis_penerima' => $jenisPenerimaDb,
+        'divisi' => $divisi,
+        'processor' => $request->filled('processor') ? strtoupper(trim($request->processor)) : null,
+        'ram' => $request->filled('ram') ? strtoupper(trim($request->ram)) : null,
+        'device_id' => $request->filled('device_id') ? strtoupper(trim($request->device_id)) : null,
+        'produk_id' => $request->filled('produk_id') ? strtoupper(trim($request->produk_id)) : null,
+        'system' => $request->filled('system') ? strtoupper(trim($request->system)) : null,
+        'version' => $request->filled('version') ? strtoupper(trim($request->version)) : null,
         'instal_on' => $request->instal_on,
-
         'tanggal_digunakan' => $request->tanggal_digunakan,
-
         'catatan' => $request->catatan,
       ]);
 
@@ -877,52 +970,80 @@ class MapingController extends Controller
 
       return redirect()
         ->route('maping.index')
-        ->with('success', 'Mapping berhasil diperbarui.');
+        ->with('success', 'Mapping aset berhasil diperbarui.');
     } catch (\Exception $e) {
       DB::rollBack();
-
-      Log::error($e);
+      Log::error('Gagal update mapping: ' . $e->getMessage());
 
       return back()
         ->withInput()
-        ->with('error', $e->getMessage());
+        ->with('error', 'Gagal memperbarui data mapping: ' . $e->getMessage());
     }
   }
 
   /**
    * Remove the specified resource from storage.
+   * Hanya mapping yang belum memiliki riwayat mutasi, pencabutan, dan servis yang dapat dihapus.
+   * Saat dihapus, unit inventaris otomatis dikembalikan menjadi TERSEDIA dan transaksi keluar dibersihkan.
    */
   public function destroy(int $id)
   {
+    $user = auth()->user();
+    $maping = Maping::withoutGlobalScopes()->with(['keluar.inventaris'])->findOrFail($id);
+
+    // Proteksi multi-company
+    if ($user->role !== 'super_admin' && $maping->id_perusahaan != $user->id_perusahaan) {
+      abort(403, 'Anda tidak memiliki hak akses untuk menghapus mapping ini.');
+    }
+
+    // Validasi apakah boleh dihapus
+    if (!$maping->canBeDeleted()) {
+      return back()->with('error', $maping->delete_block_reason ?? 'Mapping tidak dapat dihapus karena sudah memiliki riwayat transaksi.');
+    }
+
+    DB::beginTransaction();
     try {
-      $maping = Maping::findOrFail($id);
+      $keluar = $maping->keluar;
+      $inventaris = $keluar?->inventaris;
+      $kodeAset = $inventaris?->kode_aset ?? $inventaris?->no_inventaris ?? 'Perangkat';
 
-      /*
-        |--------------------------------------------------------------------------
-        | CEK APAKAH SUDAH PERNAH DIGUNAKAN TRANSAKSI
-        |--------------------------------------------------------------------------
-        */
+      // 1. Bersihkan relasi hak akses jika ada
+      $maping->mapingAccesses()->delete();
+      $maping->historyHakAkses()->delete();
 
-      // Sudah pernah mutasi
-      if ($maping->mutasiMapings()->exists()) {
-        return back()->with('error', 'Mapping tidak dapat dihapus karena sudah memiliki riwayat mutasi.');
+      // 2. Bersihkan foto bukti jika ada
+      if ($keluar && $keluar->gambar) {
+        if (Storage::disk('public')->exists($keluar->gambar)) {
+          Storage::disk('public')->delete($keluar->gambar);
+        }
       }
 
-      /*
-        |--------------------------------------------------------------------------
-        | HAPUS
-        |--------------------------------------------------------------------------
-        */
-
+      // 3. Hapus data mapping
       $maping->delete();
+
+      // 4. Hapus data transaksi keluar terkait
+      if ($keluar) {
+        $keluar->delete();
+      }
+
+      // 5. Kembalikan unit inventaris menjadi TERSEDIA di gudang
+      if ($inventaris) {
+        $inventaris->update([
+          'status' => 'TERSEDIA',
+          'is_transfer' => false,
+        ]);
+      }
+
+      DB::commit();
 
       return redirect()
         ->route('maping.index')
-        ->with('success', 'Mapping berhasil dihapus.');
-    } catch (\Exception $e) {
-      Log::error($e->getMessage());
+        ->with('success', "Data Mapping berhasil dihapus. Unit aset {$kodeAset} telah dikembalikan ke status TERSEDIA di gudang.");
+    } catch (\Throwable $e) {
+      DB::rollBack();
+      Log::error('Gagal menghapus mapping ID ' . $id . ': ' . $e->getMessage());
 
-      return back()->with('error', 'Gagal menghapus mapping.');
+      return back()->with('error', 'Gagal menghapus mapping: ' . $e->getMessage());
     }
   }
 
@@ -993,12 +1114,12 @@ class MapingController extends Controller
     }
 
     $perusahaanId = $request->get('perusahaan_id', $request->get('perusahaan'));
-    if ($user->role === 'super_admin') {
+    if (in_array($user->role, ['super_admin', '1', 1]) || !$user->id_perusahaan) {
       $namaPerusahaan = !empty($perusahaanId)
         ? optional(Perusahaan::find($perusahaanId))->nama_perusahaan
         : 'SEMBILAN GROUP';
     } else {
-      $namaPerusahaan = $user->perusahaan->nama_perusahaan ?? 'Perusahaan';
+      $namaPerusahaan = $user->perusahaan?->nama_perusahaan ?? 'Perusahaan';
     }
 
     return view('content.dashboard.maping.print', compact('mapings', 'namaPerusahaan'));
@@ -1080,9 +1201,9 @@ class MapingController extends Controller
     }
 
     $perusahaanId = $request->get('perusahaan_id', $request->get('perusahaan'));
-    $namaPerusahaan = $user->role == 'super_admin'
+    $namaPerusahaan = (in_array($user->role, ['super_admin', '1', 1]) || !$user->id_perusahaan)
       ? (!empty($perusahaanId) ? optional(Perusahaan::find($perusahaanId))->nama_perusahaan : 'SEMBILAN GROUP')
-      : ($user->perusahaan->nama_perusahaan ?? 'Perusahaan');
+      : ($user->perusahaan?->nama_perusahaan ?? 'Perusahaan');
 
     return Excel::download(new MapingExport($mapings, $namaPerusahaan), 'Laporan Mapping.xlsx');
   }

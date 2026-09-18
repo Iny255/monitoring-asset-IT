@@ -24,26 +24,21 @@ class KaryawanController extends Controller
 
     $perusahaans = Perusahaan::all();
 
-    if ($user->role === 'super_admin') {
-      if ($perusahaanId) {
-        $karyawans = Karyawan::with('perusahaan')->where('id_perusahaan', $perusahaanId);
-      } else {
-        $karyawans = Karyawan::select(DB::raw('MIN(id) as id'), 'kode_karyawan', 'nama_karyawan', 'jabatan', 'divisi')
-          ->selectRaw('COUNT(DISTINCT id_perusahaan) as total_perusahaan')
-          ->selectRaw('MAX(created_at) as created_at')
-          ->groupBy('kode_karyawan', 'nama_karyawan', 'jabatan', 'divisi');
-      }
-    } else {
-      $karyawans = Karyawan::with('perusahaan')->where('id_perusahaan', $user->id_perusahaan);
+    $query = Karyawan::with('perusahaan');
+
+    if ($user->role !== 'super_admin') {
+      $query->where('id_perusahaan', $user->id_perusahaan);
+    } elseif ($perusahaanId) {
+      $query->where('id_perusahaan', $perusahaanId);
     }
 
     if ($search) {
-      $karyawans->where(function ($q) use ($search) {
+      $query->where(function ($q) use ($search) {
         $q->where('nama_karyawan', 'like', "%{$search}%")->orWhere('kode_karyawan', 'like', "%{$search}%");
       });
     }
 
-    $karyawans = $karyawans
+    $karyawans = $query
       ->latest()
       ->paginate(10)
       ->appends($request->query());

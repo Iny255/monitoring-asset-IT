@@ -37,8 +37,8 @@
                     <td style="text-align: center; border: 1px solid #000000;">{{ $index + 1 }}</td>
                     <td style="border: 1px solid #000000;">{{ $item['tanggal'] ? $item['tanggal']->format('d-m-Y') : '-' }}</td>
                     <td style="border: 1px solid #000000;">{{ $item['aktivitas'] }}</td>
-                    <td style="border: 1px solid #000000;">{{ $item['user_baru'] ?? '-' }}</td>
-                    <td style="border: 1px solid #000000;">{{ $item['lokasi_baru'] ?? '-' }}</td>
+                    <td style="border: 1px solid #000000;">{{ $item['user_baru'] ?? $item['user_lama'] ?? '-' }}</td>
+                    <td style="border: 1px solid #000000;">{{ $item['lokasi_baru'] ?? $item['lokasi_lama'] ?? '-' }}</td>
                     <td style="border: 1px solid #000000;">{{ $item['hak_akses'] ?? '-' }}</td>
                     <td style="border: 1px solid #000000;">{{ $item['keterangan'] ?? '-' }}</td>
                     <td style="border: 1px solid #000000;">{{ $item['petugas'] ?? '-' }}</td>

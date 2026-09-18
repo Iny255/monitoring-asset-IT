@@ -97,22 +97,8 @@
                                 <th>JABATAN</th>
                                 <th>DIVISI</th>
 
-                                @if (auth()->user()->role == 'super_admin')
-
-                                    @if (request('perusahaan_id'))
-                                        <th>PERUSAHAAN</th>
-                                    @else
-                                        <th>DIGUNAKAN DI</th>
-                                    @endif
-                                @else
-                                    <th>PERUSAHAAN</th>
-
-                                @endif
-
-                                @if (!(auth()->user()->role == 'super_admin' && empty(request('perusahaan_id'))))
-                                    <th width="120">ACTION</th>
-                                @endif
-
+                                <th>PERUSAHAAN</th>
+                                <th width="120">ACTION</th>
                             </tr>
                         </thead>
 
@@ -124,59 +110,41 @@
                                     <td>{{ $karyawan->nama_karyawan }}</td>
                                     <td>{{ $karyawan->jabatan }}</td>
                                     <td>{{ $karyawan->divisi }}</td>
-                                    @if (auth()->user()->role == 'super_admin')
-                                        @if (request('perusahaan_id'))
-                                            <td>
-                                                {{ $karyawan->perusahaan->nama_perusahaan }}
-                                            </td>
-                                        @else
-                                            <td>
-
-                                                <span class="badge bg-label-primary btn-detail-karyawan"
-                                                    style="cursor:pointer" data-kode="{{ $karyawan->kode_karyawan }}">
-
-                                                    {{ $karyawan->total_perusahaan }} Perusahaan
-
-                                                </span>
-
-                                            </td>
-                                        @endif
-                                    @else
-                                        <td>
+                                    <td>
+                                        <span class="badge bg-label-info">
                                             {{ $karyawan->perusahaan->nama_perusahaan ?? '-' }}
-                                        </td>
-                                    @endif
-                                    @if (!(auth()->user()->role == 'super_admin' && empty(request('perusahaan_id'))))
-                                        <td class="text-center">
-                                            <div class="d-flex justify-content-center gap-2">
+                                        </span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center gap-2">
 
-                                                {{-- EDIT --}}
-                                                <button class="btn btn-warning btn-sm btn-edit"
-                                                    data-id="{{ $karyawan->id }}"
-                                                    data-kode="{{ $karyawan->kode_karyawan }}"
-                                                    data-nama="{{ $karyawan->nama_karyawan }}"
-                                                    data-jabatan="{{ $karyawan->jabatan }}"
-                                                    data-divisi="{{ $karyawan->divisi }}"
-                                                    data-perusahaan="{{ $karyawan->perusahaan->nama_perusahaan ?? '-' }}"
-                                                    data-perusahaan_id="{{ $karyawan->id_perusahaan }}">
-                                                    <i class="bx bx-edit-alt"></i>
-                                                </button>
+                                            {{-- EDIT --}}
+                                            <button class="btn btn-warning btn-sm btn-edit"
+                                                data-id="{{ $karyawan->id }}"
+                                                data-kode="{{ $karyawan->kode_karyawan }}"
+                                                data-nama="{{ $karyawan->nama_karyawan }}"
+                                                data-jabatan="{{ $karyawan->jabatan }}"
+                                                data-divisi="{{ $karyawan->divisi }}"
+                                                data-perusahaan="{{ $karyawan->perusahaan->nama_perusahaan ?? '-' }}"
+                                                data-perusahaan_id="{{ $karyawan->id_perusahaan }}"
+                                                title="Edit Karyawan">
+                                                <i class="bx bx-edit-alt"></i>
+                                            </button>
 
-                                                {{-- DELETE --}}
-                                                <form id="delete-form-{{ $karyawan->id }}"
-                                                    action="{{ route('useraset.destroy', $karyawan->id) }}" method="POST"
-                                                    style="display:none;">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                </form>
-                                                <button class="btn btn-danger btn-sm btn-delete"
-                                                    data-id="{{ $karyawan->id }}">
-                                                    <i class="bx bx-trash"></i>
-                                                </button>
-
-                                            </div>
-                                        </td>
-                                    @endif
+                                            {{-- DELETE --}}
+                                            <form id="delete-form-{{ $karyawan->id }}"
+                                                action="{{ route('useraset.destroy', $karyawan->id) }}" method="POST"
+                                                style="display:none;">
+                                                @csrf
+                                                @method('DELETE')
+                                            </form>
+                                            <button class="btn btn-danger btn-sm btn-delete"
+                                                data-id="{{ $karyawan->id }}"
+                                                title="Hapus Karyawan">
+                                                <i class="bx bx-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>

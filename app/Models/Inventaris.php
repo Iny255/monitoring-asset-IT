@@ -57,6 +57,10 @@ class Inventaris extends Model
   {
     return $this->hasMany(Peminjaman::class);
   }
+  public function peminjamanTerakhir()
+  {
+    return $this->hasOne(Peminjaman::class)->latestOfMany();
+  }
   public function maintenances()
   {
     return $this->hasMany(Maintenance::class);

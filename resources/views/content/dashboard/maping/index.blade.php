@@ -380,23 +380,33 @@
                                                         <hr class="dropdown-divider">
                                                     </li>
 
-                                                    <li>
-                                                        <form action="{{ route('maping.destroy', $maping->id) }}"
-                                                            method="POST" class="form-delete">
-
-                                                            @csrf
-                                                            @method('DELETE')
-
-                                                            <button type="submit" class="dropdown-item text-danger">
-
-                                                                <i class="bx bx-trash me-2"></i>
-
-                                                                Hapus
-
+                                                    @if ($maping->can_be_deleted)
+                                                        <li>
+                                                            <form action="{{ route('maping.destroy', $maping->id) }}"
+                                                                method="POST" class="form-delete"
+                                                                data-kode-aset="{{ $maping->keluar->inventaris->kode_aset ?? ($maping->keluar->inventaris->no_inventaris ?? 'perangkat ini') }}">
+                                                                @csrf
+                                                                @method('DELETE')
+                                                                <button type="submit" class="dropdown-item text-danger">
+                                                                    <i class="bx bx-trash me-2"></i>
+                                                                    Hapus Mapping
+                                                                </button>
+                                                            </form>
+                                                        </li>
+                                                    @else
+                                                        <li>
+                                                            <button type="button" class="dropdown-item text-muted"
+                                                                onclick="Swal.fire({
+                                                                    icon: 'info',
+                                                                    title: 'Tidak Dapat Dihapus',
+                                                                    text: '{{ $maping->delete_block_reason }}',
+                                                                    confirmButtonColor: '#696cff'
+                                                                })">
+                                                                <i class="bx bx-lock-alt me-2 text-warning"></i>
+                                                                <span class="text-muted">Hapus (Terkunci)</span>
                                                             </button>
-
-                                                        </form>
-                                                    </li>
+                                                        </li>
+                                                    @endif
                                                 @else
                                                     <li>
                                                         <hr class="dropdown-divider">
@@ -706,41 +716,24 @@
             document.addEventListener('DOMContentLoaded', function() {
 
                 document.querySelectorAll('.form-delete').forEach(function(form) {
-
                     form.addEventListener('submit', function(e) {
-
                         e.preventDefault();
-
+                        var kodeAset = form.getAttribute('data-kode-aset') || 'perangkat ini';
                         Swal.fire({
-
-                            title: 'Hapus Mapping?',
-
-                            text: 'Data Mapping akan dihapus.',
-
+                            title: 'Hapus Mapping Aset?',
+                            html: 'Yakin ingin menghapus data mapping untuk aset <b>' + kodeAset + '</b>?<br><br><small class="text-muted">Unit aset fisik akan otomatis <b>DIKEMBALIKAN ke status TERSEDIA</b> di gudang dan transaksi pengeluaran dibatalkan.</small>',
                             icon: 'warning',
-
                             showCancelButton: true,
-
-                            confirmButtonColor: '#696cff',
-
+                            confirmButtonColor: '#ff3e1d',
                             cancelButtonColor: '#8592a3',
-
-                            confirmButtonText: 'Ya, Hapus',
-
+                            confirmButtonText: 'Ya, Hapus & Kembalikan ke Stok',
                             cancelButtonText: 'Batal'
-
                         }).then((result) => {
-
                             if (result.isConfirmed) {
-
                                 form.submit();
-
                             }
-
                         });
-
                     });
-
                 });
 
             });

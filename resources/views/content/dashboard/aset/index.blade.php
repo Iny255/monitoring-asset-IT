@@ -89,19 +89,8 @@
                                 <th width="120">KODE</th>
                                 <th>NAMA BARANG</th>
 
-                                @if (auth()->user()->role == 'super_admin')
-
-                                    @if (request('perusahaan_id'))
-                                        <th>PERUSAHAAN</th>
-                                    @else
-                                        <th>DIGUNAKAN DI</th>
-                                    @endif
-
-                                @endif
-
-                                @if (!(auth()->user()->role == 'super_admin' && empty(request('perusahaan_id'))))
-                                    <th width="150">ACTION</th>
-                                @endif
+                                <th>PERUSAHAAN</th>
+                                <th width="150">ACTION</th>
                             </tr>
                         </thead>
 
@@ -119,50 +108,33 @@
                                         {{ $kategori->nama_barang }}
                                     </td>
 
-                                    @if (auth()->user()->role == 'super_admin')
-                                        @if (request('perusahaan_id'))
-                                            <td>
-                                                {{ $kategori->perusahaan->nama_perusahaan }}
-                                            </td>
-                                        @else
-                                            <td>
-                                                <span class="badge bg-label-primary btn-detail-perusahaan"
-                                                    style="cursor: pointer;" data-kode="{{ $kategori->kode_barang }}"
-                                                    data-nama="{{ $kategori->nama_barang }}"
-                                                    data-total="{{ $kategori->total_perusahaan }}"
-                                                    title="Klik untuk melihat daftar perusahaan">
+                                    <td>
+                                        <span class="badge bg-label-info">
+                                            {{ $kategori->perusahaan->nama_perusahaan ?? '-' }}
+                                        </span>
+                                    </td>
 
-                                                    {{ $kategori->total_perusahaan }} Perusahaan
+                                    <td class="text-center">
+                                        <button type="button" class="btn btn-warning btn-sm btn-edit"
+                                            data-id="{{ $kategori->id }}" data-kode="{{ $kategori->kode_barang }}"
+                                            data-nama="{{ $kategori->nama_barang }}"
+                                            title="Edit Kategori">
+                                            <i class="bx bx-edit-alt"></i>
+                                        </button>
 
-                                                </span>
-                                            </td>
-                                        @endif
-                                    @endif
+                                        <form id="delete-form-{{ $kategori->id }}"
+                                            action="{{ route('aset.destroy', $kategori->id) }}" method="POST"
+                                            style="display:none;">
+                                            @csrf
+                                            @method('DELETE')
+                                        </form>
 
-
-                                    @if (!(auth()->user()->role == 'super_admin' && empty(request('perusahaan_id'))))
-                                        <td class="text-center">
-
-                                            <button type="button" class="btn btn-warning btn-sm btn-edit"
-                                                data-id="{{ $kategori->id }}" data-kode="{{ $kategori->kode_barang }}"
-                                                data-nama="{{ $kategori->nama_barang }}">
-                                                <i class="bx bx-edit-alt"></i>
-                                            </button>
-
-                                            <form id="delete-form-{{ $kategori->id }}"
-                                                action="{{ route('aset.destroy', $kategori->id) }}" method="POST"
-                                                style="display:none;">
-                                                @csrf
-                                                @method('DELETE')
-                                            </form>
-
-                                            <button type="button" class="btn btn-danger btn-sm btn-delete"
-                                                data-id="{{ $kategori->id }}">
-                                                <i class="bx bx-trash"></i>
-                                            </button>
-
-                                        </td>
-                                    @endif
+                                        <button type="button" class="btn btn-danger btn-sm btn-delete"
+                                            data-id="{{ $kategori->id }}"
+                                            title="Hapus Kategori">
+                                            <i class="bx bx-trash"></i>
+                                        </button>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>

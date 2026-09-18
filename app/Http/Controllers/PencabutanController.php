@@ -52,7 +52,7 @@ class PencabutanController extends Controller
     DB::beginTransaction();
 
     try {
-      $maping->load(['keluar.inventaris.dataAset.kategori', 'keluar.karyawan', 'karyawan', 'lokasi', 'perusahaan']);
+      $maping->load(['keluar.inventaris.dataAset.kategori', 'keluar.karyawan', 'keluar.lokasi', 'karyawan', 'lokasi', 'perusahaan']);
       // dd($maping->toArray());
 
       $inventaris = $maping->keluar->inventaris;
@@ -66,6 +66,18 @@ class PencabutanController extends Controller
         */
       $lokasiBaru = Lokasi::find($request->id_lokasi);
 
+      $userLama = ($maping->penerima && $maping->penerima !== '-')
+        ? $maping->penerima
+        : (optional($maping->karyawan)->nama_karyawan
+          ?: optional($maping->keluar?->karyawan)->nama_karyawan
+          ?: $maping->divisi
+          ?: optional($maping->keluar)->divisi_klr
+          ?: '-');
+
+      $lokasiLama = optional($maping->lokasi)->nama_lokasi
+        ?: optional($maping->keluar?->lokasi)->nama_lokasi
+        ?: '-';
+
       HistoryPencabutan::create([
         'inventaris_id' => $inventaris->id,
         'maping_id' => $maping->id,
@@ -78,11 +90,11 @@ class PencabutanController extends Controller
         'nama_aset' => optional($dataAset->kategori)->nama_barang,
 
         // ambil dari mapping aktif
-        'lokasi_lama' => optional($maping->lokasi)->nama_lokasi,
+        'lokasi_lama' => $lokasiLama,
         'lokasi_baru' => optional($lokasiBaru)->nama_lokasi,
 
         // ambil dari mapping aktif
-        'user_lama' => optional($maping->karyawan)->nama_karyawan,
+        'user_lama' => $userLama,
 
         'tanggal_pencabutan' => $request->tanggal_pencabutan,
 

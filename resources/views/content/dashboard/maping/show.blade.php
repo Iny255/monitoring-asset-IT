@@ -613,7 +613,7 @@
         {{-- ========================= --}}
         <div class="card border-0 shadow-sm mt-4">
 
-            <div class="card-header bg-white py-3">
+            <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
 
                 <h5 class="mb-0 fw-bold">
 
@@ -622,6 +622,20 @@
                     Hak Akses & Aplikasi
 
                 </h5>
+
+                @php
+                    $registeredEmails = $maping->mapingAccesses->pluck('email')->filter()->unique();
+                @endphp
+                @if($registeredEmails->isNotEmpty())
+                    <div class="d-flex align-items-center gap-1 flex-wrap">
+                        <span class="text-muted small me-1">Email Terdaftar:</span>
+                        @foreach($registeredEmails as $em)
+                            <span class="badge bg-label-primary font-monospace">
+                                <i class="bx bx-envelope me-1"></i>{{ $em }}
+                            </span>
+                        @endforeach
+                    </div>
+                @endif
 
             </div>
 
@@ -638,6 +652,8 @@
                                 <th width="60" class="text-center">NO</th>
 
                                 <th>NAMA HAK AKSES / APLIKASI</th>
+
+                                <th>EMAIL TERDAFTAR</th>
 
                                 <th width="160" class="text-center">KATEGORI</th>
 
@@ -659,6 +675,16 @@
 
                                         <span class="fw-semibold text-dark">{{ $item->nama_akses }}</span>
 
+                                    </td>
+
+                                    <td>
+                                        @if (!empty($item->email))
+                                            <span class="fw-semibold text-dark font-monospace">
+                                                <i class="bx bx-envelope text-primary me-1"></i>{{ $item->email }}
+                                            </span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
                                     </td>
 
                                     <td class="text-center">
@@ -725,7 +751,7 @@
 
                                 <tr>
 
-                                    <td colspan="4" class="text-center text-muted py-4">
+                                    <td colspan="5" class="text-center text-muted py-4">
 
                                         <i class="bx bx-info-circle fs-4 d-block mb-1"></i>
 

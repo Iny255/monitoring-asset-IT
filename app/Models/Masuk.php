@@ -8,6 +8,8 @@ use App\Models\Kategori;
 use App\Models\Keluar;
 use App\Models\Perusahaan;
 use App\Models\HistoryMutasi;
+use App\Models\Inventaris;
+use App\Models\Maping;
 
 class Masuk extends Model
 {
@@ -98,5 +100,54 @@ class Masuk extends Model
         $query->where('perusahaan_id', auth()->user()->id_perusahaan);
       }
     });
+  }
+
+  /*
+    |--------------------------------------------------------------------------
+    | STATUS MAPPING & EDITABILITY
+    |--------------------------------------------------------------------------
+    */
+
+  public function isMapped(): bool
+  {
+    $invIds = $this->inventaris()->pluck('id');
+    if ($invIds->isEmpty()) {
+      return false;
+    }
+
+    $inUse = Inventaris::whereIn('id', $invIds)
+      ->where(function ($q) {
+        $q->where('status', '!=', 'TERSEDIA')
+          ->orWhere('is_transfer', true)
+          ->orWhereHas('keluars')
+          ->orWhereHas('peminjamans')
+          ->orWhereHas('maintenances');
+      })
+      ->exists();
+
+    if ($inUse) {
+      return true;
+    }
+
+    return Maping::withoutGlobalScopes()
+      ->whereHas('keluar', function ($q) use ($invIds) {
+        $q->whereIn('inventaris_id', $invIds);
+      })
+      ->exists();
+  }
+
+  public function canBeEdited(): bool
+  {
+    return !$this->isMapped();
+  }
+
+  public function getIsMappedAttribute(): bool
+  {
+    return $this->isMapped();
+  }
+
+  public function getCanBeEditedAttribute(): bool
+  {
+    return $this->canBeEdited();
   }
 }

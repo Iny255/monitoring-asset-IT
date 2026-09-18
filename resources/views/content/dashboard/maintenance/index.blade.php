@@ -166,7 +166,7 @@
                         </label>
 
                         <input type="text" name="search" class="form-control"
-                            placeholder="Kode Service / Kode Aset / No Inventaris" value="{{ request('search') }}">
+                            placeholder="Kode Service / Kode Aset / Jenis / Merek / Type / No Inventaris" value="{{ request('search') }}">
 
                     </div>
 
@@ -219,13 +219,12 @@
 
                         <th>Tanggal</th>
 
-                        <th>Inventaris</th>
+                        <th>Kode Aset</th>
                         @if (auth()->user()->role == 'super_admin')
                             <th>Perusahaan</th>
                         @endif
 
                         <th>Jenis</th>
-                        <th>Asal</th>
 
                         <th>Status</th>
 
@@ -261,13 +260,29 @@
                             </td>
 
                             <td>
-                                <strong>{{ $item->inventaris->kode_aset }}</strong>
-                                <br>
-                                <small>{{ $item->inventaris->dataAset->nama_barang }}</small>
+                                @if ($item->inventaris)
+                                    <a href="{{ route('history.perjalanan.show', $item->inventaris_id ?? $item->inventaris->id) }}"
+                                        class="fw-bold text-primary text-decoration-none"
+                                        title="Lihat Riwayat Tracking Aset">
+                                        {{ $item->inventaris->kode_aset ?? '-' }}
+                                    </a>
+                                    <br>
+                                    <small class="text-muted">
+                                        {{ $item->inventaris->dataAset?->kategori?->nama_barang ?? '-' }}
+                                        @if (!empty($item->inventaris->dataAset?->merek))
+                                            • {{ $item->inventaris->dataAset->merek }}
+                                        @endif
+                                        @if (!empty($item->inventaris->dataAset?->type))
+                                            {{ $item->inventaris->dataAset->type }}
+                                        @endif
+                                    </small>
+                                @else
+                                    <span class="text-muted">-</span>
+                                @endif
                             </td>
-                            @if (auth()->user()->role == 'super_admin')
+                            @if (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan)
                                 <td>
-                                    {{ $item->inventaris->perusahaan->nama_perusahaan ?? '-' }}
+                                    {{ $item->inventaris?->perusahaan?->nama_perusahaan ?? '-' }}
                                 </td>
                             @endif
 
@@ -277,23 +292,6 @@
                                 @else
                                     <span class="badge bg-label-warning">Maintenance</span>
                                 @endif
-                            </td>
-                            <td>
-
-                                @if ($item->asal == 'Manual')
-                                    <span class="badge bg-label-secondary">
-                                        Manual
-                                    </span>
-                                @elseif($item->asal == 'Mapping')
-                                    <span class="badge bg-label-primary">
-                                        Mapping
-                                    </span>
-                                @else
-                                    <span class="badge bg-label-info">
-                                        Peminjaman
-                                    </span>
-                                @endif
-
                             </td>
 
                             <td>

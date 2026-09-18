@@ -58,10 +58,10 @@
                                     </label>
 
                                     <input type="hidden" name="perusahaan_id"
-                                        value="{{ $maintenance->inventaris->perusahaan_id }}">
+                                        value="{{ $maintenance->inventaris?->perusahaan_id ?? '' }}">
 
                                     <input type="text" class="form-control"
-                                        value="{{ $maintenance->inventaris->perusahaan->nama_perusahaan }}" readonly>
+                                        value="{{ $maintenance->inventaris?->perusahaan?->nama_perusahaan ?? '-' }}" readonly>
 
                                 </div>
                             @endif
@@ -407,7 +407,7 @@
                                 <td id="info_perusahaan">
 
                                     @if (isset($inventaris))
-                                        {{ $maintenance->inventaris->perusahaan->nama_perusahaan }}
+                                        {{ $maintenance->inventaris?->perusahaan?->nama_perusahaan ?? '-' }}
                                     @else
                                         -
                                     @endif

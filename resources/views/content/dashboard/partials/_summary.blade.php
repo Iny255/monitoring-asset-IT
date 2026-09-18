@@ -12,9 +12,19 @@
                         <h3 class="dashboard-number" style="color: var(--primary-theme, #0b2f57);">
                             {{ number_format($dashboard['inventaris']['total']) }}
                         </h3>
-                        <small class="text-muted">
-                            Seluruh Inventaris
-                        </small>
+                        @if (($dashboard['inventaris']['mutasi_keluar'] ?? 0) > 0)
+                            <small class="text-muted d-block">
+                                Aset Aktif
+                            </small>
+                            <span class="badge bg-label-warning mt-1" style="font-size: 0.70rem; padding: 3px 6px;"
+                                title="Total Tercatat: {{ number_format($dashboard['inventaris']['total_tercatat'] ?? 0) }} unit | Telah Dimutasi Keluar: {{ number_format($dashboard['inventaris']['mutasi_keluar']) }} unit">
+                                <i class="bx bx-transfer me-1"></i>{{ number_format($dashboard['inventaris']['mutasi_keluar']) }} Dimutasi
+                            </span>
+                        @else
+                            <small class="text-muted">
+                                Seluruh Inventaris
+                            </small>
+                        @endif
                     </div>
                     <div class="dashboard-icon category-theme-icon">
                         <i class="bx bx-desktop"></i>

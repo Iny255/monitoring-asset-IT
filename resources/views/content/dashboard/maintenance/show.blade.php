@@ -143,7 +143,18 @@
 
                             <th width="220">Kode Aset</th>
 
-                            <td>{{ $maintenance->inventaris->kode_aset }}</td>
+                            <td>
+                                @if ($maintenance->inventaris)
+                                    <a href="{{ route('history.perjalanan.show', $maintenance->inventaris_id ?? $maintenance->inventaris->id) }}"
+                                        class="fw-bold text-primary text-decoration-none"
+                                        title="Lihat Riwayat Tracking Aset">
+                                        {{ $maintenance->inventaris->kode_aset }}
+                                        <i class="bx bx-link-external ms-1 font-size-xs"></i>
+                                    </a>
+                                @else
+                                    -
+                                @endif
+                            </td>
 
                         </tr>
 
@@ -192,7 +203,7 @@
 
                             <th>Perusahaan</th>
 
-                            <td>{{ $maintenance->inventaris->perusahaan->nama_perusahaan }}</td>
+                            <td>{{ $maintenance->inventaris?->perusahaan?->nama_perusahaan ?? '-' }}</td>
 
                         </tr>
 

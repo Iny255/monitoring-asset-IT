@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Hash;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Str;
 
 class LoginController extends Controller
 {
@@ -201,27 +202,68 @@ class LoginController extends Controller
     // REDIRECT BERDASARKAN ROLE
     // =====================================
 
-    switch ($user->role) {
-      case 'super_admin':
-        return redirect()->route('dashboard.superadmin');
+    $rawRole = strtolower(trim((string) ($user->role ?? '')));
+    $slugRole = Str::slug($rawRole, '_');
 
-      case 'manager':
-        return redirect()->route('dashboard.manager');
-
-      case 'petugas':
-        return redirect()->route('dashboard.petugas');
-
-      case 'user':
-      case 'karyawan':
-        return redirect()->route('aset-saya.index');
-
-      default:
-        Auth::logout();
-
-        return redirect('/login')->withErrors([
-          'login' => 'Role tidak dikenali',
-        ]);
+    // Normalisasi jika role berupa angka ID dari tabel roles
+    if (is_numeric($rawRole)) {
+      $roleModel = \App\Models\Role::find((int) $rawRole);
+      $userRole = $roleModel ? strtolower(trim($roleModel->name)) : $rawRole;
+    } else {
+      $userRole = $slugRole;
     }
+
+    // 1. Super Admin (slug 'super_admin', ID 1, variasi 'superadmin', 'super admin', dsb.)
+    if (
+      $userRole === 'super_admin' ||
+      $rawRole === '1' ||
+      $userRole === '1' ||
+      $userRole === 'superadmin' ||
+      $slugRole === 'super_admin'
+    ) {
+      return redirect()->route('dashboard.superadmin');
+    }
+
+    // 2. Petugas IT Support
+    if ($userRole === 'petugas' || $rawRole === '2' || $slugRole === 'petugas_it_support') {
+      return redirect()->route('dashboard.petugas');
+    }
+
+    // 3. Manager
+    if ($userRole === 'manager') {
+      return redirect()->route('dashboard.manager');
+    }
+
+    // 4. User / Karyawan
+    if (in_array($userRole, ['user', 'karyawan', '3', '4']) || in_array($slugRole, ['user', 'karyawan'])) {
+      return redirect()->route('aset-saya.index');
+    }
+
+    // 5. Cek role kustom dari tabel roles
+    $roleRecord = $user->roleDefinition ?: (is_numeric($rawRole) ? \App\Models\Role::find((int) $rawRole) : \App\Models\Role::where('name', $userRole)->orWhere('name', $slugRole)->first());
+    if ($roleRecord) {
+      if ($roleRecord->name === 'super_admin' || $roleRecord->can_manage_settings) {
+        return redirect()->route('dashboard.superadmin');
+      }
+
+      $firstModule = $roleRecord->modules()->where('is_active', true)->whereNotNull('url')->orderBy('order')->first();
+      if ($firstModule && $firstModule->url) {
+        return redirect('/' . ltrim($firstModule->url, '/'));
+      }
+
+      return redirect()->route('aset-saya.index');
+    }
+
+    // 6. Fallback aman menggunakan getDashboardUrl() model User
+    if (method_exists($user, 'getDashboardUrl')) {
+      return redirect($user->getDashboardUrl());
+    }
+
+    Auth::logout();
+
+    return redirect('/login')->withErrors([
+      'login' => 'Role tidak dikenali',
+    ]);
   }
 
   // =====================================================

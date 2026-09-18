@@ -224,50 +224,58 @@
                                         </td>
 
                                         <td>
-                                            <span class="badge bg-label-primary">
-                                                {{ $inventaris->kode_aset }}
-                                            </span>
+                                            <a href="{{ route('history.perjalanan.show', $inventaris->id) }}"
+                                                class="text-decoration-none"
+                                                title="Lihat Riwayat Tracking Aset">
+                                                <span class="badge bg-label-primary">
+                                                    {{ $inventaris->kode_aset }}
+                                                </span>
+                                            </a>
                                         </td>
 
                                         <td>
+                                            @if ($inventaris->is_transfer)
+                                                <span class="badge bg-warning text-dark">
+                                                    <i class="bx bx-transfer me-1"></i> TELAH DIMUTASI KE PERUSAHAAN LAIN
+                                                </span>
+                                            @else
+                                                @switch($inventaris->status)
+                                                    @case('TERSEDIA')
+                                                        <span class="badge bg-success">
+                                                            TERSEDIA
+                                                        </span>
+                                                    @break
 
-                                            @switch($inventaris->status)
-                                                @case('TERSEDIA')
-                                                    <span class="badge bg-success">
-                                                        TERSEDIA
-                                                    </span>
-                                                @break
+                                                    @case('DIPAKAI')
+                                                        <span class="badge bg-primary">
+                                                            DIPAKAI
+                                                        </span>
+                                                    @break
 
-                                                @case('DIPAKAI')
-                                                    <span class="badge bg-primary">
-                                                        DIPAKAI
-                                                    </span>
-                                                @break
+                                                    @case('DIPINJAM')
+                                                        <span class="badge bg-warning">
+                                                            DIPINJAM
+                                                        </span>
+                                                    @break
 
-                                                @case('DIPINJAM')
-                                                    <span class="badge bg-warning">
-                                                        DIPINJAM
-                                                    </span>
-                                                @break
+                                                    @case('RUSAK')
+                                                        <span class="badge bg-danger">
+                                                            RUSAK
+                                                        </span>
+                                                    @break
 
-                                                @case('RUSAK')
-                                                    <span class="badge bg-danger">
-                                                        RUSAK
-                                                    </span>
-                                                @break
+                                                    @case('AFKIR')
+                                                        <span class="badge bg-dark">
+                                                            AFKIR
+                                                        </span>
+                                                    @break
 
-                                                @case('AFKIR')
-                                                    <span class="badge bg-dark">
-                                                        AFKIR
-                                                    </span>
-                                                @break
-
-                                                @default
-                                                    <span class="badge bg-secondary">
-                                                        {{ $inventaris->status }}
-                                                    </span>
-                                            @endswitch
-
+                                                    @default
+                                                        <span class="badge bg-secondary">
+                                                            {{ $inventaris->status }}
+                                                        </span>
+                                                @endswitch
+                                            @endif
                                         </td>
 
                                     </tr>

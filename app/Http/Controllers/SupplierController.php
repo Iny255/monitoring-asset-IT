@@ -22,30 +22,23 @@ class SupplierController extends Controller
 
     $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
 
-    if ($user->role === 'super_admin') {
-      if ($perusahaanId) {
-        // Menampilkan supplier perusahaan tertentu
-        $suppliers = Supplier::with('perusahaan')->where('perusahaan_id', $perusahaanId);
-      } else {
-        // Menampilkan supplier unik semua perusahaan
-        $suppliers = Supplier::select(DB::raw('MIN(id) as id'), 'nama_supplier', 'telepon', 'alamat')
-          ->selectRaw('COUNT(DISTINCT perusahaan_id) as total_perusahaan')
-          ->selectRaw('MAX(created_at) as created_at')
-          ->groupBy('nama_supplier', 'telepon', 'alamat');
-      }
-    } else {
-      $suppliers = Supplier::with('perusahaan')->where('perusahaan_id', $user->id_perusahaan);
+    $query = Supplier::with('perusahaan');
+
+    if ($user->role !== 'super_admin') {
+      $query->where('perusahaan_id', $user->id_perusahaan);
+    } elseif ($perusahaanId) {
+      $query->where('perusahaan_id', $perusahaanId);
     }
 
     if ($search) {
-      $suppliers->where(function ($q) use ($search) {
+      $query->where(function ($q) use ($search) {
         $q->where('nama_supplier', 'like', "%{$search}%")
           ->orWhere('telepon', 'like', "%{$search}%")
           ->orWhere('alamat', 'like', "%{$search}%");
       });
     }
 
-    $suppliers = $suppliers
+    $suppliers = $query
       ->latest()
       ->paginate(10)
       ->appends($request->query());

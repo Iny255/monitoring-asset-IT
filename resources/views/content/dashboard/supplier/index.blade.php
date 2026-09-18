@@ -95,21 +95,8 @@
                                 <th width="150">NO HP</th>
                                 <th>ALAMAT</th>
 
-                                @if (auth()->user()->role == 'super_admin')
-
-                                    @if (request('perusahaan_id'))
-                                        <th>PERUSAHAAN</th>
-                                    @else
-                                        <th>DIGUNAKAN DI</th>
-                                    @endif
-                                @else
-                                    <th>PERUSAHAAN</th>
-
-                                @endif
-
-                                @if (!(auth()->user()->role == 'super_admin' && empty(request('perusahaan_id'))))
-                                    <th width="150">ACTION</th>
-                                @endif
+                                <th>PERUSAHAAN</th>
+                                <th width="150">ACTION</th>
 
                             </tr>
 
@@ -134,60 +121,45 @@
                                     <td>
                                         {{ $supplier->alamat ?: '-' }}
                                     </td>
-                                    @if (auth()->user()->role == 'super_admin')
-                                        @if (request('perusahaan_id'))
-                                            <td>
-                                                {{ $supplier->perusahaan->nama_perusahaan }}
-                                            </td>
-                                        @else
-                                            <td>
 
-                                                <span class="badge bg-label-primary btn-detail-supplier"
-                                                    style="cursor:pointer" data-nama="{{ $supplier->nama_supplier }}">
-
-                                                    {{ $supplier->total_perusahaan }} Perusahaan
-
-                                                </span>
-
-                                            </td>
-                                        @endif
-                                    @else
-                                        <td>
+                                    <td>
+                                        <span class="badge bg-label-info">
                                             {{ $supplier->perusahaan->nama_perusahaan ?? '-' }}
-                                        </td>
-                                    @endif
-                                    @if (!(auth()->user()->role == 'super_admin' && empty(request('perusahaan_id'))))
-                                        <td class="text-center">
+                                        </span>
+                                    </td>
 
-                                            <button type="button" class="btn btn-warning btn-sm btn-edit"
-                                                data-id="{{ $supplier->id }}" data-nama="{{ $supplier->nama_supplier }}"
-                                                data-telepon="{{ $supplier->telepon }}"
-                                                data-alamat="{{ $supplier->alamat }}"
-                                                data-perusahaan="{{ $supplier->perusahaan->nama_perusahaan ?? '-' }}"
-                                                data-perusahaan_id="{{ $supplier->perusahaan_id }}">
+                                    <td class="text-center">
 
-                                                <i class="bx bx-edit-alt"></i>
+                                        <button type="button" class="btn btn-warning btn-sm btn-edit"
+                                            data-id="{{ $supplier->id }}" data-nama="{{ $supplier->nama_supplier }}"
+                                            data-telepon="{{ $supplier->telepon }}"
+                                            data-alamat="{{ $supplier->alamat }}"
+                                            data-perusahaan="{{ $supplier->perusahaan->nama_perusahaan ?? '-' }}"
+                                            data-perusahaan_id="{{ $supplier->perusahaan_id }}"
+                                            title="Edit Supplier">
 
-                                            </button>
+                                            <i class="bx bx-edit-alt"></i>
 
-                                            <form id="delete-form-{{ $supplier->id }}"
-                                                action="{{ route('supplier.destroy', $supplier->id) }}" method="POST"
-                                                style="display:none;">
+                                        </button>
 
-                                                @csrf
-                                                @method('DELETE')
+                                        <form id="delete-form-{{ $supplier->id }}"
+                                            action="{{ route('supplier.destroy', $supplier->id) }}" method="POST"
+                                            style="display:none;">
 
-                                            </form>
+                                            @csrf
+                                            @method('DELETE')
 
-                                            <button type="button" class="btn btn-danger btn-sm btn-delete"
-                                                data-id="{{ $supplier->id }}">
+                                        </form>
 
-                                                <i class="bx bx-trash"></i>
+                                        <button type="button" class="btn btn-danger btn-sm btn-delete"
+                                            data-id="{{ $supplier->id }}"
+                                            title="Hapus Supplier">
 
-                                            </button>
+                                            <i class="bx bx-trash"></i>
 
-                                        </td>
-                                    @endif
+                                        </button>
+
+                                    </td>
 
                                 </tr>
 

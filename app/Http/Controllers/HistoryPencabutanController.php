@@ -13,7 +13,7 @@ class HistoryPencabutanController extends Controller
   {
     $user = auth()->user();
 
-    $query = HistoryPencabutan::with(['creator', 'perusahaan', 'maping']);
+    $query = HistoryPencabutan::with(['creator', 'perusahaan', 'maping.karyawan', 'maping.keluar.karyawan', 'maping.keluar.lokasi', 'maping.lokasi']);
 
     /*
         |--------------------------------------------------------------------------
@@ -69,7 +69,7 @@ class HistoryPencabutanController extends Controller
   {
     $user = auth()->user();
 
-    $query = HistoryPencabutan::with(['maping.keluar.inventaris', 'maping.keluar.karyawan', 'creator', 'perusahaan']);
+    $query = HistoryPencabutan::with(['maping.keluar.inventaris', 'maping.keluar.karyawan', 'maping.keluar.lokasi', 'maping.karyawan', 'maping.lokasi', 'creator', 'perusahaan']);
 
     /*
     |--------------------------------------------------------------------------

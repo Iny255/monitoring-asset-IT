@@ -265,9 +265,9 @@
                                             @endif
 
                                         </td>
-                                        @if (auth()->user()->role == 'super_admin')
+                                        @if (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan)
                                             <td>
-                                                {{ $item->inventaris->perusahaan->nama_perusahaan ?? '-' }}
+                                                {{ $item->inventaris?->perusahaan?->nama_perusahaan ?? '-' }}
                                             </td>
                                         @endif
 

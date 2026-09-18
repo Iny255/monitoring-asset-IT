@@ -44,7 +44,7 @@
                         @if ($user->role == 'super_admin')
                             <div class="col-md-3">
                                 <label class="form-label fw-semibold">Perusahaan</label>
-                                <select name="perusahaan_id" class="form-select">
+                                <select name="perusahaan_id" id="perusahaan_id" class="form-select">
                                     <option value="">-- Semua Perusahaan --</option>
                                     @foreach ($perusahaans as $p)
                                         <option value="{{ $p->id }}" {{ request('perusahaan_id') == $p->id ? 'selected' : '' }}>
@@ -55,9 +55,9 @@
                             </div>
                         @endif
 
-                        <div class="col-md-4">
+                        <div class="{{ $user->role == 'super_admin' ? 'col-md-3' : 'col-md-4' }}">
                             <label class="form-label fw-semibold">Kategori Aset</label>
-                            <select name="kategori_id" class="form-select">
+                            <select name="kategori_id" id="kategori_id" class="form-select">
                                 <option value="">-- Semua Kategori --</option>
                                 @foreach ($kategoris as $k)
                                     <option value="{{ $k->id }}" {{ request('kategori_id') == $k->id ? 'selected' : '' }}>
@@ -67,17 +67,20 @@
                             </select>
                         </div>
 
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Cari Kode Aset / Inventaris / Merk</label>
-                            <input type="text" name="search" class="form-control" placeholder="Cari kode aset, no inventaris, merek..." value="{{ request('search') }}">
+                        <div class="{{ $user->role == 'super_admin' ? 'col-md-3' : 'col-md-5' }}">
+                            <label class="form-label fw-semibold">Cari Kode / Inventaris / Merk / Nama Pemakai</label>
+                            <input type="text" name="search" class="form-control" placeholder="Cari kode aset, no inventaris, merek, nama pemakai..." value="{{ request('search') }}">
                         </div>
 
-                        <div class="col-md-2 d-flex align-items-end gap-1">
-                            <button type="submit" class="btn btn-primary" title="Cari">
+                        <div class="{{ $user->role == 'super_admin' ? 'col-md-3' : 'col-md-3' }} d-flex align-items-end gap-1 flex-wrap">
+                            <button type="submit" class="btn btn-primary" title="Cari Data">
                                 <i class="bx bx-search"></i>
                             </button>
-                            <a href="{{ route('history.perjalanan.index') }}" class="btn btn-label-secondary" title="Reset">
+                            <a href="{{ route('history.perjalanan.index') }}" class="btn btn-label-secondary" title="Reset Filter">
                                 <i class="bx bx-refresh"></i>
+                            </a>
+                            <a href="{{ route('history.perjalanan.cetak_index', request()->query()) }}" target="_blank" class="btn btn-danger" title="Cetak PDF">
+                                <i class="bx bxs-file-pdf me-1"></i> PDF
                             </a>
                             <a href="{{ route('history.perjalanan.export_excel_index', request()->query()) }}" class="btn btn-success" title="Export Excel">
                                 <i class="bx bxs-file-export me-1"></i> Excel
@@ -150,9 +153,22 @@
                                     </td>
                                     <td>
                                         @if($inv->status == 'DIPAKAI' && $inv->keluarTerakhir)
+                                            @php
+                                                $maping = $inv->keluarTerakhir->maping;
+                                                if ($maping && $maping->status == 'aktif') {
+                                                    $namaPemakai = $maping->jenis_penerima == 'Perorangan' ? ($maping->karyawan?->nama_karyawan ?? '-') : ($maping->divisi ?? '-');
+                                                } else {
+                                                    $namaPemakai = $inv->keluarTerakhir->jenis_penerima == 'Perorangan' ? ($inv->keluarTerakhir->karyawan?->nama_karyawan ?? '-') : ($inv->keluarTerakhir->divisi_klr ?? '-');
+                                                }
+                                            @endphp
                                             <span class="badge bg-label-primary">
                                                 <i class="bx bx-user me-1"></i>
-                                                {{ $inv->keluarTerakhir->jenis_penerima == 'Perorangan' ? ($inv->keluarTerakhir->karyawan?->nama_karyawan ?? '-') : ($inv->keluarTerakhir->divisi_klr ?? '-') }}
+                                                {{ $namaPemakai }}
+                                            </span>
+                                        @elseif($inv->status == 'DIPINJAM' && $inv->peminjamanTerakhir)
+                                            <span class="badge bg-label-info">
+                                                <i class="bx bx-user me-1"></i>
+                                                {{ $inv->peminjamanTerakhir->karyawan?->nama_karyawan ?? ($inv->peminjamanTerakhir->karyawanTujuan?->nama_karyawan ?? '-') }}
                                             </span>
                                         @else
                                             <span class="text-muted small">Belum dipakai</span>
@@ -188,21 +204,18 @@
     </div>
 @endsection
 
-@section('scripts')
+@section('page-script')
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            const perusahaanSelect = document.querySelector('form[action="{{ route('history.perjalanan.index') }}"] select[name="perusahaan_id"]');
-            const kategoriSelect = document.querySelector('form[action="{{ route('history.perjalanan.index') }}"] select[name="kategori_id"]');
+            const perusahaanSelect = document.getElementById('perusahaan_id');
+            const kategoriSelect = document.getElementById('kategori_id');
 
             if (perusahaanSelect && kategoriSelect) {
                 perusahaanSelect.addEventListener('change', function() {
                     const id = this.value;
-                    if (!id) {
-                        kategoriSelect.innerHTML = '<option value="">-- Semua Kategori --</option>';
-                        return;
-                    }
+                    const fetchUrl = id ? ('/dashboard/get-kategori/' + id) : '/dashboard/get-kategori/all';
 
-                    fetch('/dashboard/get-kategori/' + id)
+                    fetch(fetchUrl)
                         .then(res => res.json())
                         .then(data => {
                             let html = '<option value="">-- Semua Kategori --</option>';
@@ -210,6 +223,9 @@
                                 html += `<option value="${item.id}">${item.nama_barang}</option>`;
                             });
                             kategoriSelect.innerHTML = html;
+                        })
+                        .catch(err => {
+                            console.error('Error fetching kategori:', err);
                         });
                 });
             }

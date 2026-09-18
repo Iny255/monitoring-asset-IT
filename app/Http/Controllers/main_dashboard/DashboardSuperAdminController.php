@@ -45,7 +45,7 @@ class DashboardSuperAdminController extends Controller
     return [
       'perusahaan' => Perusahaan::count(),
 
-      'inventaris' => Inventaris::count(),
+      'inventaris' => Inventaris::where('is_transfer', false)->count(),
 
       'user' => User::count(),
 
@@ -66,7 +66,7 @@ class DashboardSuperAdminController extends Controller
 
         'secondary' => $perusahaan->secondary_color,
 
-        'aset' => Inventaris::where('perusahaan_id', $perusahaan->id)->count(),
+        'aset' => Inventaris::where('perusahaan_id', $perusahaan->id)->where('is_transfer', false)->count(),
 
         'mapping' => Maping::where('id_perusahaan', $perusahaan->id)->count(),
 
@@ -80,17 +80,23 @@ class DashboardSuperAdminController extends Controller
   }
   private function inventarisGlobal()
   {
+    $active = Inventaris::where('is_transfer', false);
+    $mutasiKeluar = Inventaris::where('is_transfer', true)->count();
+    $totalTercatat = Inventaris::count();
+
     return [
-      'total' => Inventaris::count(),
+      'total' => (clone $active)->count(),
 
-      'tersedia' => Inventaris::where('status', 'TERSEDIA')->count(),
+      'tersedia' => (clone $active)->where('status', 'TERSEDIA')->count(),
 
-      'dipakai' => Inventaris::where('status', 'DIPAKAI')->count(),
+      'dipakai' => (clone $active)->where('status', 'DIPAKAI')->count(),
 
-      'dipinjam' => Inventaris::where('status', 'DIPINJAM')->count(),
+      'dipinjam' => (clone $active)->where('status', 'DIPINJAM')->count(),
 
-      'rusak' => Inventaris::where('status', 'RUSAK')->count(),
-      'afkir' => Inventaris::where('status', 'AFKIR')->count(),
+      'rusak' => (clone $active)->where('status', 'RUSAK')->count(),
+      'afkir' => (clone $active)->where('status', 'AFKIR')->count(),
+      'mutasi_keluar' => $mutasiKeluar,
+      'total_tercatat' => $totalTercatat,
     ];
   }
   private function transaksiGlobal()
@@ -240,7 +246,7 @@ class DashboardSuperAdminController extends Controller
       $timeline->push([
         'judul' => 'Penerimaan Aset',
 
-        'perusahaan' => optional($item->perusahaan)->nama_perusahaan,
+        'perusahaan' => $item->perusahaan?->nama_perusahaan ?? '-',
 
         'icon' => 'bx bx-download',
 
@@ -266,7 +272,7 @@ class DashboardSuperAdminController extends Controller
       $timeline->push([
         'judul' => 'Pemakaian Aset',
 
-        'perusahaan' => optional($item->perusahaan)->nama_perusahaan,
+        'perusahaan' => $item->perusahaan?->nama_perusahaan ?? '-',
 
         'icon' => 'bx bx-desktop',
 
@@ -292,7 +298,7 @@ class DashboardSuperAdminController extends Controller
       $timeline->push([
         'judul' => $item->kode_service,
 
-        'perusahaan' => optional($item->inventaris->perusahaan)->nama_perusahaan,
+        'perusahaan' => $item->inventaris?->perusahaan?->nama_perusahaan ?? '-',
 
         'icon' => 'bx bx-wrench',
 
@@ -318,7 +324,7 @@ class DashboardSuperAdminController extends Controller
       $timeline->push([
         'judul' => $item->kode_peminjaman,
 
-        'perusahaan' => optional($item->perusahaanTujuan)->nama_perusahaan,
+        'perusahaan' => $item->perusahaanTujuan?->nama_perusahaan ?? ($item->inventaris?->perusahaan?->nama_perusahaan ?? '-'),
 
         'icon' => 'bx bx-transfer',
 
@@ -338,10 +344,11 @@ class DashboardSuperAdminController extends Controller
   }
   private function komposisiInventaris()
   {
-    return Inventaris::with('dataAset.kategori')
+    return Inventaris::where('is_transfer', false)
+      ->with('dataAset.kategori')
       ->get()
       ->groupBy(function ($item) {
-        return optional($item->dataAset->kategori)->nama_barang ?? 'Lainnya';
+        return $item->dataAset?->kategori?->nama_barang ?? 'Lainnya';
       })
       ->map(function ($items, $kategori) {
         return [
@@ -364,8 +371,8 @@ class DashboardSuperAdminController extends Controller
 
       'mapping_servis' => Maping::where('status', 'servis')->count(),
 
-      'inventaris_rusak' => Inventaris::where('status', 'RUSAK')->count(),
-      'inventaris_afkir' => Inventaris::where('status', 'AFKIR')->count(),
+      'inventaris_rusak' => Inventaris::where('is_transfer', false)->where('status', 'RUSAK')->count(),
+      'inventaris_afkir' => Inventaris::where('is_transfer', false)->where('status', 'AFKIR')->count(),
     ];
   }
 }

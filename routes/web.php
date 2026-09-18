@@ -33,6 +33,11 @@ use App\Http\Controllers\main_dashboard\DashboardSuperAdminController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\TicketCategoryController;
 use App\Http\Controllers\UserAssetController;
+use App\Http\Controllers\ChecklistJadwalController;
+use App\Http\Controllers\ChecklistPemeriksaanController;
+use App\Http\Controllers\ChecklistItemController;
+use App\Http\Controllers\RoleController;
+use App\Http\Controllers\ModuleSettingController;
 
 Route::get('/', function () {
   return redirect('/login');
@@ -240,6 +245,7 @@ Route::middleware(['auth'])->group(function () {
       ->group(function () {
         // HISTORY PERJALANAN ASET
         Route::get('/perjalanan-aset', [HistoryPerjalananAsetController::class, 'index'])->name('history.perjalanan.index');
+        Route::get('/perjalanan-aset/cetak', [HistoryPerjalananAsetController::class, 'cetakIndex'])->name('history.perjalanan.cetak_index');
         Route::get('/perjalanan-aset/export-excel', [HistoryPerjalananAsetController::class, 'exportExcelIndex'])->name('history.perjalanan.export_excel_index');
         Route::get('/perjalanan-aset/{id}', [HistoryPerjalananAsetController::class, 'show'])->name('history.perjalanan.show');
         Route::get('/perjalanan-aset/{id}/cetak', [HistoryPerjalananAsetController::class, 'cetak'])->name('history.perjalanan.cetak');
@@ -331,5 +337,43 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/', [TicketCategoryController::class, 'store'])->name('store');
     Route::put('/{id}', [TicketCategoryController::class, 'update'])->name('update');
     Route::delete('/{id}', [TicketCategoryController::class, 'destroy'])->name('destroy');
+  });
+
+  /*
+  |--------------------------------------------------------------------------
+  | CHECKLIST & PERAWATAN DEVICE (ROOM-CENTRIC)
+  |--------------------------------------------------------------------------
+  */
+  Route::prefix('dashboard/checklist')->name('checklist.')->middleware(['role:petugas,super_admin'])->group(function () {
+    // Jadwal Mingguan
+    Route::resource('jadwal', ChecklistJadwalController::class);
+
+    // Pelaksanaan Checklist Device
+    Route::get('pemeriksaan', [ChecklistPemeriksaanController::class, 'index'])->name('pemeriksaan.index');
+    Route::get('pemeriksaan/{id}', [ChecklistPemeriksaanController::class, 'show'])->name('pemeriksaan.show');
+    Route::post('pemeriksaan/{id}/mark-all-ok', [ChecklistPemeriksaanController::class, 'markAllOk'])->name('pemeriksaan.mark-all-ok');
+    Route::post('pemeriksaan/{ruanganId}/device/{deviceId}/mark-ok', [ChecklistPemeriksaanController::class, 'markDeviceOk'])->name('pemeriksaan.device.mark-ok');
+    Route::post('pemeriksaan/{ruanganId}/device/{deviceId}/update', [ChecklistPemeriksaanController::class, 'updateDevice'])->name('pemeriksaan.device.update');
+    Route::get('pemeriksaan/{id}/cetak', [ChecklistPemeriksaanController::class, 'cetak'])->name('pemeriksaan.cetak');
+
+    // Master Item Pemeriksaan
+    Route::resource('item', ChecklistItemController::class)->except(['create', 'show', 'edit']);
+  });
+
+  /*
+  |--------------------------------------------------------------------------
+  | PENGATURAN SISTEM (SETTING MODUL & MANAJEMEN ROLE)
+  |--------------------------------------------------------------------------
+  */
+  Route::prefix('dashboard/settings')->name('settings.')->middleware(['setting.access'])->group(function () {
+    // Setting Modul & Hak Akses
+    Route::get('modules', [ModuleSettingController::class, 'index'])->name('modules.index');
+    Route::post('modules/matrix', [ModuleSettingController::class, 'updateMatrix'])->name('modules.matrix');
+    Route::post('modules/{id}/toggle', [ModuleSettingController::class, 'toggleModuleStatus'])->name('modules.toggle');
+    Route::post('modules/managers', [ModuleSettingController::class, 'updateSettingManagers'])->name('modules.managers');
+
+    // Manajemen Role
+    Route::resource('roles', RoleController::class)->except(['create', 'show', 'edit']);
+    Route::post('roles/{id}/toggle-setting', [RoleController::class, 'toggleSettingAccess'])->name('roles.toggle-setting');
   });
 });

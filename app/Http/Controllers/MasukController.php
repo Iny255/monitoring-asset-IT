@@ -48,6 +48,19 @@ class MasukController extends Controller
       $query->where('jenis_masuk', $request->jenis_masuk);
     }
 
+    // FILTER STATUS MUTASI ASET
+    if ($request->filled('status_aset')) {
+      if ($request->status_aset == 'aktif') {
+        $query->whereHas('inventaris', function ($q) {
+          $q->where('is_transfer', false);
+        });
+      } elseif ($request->status_aset == 'dimutasi') {
+        $query->whereHas('inventaris', function ($q) {
+          $q->where('is_transfer', true);
+        });
+      }
+    }
+
     // SEARCH
     if ($request->search) {
       $search = $request->search;
@@ -322,69 +335,7 @@ class MasukController extends Controller
         'ket_penerimaan' => $request->ket_penerimaan,
       ]);
 
-      $dataAset = DataAset::with('kategori')->findOrFail($request->data_aset_id);
-      $perusahaan = Perusahaan::findOrFail($perusahaanId);
-
-      $prefixKode = strtoupper($dataAset->kategori->kode_barang) . '.' . strtoupper($perusahaan->kode_perusahaan) . '-';
-
-      // Hitung urutan tertinggi no_inventaris untuk perusahaan ini
-      $existingInvs = Inventaris::where('perusahaan_id', $perusahaanId)
-        ->where('no_inventaris', 'like', 'INV-%')
-        ->pluck('no_inventaris');
-
-      $maxInvUrut = 0;
-      foreach ($existingInvs as $inv) {
-        $numStr = str_replace('INV-', '', $inv);
-        if (is_numeric($numStr)) {
-          $val = (int) $numStr;
-          if ($val > $maxInvUrut) {
-            $maxInvUrut = $val;
-          }
-        }
-      }
-
-      // Hitung urutan tertinggi kode_aset untuk prefix kategori & perusahaan ini
-      $existingKodes = Inventaris::where('perusahaan_id', $perusahaanId)
-        ->where('kode_aset', 'like', $prefixKode . '%')
-        ->pluck('kode_aset');
-
-      $maxKodeUrut = 0;
-      foreach ($existingKodes as $k) {
-        $numStr = substr($k, strlen($prefixKode));
-        if (is_numeric($numStr)) {
-          $val = (int) $numStr;
-          if ($val > $maxKodeUrut) {
-            $maxKodeUrut = $val;
-          }
-        }
-      }
-
-      for ($i = 1; $i <= $request->jumlah; $i++) {
-        // NO INVENTARIS
-        $maxInvUrut++;
-        $noInventaris = 'INV-' . str_pad($maxInvUrut, 3, '0', STR_PAD_LEFT);
-        while (Inventaris::where('perusahaan_id', $perusahaanId)->where('no_inventaris', $noInventaris)->exists()) {
-          $maxInvUrut++;
-          $noInventaris = 'INV-' . str_pad($maxInvUrut, 3, '0', STR_PAD_LEFT);
-        }
-
-        // KODE ASET
-        $maxKodeUrut++;
-        $kodeAset = $prefixKode . str_pad($maxKodeUrut, 3, '0', STR_PAD_LEFT);
-        while (Inventaris::where('perusahaan_id', $perusahaanId)->where('kode_aset', $kodeAset)->exists()) {
-          $maxKodeUrut++;
-          $kodeAset = $prefixKode . str_pad($maxKodeUrut, 3, '0', STR_PAD_LEFT);
-        }
-
-        Inventaris::create([
-          'masuk_id' => $masuk->id,
-          'perusahaan_id' => $perusahaanId,
-          'data_aset_id' => $dataAset->id,
-          'kode_aset' => $kodeAset,
-          'no_inventaris' => $noInventaris,
-          'status' => 'TERSEDIA',
-        ]);
-      }
+      $this->generateInventaris($masuk, $perusahaanId, $request->data_aset_id, $request->jumlah);
 
       DB::commit();
 
@@ -418,65 +369,204 @@ class MasukController extends Controller
 
   public function edit(Masuk $masuk)
   {
+    if ($masuk->isMapped()) {
+      return redirect()
+        ->route('transaksi-masuk.index')
+        ->with('error', 'Data penerimaan aset ini tidak dapat diedit karena sebagian atau seluruh aset sudah di-mapping.');
+    }
+
     $user = auth()->user();
+    $perusahaanId = $user->role == 'super_admin' ? $masuk->perusahaan_id : $user->id_perusahaan;
+    $perusahaans = $user->role == 'super_admin' ? Perusahaan::orderBy('nama_perusahaan')->get() : collect();
 
-    $perusahaans = $user->role == 'super_admin' ? Perusahaan::all() : collect();
-
-    $suppliers =
-      $user->role == 'super_admin' ? Supplier::all() : Supplier::where('perusahaan_id', $user->id_perusahaan)->get();
-
+    $suppliers = Supplier::where('perusahaan_id', $perusahaanId)->orderBy('nama_supplier')->get();
+    $kategoris = Kategori::where('perusahaan_id', $perusahaanId)->orderBy('nama_barang')->get();
     $dataAsets = DataAset::with('kategori')
-      ->where('perusahaan_id', $masuk->perusahaan_id)
+      ->where('perusahaan_id', $perusahaanId)
+      ->where('kategori_id', $masuk->dataAset->kategori_id ?? null)
       ->get();
 
-    $suppliers = Supplier::where('perusahaan_id', $masuk->perusahaan_id)->get();
-
-    return view('content.dashboard.transaksi-masuk.edit', compact('masuk', 'perusahaans', 'dataAsets', 'suppliers'));
+    return view('content.dashboard.transaksi-masuk.edit', compact(
+      'masuk',
+      'perusahaans',
+      'suppliers',
+      'kategoris',
+      'dataAsets'
+    ));
   }
 
   public function update(Request $request, Masuk $masuk)
   {
+    if ($masuk->isMapped()) {
+      return redirect()
+        ->route('transaksi-masuk.index')
+        ->with('error', 'Data penerimaan aset ini tidak dapat diedit karena sebagian atau seluruh aset sudah di-mapping.');
+    }
+
+    $user = auth()->user();
+
     $request->validate([
+      'kategori_id' => 'required|exists:kategoris,id',
+      'data_aset_id' => 'required|exists:data_asets,id',
       'supplier_id' => [Rule::requiredIf($masuk->jenis_masuk == 'Pembelian'), 'nullable', 'exists:suppliers,id'],
       'tanggal_pembelian' => 'required|date',
+      'jumlah' => 'required|integer|min:1',
       'harga_satuan' => 'required|numeric|min:0',
       'garansi' => 'nullable|integer|min:0',
       'ket_penerimaan' => 'required|in:BAIK,RUSAK',
+      'perusahaan_id' => [Rule::requiredIf($user->role == 'super_admin'), 'nullable', 'exists:perusahaans,id'],
     ]);
 
+    DB::beginTransaction();
+
     try {
+      $targetPerusahaanId = $user->role == 'super_admin' ? $request->perusahaan_id : $masuk->perusahaan_id;
+      $targetDataAsetId = $request->data_aset_id;
+      $targetJumlah = (int) $request->jumlah;
+
+      // Sinkronisasi unit inventaris sebelum update data masuk
+      $this->syncInventaris($masuk, $targetPerusahaanId, $targetDataAsetId, $targetJumlah);
+
+      // Update data masuk
       $masuk->update([
-        'supplier_id' => $request->supplier_id,
+        'perusahaan_id' => $targetPerusahaanId,
+        'supplier_id' => $masuk->jenis_masuk == 'Pembelian' ? $request->supplier_id : $masuk->supplier_id,
+        'data_aset_id' => $targetDataAsetId,
         'tanggal_pembelian' => $request->tanggal_pembelian,
+        'jumlah' => $targetJumlah,
         'harga_satuan' => $request->harga_satuan,
         'garansi' => $request->garansi,
         'ket_penerimaan' => $request->ket_penerimaan,
       ]);
 
+      DB::commit();
+
       return redirect()
         ->route('transaksi-masuk.index')
         ->with('success', 'Data penerimaan aset berhasil diperbarui.');
     } catch (\Exception $e) {
-      Log::error($e->getMessage());
+      DB::rollBack();
+      Log::error('Gagal update penerimaan aset: ' . $e->getMessage());
 
       return back()
         ->withInput()
-        ->with('error', 'Gagal memperbarui data.');
+        ->with('error', 'Gagal memperbarui data: ' . $e->getMessage());
     }
   }
 
   public function destroy(Masuk $masuk)
   {
+    if ($masuk->isMapped()) {
+      return back()->with('error', 'Data penerimaan aset ini tidak dapat dihapus karena aset sudah di-mapping.');
+    }
+
     try {
+      DB::beginTransaction();
+      $masuk->inventaris()->delete();
       $masuk->delete();
+      DB::commit();
 
       return redirect()
         ->route('transaksi-masuk.index')
         ->with('success', 'Data berhasil dihapus.');
     } catch (\Exception $e) {
+      DB::rollBack();
       Log::error($e->getMessage());
 
       return back()->with('error', 'Gagal menghapus data.');
+    }
+  }
+
+  private function generateInventaris(Masuk $masuk, int $perusahaanId, int $dataAsetId, int $jumlah)
+  {
+    $dataAset = DataAset::with('kategori')->findOrFail($dataAsetId);
+    $perusahaan = Perusahaan::findOrFail($perusahaanId);
+
+    $prefixKode = strtoupper($dataAset->kategori->kode_barang) . '.' . strtoupper($perusahaan->kode_perusahaan) . '-';
+
+    // Hitung urutan tertinggi no_inventaris untuk perusahaan ini
+    $existingInvs = Inventaris::where('perusahaan_id', $perusahaanId)
+      ->where('no_inventaris', 'like', 'INV-%')
+      ->pluck('no_inventaris');
+
+    $maxInvUrut = 0;
+    foreach ($existingInvs as $inv) {
+      $numStr = str_replace('INV-', '', $inv);
+      if (is_numeric($numStr)) {
+        $val = (int) $numStr;
+        if ($val > $maxInvUrut) {
+          $maxInvUrut = $val;
+        }
+      }
+    }
+
+    // Hitung urutan tertinggi kode_aset untuk prefix kategori & perusahaan ini
+    $existingKodes = Inventaris::where('perusahaan_id', $perusahaanId)
+      ->where('kode_aset', 'like', $prefixKode . '%')
+      ->pluck('kode_aset');
+
+    $maxKodeUrut = 0;
+    foreach ($existingKodes as $k) {
+      $numStr = substr($k, strlen($prefixKode));
+      if (is_numeric($numStr)) {
+        $val = (int) $numStr;
+        if ($val > $maxKodeUrut) {
+          $maxKodeUrut = $val;
+        }
+      }
+    }
+
+    for ($i = 1; $i <= $jumlah; $i++) {
+      // NO INVENTARIS
+      $maxInvUrut++;
+      $noInventaris = 'INV-' . str_pad($maxInvUrut, 3, '0', STR_PAD_LEFT);
+      while (Inventaris::where('perusahaan_id', $perusahaanId)->where('no_inventaris', $noInventaris)->exists()) {
+        $maxInvUrut++;
+        $noInventaris = 'INV-' . str_pad($maxInvUrut, 3, '0', STR_PAD_LEFT);
+      }
+
+      // KODE ASET
+      $maxKodeUrut++;
+      $kodeAset = $prefixKode . str_pad($maxKodeUrut, 3, '0', STR_PAD_LEFT);
+      while (Inventaris::where('perusahaan_id', $perusahaanId)->where('kode_aset', $kodeAset)->exists()) {
+        $maxKodeUrut++;
+        $kodeAset = $prefixKode . str_pad($maxKodeUrut, 3, '0', STR_PAD_LEFT);
+      }
+
+      Inventaris::create([
+        'masuk_id' => $masuk->id,
+        'perusahaan_id' => $perusahaanId,
+        'data_aset_id' => $dataAset->id,
+        'kode_aset' => $kodeAset,
+        'no_inventaris' => $noInventaris,
+        'status' => 'TERSEDIA',
+      ]);
+    }
+  }
+
+  private function syncInventaris(Masuk $masuk, int $targetPerusahaanId, int $targetDataAsetId, int $targetJumlah)
+  {
+    $oldPerusahaanId = $masuk->perusahaan_id;
+    $oldDataAsetId = $masuk->data_aset_id;
+    $oldJumlah = $masuk->inventaris()->count();
+
+    $dataAsetChanged = ($oldDataAsetId != $targetDataAsetId);
+    $perusahaanChanged = ($oldPerusahaanId != $targetPerusahaanId);
+
+    if ($dataAsetChanged || $perusahaanChanged) {
+      // Jika data aset atau perusahaan berubah, hapus inventaris lama dan buat baru
+      $masuk->inventaris()->delete();
+      $this->generateInventaris($masuk, $targetPerusahaanId, $targetDataAsetId, $targetJumlah);
+    } else {
+      // Data aset & perusahaan sama, periksa perubahan jumlah
+      if ($targetJumlah > $oldJumlah) {
+        $selisih = $targetJumlah - $oldJumlah;
+        $this->generateInventaris($masuk, $targetPerusahaanId, $targetDataAsetId, $selisih);
+      } elseif ($targetJumlah < $oldJumlah) {
+        $selisih = $oldJumlah - $targetJumlah;
+        $idsToDelete = $masuk->inventaris()->orderByDesc('id')->take($selisih)->pluck('id');
+        Inventaris::whereIn('id', $idsToDelete)->delete();
+      }
     }
   }
 
@@ -525,16 +615,17 @@ class MasukController extends Controller
 
           'type' => $first->dataAset->type,
 
-          'total_aset' => $items->count(),
+          'total_aset' => $items->where('is_transfer', false)->count(),
 
-          'tersedia' => $items->where('status', 'TERSEDIA')->count(),
+          'tersedia' => $items->where('is_transfer', false)->where('status', 'TERSEDIA')->count(),
 
-          'dipakai' => $items->where('status', 'DIPAKAI')->count(),
+          'dipakai' => $items->where('is_transfer', false)->where('status', 'DIPAKAI')->count(),
 
-          'dipinjam' => $items->where('status', 'DIPINJAM')->count(),
+          'dipinjam' => $items->where('is_transfer', false)->where('status', 'DIPINJAM')->count(),
 
-          'rusak' => $items->where('status', 'RUSAK')->count(),
-          'afkir' => $items->where('status', 'AFKIR')->count(),
+          'rusak' => $items->where('is_transfer', false)->where('status', 'RUSAK')->count(),
+          'afkir' => $items->where('is_transfer', false)->where('status', 'AFKIR')->count(),
+          'dimutasi' => $items->where('is_transfer', true)->count(),
 
           'inventaris' => $items,
         ];

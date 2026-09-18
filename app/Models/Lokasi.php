@@ -29,6 +29,16 @@ class Lokasi extends Model
         return $this->hasMany(Maping::class, 'id_lokasi');
     }
 
+    public function checklistJadwals()
+    {
+        return $this->hasMany(ChecklistJadwal::class, 'id_lokasi');
+    }
+
+    public function checklistRuangans()
+    {
+        return $this->hasMany(ChecklistRuangan::class, 'id_lokasi');
+    }
+
     // ================= AUTO + FILTER =================
 
     protected static function booted()

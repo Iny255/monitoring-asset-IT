@@ -151,9 +151,27 @@ class HistoryStokController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    $historyCabut = HistoryPencabutan::whereIn('inventaris_id', $inventaris->pluck('id'))->get();
+    $historyCabut = HistoryPencabutan::with(['creator', 'maping.karyawan', 'maping.keluar.karyawan', 'inventaris.keluarTerakhir.karyawan'])
+      ->whereIn('inventaris_id', $inventaris->pluck('id'))->get();
 
     foreach ($historyCabut as $item) {
+      $userCabut = $item->user_lama;
+      if (empty($userCabut) || $userCabut === '-') {
+        $userCabut = $item->maping?->penerima
+          ?? $item->maping?->karyawan?->nama_karyawan
+          ?? $item->maping?->keluar?->karyawan?->nama_karyawan
+          ?? $item->maping?->divisi
+          ?? $item->maping?->keluar?->divisi_klr
+          ?? $item->inventaris?->keluarTerakhir?->karyawan?->nama_karyawan
+          ?? $item->inventaris?->keluarTerakhir?->divisi_klr;
+      }
+
+      $lokasiLama = $item->lokasi_lama;
+      if (empty($lokasiLama) || $lokasiLama === '-') {
+        $lokasiLama = $item->maping?->lokasi?->nama_lokasi
+          ?? $item->maping?->keluar?->lokasi?->nama_lokasi;
+      }
+
       $timeline->push([
         'tanggal' => Carbon::parse($item->tanggal_pencabutan),
 
@@ -163,11 +181,11 @@ class HistoryStokController extends Controller
 
         'inventaris' => $item->no_inventaris,
 
-        'user_lama' => $item->user_lama,
+        'user_lama' => $userCabut,
 
         'user_baru' => null,
 
-        'lokasi_lama' => $item->lokasi_lama,
+        'lokasi_lama' => $lokasiLama,
 
         'lokasi_baru' => $item->lokasi_baru,
 

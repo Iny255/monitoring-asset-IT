@@ -45,14 +45,70 @@ class User extends Authenticatable
     return $query->whereIn('role', ['petugas']);
   }
 
+  public function setRoleAttribute($value)
+  {
+    if (is_numeric($value)) {
+      $role = Role::find((int) $value);
+      $this->attributes['role'] = $role ? $role->name : (string) $value;
+    } else {
+      $this->attributes['role'] = $value;
+    }
+  }
+
+  public function getRoleAttribute($value)
+  {
+    if (is_numeric($value)) {
+      $role = Role::find((int) $value);
+      return $role ? $role->name : (string) $value;
+    }
+    return $value;
+  }
+
   public function getDashboardUrl()
   {
-    return match ($this->role) {
-      'super_admin' => '/dashboard/superadmin',
-      'petugas' => '/dashboard/petugas',
-      'user' => '/dashboard/e-ticket',
+    $currentRole = is_numeric($this->role) ? ($this->roleDefinition?->name ?? $this->role) : $this->role;
+    return match ($currentRole) {
+      'super_admin', '1' => '/dashboard/superadmin',
+      'petugas', '2' => '/dashboard/petugas',
+      'user', '3', 'karyawan', '4' => '/dashboard/e-ticket',
       default => '/dashboard/e-ticket',
     };
+  }
+
+  public function roleDefinition()
+  {
+    $roleVal = $this->attributes['role'] ?? $this->role ?? null;
+    if (is_numeric($roleVal)) {
+      return $this->belongsTo(Role::class, 'role', 'id');
+    }
+    return $this->belongsTo(Role::class, 'role', 'name');
+  }
+
+  public function canManageSettings(): bool
+  {
+    if ($this->role === 'super_admin' || $this->role === '1' || $this->role === 1) {
+      return true;
+    }
+    $role = $this->roleDefinition;
+    if (!$role && is_numeric($this->role)) {
+      $role = Role::find((int) $this->role);
+    }
+    return (bool) ($role?->can_manage_settings ?? false);
+  }
+
+  public function hasModuleAccess(string $moduleCode): bool
+  {
+    if ($this->role === 'super_admin' || $this->role === '1' || $this->role === 1) {
+      return true;
+    }
+    $role = $this->roleDefinition;
+    if (!$role && is_numeric($this->role)) {
+      $role = Role::find((int) $this->role);
+    }
+    if (!$role) {
+      return false;
+    }
+    return $role->hasModule($moduleCode);
   }
 
   public function karyawan()

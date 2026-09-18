@@ -92,7 +92,7 @@
     <div class="title">
         <h2>Laporan History Pemakaian Aset</h2>
         <p>
-            {{ $user->role == 'super_admin' ? 'SEMBILAN GROUP' : strtoupper($user->perusahaan->nama_perusahaan ?? 'PERUSAHAAN') }}
+            {{ in_array($user->role, ['super_admin', '1', 1]) || !$user->id_perusahaan ? 'SEMBILAN GROUP' : strtoupper($user->perusahaan?->nama_perusahaan ?? 'PERUSAHAAN') }}
             • Tanggal Cetak: {{ date('d-m-Y H:i') }}
         </p>
     </div>

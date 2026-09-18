@@ -156,6 +156,20 @@
                             </div>
 
                             <div class="col-md-3">
+                                <label class="form-label">Status Aset</label>
+
+                                <select name="status_aset" class="form-select">
+                                    <option value="">Semua (Termasuk Dimutasi)</option>
+                                    <option value="aktif" {{ request('status_aset') == 'aktif' ? 'selected' : '' }}>
+                                        Aset Aktif di Perusahaan
+                                    </option>
+                                    <option value="dimutasi" {{ request('status_aset') == 'dimutasi' ? 'selected' : '' }}>
+                                        Aset Telah Dimutasi Keluar
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-3">
 
                                 <label class="form-label">
                                     Pencarian
@@ -256,21 +270,42 @@
                                     @if ($masuk->inventaris && $masuk->inventaris->isNotEmpty())
                                         <div class="mb-1">
                                             @if ($masuk->inventaris->count() == 1)
-                                                <span class="badge bg-label-primary">
-                                                    {{ $masuk->inventaris->first()->kode_aset }}
-                                                </span>
-                                            @elseif ($masuk->inventaris->count() <= 3)
-                                                @foreach ($masuk->inventaris as $inv)
-                                                    <span class="badge bg-label-primary me-1 mb-1">
+                                                @php $inv = $masuk->inventaris->first(); @endphp
+                                                @if ($inv->is_transfer)
+                                                    <span class="badge bg-label-warning" title="Aset telah dimutasi ke perusahaan lain">
+                                                        <i class="bx bx-transfer me-1"></i>{{ $inv->kode_aset }} (Dimutasi)
+                                                    </span>
+                                                @else
+                                                    <span class="badge bg-label-primary">
                                                         {{ $inv->kode_aset }}
                                                     </span>
+                                                @endif
+                                            @elseif ($masuk->inventaris->count() <= 3)
+                                                @foreach ($masuk->inventaris as $inv)
+                                                    @if ($inv->is_transfer)
+                                                        <span class="badge bg-label-warning me-1 mb-1" title="Aset telah dimutasi ke perusahaan lain">
+                                                            <i class="bx bx-transfer me-1"></i>{{ $inv->kode_aset }} (Dimutasi)
+                                                        </span>
+                                                    @else
+                                                        <span class="badge bg-label-primary me-1 mb-1">
+                                                            {{ $inv->kode_aset }}
+                                                        </span>
+                                                    @endif
                                                 @endforeach
                                             @else
+                                                @php
+                                                    $mutasiCount = $masuk->inventaris->where('is_transfer', true)->count();
+                                                @endphp
                                                 <span class="badge bg-label-primary mb-1"
                                                     title="{{ $masuk->inventaris->pluck('kode_aset')->implode(', ') }}">
                                                     {{ $masuk->inventaris->first()->kode_aset }} - {{ $masuk->inventaris->last()->kode_aset }}
                                                     ({{ $masuk->inventaris->count() }} Aset)
                                                 </span>
+                                                @if ($mutasiCount > 0)
+                                                    <span class="badge bg-label-warning mb-1" title="{{ $mutasiCount }} aset telah dimutasi ke perusahaan lain">
+                                                        <i class="bx bx-transfer me-1"></i>{{ $mutasiCount }} Dimutasi
+                                                    </span>
+                                                @endif
                                             @endif
                                         </div>
                                     @endif
@@ -363,41 +398,65 @@
 
                                 {{-- AKSI --}}
                                 <td class="text-center">
+                                    @php
+                                        $isMapped = $masuk->isMapped();
+                                    @endphp
+
+                                    @if ($isMapped)
+                                        <div class="mb-1">
+                                            <span class="badge bg-label-info" style="font-size: 10px;" title="Sebagian atau seluruh aset telah di-mapping">
+                                                <i class="bx bx-check-double me-1"></i>Sudah Dimapping
+                                            </span>
+                                        </div>
+                                    @else
+                                        <div class="mb-1">
+                                            <span class="badge bg-label-success" style="font-size: 10px;" title="Aset belum di-mapping, data dapat diedit">
+                                                <i class="bx bx-edit me-1"></i>Belum Dimapping
+                                            </span>
+                                        </div>
+                                    @endif
 
                                     <div class="d-flex justify-content-center gap-1">
 
                                         <a href="{{ route('transaksi-masuk.show', $masuk->id) }}"
-                                            class="btn btn-info btn-sm">
-
+                                            class="btn btn-info btn-sm" title="Lihat Detail">
                                             <i class="bx bx-show"></i>
-
                                         </a>
 
                                         @if (in_array(auth()->user()->role, ['petugas', 'super_admin']))
-                                            <button type="button" class="btn btn-warning btn-sm btn-edit"
-                                                data-url="{{ route('transaksi-masuk.edit', $masuk->id) }}">
-
-                                                <i class="bx bx-edit-alt"></i>
-
-                                            </button>
-                                            <button class="btn btn-danger btn-sm btn-delete"
-                                                data-id="{{ $masuk->id }}">
-
-                                                <i class="bx bx-trash"></i>
-
-                                            </button>
+                                            @if ($isMapped)
+                                                <button type="button" class="btn btn-secondary btn-sm btn-edit-locked"
+                                                    title="Aset sudah di-mapping ke pengguna/ruangan (Terkunci)">
+                                                    <i class="bx bx-lock-alt"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-secondary btn-sm btn-delete-locked"
+                                                    title="Aset sudah di-mapping (Tidak dapat dihapus)">
+                                                    <i class="bx bx-lock-alt"></i>
+                                                </button>
+                                            @else
+                                                <button type="button" class="btn btn-warning btn-sm btn-edit"
+                                                    data-url="{{ route('transaksi-masuk.edit', $masuk->id) }}"
+                                                    title="Edit Penerimaan Aset">
+                                                    <i class="bx bx-edit-alt"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-danger btn-sm btn-delete"
+                                                    data-id="{{ $masuk->id }}"
+                                                    title="Hapus Penerimaan Aset">
+                                                    <i class="bx bx-trash"></i>
+                                                </button>
+                                            @endif
                                         @endif
 
                                     </div>
 
-                                    <form id="delete-form-{{ $masuk->id }}"
-                                        action="{{ route('transaksi-masuk.destroy', $masuk->id) }}" method="POST"
-                                        style="display:none;">
-
-                                        @csrf
-                                        @method('DELETE')
-
-                                    </form>
+                                    @if (!$isMapped)
+                                        <form id="delete-form-{{ $masuk->id }}"
+                                            action="{{ route('transaksi-masuk.destroy', $masuk->id) }}" method="POST"
+                                            style="display:none;">
+                                            @csrf
+                                            @method('DELETE')
+                                        </form>
+                                    @endif
 
                                 </td>
 
@@ -493,6 +552,29 @@
 
                     });
 
+                });
+
+                // Handlers untuk tombol terkunci karena sudah di-mapping
+                document.querySelectorAll('.btn-edit-locked').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        Swal.fire({
+                            title: 'Data Terkunci!',
+                            text: 'Data penerimaan ini tidak dapat diedit karena sebagian atau seluruh aset sudah di-mapping ke pengguna atau ruangan.',
+                            icon: 'info',
+                            confirmButtonColor: '#696cff'
+                        });
+                    });
+                });
+
+                document.querySelectorAll('.btn-delete-locked').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        Swal.fire({
+                            title: 'Tidak Dapat Dihapus!',
+                            text: 'Data penerimaan ini tidak dapat dihapus karena sebagian atau seluruh aset sudah di-mapping ke pengguna atau ruangan.',
+                            icon: 'warning',
+                            confirmButtonColor: '#696cff'
+                        });
+                    });
                 });
             </script>
             <script>

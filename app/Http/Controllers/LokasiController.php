@@ -27,48 +27,19 @@ class LokasiController extends Controller
 
     $perusahaans = $user->role === 'super_admin' ? Perusahaan::all() : collect();
 
-    if ($user->role === 'super_admin') {
-      // ==========================================
-      // SUPER ADMIN MEMILIH PERUSAHAAN
-      // ==========================================
-      if ($perusahaanId) {
-        $lokasis = Lokasi::with('perusahaan')->where('id_perusahaan', $perusahaanId);
-      } else {
-        // ==========================================
-        // SUPER ADMIN - SEMUA PERUSAHAAN
-        // ==========================================
-        $lokasis = Lokasi::select(DB::raw('MIN(id) as id'), 'nama_lokasi')
-          ->selectRaw('COUNT(DISTINCT id_perusahaan) as total_perusahaan')
-          ->groupBy('nama_lokasi');
-      }
-    } else {
-      // ==========================================
-      // PETUGAS
-      // ==========================================
-      $lokasis = Lokasi::with('perusahaan')->where('id_perusahaan', $user->id_perusahaan);
+    $query = Lokasi::with('perusahaan');
+
+    if ($user->role !== 'super_admin') {
+      $query->where('id_perusahaan', $user->id_perusahaan);
+    } elseif ($perusahaanId) {
+      $query->where('id_perusahaan', $perusahaanId);
     }
 
-    // ==========================================
-    // SEARCH
-    // ==========================================
     if ($search) {
-      $lokasis->where('nama_lokasi', 'like', "%{$search}%");
+      $query->where('nama_lokasi', 'like', "%{$search}%");
     }
 
-    // ==========================================
-    // PAGINATION
-    // ==========================================
-    if ($user->role === 'super_admin' && !$perusahaanId) {
-      $lokasis = $lokasis
-        ->orderBy('nama_lokasi')
-        ->paginate(10)
-        ->appends($request->query());
-    } else {
-      $lokasis = $lokasis
-        ->latest()
-        ->paginate(10)
-        ->appends($request->query());
-    }
+    $lokasis = $query->latest()->paginate(10)->appends($request->query());
 
     return view('content.dashboard.lokasi.index', compact('lokasis', 'perusahaans', 'perusahaanId'));
   }

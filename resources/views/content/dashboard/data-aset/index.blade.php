@@ -298,13 +298,17 @@
                                     </option>
 
                                     @if (auth()->user()->role !== 'super_admin')
-
                                         @foreach ($kategoris as $kategori)
                                             <option value="{{ $kategori->id }}">
                                                 {{ strtoupper($kategori->nama_barang) }}
                                             </option>
                                         @endforeach
-
+                                    @else
+                                        @foreach ($kategoris as $kategori)
+                                            <option value="{{ $kategori->id }}" data-perusahaan="{{ $kategori->perusahaan_id }}">
+                                                {{ strtoupper($kategori->nama_barang) }} ({{ $kategori->perusahaan->nama_perusahaan ?? '-' }})
+                                            </option>
+                                        @endforeach
                                     @endif
                                 </select>
 

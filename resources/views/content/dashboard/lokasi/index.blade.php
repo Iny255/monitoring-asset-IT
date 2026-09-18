@@ -94,19 +94,8 @@
 
                                 <th>NAMA LOKASI</th>
 
-                                @if (auth()->user()->role == 'super_admin')
-
-                                    @if (request('perusahaan_id'))
-                                        <th>PERUSAHAAN</th>
-                                    @else
-                                        <th>DIGUNAKAN DI</th>
-                                    @endif
-
-                                @endif
-
-                                @if (!(auth()->user()->role == 'super_admin' && empty(request('perusahaan_id'))))
-                                    <th width="120">ACTION</th>
-                                @endif
+                                <th>PERUSAHAAN</th>
+                                <th width="120">ACTION</th>
                             </tr>
                         </thead>
 
@@ -118,52 +107,40 @@
                                     </td>
                                     <td>{{ $lokasi->nama_lokasi }}</td>
 
-                                    @if (auth()->user()->role == 'super_admin')
-                                        @if (request('perusahaan_id'))
-                                            <td>
-                                                {{ $lokasi->perusahaan->nama_perusahaan }}
-                                            </td>
-                                        @else
-                                            <td>
-                                                <span class="badge bg-label-primary btn-detail-lokasi"
-                                                    style="cursor:pointer" data-nama="{{ $lokasi->nama_lokasi }}">
+                                    <td>
+                                        <span class="badge bg-label-info">
+                                            {{ $lokasi->perusahaan->nama_perusahaan ?? '-' }}
+                                        </span>
+                                    </td>
 
-                                                    {{ $lokasi->total_perusahaan }} Perusahaan
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center gap-2">
 
-                                                </span>
-                                            </td>
-                                        @endif
-                                    @endif
+                                            {{-- EDIT --}}
+                                            <button class="btn btn-warning btn-sm btn-edit"
+                                                data-id="{{ $lokasi->id }}" data-kode="{{ $lokasi->kode_lokasi }}"
+                                                data-nama="{{ $lokasi->nama_lokasi }}"
+                                                data-perusahaan_id="{{ $lokasi->id_perusahaan }}"
+                                                title="Edit Lokasi">
+                                                <i class="bx bx-edit-alt"></i>
+                                            </button>
 
-                                    @if (!(auth()->user()->role == 'super_admin' && empty(request('perusahaan_id'))))
-                                        <td class="text-center">
-                                            <div class="d-flex justify-content-center gap-2">
+                                            {{-- DELETE --}}
+                                            <form id="delete-form-{{ $lokasi->id }}"
+                                                action="{{ route('lokasi.destroy', $lokasi->id) }}" method="POST"
+                                                style="display:none;">
+                                                @csrf
+                                                @method('DELETE')
+                                            </form>
 
-                                                {{-- EDIT --}}
-                                                <button class="btn btn-warning btn-sm btn-edit"
-                                                    data-id="{{ $lokasi->id }}" data-kode="{{ $lokasi->kode_lokasi }}"
-                                                    data-nama="{{ $lokasi->nama_lokasi }}"
-                                                    data-perusahaan_id="{{ $lokasi->id_perusahaan }}">
-                                                    <i class="bx bx-edit-alt"></i>
-                                                </button>
+                                            <button class="btn btn-danger btn-sm btn-delete"
+                                                data-id="{{ $lokasi->id }}"
+                                                title="Hapus Lokasi">
+                                                <i class="bx bx-trash"></i>
+                                            </button>
 
-                                                {{-- DELETE --}}
-
-                                                <form id="delete-form-{{ $lokasi->id }}"
-                                                    action="{{ route('lokasi.destroy', $lokasi->id) }}" method="POST"
-                                                    style="display:none;">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                </form>
-
-                                                <button class="btn btn-danger btn-sm btn-delete"
-                                                    data-id="{{ $lokasi->id }}">
-                                                    <i class="bx bx-trash"></i>
-                                                </button>
-
-                                            </div>
-                                        </td>
-                                    @endif
+                                        </div>
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>

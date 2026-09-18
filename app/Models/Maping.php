@@ -10,6 +10,10 @@ use App\Models\Keluar;
 use App\Models\Perusahaan;
 use App\Models\MutasiMaping;
 use App\Models\MapingAccess;
+use App\Models\HistoryMutasi;
+use App\Models\HistoryPencabutan;
+use App\Models\Maintenance;
+use App\Models\Peminjaman;
 
 class Maping extends Model
 {
@@ -103,9 +107,91 @@ class Maping extends Model
     return $this->jenis_penerima ?? '-';
   }
   public function isAktif(): bool
-{
+  {
     return $this->status === 'aktif';
-}
+  }
+
+  /**
+   * Cek apakah data mapping ini memenuhi syarat untuk dihapus:
+   * Hanya boleh dihapus jika masih "Fresh" (belum pernah ada mutasi, pencabutan, servis, atau transaksi lanjutan).
+   */
+  public function canBeDeleted(): bool
+  {
+    // Jika status bukan aktif (misal sudah selesai/dicabut atau diservis), tidak boleh dihapus langsung
+    if ($this->status !== 'aktif') {
+      return false;
+    }
+
+    // Cek apakah sudah pernah ada riwayat mutasi
+    $hasMutasi = HistoryMutasi::where('maping_id', $this->id)
+      ->orWhere('maping_baru_id', $this->id)
+      ->exists();
+    if ($hasMutasi) {
+      return false;
+    }
+
+    // Cek apakah sudah pernah ada riwayat pencabutan
+    if ($this->historyPencabutans()->exists()) {
+      return false;
+    }
+
+    // Cek apakah sudah pernah ada riwayat perbaikan / servis
+    if ($this->maintenances()->exists()) {
+      return false;
+    }
+
+    // Cek apakah inventaris sedang dipinjam
+    $inventarisId = $this->keluar?->inventaris_id;
+    if ($inventarisId) {
+      $isDipinjam = Peminjaman::where('inventaris_id', $inventarisId)
+        ->whereIn('status', ['dipinjam', 'DIPINJAM'])
+        ->exists();
+      if ($isDipinjam) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  public function getCanBeDeletedAttribute(): bool
+  {
+    return $this->canBeDeleted();
+  }
+
+  public function getDeleteBlockReasonAttribute(): ?string
+  {
+    if ($this->status !== 'aktif') {
+      return "Mapping ini berstatus '{$this->status}' dan tidak dapat dihapus secara langsung.";
+    }
+
+    $hasMutasi = HistoryMutasi::where('maping_id', $this->id)
+      ->orWhere('maping_baru_id', $this->id)
+      ->exists();
+    if ($hasMutasi) {
+      return 'Mapping ini sudah memiliki riwayat mutasi aset sehingga tidak dapat dihapus.';
+    }
+
+    if ($this->historyPencabutans()->exists()) {
+      return 'Mapping ini sudah memiliki riwayat pencabutan perangkat.';
+    }
+
+    if ($this->maintenances()->exists()) {
+      return 'Mapping ini sudah memiliki riwayat perbaikan/maintenance perangkat.';
+    }
+
+    $inventarisId = $this->keluar?->inventaris_id;
+    if ($inventarisId) {
+      $isDipinjam = Peminjaman::where('inventaris_id', $inventarisId)
+        ->whereIn('status', ['dipinjam', 'DIPINJAM'])
+        ->exists();
+      if ($isDipinjam) {
+        return 'Perangkat pada mapping ini sedang dalam status peminjaman aktif.';
+      }
+    }
+
+    return null;
+  }
   /*
     |--------------------------------------------------------------------------
     | AUTO FILTER PERUSAHAAN

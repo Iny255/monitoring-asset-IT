@@ -516,7 +516,7 @@
 
                             <div class="col-7">
 
-                                {{ $peminjaman->inventaris->perusahaan->nama_perusahaan }}
+                                {{ $peminjaman->inventaris?->perusahaan?->nama_perusahaan ?? '-' }}
 
                             </div>
 

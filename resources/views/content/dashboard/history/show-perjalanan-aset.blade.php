@@ -44,7 +44,13 @@
                         No. Inventaris: {{ $first->no_inventaris ?? '-' }} • {{ $first->dataAset->kategori->nama_barang ?? '-' }} • {{ $first->dataAset->merek ?? '-' }} {{ $first->dataAset->type ?? '-' }} • {{ $first->perusahaan->nama_perusahaan ?? '-' }}
                     </div>
                 </div>
-                <div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ route('history.perjalanan.cetak', array_merge(['id' => $id], request()->query())) }}" target="_blank" class="btn btn-danger">
+                        <i class="bx bxs-file-pdf me-1"></i> Cetak PDF
+                    </a>
+                    <a href="{{ route('history.perjalanan.export_excel', array_merge(['id' => $id], request()->query())) }}" class="btn btn-success">
+                        <i class="bx bxs-file-export me-1"></i> Export Excel
+                    </a>
                     <a href="{{ route('history.perjalanan.index') }}" class="btn btn-outline-secondary">
                         <i class="bx bx-arrow-back me-1"></i> Kembali
                     </a>
@@ -193,10 +199,10 @@
                                 Reset
                             </a>
                             <a href="{{ route('history.perjalanan.cetak', array_merge(['id' => $id], request()->query())) }}" target="_blank" class="btn btn-danger" title="Cetak PDF">
-                                <i class="bx bxs-file-pdf"></i>
+                                <i class="bx bxs-file-pdf me-1"></i> PDF
                             </a>
                             <a href="{{ route('history.perjalanan.export_excel', array_merge(['id' => $id], request()->query())) }}" class="btn btn-success" title="Export Excel">
-                                <i class="bx bxs-file-export"></i>
+                                <i class="bx bxs-file-export me-1"></i> Excel
                             </a>
                         </div>
                     </div>
@@ -258,10 +264,10 @@
                                         @endswitch
                                     </td>
                                     <td>
-                                        <div class="fw-semibold text-dark"><i class="bx bx-user me-1"></i>{{ $item['user_baru'] ?? '-' }}</div>
+                                        <div class="fw-semibold text-dark"><i class="bx bx-user me-1"></i>{{ $item['user_baru'] ?? $item['user_lama'] ?? '-' }}</div>
                                     </td>
                                     <td>
-                                        <div class="text-dark"><i class="bx bx-map-pin me-1"></i>{{ $item['lokasi_baru'] ?? '-' }}</div>
+                                        <div class="text-dark"><i class="bx bx-map-pin me-1"></i>{{ $item['lokasi_baru'] ?? $item['lokasi_lama'] ?? '-' }}</div>
                                     </td>
                                     <td>
                                         <div class="small fw-semibold text-dark">{{ $item['hak_akses'] ?? '-' }}</div>

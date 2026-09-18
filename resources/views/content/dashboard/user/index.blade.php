@@ -90,16 +90,18 @@
                                 <td>{{ $user->username }}</td>
                                 <td>{{ $user->email }}</td>
                                 <td>
-                                    @switch($user->role)
-                                        @case('super_admin')
-                                            <span class="badge bg-danger">Super Admin</span>
-                                            @break
-                                        @case('petugas')
-                                            <span class="badge bg-primary">Petugas IT</span>
-                                            @break
-                                        @default
-                                            <span class="badge bg-info">User / Karyawan</span>
-                                    @endswitch
+                                    @php
+                                        $roleSlug = (string) $user->role;
+                                        $roleDisplay = $user->roleDefinition?->display_name ?? ucfirst(str_replace('_', ' ', $roleSlug));
+                                        $badgeClass = match($roleSlug) {
+                                            'super_admin', '1' => 'bg-danger',
+                                            'petugas', '2' => 'bg-primary',
+                                            'user', '3' => 'bg-info',
+                                            'karyawan', '4' => 'bg-secondary',
+                                            default => 'bg-dark',
+                                        };
+                                    @endphp
+                                    <span class="badge {{ $badgeClass }}">{{ $roleDisplay }}</span>
                                 </td>
                                 <td>
                                     @if ($user->karyawan)
@@ -109,7 +111,7 @@
                                     @endif
                                 </td>
                                 <td>
-                                    @if ($user->role === 'super_admin')
+                                    @if (in_array($user->role, ['super_admin', '1', 1]) || !$user->id_perusahaan)
                                         <span class="badge bg-label-primary">Semua Perusahaan</span>
                                     @elseif ($user->perusahaan)
                                         <strong>{{ $user->perusahaan->nama_perusahaan }}</strong>
@@ -202,9 +204,9 @@
                                 <label>Role Access <span class="text-danger">*</span></label>
                                 <select name="role" class="form-select" required>
                                     <option value="">Pilih Role</option>
-                                    <option value="user">User / Karyawan (Pelapor Tiket)</option>
-                                    <option value="petugas">Petugas IT Support</option>
-                                    <option value="super_admin">Super Admin</option>
+                                    @foreach ($roles as $r)
+                                        <option value="{{ $r->name }}" data-id="{{ $r->id }}">{{ $r->display_name }}</option>
+                                    @endforeach
                                 </select>
                             </div>
 
@@ -291,9 +293,10 @@
                             <div class="col-md-6 mb-3">
                                 <label>Role Access</label>
                                 <select id="editRole" name="role" class="form-select" required>
-                                    <option value="user">User / Karyawan (Pelapor Tiket)</option>
-                                    <option value="petugas">Petugas IT Support</option>
-                                    <option value="super_admin">Super Admin</option>
+                                    <option value="">Pilih Role</option>
+                                    @foreach ($roles as $r)
+                                        <option value="{{ $r->name }}" data-id="{{ $r->id }}">{{ $r->display_name }}</option>
+                                    @endforeach
                                 </select>
                             </div>
 
@@ -346,7 +349,18 @@
             document.getElementById('editUsername').value = username;
             document.getElementById('editName').value = name;
             document.getElementById('editEmail').value = email;
-            document.getElementById('editRole').value = role;
+            
+            const roleSelect = document.getElementById('editRole');
+            roleSelect.value = role;
+            if (!roleSelect.value && role !== null && role !== undefined) {
+                for (let i = 0; i < roleSelect.options.length; i++) {
+                    const opt = roleSelect.options[i];
+                    if (opt.value == role || opt.getAttribute('data-id') == role) {
+                        roleSelect.selectedIndex = i;
+                        break;
+                    }
+                }
+            }
 
             if (perusahaan_id) {
                 document.getElementById('editPerusahaan').value = perusahaan_id;

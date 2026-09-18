@@ -27,12 +27,12 @@
 
                         <p class="mb-3 text-white opacity-75">
 
-                            @if (auth()->user()->role == 'super_admin')
+                            @if (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan || (auth()->user()->roleDefinition && (auth()->user()->roleDefinition->name === 'super_admin' || auth()->user()->roleDefinition->can_manage_settings)))
                                 Monitoring Seluruh Perusahaan
                             @else
                                 Monitoring Asset
                                 <strong>
-                                    {{ auth()->user()->perusahaan->nama_perusahaan ?? '-' }}
+                                    {{ auth()->user()->perusahaan?->nama_perusahaan ?? '-' }}
                                 </strong>
                             @endif
 

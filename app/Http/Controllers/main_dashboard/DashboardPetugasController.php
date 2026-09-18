@@ -93,19 +93,26 @@ class DashboardPetugasController extends Controller
   private function inventaris($user)
   {
     $inventaris = $this->filterPerusahaan(Inventaris::query(), $user);
+    $active = (clone $inventaris)->where('is_transfer', false);
+    $mutasiKeluar = (clone $inventaris)->where('is_transfer', true)->count();
+    $totalTercatat = (clone $inventaris)->count();
 
     return [
-      'total' => (clone $inventaris)->count(),
+      'total' => (clone $active)->count(),
 
-      'tersedia' => (clone $inventaris)->where('status', 'TERSEDIA')->count(),
+      'tersedia' => (clone $active)->where('status', 'TERSEDIA')->count(),
 
-      'dipakai' => (clone $inventaris)->where('status', 'DIPAKAI')->count(),
+      'dipakai' => (clone $active)->where('status', 'DIPAKAI')->count(),
 
-      'dipinjam' => (clone $inventaris)->where('status', 'DIPINJAM')->count(),
+      'dipinjam' => (clone $active)->where('status', 'DIPINJAM')->count(),
 
-      'rusak' => (clone $inventaris)->where('status', 'RUSAK')->count(),
+      'rusak' => (clone $active)->where('status', 'RUSAK')->count(),
 
-      'afkir' => (clone $inventaris)->where('status', 'AFKIR')->count(),
+      'afkir' => (clone $active)->where('status', 'AFKIR')->count(),
+
+      'mutasi_keluar' => $mutasiKeluar,
+
+      'total_tercatat' => $totalTercatat,
     ];
   }
 
@@ -142,6 +149,7 @@ class DashboardPetugasController extends Controller
   private function komposisiAset($user)
   {
     return $this->filterPerusahaan(Inventaris::with('dataAset.kategori'), $user)
+      ->where('is_transfer', false)
       ->get()
 
       ->groupBy(function ($item) {
@@ -810,7 +818,8 @@ class DashboardPetugasController extends Controller
    */
   private function matriksKategori($user)
   {
-    $inventarisQuery = $this->filterPerusahaan(Inventaris::with(['dataAset.kategori', 'kategori']), $user);
+    $inventarisQuery = $this->filterPerusahaan(Inventaris::with(['dataAset.kategori', 'kategori']), $user)
+      ->where('is_transfer', false);
     $inventarisList = $inventarisQuery->get();
     $totalAset = $inventarisList->count();
 

@@ -13,6 +13,11 @@
                 </th>
             </tr>
             <tr>
+                <th colspan="7" style="font-size: 11px; text-align: center; color: #555555;">
+                    TANGGAL EXPORT: {{ date('d-m-Y H:i') }}
+                </th>
+            </tr>
+            <tr>
                 <th style="font-weight: bold; background-color: #f2f2f2; border: 1px solid #000000; text-align: center;">NO</th>
                 <th style="font-weight: bold; background-color: #f2f2f2; border: 1px solid #000000;">PERUSAHAAN</th>
                 <th style="font-weight: bold; background-color: #f2f2f2; border: 1px solid #000000;">KODE ASET</th>
@@ -33,7 +38,17 @@
                     <td style="border: 1px solid #000000;">{{ $inv->status ?? '-' }}</td>
                     <td style="border: 1px solid #000000;">
                         @if($inv->status == 'DIPAKAI' && $inv->keluarTerakhir)
-                            {{ $inv->keluarTerakhir->jenis_penerima == 'Perorangan' ? ($inv->keluarTerakhir->karyawan?->nama_karyawan ?? '-') : ($inv->keluarTerakhir->divisi_klr ?? '-') }}
+                            @php
+                                $maping = $inv->keluarTerakhir->maping;
+                                if ($maping && $maping->status == 'aktif') {
+                                    $namaPemakai = $maping->jenis_penerima == 'Perorangan' ? ($maping->karyawan?->nama_karyawan ?? '-') : ($maping->divisi ?? '-');
+                                } else {
+                                    $namaPemakai = $inv->keluarTerakhir->jenis_penerima == 'Perorangan' ? ($inv->keluarTerakhir->karyawan?->nama_karyawan ?? '-') : ($inv->keluarTerakhir->divisi_klr ?? '-');
+                                }
+                            @endphp
+                            {{ $namaPemakai }}
+                        @elseif($inv->status == 'DIPINJAM' && $inv->peminjamanTerakhir)
+                            {{ $inv->peminjamanTerakhir->karyawan?->nama_karyawan ?? ($inv->peminjamanTerakhir->karyawanTujuan?->nama_karyawan ?? '-') }}
                         @else
                             Belum dipakai
                         @endif

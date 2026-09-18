@@ -88,9 +88,12 @@
 </head>
 <body onload="window.print()">
 
-    <div class="no-print" style="margin-bottom: 15px; text-align: right;">
-        <button onclick="window.print()" style="padding: 8px 16px; background: #154b87; color: white; border: none; border-radius: 4px; cursor: pointer;">
+    <div class="no-print" style="margin-bottom: 15px; display: flex; justify-content: flex-end; gap: 8px;">
+        <button onclick="window.print()" style="padding: 8px 16px; background: #154b87; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
             Cetak PDF / Print
+        </button>
+        <button onclick="window.close()" style="padding: 8px 16px; background: #6c757d; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">
+            Tutup
         </button>
     </div>
 
@@ -102,7 +105,7 @@
         <h2>Laporan History Perjalanan Aset</h2>
         <p>
             <strong>Kode Aset: {{ $first->kode_aset ?? '-' }}</strong> • No. Inventaris: {{ $first->no_inventaris ?? '-' }} • {{ $first->dataAset->kategori->nama_barang ?? '-' }} • {{ $first->dataAset->merek ?? '-' }} {{ $first->dataAset->type ?? '' }}
-            • {{ $user->role == 'super_admin' ? 'SEMBILAN GROUP' : strtoupper($first->perusahaan->nama_perusahaan ?? $user->perusahaan->nama_perusahaan ?? 'PERUSAHAAN') }}
+            • {{ in_array($user->role, ['super_admin', '1', 1]) || !$user->id_perusahaan ? 'SEMBILAN GROUP' : strtoupper($first?->perusahaan?->nama_perusahaan ?? $user->perusahaan?->nama_perusahaan ?? 'PERUSAHAAN') }}
         </p>
     </div>
 
@@ -122,7 +125,7 @@
         <tbody>
             @forelse($timeline as $item)
                 <tr>
-                    <td class="text-center">{{ $item['tanggal']->format('d-m-Y') }}</td>
+                    <td class="text-center">{{ $item['tanggal'] instanceof \Carbon\Carbon ? $item['tanggal']->format('d-m-Y') : ($item['tanggal'] ? \Carbon\Carbon::parse($item['tanggal'])->format('d-m-Y') : '-') }}</td>
                     <td>
                         @if ($item['aktivitas'] == 'MUTASI' && !empty($item['kode_aset_lama']) && $item['kode_aset_lama'] != $item['kode_aset_baru'])
                             {{ $item['kode_aset_lama'] }} &rarr; {{ $item['kode_aset_baru'] }}
@@ -131,8 +134,8 @@
                         @endif
                     </td>
                     <td class="text-center"><span class="badge">{{ $item['aktivitas'] }}</span></td>
-                    <td>{{ $item['user_baru'] ?? '-' }}</td>
-                    <td>{{ $item['lokasi_baru'] ?? '-' }}</td>
+                    <td>{{ $item['user_baru'] ?? $item['user_lama'] ?? '-' }}</td>
+                    <td>{{ $item['lokasi_baru'] ?? $item['lokasi_lama'] ?? '-' }}</td>
                     <td>{{ $item['hak_akses'] ?? '-' }}</td>
                     <td>{{ $item['keterangan'] }}</td>
                     <td class="text-center">{{ $item['petugas'] ?? '-' }}</td>

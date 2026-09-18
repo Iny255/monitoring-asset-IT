@@ -198,13 +198,13 @@
 
                         <td>
 
-                            {{ $item->user_lama }}
+                            {{ $item->user_lama ?: (($item->maping?->penerima && $item->maping->penerima !== '-') ? $item->maping->penerima : ($item->maping?->keluar?->karyawan?->nama_karyawan ?: ($item->maping?->divisi ?: '-'))) }}
 
                         </td>
 
                         <td>
 
-                            {{ $item->lokasi_lama }}
+                            {{ $item->lokasi_lama ?: ($item->maping?->lokasi?->nama_lokasi ?: ($item->maping?->keluar?->lokasi?->nama_lokasi ?: '-')) }}
 
                         </td>
 

@@ -6,6 +6,7 @@ use App\Models\DataAset;
 use App\Models\Kategori;
 use App\Models\Perusahaan;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class DataAsetController extends Controller
@@ -39,8 +40,7 @@ class DataAsetController extends Controller
     $dataAsets = $query->latest()->paginate(10)->appends($request->query());
 
     if ($user->role == 'super_admin') {
-      // kosongkan dulu
-      $kategoris = collect();
+      $kategoris = Kategori::with('perusahaan')->orderBy('nama_barang')->get();
     } else {
       $kategoris = Kategori::where('perusahaan_id', $user->id_perusahaan)
         ->orderBy('nama_barang')
@@ -161,9 +161,16 @@ class DataAsetController extends Controller
   }
   public function getKategori(string $id)
   {
-    $kategoris = Kategori::where('perusahaan_id', $id)
-      ->orderBy('nama_barang')
-      ->get();
+    if ($id === 'all' || $id === '0' || empty($id)) {
+      $kategoris = Kategori::select('nama_barang', DB::raw('MIN(id) as id'))
+        ->groupBy('nama_barang')
+        ->orderBy('nama_barang')
+        ->get();
+    } else {
+      $kategoris = Kategori::where('perusahaan_id', $id)
+        ->orderBy('nama_barang')
+        ->get();
+    }
 
     return response()->json($kategoris);
   }

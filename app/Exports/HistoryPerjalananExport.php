@@ -2,11 +2,12 @@
 
 namespace App\Exports;
 
-use Illuminate\Contracts\View\View;
-use Maatwebsite\Excel\Concerns\FromView;
+use Maatwebsite\Excel\Concerns\FromCollection;
+use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\ShouldAutoSize;
+use Carbon\Carbon;
 
-class HistoryPerjalananExport implements FromView, ShouldAutoSize
+class HistoryPerjalananExport implements FromCollection, WithHeadings, ShouldAutoSize
 {
     protected $inventaris;
     protected $timeline;
@@ -19,12 +20,46 @@ class HistoryPerjalananExport implements FromView, ShouldAutoSize
         $this->user = $user;
     }
 
-    public function view(): View
+    public function collection()
     {
-        return view('content.dashboard.history.excel-perjalanan-aset', [
-            'inventaris' => $this->inventaris,
-            'timeline' => $this->timeline,
-            'user' => $this->user,
-        ]);
+        return $this->timeline->values()->map(function ($item, $index) {
+            $tanggal = '-';
+            if (!empty($item['tanggal'])) {
+                if ($item['tanggal'] instanceof Carbon) {
+                    $tanggal = $item['tanggal']->format('d-m-Y H:i');
+                } else {
+                    $tanggal = Carbon::parse($item['tanggal'])->format('d-m-Y H:i');
+                }
+            }
+
+            return [
+                'No' => $index + 1,
+                'Tanggal' => $tanggal,
+                'Kode Aset' => $item['kode_aset'] ?? '-',
+                'No Inventaris' => $item['inventaris'] ?? '-',
+                'Aktivitas' => $item['aktivitas'] ?? '-',
+                'User Baru' => $item['user_baru'] ?? $item['user_lama'] ?? '-',
+                'Lokasi Baru' => $item['lokasi_baru'] ?? $item['lokasi_lama'] ?? '-',
+                'Hak Akses' => $item['hak_akses'] ?? '-',
+                'Keterangan' => $item['keterangan'] ?? '-',
+                'Petugas' => $item['petugas'] ?? '-',
+            ];
+        });
+    }
+
+    public function headings(): array
+    {
+        return [
+            'NO',
+            'TANGGAL',
+            'KODE ASET',
+            'NO INVENTARIS',
+            'AKTIVITAS',
+            'USER BARU',
+            'LOKASI BARU',
+            'HAK AKSES',
+            'KETERANGAN',
+            'PETUGAS',
+        ];
     }
 }

@@ -36,11 +36,19 @@ class MaintenanceController extends Controller
 
     // Search
     if ($request->filled('search')) {
-      $search = $request->search;
+      $search = trim($request->search);
 
       $query->where(function ($q) use ($search) {
         $q->where('kode_service', 'like', "%{$search}%")->orWhereHas('inventaris', function ($qq) use ($search) {
-          $qq->where('kode_aset', 'like', "%{$search}%")->orWhere('no_inventaris', 'like', "%{$search}%");
+          $qq->where('kode_aset', 'like', "%{$search}%")
+            ->orWhere('no_inventaris', 'like', "%{$search}%")
+            ->orWhereHas('dataAset.kategori', function ($qk) use ($search) {
+              $qk->where('nama_barang', 'like', "%{$search}%");
+            })
+            ->orWhereHas('dataAset', function ($qd) use ($search) {
+              $qd->where('merek', 'like', "%{$search}%")
+                ->orWhere('type', 'like', "%{$search}%");
+            });
         });
       });
     }
@@ -665,11 +673,11 @@ class MaintenanceController extends Controller
     }
 
     $user = auth()->user();
-    if ($user->role != 'super_admin') {
+    if (!in_array($user->role, ['super_admin', '1', 1]) && $user->id_perusahaan) {
       $accessibleIds = $user->getAccessibleCompanyIds();
       $isAllowed = $accessibleIds
-        ? $accessibleIds->contains($maintenance->inventaris->perusahaan_id)
-        : ($maintenance->inventaris->perusahaan_id == $user->id_perusahaan);
+        ? $accessibleIds->contains($maintenance->inventaris?->perusahaan_id)
+        : ($maintenance->inventaris?->perusahaan_id == $user->id_perusahaan);
       if (!$isAllowed) {
         return back()->with('error', 'Anda tidak memiliki akses ke data service ini.');
       }
@@ -755,11 +763,19 @@ class MaintenanceController extends Controller
     */
 
     if ($request->filled('search')) {
-      $search = $request->search;
+      $search = trim($request->search);
 
       $query->where(function ($q) use ($search) {
         $q->where('kode_service', 'like', "%{$search}%")->orWhereHas('inventaris', function ($qq) use ($search) {
-          $qq->where('kode_aset', 'like', "%{$search}%")->orWhere('no_inventaris', 'like', "%{$search}%");
+          $qq->where('kode_aset', 'like', "%{$search}%")
+            ->orWhere('no_inventaris', 'like', "%{$search}%")
+            ->orWhereHas('dataAset.kategori', function ($qk) use ($search) {
+              $qk->where('nama_barang', 'like', "%{$search}%");
+            })
+            ->orWhereHas('dataAset', function ($qd) use ($search) {
+              $qd->where('merek', 'like', "%{$search}%")
+                ->orWhere('type', 'like', "%{$search}%");
+            });
         });
       });
     }
@@ -801,14 +817,14 @@ class MaintenanceController extends Controller
     $maintenances = $query->orderBy('tanggal', 'desc')->get();
     $laporan = $maintenances;
 
-    if (auth()->user()->role == 'super_admin') {
+    if (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan) {
       if ($request->filled('perusahaan_id')) {
         $namaPerusahaan = Perusahaan::find($request->perusahaan_id)?->nama_perusahaan ?? 'Semua Perusahaan';
       } else {
         $namaPerusahaan = 'SEMBILAN GROUP';
       }
     } else {
-      $namaPerusahaan = auth()->user()->perusahaan->nama_perusahaan;
+      $namaPerusahaan = auth()->user()->perusahaan?->nama_perusahaan ?? 'Perusahaan';
     }
 
     return view('content.dashboard.maintenance.cetak', compact('laporan', 'namaPerusahaan'));
@@ -832,10 +848,18 @@ class MaintenanceController extends Controller
     }
 
     if ($request->filled('search')) {
-      $search = $request->search;
+      $search = trim($request->search);
       $query->where(function ($q) use ($search) {
         $q->where('kode_service', 'like', "%{$search}%")->orWhereHas('inventaris', function ($qq) use ($search) {
-          $qq->where('kode_aset', 'like', "%{$search}%")->orWhere('no_inventaris', 'like', "%{$search}%");
+          $qq->where('kode_aset', 'like', "%{$search}%")
+            ->orWhere('no_inventaris', 'like', "%{$search}%")
+            ->orWhereHas('dataAset.kategori', function ($qk) use ($search) {
+              $qk->where('nama_barang', 'like', "%{$search}%");
+            })
+            ->orWhereHas('dataAset', function ($qd) use ($search) {
+              $qd->where('merek', 'like', "%{$search}%")
+                ->orWhere('type', 'like', "%{$search}%");
+            });
         });
       });
     }

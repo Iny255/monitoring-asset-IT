@@ -236,17 +236,17 @@ class PeminjamanController extends Controller
           'status' => $item->status,
 
           'perusahaan' => [
-            'nama_perusahaan' => optional($item->perusahaan)->nama_perusahaan,
+            'nama_perusahaan' => $item->perusahaan?->nama_perusahaan ?? '-',
           ],
 
           'data_aset' => [
-            'nama_barang' => optional($item->dataAset->kategori)->nama_barang,
+            'nama_barang' => $item->dataAset?->kategori?->nama_barang ?? '-',
 
-            'merek' => $item->dataAset->merek,
+            'merek' => $item->dataAset?->merek ?? '-',
 
-            'type' => $item->dataAset->type,
+            'type' => $item->dataAset?->type ?? '-',
 
-            'warna' => $item->dataAset->warna,
+            'warna' => $item->dataAset?->warna ?? '-',
           ],
         ];
       });
@@ -563,14 +563,14 @@ class PeminjamanController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    if (auth()->user()->role == 'super_admin') {
+    if (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan) {
       if ($request->filled('perusahaan')) {
         $namaPerusahaan = optional(Perusahaan::find($request->perusahaan))->nama_perusahaan ?? 'SEMUA PERUSAHAAN';
       } else {
         $namaPerusahaan = 'SEMUA PERUSAHAAN';
       }
     } else {
-      $namaPerusahaan = auth()->user()->perusahaan->nama_perusahaan;
+      $namaPerusahaan = auth()->user()->perusahaan?->nama_perusahaan ?? 'Perusahaan';
     }
 
     return view('content.dashboard.peminjaman.cetak', compact('laporan', 'namaPerusahaan'));

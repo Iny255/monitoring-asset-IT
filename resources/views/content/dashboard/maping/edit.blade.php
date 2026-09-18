@@ -1,577 +1,316 @@
 @extends('layouts/contentNavbarLayout')
 
-@section('title', 'Edit Data Maping')
+@section('title', 'Edit Mapping Aset')
 
 @section('content')
 
-    <div class="card shadow-sm">
-        <div class="card-header">
-            <h5 class="mb-0 fw-bold text-primary">Edit Data Maping</h5>
+    <div class="container-xxl flex-grow-1 container-p-y">
+
+        {{-- HERO HEADER --}}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body py-4">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar avatar-md bg-label-primary me-3">
+                            <span class="avatar-initial rounded">
+                                <i class="bx bx-edit fs-3"></i>
+                            </span>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold mb-0">Edit Mapping Aset</h4>
+                            <small class="text-muted">Perbarui data alokasi penerima, lokasi, dan spesifikasi perangkat</small>
+                        </div>
+                    </div>
+                    <div>
+                        <a href="{{ route('maping.index') }}" class="btn btn-outline-secondary">
+                            <i class="bx bx-arrow-back me-1"></i> Kembali
+                        </a>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div class="card-body">
+        {{-- ALERT MESSAGES --}}
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show">
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
 
-            @if ($errors->any())
-                <div class="alert alert-danger">
-                    <ul class="mb-0">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
+        @if ($errors->any())
+            <div class="alert alert-danger alert-dismissible fade show">
+                <ul class="mb-0">
+                    @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
+
+        <form action="{{ route('maping.update', $maping->id) }}" method="POST" enctype="multipart/form-data">
+            @csrf
+            @method('PUT')
+
+            <input type="hidden" id="id_perusahaan" name="id_perusahaan" value="{{ $maping->id_perusahaan }}">
+
+            {{-- CARD 1: ALOKASI & PENERIMA --}}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="fw-bold text-primary mb-0">
+                        <i class="bx bx-package me-2"></i> 1. Informasi Alokasi & Penerima Aset
+                    </h5>
                 </div>
-            @endif
+                <div class="card-body py-4">
+                    <div class="row g-3">
 
-            <form action="{{ route('maping.update', $maping->id) }}" method="POST" enctype="multipart/form-data">
-                @csrf
-                @method('PUT')
-
-                <input type="hidden" id="id_maping" value="{{ $maping->id }}">
-                <input type="hidden" name="id_keluar" id="id_keluar" value="{{ $maping->id_keluar }}">
-
-                <div class="row g-4">
-
-                    {{-- ========================= --}}
-                    {{-- PERUSAHAAN --}}
-                    {{-- ========================= --}}
-                    @if (auth()->user()->role == 'super_admin')
-
+                        {{-- PERUSAHAAN --}}
                         <div class="col-md-6">
+                            <label class="form-label fw-semibold">Perusahaan</label>
+                            <input type="text" class="form-control bg-light"
+                                value="{{ $maping->perusahaan->nama_perusahaan ?? '-' }}" readonly>
+                        </div>
 
-                            <label class="form-label fw-semibold">
+                        {{-- UNIT INVENTARIS --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Unit Inventaris Terpasang <span class="text-danger">*</span></label>
+                            <select name="inventaris_id" id="inventaris_id" class="form-select">
+                                @if ($currentInventaris)
+                                    <option value="{{ $currentInventaris->id }}" selected>
+                                        [Saat Ini] [{{ $currentInventaris->no_inventaris }}] {{ $currentInventaris->kode_aset }} - {{ $currentInventaris->dataAset->kategori->nama_barang ?? '' }} {{ $currentInventaris->dataAset->merek ?? '' }} {{ $currentInventaris->dataAset->type ?? '' }}
+                                    </option>
+                                @endif
+                                @if (isset($availableInventaris) && $availableInventaris->isNotEmpty())
+                                    <optgroup label="Tukar dengan Unit Tersedia Lainnya di Gudang:">
+                                        @foreach ($availableInventaris as $inv)
+                                            @if (!$currentInventaris || $inv->id != $currentInventaris->id)
+                                                <option value="{{ $inv->id }}" {{ old('inventaris_id') == $inv->id ? 'selected' : '' }}>
+                                                    [{{ $inv->no_inventaris }}] {{ $inv->kode_aset }} - {{ $inv->dataAset->kategori->nama_barang ?? '' }} {{ $inv->dataAset->merek ?? '' }} {{ $inv->dataAset->type ?? '' }}
+                                                </option>
+                                            @endif
+                                        @endforeach
+                                    </optgroup>
+                                @endif
+                            </select>
+                            <small class="text-muted">Pilih unit lain jika ingin menukar fisik inventaris yang dialokasikan.</small>
+                        </div>
 
-                                Perusahaan
+                        {{-- JENIS PENERIMA --}}
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Jenis Penerima <span class="text-danger">*</span></label>
+                            @php
+                                $selectedJenis = old('jenis_penerima', $maping->jenis_penerima);
+                            @endphp
+                            <select name="jenis_penerima" id="jenis_penerima" class="form-select" required>
+                                <option value="Perorangan" {{ in_array($selectedJenis, ['Perorangan']) ? 'selected' : '' }}>
+                                    Perorangan (Karyawan)
+                                </option>
+                                <option value="Perdivisi" {{ in_array($selectedJenis, ['Per Divisi', 'Perdivisi']) ? 'selected' : '' }}>
+                                    Per Divisi
+                                </option>
+                            </select>
+                        </div>
 
-                            </label>
+                        {{-- KARYAWAN AUTOCOMPLETE --}}
+                        <div class="col-md-4 position-relative" id="box_karyawan">
+                            <label class="form-label fw-semibold">Pilih Karyawan (Autocomplete) <span class="text-danger">*</span></label>
+                            <input type="hidden" name="karyawan_id" id="karyawan_id"
+                                value="{{ old('karyawan_id', $maping->karyawan_id) }}">
+                            <input type="text" id="search_karyawan" class="form-control"
+                                placeholder="Ketik Nama Karyawan..." autocomplete="off"
+                                value="{{ old('search_karyawan', $maping->karyawan?->nama_karyawan ?? '') }}">
+                            <div id="result_karyawan" class="list-group position-absolute w-100 shadow-lg z-3 mt-1"
+                                style="display:none; max-height: 220px; overflow-y: auto;"></div>
+                            <small class="text-muted">Ketik nama untuk mencari dan memilih karyawan.</small>
+                        </div>
 
-                            <select name="id_perusahaan" id="id_perusahaan" class="form-select">
+                        {{-- DIVISI --}}
+                        <div class="col-md-4 d-none" id="box_divisi">
+                            <label class="form-label fw-semibold">Nama Divisi <span class="text-danger">*</span></label>
+                            <input type="text" name="divisi" id="divisi" class="form-control"
+                                placeholder="Misal: IT, Finance, HR..."
+                                value="{{ old('divisi', $maping->divisi ?? $maping->keluar?->divisi_klr) }}">
+                        </div>
 
-                                @foreach ($perusahaans as $perusahaan)
-                                    <option value="{{ $perusahaan->id }}"
-                                        {{ $maping->id_perusahaan == $perusahaan->id ? 'selected' : '' }}>
-
-                                        {{ $perusahaan->nama_perusahaan }}
-
+                        {{-- LOKASI --}}
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Lokasi Penempatan <span class="text-danger">*</span></label>
+                            <select name="id_lokasi" id="id_lokasi" class="form-select" required>
+                                <option value="">-- Pilih Lokasi --</option>
+                                @foreach ($lokasis as $lok)
+                                    <option value="{{ $lok->id }}"
+                                        {{ old('id_lokasi', $maping->id_lokasi) == $lok->id ? 'selected' : '' }}>
+                                        {{ $lok->nama_lokasi }}
                                     </option>
                                 @endforeach
-
                             </select>
-
                         </div>
-                    @else
-                        <input type="hidden" id="id_perusahaan" name="id_perusahaan"
-                            value="{{ auth()->user()->id_perusahaan }}">
 
-                    @endif
-
-
-                    {{-- ========================= --}}
-                    {{-- KATEGORI --}}
-                    {{-- ========================= --}}
-
-                    <div class="col-md-6">
-
-                        <label class="form-label fw-semibold">
-
-                           
-
-                        </label>
-
-                        <div class="col-md-6">
-
-                            <label class="form-label fw-semibold">
-                                Kategori Barang
-                            </label>
-
-                            <input type="text" class="form-control"
-                                value="{{ optional($maping->keluar->inventaris->dataAset->kategori)->nama_barang }}"
-                                readonly>
-
+                        {{-- TANGGAL DIGUNAKAN --}}
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Tanggal Digunakan <span class="text-danger">*</span></label>
+                            <input type="date" name="tanggal_digunakan" class="form-control"
+                                value="{{ old('tanggal_digunakan', $maping->tanggal_digunakan) }}" required>
                         </div>
 
                     </div>
-
                 </div>
+            </div>
 
-
-                <hr class="my-4">
-
-
-                <div class="row g-4">
-
-                    {{-- ========================= --}}
-                    {{-- KODE ASET --}}
-                    {{-- ========================= --}}
-
-                    <div class="col-md-6">
-
-                        <label class="form-label fw-semibold">
-                            Kode Asset
-                        </label>
-
-                        <input type="text" id="kode_aset" class="form-control"
-                            value="{{ optional($maping->keluar->inventaris)->kode_aset }}" readonly>
-
-                    </div>
-
-
-                    {{-- ========================= --}}
-                    {{-- NAMA BARANG --}}
-                    {{-- ========================= --}}
-
-                    <div class="col-md-6">
-
-                        <label class="form-label fw-semibold">
-
-                            Nama Barang
-
-                        </label>
-
-                        <input type="text" id="nama_barang" class="form-control" readonly
-                            value="{{ $maping->keluar->inventaris->dataAset->kategori->nama_barang ?? '' }}">
-
-                    </div>
-
-
-                    {{-- ========================= --}}
-                    {{-- TYPE --}}
-                    {{-- ========================= --}}
-
-                    <div class="col-md-3">
-
-                        <label class="form-label fw-semibold">
-
-                            Type
-
-                        </label>
-
-                        <input type="text" id="type" class="form-control" readonly
-                            value="{{ $maping->keluar->inventaris->dataAset->type ?? '' }}">
-
-                    </div>
-
-
-                    {{-- ========================= --}}
-                    {{-- MEREK --}}
-                    {{-- ========================= --}}
-
-                    <div class="col-md-3">
-
-                        <label class="form-label fw-semibold">
-
-                            Merek
-
-                        </label>
-
-                        <input type="text" id="merek" class="form-control" readonly
-                            value="{{ $maping->keluar->inventaris->dataAset->merek ?? '' }}">
-
-                    </div>
-
-
-                    {{-- ========================= --}}
-                    {{-- WARNA --}}
-                    {{-- ========================= --}}
-
-                    <div class="col-md-3">
-
-                        <label class="form-label fw-semibold">
-
-                            Warna
-
-                        </label>
-
-                        <input type="text" id="warna" class="form-control" readonly
-                            value="{{ $maping->keluar->inventaris->dataAset->warna ?? '' }}">
-
-                    </div>
-
-
-                    {{-- ========================= --}}
-                    {{-- USER ASET --}}
-                    {{-- ========================= --}}
-
-                    <div class="col-md-3">
-
-                        <label class="form-label fw-semibold">
-
-                            User Asset
-
-                        </label>
-
-                        <input type="text" id="nama_karyawan" class="form-control" readonly
-                            value="{{ $maping->keluar->jenis_penerima == 'Perorangan'
-                                ? optional($maping->karyawan)->nama_karyawan
-                                : $maping->keluar->divisi_klr }}"
-                            </div>
-
-                    </div>
-
-                    <hr class="my-4">
-
-                    {{-- ====================================================== --}}
-                    {{-- INFORMASI MAPPING --}}
-                    {{-- ====================================================== --}}
-
-                    <div class="card border-0 shadow-sm mb-4">
-
-                        <div class="card-header bg-white">
-
-                            <h5 class="mb-0 fw-bold">
-
-                                <i class="bx bx-map text-primary me-2"></i>
-
-                                Informasi Mapping
-
-                            </h5>
-
+            {{-- CARD 2: SPESIFIKASI DEVICE --}}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom py-3">
+                    <h5 class="fw-bold text-primary mb-0">
+                        <i class="bx bx-laptop me-2"></i> 2. Spesifikasi & Identitas Device
+                    </h5>
+                </div>
+                <div class="card-body py-4">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Processor</label>
+                            <input type="text" name="processor" class="form-control text-uppercase"
+                                placeholder="Misal: INTEL CORE I7-12700"
+                                value="{{ old('processor', $maping->processor) }}">
                         </div>
-
-                        <div class="card-body">
-
-                            <div class="row g-4">
-
-                                {{-- LOKASI --}}
-                                <div class="col-md-6">
-
-                                    <label class="form-label fw-semibold">
-
-                                        Lokasi Asset <span class="text-danger">*</span>
-
-                                    </label>
-
-                                    <select name="id_lokasi" class="form-select" required>
-
-                                        @foreach ($lokasis as $lokasi)
-                                            <option value="{{ $lokasi->id }}"
-                                                {{ $maping->id_lokasi == $lokasi->id ? 'selected' : '' }}>
-
-                                                {{ $lokasi->nama_lokasi }}
-
-                                            </option>
-                                        @endforeach
-
-                                    </select>
-
-                                </div>
-
-                                {{-- TANGGAL DIGUNAKAN --}}
-                                <div class="col-md-6">
-
-                                    <label class="form-label fw-semibold">
-
-                                        Tanggal Digunakan <span class="text-danger">*</span>
-
-                                    </label>
-
-                                    <input type="date" name="tanggal_digunakan" class="form-control"
-                                        value="{{ old('tanggal_digunakan', $maping->tanggal_digunakan) }}" required>
-
-                                </div>
-
-                            </div>
-
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">RAM</label>
+                            <input type="text" name="ram" class="form-control text-uppercase"
+                                placeholder="Misal: 16 GB" value="{{ old('ram', $maping->ram) }}">
                         </div>
-
-                    </div>
-
-                    {{-- ====================================================== --}}
-                    {{-- SPESIFIKASI --}}
-                    {{-- ====================================================== --}}
-
-                    <div class="card border-0 shadow-sm mb-4">
-
-                        <div class="card-header bg-white">
-
-                            <h5 class="mb-0 fw-bold">
-
-                                <i class="bx bx-chip text-success me-2"></i>
-
-                                Spesifikasi Perangkat
-
-                            </h5>
-
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Device ID / Serial Number</label>
+                            <input type="text" name="device_id" class="form-control text-uppercase"
+                                placeholder="Masukkan Serial / Device ID"
+                                value="{{ old('device_id', $maping->device_id) }}">
                         </div>
-
-                        <div class="card-body">
-
-                            <div class="row g-4">
-
-                                {{-- PROCESSOR --}}
-                                <div class="col-md-6">
-
-                                    <label class="form-label">
-
-                                        Processor
-
-                                    </label>
-
-                                    <input type="text" name="processor" class="form-control"
-                                        value="{{ old('processor', $maping->processor) }}">
-
-                                </div>
-
-                                {{-- RAM --}}
-                                <div class="col-md-6">
-
-                                    <label class="form-label">
-
-                                        RAM
-
-                                    </label>
-
-                                    <input type="text" name="ram" class="form-control"
-                                        value="{{ old('ram', $maping->ram) }}">
-
-                                </div>
-
-                                {{-- DEVICE ID --}}
-                                <div class="col-md-6">
-
-                                    <label class="form-label">
-
-                                        Device ID
-
-                                    </label>
-
-                                    <input type="text" name="device_id" class="form-control"
-                                        value="{{ old('device_id', $maping->device_id) }}">
-
-                                </div>
-
-                                {{-- PRODUCT ID --}}
-                                <div class="col-md-6">
-
-                                    <label class="form-label">
-
-                                        Product ID
-
-                                    </label>
-
-                                    <input type="text" name="produk_id" class="form-control"
-                                        value="{{ old('produk_id', $maping->produk_id) }}">
-
-                                </div>
-
-                                {{-- SYSTEM --}}
-                                <div class="col-md-6">
-
-                                    <label class="form-label">
-
-                                        Operating System
-
-                                    </label>
-
-                                    <input type="text" name="system" class="form-control"
-                                        value="{{ old('system', $maping->system) }}">
-
-                                </div>
-
-                                {{-- VERSION --}}
-                                <div class="col-md-6">
-
-                                    <label class="form-label">
-
-                                        Version
-
-                                    </label>
-
-                                    <input type="text" name="version" class="form-control"
-                                        value="{{ old('version', $maping->version) }}">
-
-                                </div>
-
-                                {{-- INSTALL ON --}}
-                                <div class="col-md-6">
-
-                                    <label class="form-label">
-
-                                        Install On
-
-                                    </label>
-
-                                    <input type="date" name="instal_on" class="form-control"
-                                        value="{{ old('instal_on', $maping->instal_on) }}">
-
-                                </div>
-
-                            </div>
-
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Product ID</label>
+                            <input type="text" name="produk_id" class="form-control text-uppercase"
+                                placeholder="Masukkan Product ID"
+                                value="{{ old('produk_id', $maping->produk_id) }}">
                         </div>
-
-                    </div>
-
-                    {{-- ====================================================== --}}
-                    {{-- FOTO PERANGKAT --}}
-                    {{-- ====================================================== --}}
-                    <div class="card border-0 shadow-sm mb-4">
-                        <div class="card-header bg-white">
-                            <h5 class="mb-0 fw-bold">
-                                <i class="bx bx-image text-primary me-2"></i>
-                                Foto Perangkat
-                            </h5>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Sistem Operasi (OS)</label>
+                            <input type="text" name="system" class="form-control text-uppercase"
+                                placeholder="Misal: WINDOWS 11 PRO"
+                                value="{{ old('system', $maping->system) }}">
                         </div>
-                        <div class="card-body">
-                            <div class="mb-3">
-                                <label class="form-label fw-semibold">Unggah / Ganti Foto Perangkat <small class="text-danger">(Maksimal 1 MB - JPG, JPEG, PNG, WEBP)</small></label>
-                                <input type="file" name="gambar" id="input_gambar_edit" class="form-control" accept="image/jpeg,image/png,image/jpg,image/webp" onchange="validateFotoSizeEdit(this)">
-                            </div>
-                            @if($maping->keluar?->gambar)
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Versi OS</label>
+                            <input type="text" name="version" class="form-control text-uppercase"
+                                placeholder="Misal: 22H2" value="{{ old('version', $maping->version) }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Tanggal Instalasi</label>
+                            <input type="date" name="instal_on" class="form-control"
+                                value="{{ old('instal_on', $maping->instal_on) }}">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Unggah / Ganti Foto Perangkat <small class="text-danger">(Maksimal 1 MB - JPG, JPEG, PNG, WEBP)</small></label>
+                            <input type="file" name="gambar" id="input_gambar_edit" class="form-control"
+                                accept="image/jpeg,image/png,image/jpg,image/webp" onchange="validateFotoSizeEdit(this)">
+                            @if ($maping->keluar?->gambar)
                                 <div class="mt-2" id="existing_foto_box">
                                     <small class="text-muted d-block mb-1">Foto Saat Ini:</small>
-                                    <img src="{{ asset('storage/' . $maping->keluar->gambar) }}" alt="Foto Perangkat" class="img-thumbnail rounded" style="max-height: 180px; object-fit: contain;">
+                                    <img src="{{ asset('storage/' . $maping->keluar->gambar) }}" alt="Foto Perangkat"
+                                        class="img-thumbnail rounded" style="max-height: 180px; object-fit: contain;">
                                 </div>
                             @endif
                             <div id="foto_edit_preview_box" class="mt-2 d-none">
                                 <small class="text-muted d-block mb-1">Preview Foto Baru:</small>
-                                <img id="foto_edit_preview" src="#" alt="Preview Foto Baru" class="img-thumbnail rounded" style="max-height: 180px; object-fit: contain;">
+                                <img id="foto_edit_preview" src="#" alt="Preview Foto Baru"
+                                    class="img-thumbnail rounded" style="max-height: 180px; object-fit: contain;">
                             </div>
                         </div>
-                    </div>
-
-                    {{-- ====================================================== --}}
-                    {{-- CATATAN --}}
-                    {{-- ====================================================== --}}
-
-                    <div class="card border-0 shadow-sm mb-4">
-
-                        <div class="card-header bg-white">
-
-                            <h5 class="mb-0 fw-bold">
-
-                                <i class="bx bx-note text-warning me-2"></i>
-
-                                Catatan
-
-                            </h5>
-
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Catatan Tambahan</label>
+                            <textarea name="catatan" class="form-control" rows="2"
+                                placeholder="Catatan kondisi fisik / kelengkapan unit...">{{ old('catatan', $maping->catatan) }}</textarea>
                         </div>
-
-                        <div class="card-body">
-
-                            <textarea name="catatan" rows="4" class="form-control" placeholder="Tambahkan catatan jika diperlukan...">{{ old('catatan', $maping->catatan) }}</textarea>
-
-                        </div>
-
                     </div>
+                </div>
+            </div>
 
+            {{-- TOMBOL SUBMIT --}}
+            <div class="d-flex justify-content-end gap-2 mb-4">
+                <a href="{{ route('maping.index') }}" class="btn btn-outline-secondary px-4 py-2">
+                    Batal
+                </a>
+                <button type="submit" class="btn btn-primary px-4 py-2">
+                    <i class="bx bx-save me-1"></i> Simpan Perubahan Mapping
+                </button>
+            </div>
 
-                    <div class="d-flex justify-content-between mt-4">
+        </form>
 
-                        <a href="{{ route('maping.index') }}" class="btn btn-outline-secondary">
-
-                            <i class="bx bx-arrow-back"></i>
-
-                            Kembali
-
-                        </a>
-
-                        <button type="submit" class="btn btn-primary">
-
-                            <i class="bx bx-save"></i>
-
-                            Update Mapping
-
-                        </button>
-
-                    </div>
-
-            </form>
-        </div>
     </div>
 
-@endsection
-
-
-
-@section('scripts')
-    <meta name="csrf-token" content="{{ csrf_token() }}">
-
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        $(document).ready(function() {
 
-            const currentKeluar = "{{ $maping->id_keluar }}";
-
-            /*
-            |--------------------------------------------------------------------------
-            | Reset Detail Barang
-            |--------------------------------------------------------------------------
-            */
-
-            function resetDetailBarang() {
-
-                document.getElementById('id_keluar').value = '';
-
-                document.getElementById('kode_aset').value = '';
-
-                document.getElementById('nama_barang').value = '';
-
-                document.getElementById('type').value = '';
-
-                document.getElementById('merek').value = '';
-
-                document.getElementById('warna').value = '';
-
-                document.getElementById('nama_karyawan').value = '';
-
+            // 1. TOGGLE JENIS PENERIMA
+            function togglePenerima() {
+                let jenis = $('#jenis_penerima').val();
+                if (jenis === 'Perorangan') {
+                    $('#box_karyawan').removeClass('d-none').show();
+                    $('#box_divisi').addClass('d-none').hide();
+                } else {
+                    $('#box_karyawan').addClass('d-none').hide();
+                    $('#box_divisi').removeClass('d-none').show();
+                }
             }
 
-            /*
-            |--------------------------------------------------------------------------
-            | Load Detail Asset
-            |--------------------------------------------------------------------------
-            */
+            $('#jenis_penerima').on('change', togglePenerima);
+            togglePenerima();
 
-            function loadDetailAset(idKeluar) {
+            // 2. AUTOCOMPLETE KARYAWAN
+            $('#search_karyawan').on('keyup input', function() {
+                let keyword = $(this).val();
+                let perusahaanId = $('#id_perusahaan').val();
 
-                if (!idKeluar) {
-                    resetDetailBarang();
+                if (keyword.length < 1) {
+                    $('#result_karyawan').hide().html('');
+                    $('#karyawan_id').val('');
                     return;
                 }
 
-                fetch('/maping/get-detail-aset/' + idKeluar)
+                $.get('/dashboard/maping/search-karyawan', {
+                    q: keyword,
+                    id_perusahaan: perusahaanId
+                }, function(data) {
+                    let html = '';
+                    if (data.length === 0) {
+                        html = '<div class="list-group-item text-muted small py-2">Karyawan tidak ditemukan</div>';
+                    } else {
+                        data.forEach(function(item) {
+                            html += `
+                                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-2 select-karyawan-item" 
+                                   data-id="${item.id}" data-nama="${item.nama_karyawan}">
+                                    <div class="fw-bold text-dark">${item.nama_karyawan}</div>
+                                    <small class="text-muted">${item.kode_karyawan ?? '-'} • Divisi: ${item.divisi ?? '-'}</small>
+                                </a>
+                            `;
+                        });
+                    }
+                    $('#result_karyawan').html(html).show();
+                });
+            });
 
-                    .then(response => response.json())
+            $(document).on('click', '.select-karyawan-item', function() {
+                let id = $(this).data('id');
+                let nama = $(this).data('nama');
+                $('#karyawan_id').val(id);
+                $('#search_karyawan').val(nama);
+                $('#result_karyawan').hide().html('');
+            });
 
-                    .then(data => {
-
-                        document.getElementById('id_keluar').value =
-                            data.id_keluar ?? '';
-
-                        document.getElementById('kode_aset').value =
-                            data.kode_aset ?? '';
-
-                        document.getElementById('nama_barang').value =
-                            data.nama_barang ?? '';
-
-                        document.getElementById('type').value =
-                            data.type ?? '';
-
-                        document.getElementById('merek').value =
-                            data.merek ?? '';
-
-                        document.getElementById('warna').value =
-                            data.warna ?? '';
-
-                        document.getElementById('nama_karyawan').value =
-                            data.user_aset ?? '';
-
-                    })
-
-                    .catch(error => {
-
-                        console.error('Gagal mengambil detail asset :', error);
-
-                    });
-
-            }
-
-            /*
-            |--------------------------------------------------------------------------
-            | Pertama kali halaman dibuka
-            |--------------------------------------------------------------------------
-            */
-
-            loadDetailAset(currentKeluar);
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('#box_karyawan').length) {
+                    $('#result_karyawan').hide();
+                }
+            });
 
         });
 
@@ -579,7 +318,7 @@
         function validateFotoSizeEdit(input) {
             if (input.files && input.files[0]) {
                 const file = input.files[0];
-                const maxSizeInBytes = 1048576; // 1 MB = 1024 * 1024 bytes
+                const maxSizeInBytes = 1048576; // 1 MB
                 if (file.size > maxSizeInBytes) {
                     let sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
                     if (typeof Swal !== 'undefined') {
@@ -606,4 +345,5 @@
             }
         }
     </script>
+
 @endsection

@@ -214,7 +214,7 @@
 
                                 <tr>
                                     <th>Perusahaan</th>
-                                    <td>{{ $keluar->inventaris->perusahaan->nama_perusahaan ?? '-' }}</td>
+                                    <td>{{ $keluar->inventaris?->perusahaan?->nama_perusahaan ?? '-' }}</td>
                                 </tr>
 
                                 <tr>

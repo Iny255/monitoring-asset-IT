@@ -88,24 +88,24 @@ class PeminjamanExport implements FromCollection, WithHeadings
         return [
           'Kode Peminjaman' => $item->kode_peminjaman,
 
-          'Perusahaan' => optional($item->inventaris->perusahaan)->nama_perusahaan,
+          'Perusahaan' => $item->inventaris?->perusahaan?->nama_perusahaan ?? '-',
 
-          'Kode Aset' => optional($item->inventaris)->kode_aset,
+          'Kode Aset' => $item->inventaris?->kode_aset ?? '-',
 
-          'No Inventaris' => optional($item->inventaris)->no_inventaris,
+          'No Inventaris' => $item->inventaris?->no_inventaris ?? '-',
 
-          'Kategori' => optional(optional($item->inventaris)->dataAset->kategori)->nama_barang,
+          'Kategori' => $item->inventaris?->dataAset?->kategori?->nama_barang ?? '-',
 
-          'Merek' => optional(optional($item->inventaris)->dataAset)->merek,
+          'Merek' => $item->inventaris?->dataAset?->merek ?? '-',
 
-          'Type' => optional(optional($item->inventaris)->dataAset)->type,
+          'Type' => $item->inventaris?->dataAset?->type ?? '-',
 
-          'Jenis Peminjaman' => strtoupper($item->jenis_peminjaman),
+          'Jenis Peminjaman' => strtoupper($item->jenis_peminjaman ?? ''),
 
           'Peminjam' =>
             $item->jenis_peminjaman == 'internal'
-              ? optional($item->karyawan)->nama_karyawan
-              : optional($item->perusahaanTujuan)->nama_perusahaan,
+              ? ($item->karyawan?->nama_karyawan ?? '-')
+              : ($item->perusahaanTujuan?->nama_perusahaan ?? '-'),
 
           'Tanggal Pinjam' => $item->tanggal_pinjam,
 

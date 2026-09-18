@@ -38,8 +38,9 @@ class DashboardUserController extends Controller
     $parentPerusahaans = Perusahaan::with('cabangs')->whereNull('parent_id')->orderBy('nama_perusahaan')->get();
     $perusahaans = Perusahaan::with('parent')->orderBy('nama_perusahaan')->get();
     $karyawans = \App\Models\Karyawan::orderBy('nama_karyawan')->get();
+    $roles = \App\Models\Role::orderBy('id')->get();
 
-    return view('content.dashboard.user.index', compact('users', 'perusahaans', 'parentPerusahaans', 'karyawans'));
+    return view('content.dashboard.user.index', compact('users', 'perusahaans', 'parentPerusahaans', 'karyawans', 'roles'));
   }
 
   public function hapususer(int $id)
@@ -54,12 +55,20 @@ class DashboardUserController extends Controller
 
   public function store(Request $request)
   {
+    // Normalisasi role jika dikirim berupa numeric ID
+    if ($request->filled('role') && is_numeric($request->role)) {
+      $foundRole = \App\Models\Role::find((int) $request->role);
+      if ($foundRole) {
+        $request->merge(['role' => $foundRole->name]);
+      }
+    }
+
     $validatedData = $request->validate([
       'username' => ['required', 'min:3', 'max:100', 'unique:users'],
       'name' => ['required', 'min:3', 'max:100'],
       'email' => 'required|email|unique:users',
       'password' => 'required|min:5|max:100',
-      'role' => 'required|in:user,karyawan,petugas,super_admin',
+      'role' => 'required|string|exists:roles,name',
 
       'id_perusahaan' => 'nullable|exists:perusahaans,id',
       'karyawan_id' => 'nullable|exists:karyawans,id',
@@ -83,7 +92,7 @@ class DashboardUserController extends Controller
   {
     $authUser = auth()->user();
 
-    if ($authUser->role !== 'super_admin') {
+    if ($authUser->role !== 'super_admin' && $authUser->role !== '1' && $authUser->role !== 1) {
       abort(404);
     }
 
@@ -102,12 +111,20 @@ class DashboardUserController extends Controller
 
   public function update(Request $request, string $id)
   {
+    // Normalisasi role jika dikirim berupa numeric ID
+    if ($request->filled('role') && is_numeric($request->role)) {
+      $foundRole = \App\Models\Role::find((int) $request->role);
+      if ($foundRole) {
+        $request->merge(['role' => $foundRole->name]);
+      }
+    }
+
     $request->validate([
       'username' => 'required|string|max:100',
       'name' => 'required|string|max:100',
       'email' => 'required|email|max:100',
       'password' => 'nullable|string|min:8',
-      'role' => 'required|in:user,karyawan,petugas,super_admin',
+      'role' => 'required|string|exists:roles,name',
       'id_perusahaan' => 'nullable|exists:perusahaans,id',
       'karyawan_id' => 'nullable|exists:karyawans,id',
     ]);

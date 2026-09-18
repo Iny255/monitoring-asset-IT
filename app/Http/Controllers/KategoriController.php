@@ -18,37 +18,22 @@ class KategoriController extends Controller
     $search = $request->search;
     $perusahaanId = $request->perusahaan_id;
 
-    if ($user->role == 'super_admin') {
-      // ==========================
-      // FILTER PERUSAHAAN DIPILIH
-      // ==========================
-      if ($perusahaanId) {
-        $query = Kategori::with('perusahaan')->where('perusahaan_id', $perusahaanId);
+    $query = Kategori::with('perusahaan');
 
-        if ($search) {
-          $query->where('nama_barang', 'like', "%{$search}%");
-        }
-      } else {
-        // ==========================
-        // SEMUA PERUSAHAAN
-        // ==========================
-        $query = Kategori::select('kode_barang', 'nama_barang')
-          ->selectRaw('COUNT(DISTINCT perusahaan_id) as total_perusahaan')
-          ->groupBy('kode_barang', 'nama_barang');
-
-        if ($search) {
-          $query->where('nama_barang', 'like', "%{$search}%");
-        }
-      }
-    } else {
-      $query = Kategori::with('perusahaan')->where('perusahaan_id', $user->id_perusahaan);
-
-      if ($search) {
-        $query->where('nama_barang', 'like', "%{$search}%");
-      }
+    if ($user->role !== 'super_admin') {
+      $query->where('perusahaan_id', $user->id_perusahaan);
+    } elseif ($perusahaanId) {
+      $query->where('perusahaan_id', $perusahaanId);
     }
 
-    $kategoris = $query->paginate(10)->appends($request->query());
+    if ($search) {
+      $query->where(function ($q) use ($search) {
+        $q->where('nama_barang', 'like', "%{$search}%")
+          ->orWhere('kode_barang', 'like', "%{$search}%");
+      });
+    }
+
+    $kategoris = $query->latest()->paginate(10)->appends($request->query());
 
     $perusahaans = Perusahaan::all();
 
