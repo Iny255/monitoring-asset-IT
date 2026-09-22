@@ -33,6 +33,9 @@
             <p class="text-muted small mb-0">Inspeksi & monitoring fisik perangkat per ruangan terjadwal.</p>
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center shadow-xs" id="btnOpenScanner">
+                <i class="bx bx-camera me-1"></i> Scan QR Perangkat
+            </button>
             <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center shadow-xs" data-bs-toggle="modal" data-bs-target="#modalFilter">
                 <i class="bx bx-filter-alt me-1"></i> Filter
                 @if(request()->anyFilled(['hari', 'id_lokasi', 'status', 'id_perusahaan']) || $modeTanggal === 'all')
@@ -413,7 +416,30 @@
     </div>
 </div>
 
+{{-- MODAL SCANNER QR PERANGKAT --}}
+<div class="modal fade" id="modalScannerQR" tabindex="-1" aria-labelledby="modalScannerQRLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title text-white fw-bold d-flex align-items-center" id="modalScannerQRLabel">
+                    <i class="bx bx-camera me-2 fs-4"></i> Scan QR / Barcode Perangkat
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-3">
+                <p class="text-muted small mb-2">Arahkan kamera ke stiker barcode/QR yang tertempel pada perangkat.</p>
+                <div id="qr-reader" style="width: 100%; max-width: 360px; margin: 0 auto; border-radius: 12px; overflow: hidden;" class="shadow-xs bg-dark"></div>
+                <div id="qr-reader-status" class="small text-muted mt-2 fw-semibold">Menghubungkan ke kamera...</div>
+            </div>
+            <div class="modal-footer py-2 bg-light d-flex justify-content-between">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     const filterPerusahaan = document.getElementById('filterPerusahaan');
@@ -442,6 +468,82 @@ document.addEventListener('DOMContentLoaded', function() {
     if (filterPerusahaan) {
         filterPerusahaan.addEventListener('change', filterLokasiOptions);
         filterLokasiOptions();
+    }
+
+    // Camera QR Scanner Handler
+    let html5QrScanner = null;
+    const modalScannerEl = document.getElementById('modalScannerQR');
+    const bsModalScanner = modalScannerEl ? new bootstrap.Modal(modalScannerEl) : null;
+    const btnOpenScanner = document.getElementById('btnOpenScanner');
+
+    if (btnOpenScanner && modalScannerEl) {
+        btnOpenScanner.addEventListener('click', function () {
+            bsModalScanner.show();
+        });
+
+        modalScannerEl.addEventListener('shown.bs.modal', function () {
+            startCameraScanner();
+        });
+
+        modalScannerEl.addEventListener('hidden.bs.modal', function () {
+            stopCameraScanner();
+        });
+    }
+
+    function startCameraScanner() {
+        const statusEl = document.getElementById('qr-reader-status');
+        if (statusEl) statusEl.textContent = 'Menghubungkan ke kamera smartphone/laptop...';
+
+        if (typeof Html5Qrcode === 'undefined') {
+            if (statusEl) statusEl.innerHTML = '<span class="text-danger">Library scanner sedang dimuat. Silakan coba sesaat lagi.</span>';
+            return;
+        }
+
+        if (!html5QrScanner) {
+            html5QrScanner = new Html5Qrcode("qr-reader");
+        }
+
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+
+        html5QrScanner.start({ facingMode: "environment" }, config, onQrScanned, onQrScanError)
+            .then(() => {
+                if (statusEl) statusEl.textContent = 'Kamera aktif. Silakan arahkan ke barcode perangkat.';
+            })
+            .catch(err => {
+                html5QrScanner.start({ facingMode: "user" }, config, onQrScanned, onQrScanError)
+                    .then(() => {
+                        if (statusEl) statusEl.textContent = 'Kamera depan aktif.';
+                    })
+                    .catch(err2 => {
+                        if (statusEl) statusEl.innerHTML = '<span class="text-danger">Kamera tidak dapat diakses atau tidak ada izin browser.</span>';
+                    });
+            });
+    }
+
+    function stopCameraScanner() {
+        if (html5QrScanner && html5QrScanner.isScanning) {
+            html5QrScanner.stop().then(() => {
+                html5QrScanner.clear();
+            }).catch(e => console.error(e));
+        }
+    }
+
+    function onQrScanError(err) {
+        // Ignore frame scan misses
+    }
+
+    function onQrScanned(decodedText) {
+        stopCameraScanner();
+        if (bsModalScanner) bsModalScanner.hide();
+
+        const statusEl = document.getElementById('qr-reader-status');
+        if (statusEl) statusEl.textContent = 'Barcode terdeteksi: ' + decodedText + '. Membuka halaman...';
+
+        if (decodedText.includes('/maping/')) {
+            window.location.href = decodedText;
+        } else {
+            window.location.href = "{{ url('/maping') }}/" + encodeURIComponent(decodedText.trim());
+        }
     }
 });
 </script>

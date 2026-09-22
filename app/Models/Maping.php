@@ -14,6 +14,7 @@ use App\Models\HistoryMutasi;
 use App\Models\HistoryPencabutan;
 use App\Models\Maintenance;
 use App\Models\Peminjaman;
+use App\Models\ChecklistDevice;
 
 class Maping extends Model
 {
@@ -83,9 +84,19 @@ class Maping extends Model
     return $this->belongsTo(Karyawan::class, 'karyawan_id');
   }
   public function maintenances()
-{
+  {
     return $this->hasMany(Maintenance::class, 'maping_id');
-}
+  }
+
+  public function checklistDevices()
+  {
+    return $this->hasMany(ChecklistDevice::class, 'maping_id');
+  }
+
+  public function latestChecklistDevice()
+  {
+    return $this->hasOne(ChecklistDevice::class, 'maping_id')->latestOfMany('id');
+  }
   /*
 |--------------------------------------------------------------------------
 | ACCESSOR

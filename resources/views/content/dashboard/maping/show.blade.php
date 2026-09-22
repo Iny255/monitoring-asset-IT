@@ -549,60 +549,110 @@
 
                 </div>
 
-                {{-- QR --}}
-                <div class="card border-0 shadow-sm">
-
-                    <div class="card-header bg-white">
-
+                {{-- QR BARCODE TERPADU --}}
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
                         <h5 class="mb-0 fw-bold">
-
                             <i class="bx bx-qr text-success me-2"></i>
-
-                            QR Code Asset
-
+                            QR Code Mapping Terpadu
                         </h5>
-
+                        <span class="badge bg-label-primary font-monospace">Realtime</span>
                     </div>
 
                     <div class="card-body text-center">
-
-                        <div id="qr-code">
-
-                            {!! QrCode::size(220)->generate(route('maping.public_show', $maping->uuid ?? $maping->id)) !!}
-
+                        <div id="qr-code" class="p-2 bg-light rounded d-inline-block shadow-xs">
+                            {!! QrCode::size(200)->generate(route('maping.public_show', $maping->uuid ?? $maping->id)) !!}
                         </div>
 
                         <div class="mt-3">
-
-                            <h5 class="fw-bold">
-
-                                {{ $maping->keluar->inventaris->kode_aset }}
-
+                            <h5 class="fw-bold mb-1">
+                                {{ $maping->keluar->inventaris->kode_aset ?? '-' }}
                             </h5>
-
-                            <small class="text-muted">
-
-                                Scan QR untuk melihat informasi asset.
-
-                            </small>
-
+                            <p class="text-muted small mb-0">
+                                Scan QR ini untuk melihat spek aset dan status pengecekan secara realtime, atau untuk mengisi checklist langsung oleh Petugas IT.
+                            </p>
                         </div>
 
-                        <div class="d-grid gap-2 mt-4">
-
+                        <div class="d-grid gap-2 mt-3">
                             <button class="btn btn-primary" onclick="downloadQR()">
-
-                                <i class="bx bx-download me-1"></i>
-
-                                Download QR
-
+                                <i class="bx bx-download me-1"></i> Download QR Stiker
                             </button>
-
-
+                            <a href="{{ route('maping.public_show', $maping->uuid ?? $maping->id) }}" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                <i class="bx bx-link-external me-1"></i> Buka Tampilan Hasil Scan
+                            </a>
                         </div>
+                    </div>
+                </div>
 
+                {{-- STATUS CHECKLIST REALTIME --}}
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0 fw-bold">
+                            <i class="bx bx-calendar-check text-primary me-2"></i>
+                            Status Pengecekan Device
+                        </h5>
+                        @if ($latestChecklist)
+                            @if ($latestChecklist->status_device === 'normal')
+                                <span class="badge bg-success">NORMAL</span>
+                            @elseif ($latestChecklist->status_device === 'ada_kendala')
+                                <span class="badge bg-danger">KENDALA</span>
+                            @else
+                                <span class="badge bg-secondary">BELUM DICEK</span>
+                            @endif
+                        @else
+                            <span class="badge bg-secondary">BELUM ADA</span>
+                        @endif
                     </div>
 
+                    <div class="card-body">
+                        @if ($latestChecklist)
+                            <div class="mb-3">
+                                <div class="text-muted small">Pemeriksaan Terakhir:</div>
+                                <div class="fw-bold text-dark">
+                                    {{ $latestChecklist->checked_at ? $latestChecklist->checked_at->translatedFormat('d F Y, H:i') . ' WIB' : 'Belum selesai diperiksa' }}
+                                </div>
+                                <div class="small text-muted mt-1">
+                                    Petugas: <strong class="text-primary">{{ $latestChecklist->checkedBy->name ?? 'Petugas IT' }}</strong>
+                                </div>
+                            </div>
+
+                            @if ($latestChecklist->status_device === 'ada_kendala' && $latestChecklist->catatan_kendala)
+                                <div class="alert alert-danger py-2 px-3 small mb-3">
+                                    <strong>Catatan Kendala:</strong><br>
+                                    {{ $latestChecklist->catatan_kendala }}
+                                </div>
+                            @endif
+
+                            @if ($latestChecklist->items->isNotEmpty())
+                                <div class="mb-3">
+                                    <div class="text-muted small mb-1">Kondisi Komponen:</div>
+                                    <div class="d-flex flex-wrap gap-1">
+                                        @foreach ($latestChecklist->items as $item)
+                                            <span class="badge {{ $item->is_ok ? 'bg-label-success' : 'bg-label-danger' }}" style="font-size: 11px;">
+                                                {{ $item->is_ok ? '✔' : '✖' }} {{ $item->nama_item }}
+                                            </span>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+                        @else
+                            <div class="text-center py-3 text-muted small">
+                                <i class="bx bx-info-circle fs-3 text-secondary d-block mb-1"></i>
+                                Perangkat ini belum memiliki riwayat pengecekan checklist.
+                            </div>
+                        @endif
+
+                        <div class="d-grid gap-2 mt-3 pt-2 border-top">
+                            <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalChecklistMapping">
+                                <i class="bx bx-check-square me-1"></i> Input / Perbarui Checklist
+                            </button>
+                            @if ($latestChecklist && $latestChecklist->checklist_ruangan_id)
+                                <a href="{{ route('checklist.pemeriksaan.show', $latestChecklist->checklist_ruangan_id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bx bx-door-open me-1"></i> Buka Sesi Checklist Ruangan
+                                </a>
+                            @endif
+                        </div>
+                    </div>
                 </div>
 
             </div>
@@ -844,6 +894,104 @@
                     downloadLink.click();
                 };
             }
+
+            // Handler Modal Checklist
+            document.addEventListener('DOMContentLoaded', function() {
+                const rNormal = document.getElementById('modalStatusNormal');
+                const rKendala = document.getElementById('modalStatusKendala');
+                const boxKendala = document.getElementById('modalCatatanKendalaBox');
+
+                function toggleModalCatatan() {
+                    if (rKendala && rKendala.checked) {
+                        boxKendala.style.display = 'block';
+                    } else if (boxKendala) {
+                        boxKendala.style.display = 'none';
+                    }
+                }
+
+                if (rNormal) rNormal.addEventListener('change', toggleModalCatatan);
+                if (rKendala) rKendala.addEventListener('change', toggleModalCatatan);
+            });
         </script>
+
+        {{-- MODAL INPUT CHECKLIST DEVICE LANGSUNG DARI MAPPING --}}
+        <div class="modal fade" id="modalChecklistMapping" tabindex="-1" aria-labelledby="modalChecklistMappingLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <form action="{{ route('maping.checklist.submit', $maping->uuid ?? $maping->id) }}" method="POST">
+                        @csrf
+                        <div class="modal-header bg-light">
+                            <h5 class="modal-title fw-bold" id="modalChecklistMappingLabel">
+                                <i class="bx bx-check-square text-primary me-1"></i> Input Checklist Device
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3 pb-2 border-bottom">
+                                <div class="small text-muted">Perangkat:</div>
+                                <div class="fw-bold text-dark fs-6">{{ $maping->keluar->inventaris->kode_aset ?? '-' }} ({{ $maping->keluar->inventaris->dataAset->kategori->nama_barang ?? 'Perangkat' }})</div>
+                                <div class="small text-muted">User: {{ $maping->penerima ?? '-' }} &bull; Lokasi: {{ $maping->lokasi->nama_lokasi ?? '-' }}</div>
+                            </div>
+
+                            {{-- Pilihan Status --}}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase">Status Kondisi Fisik:</label>
+                                <div class="d-flex gap-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="status_device" id="modalStatusNormal" value="normal"
+                                            {{ ($latestChecklist?->status_device === 'normal' || !$latestChecklist || $latestChecklist->status_device === 'belum_dicek') ? 'checked' : '' }}>
+                                        <label class="form-check-label fw-bold text-success" for="modalStatusNormal">
+                                            <i class="bx bx-check-circle me-1"></i> Normal (Baik)
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="radio" name="status_device" id="modalStatusKendala" value="ada_kendala"
+                                            {{ $latestChecklist?->status_device === 'ada_kendala' ? 'checked' : '' }}>
+                                        <label class="form-check-label fw-bold text-danger" for="modalStatusKendala">
+                                            <i class="bx bx-error me-1"></i> Ada Kendala
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {{-- Checkbox Items --}}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold small text-uppercase">Item Yang Diperiksa:</label>
+                                <div class="row g-2">
+                                    @forelse ($masterItems as $mItem)
+                                        @php
+                                            $checkedItem = $latestChecklist?->items->firstWhere('nama_item', $mItem->nama_item);
+                                            $isItemOk = $checkedItem ? (bool)$checkedItem->is_ok : true;
+                                        @endphp
+                                        <div class="col-6">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="items[{{ $mItem->id }}]" value="1" id="mItem{{ $mItem->id }}" {{ $isItemOk ? 'checked' : '' }}>
+                                                <label class="form-check-label small" for="mItem{{ $mItem->id }}">
+                                                    {{ $mItem->nama_item }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    @empty
+                                        <div class="col-12 text-muted small">Master item checklist belum diset.</div>
+                                    @endforelse
+                                </div>
+                            </div>
+
+                            {{-- Catatan Kendala --}}
+                            <div class="mb-3" id="modalCatatanKendalaBox" style="{{ $latestChecklist?->status_device === 'ada_kendala' ? '' : 'display: none;' }}">
+                                <label for="modalCatatan" class="form-label fw-bold small text-danger text-uppercase">Catatan Kendala / Masalah:</label>
+                                <textarea class="form-control" id="modalCatatan" name="catatan_kendala" rows="2" placeholder="Jelaskan masalah pada perangkat ini...">{{ $latestChecklist?->catatan_kendala }}</textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer bg-light">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+                            <button type="submit" class="btn btn-primary btn-sm fw-semibold">
+                                <i class="bx bx-save me-1"></i> Simpan Pengecekan
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
 
     @endsection

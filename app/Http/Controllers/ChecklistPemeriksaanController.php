@@ -405,7 +405,7 @@ class ChecklistPemeriksaanController extends Controller
                 $device->update([
                     'status_device' => 'normal',
                     'catatan_kendala' => null,
-                    'checked_at' => now(),
+                    'checked_at' => Carbon::now('Asia/Jakarta'),
                     'checked_by' => auth()->id(),
                 ]);
 
@@ -414,7 +414,7 @@ class ChecklistPemeriksaanController extends Controller
             }
 
             $ruangan->petugas_id = auth()->id();
-            $ruangan->tanggal_cek = now();
+            $ruangan->tanggal_cek = Carbon::now('Asia/Jakarta');
             $ruangan->updateProgress();
 
             DB::commit();
@@ -491,7 +491,7 @@ class ChecklistPemeriksaanController extends Controller
             $device->update([
                 'status_device' => 'normal',
                 'catatan_kendala' => null,
-                'checked_at' => now(),
+                'checked_at' => Carbon::now('Asia/Jakarta'),
                 'checked_by' => auth()->id(),
             ]);
 
@@ -542,7 +542,7 @@ class ChecklistPemeriksaanController extends Controller
         DB::beginTransaction();
         try {
             $status = $request->status_device;
-            $checkedAt = ($status === 'belum_dicek') ? null : now();
+            $checkedAt = ($status === 'belum_dicek') ? null : Carbon::now('Asia/Jakarta');
             $checkedBy = ($status === 'belum_dicek') ? null : auth()->id();
             $catatan = ($status === 'belum_dicek') ? null : $request->catatan_kendala;
 

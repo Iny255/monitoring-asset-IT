@@ -53,6 +53,11 @@ Route::get('/maping/{id}', [MapingController::class, 'publicShow'])
   ->where('id', '[a-zA-Z0-9\-]+')
   ->name('maping.public_show');
 
+Route::post('/maping/{id}/checklist', [MapingController::class, 'submitChecklistFromScan'])
+  ->where('id', '[a-zA-Z0-9\-]+')
+  ->middleware(['auth', 'role:petugas,super_admin,teknisi'])
+  ->name('maping.checklist.submit');
+
 Route::middleware(['auth'])->group(function () {
   Route::get('/dashboard', function () {
     return redirect(auth()->user()->getDashboardUrl());

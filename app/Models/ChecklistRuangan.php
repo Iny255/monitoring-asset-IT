@@ -120,7 +120,7 @@ class ChecklistRuangan extends Model
         } else {
             $this->status = 'selesai';
             if (empty($this->tanggal_cek)) {
-                $this->tanggal_cek = now();
+                $this->tanggal_cek = \Illuminate\Support\Carbon::now('Asia/Jakarta');
             }
         }
 

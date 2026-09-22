@@ -349,6 +349,9 @@
                 <!-- FORM -->
                 <form method="POST" action="{{ url('/login') }}">
                     @csrf
+                    @if(request()->filled('redirect'))
+                        <input type="hidden" name="redirect" value="{{ request('redirect') }}">
+                    @endif
 
                     <div class="mb-3">
                         <input type="text" name="username" class="form-control" placeholder="Username" required>

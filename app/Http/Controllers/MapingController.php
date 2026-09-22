@@ -11,6 +11,12 @@ use App\Models\Karyawan;
 use App\Models\Access;
 use App\Models\Inventaris;
 use App\Models\MapingAccess;
+use App\Models\ChecklistRuangan;
+use App\Models\ChecklistDevice;
+use App\Models\ChecklistDeviceItem;
+use App\Models\ChecklistItem;
+use App\Models\ChecklistJadwalRutin;
+use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -767,7 +773,49 @@ class MapingController extends Controller
 
     $maping = $query->findOrFail($id);
 
-    return view('content.dashboard.maping.show', compact('maping'));
+    // Ambil status checklist terkini untuk perangkat ini
+    $latestChecklist = ChecklistDevice::where('maping_id', $maping->id)
+      ->with(['checklistRuangan.lokasi', 'checkedBy', 'items'])
+      ->orderByDesc('checked_at')
+      ->orderByDesc('id')
+      ->first();
+
+    // Cek apakah ada jadwal checklist hari ini
+    $todayChecklist = ChecklistDevice::where('maping_id', $maping->id)
+      ->whereHas('checklistRuangan', function ($q) {
+        $q->whereDate('tanggal_pemeriksaan', date('Y-m-d'))
+          ->orWhere(function ($sub) {
+            $sub->whereNull('tanggal_pemeriksaan')
+                ->whereDate('tanggal_cek', date('Y-m-d'));
+          });
+      })
+      ->with(['checklistRuangan.lokasi', 'checkedBy', 'items'])
+      ->first();
+
+    // Ambil 5 riwayat checklist terakhir
+    $checklistHistory = ChecklistDevice::where('maping_id', $maping->id)
+      ->where('status_device', '!=', 'belum_dicek')
+      ->with(['checklistRuangan.lokasi', 'checkedBy', 'items'])
+      ->orderByDesc('checked_at')
+      ->take(5)
+      ->get();
+
+    // Master item checklist
+    $masterItems = ChecklistItem::where('is_active', true)
+      ->where(function ($q) use ($maping) {
+        $q->whereNull('id_perusahaan')
+          ->orWhere('id_perusahaan', $maping->id_perusahaan);
+      })
+      ->orderBy('urutan')
+      ->get();
+
+    return view('content.dashboard.maping.show', compact(
+      'maping',
+      'latestChecklist',
+      'todayChecklist',
+      'checklistHistory',
+      'masterItems'
+    ));
   }
 
   /**
@@ -1233,7 +1281,227 @@ class MapingController extends Controller
       $maping = $query->where('id', $identifier)->firstOrFail();
     }
 
-    return view('content.dashboard.maping.public_show', compact('maping'));
+    // 1. Ambil checklist device terakhir yang sudah dicek (atau entri terbaru)
+    $latestChecklist = ChecklistDevice::where('maping_id', $maping->id)
+      ->with(['checklistRuangan.lokasi', 'checkedBy', 'items'])
+      ->orderByDesc('checked_at')
+      ->orderByDesc('id')
+      ->first();
+
+    // 2. Cek apakah ada checklist hari ini untuk device ini
+    $today = date('Y-m-d');
+    $todayChecklist = ChecklistDevice::where('maping_id', $maping->id)
+      ->whereHas('checklistRuangan', function ($q) use ($today) {
+        $q->whereDate('tanggal_pemeriksaan', $today)
+          ->orWhere(function ($sub) use ($today) {
+            $sub->whereNull('tanggal_pemeriksaan')
+                ->whereDate('tanggal_cek', $today);
+          });
+      })
+      ->with(['checklistRuangan.lokasi', 'checkedBy', 'items'])
+      ->first();
+
+    // 3. Ambil 5 riwayat checklist terakhir yang sudah dicek
+    $checklistHistory = ChecklistDevice::where('maping_id', $maping->id)
+      ->where('status_device', '!=', 'belum_dicek')
+      ->with(['checklistRuangan.lokasi', 'checkedBy', 'items'])
+      ->orderByDesc('checked_at')
+      ->take(5)
+      ->get();
+
+    // 4. Ambil master item checklist aktif untuk perusahaan terkait
+    $masterItems = ChecklistItem::where('is_active', true)
+      ->where(function ($q) use ($maping) {
+        $q->whereNull('id_perusahaan')
+          ->orWhere('id_perusahaan', $maping->id_perusahaan);
+      })
+      ->orderBy('urutan')
+      ->get();
+
+    return view('content.dashboard.maping.public_show', compact(
+      'maping',
+      'latestChecklist',
+      'todayChecklist',
+      'checklistHistory',
+      'masterItems'
+    ));
+  }
+
+  /**
+   * Simpan checklist pemeriksaan langsung dari scan QR/Barcode perangkat di lapangan.
+   */
+  public function submitChecklistFromScan(Request $request, string $identifier)
+  {
+    $user = auth()->user();
+    if (!$user || !in_array($user->role, ['petugas', 'teknisi', 'super_admin', '1', '2'])) {
+      if ($request->ajax() || $request->wantsJson()) {
+        return response()->json([
+          'success' => false,
+          'message' => 'Hanya Petugas IT atau Super Admin yang berwenang mengisi checklist.',
+        ], 403);
+      }
+      return back()->with('error', 'Hanya Petugas IT atau Super Admin yang berwenang mengisi checklist.');
+    }
+
+    $query = Maping::withoutGlobalScopes()->with(['keluar.inventaris']);
+    if (Str::isUuid($identifier)) {
+      $maping = $query->where('uuid', $identifier)->firstOrFail();
+    } else {
+      $maping = $query->where('id', $identifier)->firstOrFail();
+    }
+
+    $request->validate([
+      'status_device' => 'required|in:normal,ada_kendala,belum_dicek',
+      'catatan_kendala' => 'nullable|string|max:500',
+      'items' => 'nullable|array',
+    ]);
+
+    $statusDevice = $request->status_device;
+    $catatan = ($statusDevice === 'belum_dicek') ? null : $request->catatan_kendala;
+    $checkedAt = ($statusDevice === 'belum_dicek') ? null : Carbon::now('Asia/Jakarta');
+    $checkedBy = ($statusDevice === 'belum_dicek') ? null : $user->id;
+
+    DB::beginTransaction();
+    try {
+      $today = Carbon::now('Asia/Jakarta')->format('Y-m-d');
+      $dayNum = (int) Carbon::now('Asia/Jakarta')->format('N');
+      $mapHari = [1 => 'senin', 2 => 'selasa', 3 => 'rabu', 4 => 'kamis', 5 => 'jumat', 6 => 'sabtu', 7 => 'minggu'];
+      $namaHari = $mapHari[$dayNum] ?? 'senin';
+
+      // 1. Cari atau buat ChecklistRuangan untuk lokasi ini hari ini
+      $ruangan = ChecklistRuangan::withoutGlobalScopes()
+        ->where('id_lokasi', $maping->id_lokasi)
+        ->where(function ($q) use ($today) {
+          $q->whereDate('tanggal_pemeriksaan', $today)
+            ->orWhere(function ($sub) use ($today) {
+              $sub->whereNull('tanggal_pemeriksaan')
+                  ->whereDate('tanggal_cek', $today);
+            });
+        })
+        ->when($maping->id_perusahaan, fn($q) => $q->where('id_perusahaan', $maping->id_perusahaan))
+        ->first();
+
+      if (!$ruangan) {
+        $rutin = ChecklistJadwalRutin::where('id_lokasi', $maping->id_lokasi)
+          ->where('hari', $namaHari)
+          ->where('is_active', true)
+          ->when($maping->id_perusahaan, fn($q) => $q->where('id_perusahaan', $maping->id_perusahaan))
+          ->first();
+
+        $ruangan = ChecklistRuangan::create([
+          'jadwal_rutin_id' => $rutin?->id,
+          'tanggal_pemeriksaan' => $today,
+          'hari' => $namaHari,
+          'id_lokasi' => $maping->id_lokasi,
+          'id_perusahaan' => $maping->id_perusahaan,
+          'petugas_id' => $user->id,
+          'status' => 'sedang_dicek',
+          'kondisi_ruangan' => 'semua_baik',
+          'total_device' => 1,
+          'total_checked' => 0,
+        ]);
+      }
+
+      // 2. Cari atau buat ChecklistDevice di ruangan ini untuk mapping ini
+      $checklistDevice = ChecklistDevice::where('checklist_ruangan_id', $ruangan->id)
+        ->where('maping_id', $maping->id)
+        ->first();
+
+      $inventarisId = $maping->keluar?->inventaris_id;
+
+      if (!$checklistDevice) {
+        $checklistDevice = ChecklistDevice::create([
+          'checklist_ruangan_id' => $ruangan->id,
+          'maping_id' => $maping->id,
+          'inventaris_id' => $inventarisId,
+          'nama_pengguna' => $maping->penerima,
+          'status_device' => $statusDevice,
+          'catatan_kendala' => $catatan,
+          'checked_at' => $checkedAt,
+          'checked_by' => $checkedBy,
+        ]);
+      } else {
+        $checklistDevice->update([
+          'status_device' => $statusDevice,
+          'catatan_kendala' => $catatan,
+          'checked_at' => $checkedAt,
+          'checked_by' => $checkedBy,
+          'nama_pengguna' => $maping->penerima,
+        ]);
+      }
+
+      // 3. Ambil master item dan sinkronkan kondisi item
+      $masterItems = ChecklistItem::where('is_active', true)
+        ->where(function ($q) use ($maping) {
+          $q->whereNull('id_perusahaan')
+            ->orWhere('id_perusahaan', $maping->id_perusahaan);
+        })
+        ->orderBy('urutan')
+        ->get();
+
+      $submittedItems = $request->input('items', []);
+      $existingItems = $checklistDevice->items()->get();
+
+      if ($existingItems->isEmpty()) {
+        foreach ($masterItems as $mItem) {
+          $isOk = ($statusDevice === 'normal') ? true : (!empty($submittedItems[$mItem->id]) || !empty($submittedItems[$mItem->nama_item]));
+          if ($statusDevice === 'belum_dicek') $isOk = false;
+
+          ChecklistDeviceItem::create([
+            'checklist_device_id' => $checklistDevice->id,
+            'nama_item' => $mItem->nama_item,
+            'kategori_item' => $mItem->kategori,
+            'is_ok' => $isOk,
+          ]);
+        }
+      } else {
+        foreach ($existingItems as $eItem) {
+          if ($statusDevice === 'normal') {
+            $eItem->update(['is_ok' => true]);
+          } elseif ($statusDevice === 'belum_dicek') {
+            $eItem->update(['is_ok' => false]);
+          } else {
+            $isOk = !empty($submittedItems[$eItem->id]) || !empty($submittedItems[$eItem->nama_item]);
+            $eItem->update(['is_ok' => $isOk]);
+          }
+        }
+      }
+
+      // 4. Update progress ruangan & jadwal secara realtime
+      $ruangan->petugas_id = $user->id;
+      $ruangan->updateProgress();
+
+      DB::commit();
+
+      $pesan = ($statusDevice === 'normal')
+        ? 'Perangkat berhasil ditandai NORMAL (Kondisi Baik).'
+        : (($statusDevice === 'ada_kendala')
+          ? 'Catatan kendala perangkat berhasil disimpan dan dilaporkan.'
+          : 'Pemeriksaan perangkat berhasil dibatalkan (Belum Dicek).');
+
+      if ($request->ajax() || $request->wantsJson()) {
+        return response()->json([
+          'success' => true,
+          'message' => $pesan,
+          'status_device' => $checklistDevice->status_device,
+          'checked_at' => $checklistDevice->checked_at ? $checklistDevice->checked_at->format('d M Y, H:i') : null,
+          'checked_by' => $user->name,
+          'catatan_kendala' => $checklistDevice->catatan_kendala,
+        ]);
+      }
+
+      return back()->with('success', $pesan);
+    } catch (\Exception $e) {
+      DB::rollBack();
+      Log::error('Gagal simpan checklist dari scan: ' . $e->getMessage());
+      if ($request->ajax() || $request->wantsJson()) {
+        return response()->json([
+          'success' => false,
+          'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage(),
+        ], 500);
+      }
+      return back()->with('error', 'Terjadi kesalahan sistem: ' . $e->getMessage());
+    }
   }
 
   public function exportExcel(Request $request)

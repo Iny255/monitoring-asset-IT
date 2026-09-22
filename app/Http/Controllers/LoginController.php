@@ -199,6 +199,16 @@ class LoginController extends Controller
     $request->session()->regenerate();
 
     // =====================================
+    // REDIRECT KHUSUS (MISAL DARI SCAN QR)
+    // =====================================
+    $redirectTarget = $request->input('redirect', $request->query('redirect'));
+    if (!empty($redirectTarget) && is_string($redirectTarget)) {
+      if (str_starts_with($redirectTarget, '/') && !str_starts_with($redirectTarget, '//')) {
+        return redirect($redirectTarget);
+      }
+    }
+
+    // =====================================
     // REDIRECT BERDASARKAN ROLE
     // =====================================
 
