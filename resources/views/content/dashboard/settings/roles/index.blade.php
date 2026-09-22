@@ -49,6 +49,8 @@
         </div>
     @endif
 
+    <x-company-filter-banner />
+
     {{-- Tabel Daftar Role --}}
     <div class="card shadow-sm border-0">
         <div class="card-header border-bottom py-3 d-flex justify-content-between align-items-center">
@@ -135,7 +137,7 @@
                             <td class="text-center">
                                 <div class="d-inline-flex gap-1">
                                     {{-- Tombol Edit --}}
-                                    <button type="button" class="btn btn-sm btn-icon btn-outline-warning btn-edit-role"
+                                    <button type="button" class="btn btn-sm btn-icon btn-outline-secondary btn-edit-role"
                                             data-id="{{ $role->id }}"
                                             data-name="{{ $role->name }}"
                                             data-display="{{ $role->display_name }}"
@@ -143,7 +145,7 @@
                                             data-setting="{{ $role->can_manage_settings ? '1' : '0' }}"
                                             data-system="{{ $role->is_system ? '1' : '0' }}"
                                             title="Edit Role">
-                                        <i class="bx bx-edit-alt"></i>
+                                        <i class="bx bx-edit"></i>
                                     </button>
 
                                     {{-- Tombol Hapus (Hanya untuk non-sistem) --}}

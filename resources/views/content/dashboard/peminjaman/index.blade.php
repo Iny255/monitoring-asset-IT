@@ -47,7 +47,27 @@
                             <small class="text-muted">Kelola transaksi peminjaman aset sementara dan pengembalian</small>
                         </div>
                     </div>
-                    <div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
+                            <i class="bx bx-filter-alt me-1"></i> Filter
+                        </button>
+                        <div class="dropdown">
+                            <button class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="bx bx-export me-1"></i> Export
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('peminjaman.cetak', request()->query()) }}" target="_blank">
+                                        <i class="bx bxs-file-pdf text-danger me-2"></i> Export PDF
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('peminjaman.exportExcel', request()->query()) }}">
+                                        <i class="bx bxs-file-export text-success me-2"></i> Export Excel
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                         <a href="{{ route('peminjaman.create') }}" class="btn btn-primary">
                             <i class="bx bx-plus me-1"></i> Input Peminjaman
                         </a>
@@ -56,138 +76,21 @@
             </div>
         </div>
 
+        <x-company-filter-banner />
+
         <div class="card border-0 shadow-sm">
             <div class="card-body">
 
-                    {{-- Filter --}}
-
-                    <form method="GET">
-
-                        <div class="row mb-4">
-
-                            <div class="col-md-4">
-                                <label class="form-label">Tanggal Pinjam</label>
-
-                                <div class="row g-2">
-
-                                    <div class="col-6">
-                                        <input type="date" name="tanggal_awal" class="form-control"
-                                            value="{{ request('tanggal_awal') }}" placeholder="Dari">
-                                    </div>
-
-                                    <div class="col-6">
-                                        <input type="date" name="tanggal_akhir" class="form-control"
-                                            value="{{ request('tanggal_akhir') }}" placeholder="Sampai">
-                                    </div>
-
-                                </div>
-                            </div>
-                            @if (auth()->user()->role == 'super_admin')
-                                <div class="col-md-3">
-                                    <label class="form-label">Perusahaan</label>
-
-                                    <select name="perusahaan" class="form-select">
-                                        <option value="">Semua Perusahaan</option>
-
-                                        @foreach ($perusahaans as $perusahaan)
-                                            <option value="{{ $perusahaan->id }}"
-                                                {{ request('perusahaan') == $perusahaan->id ? 'selected' : '' }}>
-                                                {{ $perusahaan->nama_perusahaan }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                            @endif
-
-                            <div class="col-md-2">
-                                <label class="form-label">Jenis Peminjaman</label>
-
-                                <select name="jenis" class="form-select">
-
-                                    <option value="">Semua</option>
-
-                                    <option value="internal" {{ request('jenis') == 'internal' ? 'selected' : '' }}>
-                                        Internal
-                                    </option>
-
-                                    <option value="antar_perusahaan"
-                                        {{ request('jenis') == 'antar_perusahaan' ? 'selected' : '' }}>
-                                        Antar Perusahaan
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-                            <div class="col-md-2">
-
-                                <label class="form-label">
-                                    Status
-                                </label>
-
-                                <select name="status" class="form-select">
-
-                                    <option value="">Semua</option>
-
-                                    <option value="Dipinjam" {{ request('status') == 'Dipinjam' ? 'selected' : '' }}>
-                                        Dipinjam
-                                    </option>
-
-                                    <option value="Dikembalikan"
-                                        {{ request('status') == 'Dikembalikan' ? 'selected' : '' }}>
-                                        Dikembalikan
-                                    </option>
-
-                                    <option value="Hilang" {{ request('status') == 'Hilang' ? 'selected' : '' }}>
-                                        Hilang
-                                    </option>
-
-                                </select>
-
-                            </div>
-
-                            <div class="col-md-3">
-
-                                <label class="form-label">
-                                    Cari
-                                </label>
-
-                                <input type="text" name="search" class="form-control"
-                                    placeholder="Kode / Inventaris / Peminjam" value="{{ request('search') }}">
-
-                            </div>
-
-                        </div>
-
-                        <div class="text-end mb-3">
-
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bx bx-search"></i>
-                                Filter
-                            </button>
-
-                            <a href="{{ route('peminjaman.index') }}" class="btn btn-outline-secondary">
-                                <i class="bx bx-reset"></i>
-                                Reset
-                            </a>
-
-                            <a href="{{ route('peminjaman.cetak', request()->query()) }}" target="_blank"
-                                class="btn btn-danger">
-
-                                <i class="bx bxs-file-pdf me-1"></i>
-
-                                Cetak PDF
-
-                            </a>
-                            <a href="{{ route('peminjaman.exportExcel', request()->query()) }}" class="btn btn-success">
-
-                                <i class="bx bxs-file-export"></i>
-                                Export Excel
-
+                    @if(request()->anyFilled(['tanggal_awal', 'tanggal_akhir', 'perusahaan', 'jenis', 'status', 'search']))
+                        <div class="d-flex align-items-center gap-2 mb-3">
+                            <span class="badge bg-label-primary px-3 py-2">
+                                <i class="bx bx-filter-alt me-1"></i> Filter Aktif
+                            </span>
+                            <a href="{{ route('peminjaman.index') }}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bx bx-x me-1"></i> Reset Filter
                             </a>
                         </div>
-
-                    </form>
+                    @endif
 
                     {{-- Table --}}
 
@@ -204,7 +107,7 @@
                                     <th>No Transaksi</th>
 
                                     <th>Inventaris</th>
-                                    @if (auth()->user()->role == 'super_admin')
+                                    @if (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan)
                                         <th>Perusahaan</th>
                                     @endif
 
@@ -267,7 +170,7 @@
                                         </td>
                                         @if (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan)
                                             <td>
-                                                {{ $item->inventaris?->perusahaan?->nama_perusahaan ?? '-' }}
+                                                <x-company-badge :perusahaan="$item->inventaris?->perusahaan" />
                                             </td>
                                         @endif
 
@@ -361,23 +264,23 @@
 
                                         <td class="text-center">
 
-                                            <div class="btn-group shadow-sm" role="group">
+                                            <div class="d-flex justify-content-center gap-1">
 
                                                 {{-- Detail --}}
                                                 <a href="{{ route('peminjaman.show', $item->id) }}"
-                                                    class="btn btn-info btn-sm" data-bs-toggle="tooltip" title="Detail">
+                                                    class="btn btn-sm btn-icon btn-outline-primary" data-bs-toggle="tooltip" title="Detail">
 
-                                                    <i class="bx bx-show text-white"></i>
+                                                    <i class="bx bx-show"></i>
 
                                                 </a>
 
                                                 {{-- Jika masih dipinjam --}}
                                                 @if ($item->status == 'Dipinjam')
                                                     <a href="{{ route('peminjaman.edit', $item->id) }}"
-                                                        class="btn btn-warning btn-sm" data-bs-toggle="tooltip"
+                                                        class="btn btn-sm btn-icon btn-outline-secondary" data-bs-toggle="tooltip"
                                                         title="Pengembalian">
 
-                                                        <i class="bx bx-undo text-white"></i>
+                                                        <i class="bx bx-undo"></i>
 
                                                     </a>
                                                 @endif
@@ -387,19 +290,19 @@
                                                     @if (!$item->maintenanceTerakhir)
                                                         {{-- Belum ada Service --}}
                                                         <a href="{{ route('peminjaman.servis', $item->id) }}"
-                                                            class="btn btn-danger btn-sm" data-bs-toggle="tooltip"
+                                                            class="btn btn-sm btn-icon btn-outline-danger" data-bs-toggle="tooltip"
                                                             title="Service">
 
-                                                            <i class="bx bx-wrench text-white"></i>
+                                                            <i class="bx bx-wrench"></i>
 
                                                         </a>
                                                     @else
                                                         {{-- Sudah ada Service --}}
                                                         <a href="{{ route('maintenance.show', $item->maintenanceTerakhir->id) }}"
-                                                            class="btn btn-success btn-sm" data-bs-toggle="tooltip"
+                                                            class="btn btn-sm btn-icon btn-outline-success" data-bs-toggle="tooltip"
                                                             title="Lihat Service">
 
-                                                            <i class="bx bx-receipt text-white"></i>
+                                                            <i class="bx bx-receipt"></i>
 
                                                         </a>
                                                     @endif
@@ -444,4 +347,82 @@
 
         </div>
 
+    <!-- ================= FILTER MODAL ================= -->
+    <div class="modal fade" id="modalFilter" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form method="GET" action="{{ route('peminjaman.index') }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bx bx-filter-alt me-2 text-primary"></i> Filter Data Peminjaman Aset
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal Awal</label>
+                                <input type="date" name="tanggal_awal" class="form-control"
+                                    value="{{ request('tanggal_awal') }}">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal Akhir</label>
+                                <input type="date" name="tanggal_akhir" class="form-control"
+                                    value="{{ request('tanggal_akhir') }}">
+                            </div>
+
+                            @if (auth()->user()->role == 'super_admin')
+                                <div class="col-md-6">
+                                    <label class="form-label">Perusahaan</label>
+                                    <select name="perusahaan" class="form-select">
+                                        <option value="">Semua Perusahaan</option>
+                                        @foreach ($perusahaans as $perusahaan)
+                                            <option value="{{ $perusahaan->id }}"
+                                                {{ request('perusahaan') == $perusahaan->id ? 'selected' : '' }}>
+                                                {{ $perusahaan->nama_perusahaan }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            <div class="col-md-{{ auth()->user()->role == 'super_admin' ? '6' : '12' }}">
+                                <label class="form-label">Jenis Peminjaman</label>
+                                <select name="jenis" class="form-select">
+                                    <option value="">Semua</option>
+                                    <option value="internal" {{ request('jenis') == 'internal' ? 'selected' : '' }}>Internal</option>
+                                    <option value="antar_perusahaan" {{ request('jenis') == 'antar_perusahaan' ? 'selected' : '' }}>Antar Perusahaan</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="">Semua</option>
+                                    <option value="Dipinjam" {{ request('status') == 'Dipinjam' ? 'selected' : '' }}>Dipinjam</option>
+                                    <option value="Dikembalikan" {{ request('status') == 'Dikembalikan' ? 'selected' : '' }}>Dikembalikan</option>
+                                    <option value="Hilang" {{ request('status') == 'Hilang' ? 'selected' : '' }}>Hilang</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Cari</label>
+                                <input type="text" name="search" class="form-control"
+                                    placeholder="Kode / Inventaris / Peminjam" value="{{ request('search') }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{{ route('peminjaman.index') }}" class="btn btn-secondary">
+                            <i class="bx bx-refresh me-1"></i> Reset
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-search me-1"></i> Terapkan Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
     @endsection

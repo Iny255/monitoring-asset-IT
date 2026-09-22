@@ -7,7 +7,7 @@
 
     <div class="col-12">
 
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
 
             <div>
 
@@ -25,7 +25,29 @@
 
             </div>
 
-            <div>
+            <div class="d-flex gap-2 flex-wrap">
+
+                <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
+                    <i class="bx bx-filter-alt me-1"></i> Filter
+                </button>
+
+                <div class="dropdown">
+                    <button class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="bx bx-export me-1"></i> Export
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li>
+                            <a class="dropdown-item" href="{{ route('history.maintenance.cetak', request()->query()) }}" target="_blank">
+                                <i class="bx bxs-file-pdf text-danger me-2"></i> Cetak PDF
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{{ route('history.maintenance.export_excel', request()->query()) }}">
+                                <i class="bx bxs-file-export text-success me-2"></i> Export Excel
+                            </a>
+                        </li>
+                    </ul>
+                </div>
 
                 <a href="{{ route('maintenance.index') }}"
                     class="btn btn-secondary">
@@ -43,304 +65,19 @@
     </div>
 
 </div>
-{{-- ===========================
-    FILTER
-=========================== --}}
-<div class="row">
-
-    <div class="col-12">
-
-        <div class="card mb-4">
-
-            <div class="card-header">
-
-                <h5 class="mb-0">
-
-                    <i class="bx bx-filter-alt"></i>
-
-                    Filter Data
-
-                </h5>
-
-            </div>
-
-            <div class="card-body">
-
-                <form method="GET"
-                    action="{{ route('history.maintenance.index') }}">
-
-                    <div class="row">
-
-                        {{-- Perusahaan --}}
-                        @if(auth()->user()->role=='super_admin')
-
-                            <div class="col-md-3 mb-3">
-
-                                <label class="form-label">
-
-                                    Perusahaan
-
-                                </label>
-
-                                <select
-                                    name="perusahaan_id"
-                                    class="form-select">
-
-                                    <option value="">
-
-                                        Semua
-
-                                    </option>
-
-                                    @foreach($perusahaans as $perusahaan)
-
-                                        <option
-                                            value="{{ $perusahaan->id }}"
-                                            {{ request('perusahaan_id')==$perusahaan->id ? 'selected' : '' }}>
-
-                                            {{ $perusahaan->nama_perusahaan }}
-
-                                        </option>
-
-                                    @endforeach
-
-                                </select>
-
-                            </div>
-
-                        @endif
-
-                        {{-- Tanggal Awal --}}
-                        <div class="col-md-3 mb-3">
-
-                            <label class="form-label">
-
-                                Tanggal Awal
-
-                            </label>
-
-                            <input
-                                type="date"
-                                name="tanggal_awal"
-                                class="form-control"
-                                value="{{ request('tanggal_awal') }}">
-
-                        </div>
-
-                        {{-- Tanggal Akhir --}}
-                        <div class="col-md-3 mb-3">
-
-                            <label class="form-label">
-
-                                Tanggal Akhir
-
-                            </label>
-
-                            <input
-                                type="date"
-                                name="tanggal_akhir"
-                                class="form-control"
-                                value="{{ request('tanggal_akhir') }}">
-
-                        </div>
-
-                        {{-- Jenis --}}
-                        <div class="col-md-3 mb-3">
-
-                            <label class="form-label">
-
-                                Jenis
-
-                            </label>
-
-                            <select
-                                name="jenis"
-                                class="form-select">
-
-                                <option value="">
-
-                                    Semua
-
-                                </option>
-
-                                <option
-                                    value="Service"
-                                    {{ request('jenis')=='Service'?'selected':'' }}>
-
-                                    Service
-
-                                </option>
-
-                                <option
-                                    value="Maintenance"
-                                    {{ request('jenis')=='Maintenance'?'selected':'' }}>
-
-                                    Maintenance
-
-                                </option>
-
-                            </select>
-
-                        </div>
-
-                    </div>
-
-                    <div class="row">
-
-                        {{-- Status --}}
-                        <div class="col-md-3 mb-3">
-
-                            <label class="form-label">
-
-                                Status
-
-                            </label>
-
-                            <select
-                                name="status"
-                                class="form-select">
-
-                                <option value="">Semua</option>
-
-                                <option value="Pengajuan"
-                                    {{ request('status')=='Pengajuan'?'selected':'' }}>
-                                    Pengajuan
-                                </option>
-
-                                <option value="Diproses"
-                                    {{ request('status')=='Diproses'?'selected':'' }}>
-                                    Diproses
-                                </option>
-
-                                <option value="Selesai"
-                                    {{ request('status')=='Selesai'?'selected':'' }}>
-                                    Selesai
-                                </option>
-
-                                <option value="Tidak Dapat Diperbaiki"
-                                    {{ request('status')=='Tidak Dapat Diperbaiki'?'selected':'' }}>
-                                    Tidak Dapat Diperbaiki
-                                </option>
-
-                                <option value="Dibatalkan"
-                                    {{ request('status')=='Dibatalkan'?'selected':'' }}>
-                                    Dibatalkan
-                                </option>
-
-                            </select>
-
-                        </div>
-
-                        {{-- Asal --}}
-                        <div class="col-md-3 mb-3">
-
-                            <label class="form-label">
-
-                                Asal
-
-                            </label>
-
-                            <select
-                                name="asal"
-                                class="form-select">
-
-                                <option value="">
-
-                                    Semua
-
-                                </option>
-
-                                <option
-                                    value="Manual"
-                                    {{ request('asal')=='Manual'?'selected':'' }}>
-
-                                    Manual
-
-                                </option>
-
-                                <option
-                                    value="Mapping"
-                                    {{ request('asal')=='Mapping'?'selected':'' }}>
-
-                                    Mapping
-
-                                </option>
-
-                                <option
-                                    value="Peminjaman"
-                                    {{ request('asal')=='Peminjaman'?'selected':'' }}>
-
-                                    Peminjaman
-
-                                </option>
-
-                            </select>
-
-                        </div>
-
-                        {{-- Search --}}
-                        <div class="col-md-6 mb-3">
-
-                            <label class="form-label">
-
-                                Pencarian
-
-                            </label>
-
-                            <input
-                                type="text"
-                                name="search"
-                                class="form-control"
-                                placeholder="Kode Service, Kode Aset, No Inventaris, Vendor..."
-                                value="{{ request('search') }}">
-
-                        </div>
-
-                    </div>
-
-                    <div class="d-flex align-items-center justify-content-end gap-2 flex-wrap mt-2">
-
-                        <button
-                            type="submit"
-                            class="btn btn-primary">
-
-                            <i class="bx bx-search me-1"></i> Filter
-
-                        </button>
-
-                        <a href="{{ route('history.maintenance.index') }}"
-                            class="btn btn-outline-secondary">
-
-                            <i class="bx bx-reset me-1"></i> Reset
-
-                        </a>
-
-                        <a href="{{ route('history.maintenance.cetak', request()->query()) }}"
-                            target="_blank"
-                            class="btn btn-danger">
-
-                            <i class="bx bxs-file-pdf me-1"></i> Cetak PDF
-
-                        </a>
-
-                        <a href="{{ route('history.maintenance.export_excel', request()->query()) }}"
-                            class="btn btn-success">
-
-                            <i class="bx bxs-file-export me-1"></i> Export Excel
-
-                        </a>
-
-                    </div>
-
-                </form>
-
-            </div>
-
-        </div>
-
+@if(request()->anyFilled(['perusahaan_id', 'tanggal_awal', 'tanggal_akhir', 'jenis', 'status', 'asal', 'search']))
+    <div class="d-flex align-items-center gap-2 mb-3">
+        <span class="badge bg-label-primary px-3 py-2">
+            <i class="bx bx-filter-alt me-1"></i> Filter Aktif
+        </span>
+        <a href="{{ route('history.maintenance.index') }}" class="btn btn-sm btn-outline-secondary">
+            <i class="bx bx-x me-1"></i> Reset Filter
+        </a>
     </div>
+@endif
 
-</div>
+<x-company-filter-banner />
+
 {{-- ===========================
     DATA HISTORY
 =========================== --}}
@@ -391,7 +128,7 @@
 
                                 </th>
 
-                                @if(auth()->user()->role=='super_admin')
+                                @if(in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan)
 
                                     <th>
 
@@ -474,9 +211,7 @@
                                     @if(in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan)
 
                                         <td>
-
-                                            {{ $item->inventaris?->perusahaan?->nama_perusahaan ?? '-' }}
-
+                                            <x-company-badge :perusahaan="$item->inventaris?->perusahaan" />
                                         </td>
 
                                     @endif
@@ -646,7 +381,7 @@
                                     <td class="text-center">
 
                                         <a href="{{ route('maintenance.show',$item->id) }}"
-                                            class="btn btn-sm btn-info"
+                                            class="btn btn-sm btn-icon btn-outline-primary"
                                             title="Detail">
 
                                             <i class="bx bx-show"></i>
@@ -696,5 +431,97 @@
 
     </div>
 
+</div>
+
+<!-- ================= FILTER MODAL ================= -->
+<div class="modal fade" id="modalFilter" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <form method="GET" action="{{ route('history.maintenance.index') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bx bx-filter-alt me-2 text-primary"></i> Filter History Service & Maintenance
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3">
+                        @if(auth()->user()->role=='super_admin')
+                            <div class="col-md-6">
+                                <label class="form-label">Perusahaan</label>
+                                <select name="perusahaan_id" class="form-select">
+                                    <option value="">Semua</option>
+                                    @foreach($perusahaans as $perusahaan)
+                                        <option value="{{ $perusahaan->id }}"
+                                            {{ request('perusahaan_id')==$perusahaan->id ? 'selected' : '' }}>
+                                            {{ $perusahaan->nama_perusahaan }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+
+                        <div class="col-md-{{ auth()->user()->role == 'super_admin' ? '6' : '12' }}">
+                            <label class="form-label">Jenis</label>
+                            <select name="jenis" class="form-select">
+                                <option value="">Semua</option>
+                                <option value="Service" {{ request('jenis')=='Service'?'selected':'' }}>Service</option>
+                                <option value="Maintenance" {{ request('jenis')=='Maintenance'?'selected':'' }}>Maintenance</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Tanggal Awal</label>
+                            <input type="date" name="tanggal_awal" class="form-control"
+                                value="{{ request('tanggal_awal') }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Tanggal Akhir</label>
+                            <input type="date" name="tanggal_akhir" class="form-control"
+                                value="{{ request('tanggal_akhir') }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Status</label>
+                            <select name="status" class="form-select">
+                                <option value="">Semua</option>
+                                <option value="Pengajuan" {{ request('status')=='Pengajuan'?'selected':'' }}>Pengajuan</option>
+                                <option value="Diproses" {{ request('status')=='Diproses'?'selected':'' }}>Diproses</option>
+                                <option value="Selesai" {{ request('status')=='Selesai'?'selected':'' }}>Selesai</option>
+                                <option value="Tidak Dapat Diperbaiki" {{ request('status')=='Tidak Dapat Diperbaiki'?'selected':'' }}>Tidak Dapat Diperbaiki</option>
+                                <option value="Dibatalkan" {{ request('status')=='Dibatalkan'?'selected':'' }}>Dibatalkan</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Asal</label>
+                            <select name="asal" class="form-select">
+                                <option value="">Semua</option>
+                                <option value="Manual" {{ request('asal')=='Manual'?'selected':'' }}>Manual</option>
+                                <option value="Mapping" {{ request('asal')=='Mapping'?'selected':'' }}>Mapping</option>
+                                <option value="Peminjaman" {{ request('asal')=='Peminjaman'?'selected':'' }}>Peminjaman</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label">Pencarian</label>
+                            <input type="text" name="search" class="form-control"
+                                placeholder="Kode Service, Kode Aset, No Inventaris, Vendor..."
+                                value="{{ request('search') }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="{{ route('history.maintenance.index') }}" class="btn btn-secondary">
+                        <i class="bx bx-refresh me-1"></i> Reset
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bx bx-search me-1"></i> Terapkan Filter
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
 </div>
 @endsection

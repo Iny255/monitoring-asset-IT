@@ -20,7 +20,10 @@
                             <small class="text-muted">Kelola daftar perusahaan induk (Holding) dan entitas cabang (Multi-Company & Multi-Branch)</small>
                         </div>
                     </div>
-                    <div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
+                            <i class="bx bx-filter-alt me-1"></i> Filter
+                        </button>
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahPerusahaan">
                             <i class="bx bx-plus me-1"></i> Tambah Perusahaan / Cabang
                         </button>
@@ -44,21 +47,20 @@
             </div>
         @endif
 
+        <x-company-filter-banner />
+
         <div class="card border-0 shadow-sm">
             <div class="card-body">
-            <form method="GET" action="{{ url('/dashboard/perusahaan') }}" class="row g-3 mb-4">
-                <div class="col-md-7">
-                    <div class="d-flex justify-content-between align-items-center">
-                        <div class="flex-grow-1 me-2">
-                            <input type="text" name="search" class="form-control w-100"
-                                placeholder="Cari berdasarkan kode / nama perusahaan" value="{{ request('search') }}">
-                        </div>
-                        <div>
-                            <button type="submit" class="btn btn-primary">Cari</button>
-                        </div>
-                    </div>
+            @if(request()->filled('search'))
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <span class="badge bg-label-primary px-3 py-2">
+                        <i class="bx bx-filter-alt me-1"></i> Filter Aktif: "{{ request('search') }}"
+                    </span>
+                    <a href="{{ route('perusahaan.index') }}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bx bx-x me-1"></i> Reset Filter
+                    </a>
                 </div>
-            </form>
+            @endif
 
             <div class="table-responsive text-nowrap">
                 <table class="table table-bordered align-middle">
@@ -68,7 +70,7 @@
                             <th>NAMA PERUSAHAAN / CABANG</th>
                             <th width="180">TIPE & INDUK</th>
                             <th width="120">TEMA</th>
-                            <th width="120">ACTION</th>
+                            <th width="120" class="text-center">AKSI</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -122,18 +124,19 @@
                                 </td>
 
                                 {{-- ACTION --}}
-                                <td>
-                                    <div class="d-flex gap-2">
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-1">
                                         {{-- EDIT --}}
-                                        <button class="btn btn-warning btn-sm btn-edit" data-id="{{ $perusahaan->id }}"
+                                        <button class="btn btn-sm btn-icon btn-outline-secondary btn-edit" data-id="{{ $perusahaan->id }}"
                                             data-kode="{{ $perusahaan->kode_perusahaan }}"
                                             data-nama="{{ $perusahaan->nama_perusahaan }}"
                                             data-tipe="{{ $perusahaan->tipe ?? 'Induk' }}"
                                             data-parent-id="{{ $perusahaan->parent_id ?? '' }}"
                                             data-primary="{{ $perusahaan->primary_color }}"
                                             data-secondary="{{ $perusahaan->secondary_color }}"
-                                            data-logo="{{ $perusahaan->logo_url }}">
-                                            <i class="bx bx-edit-alt"></i>
+                                            data-logo="{{ $perusahaan->logo_url }}"
+                                            title="Edit Perusahaan">
+                                            <i class="bx bx-edit"></i>
                                         </button>
 
                                         {{-- FORM DELETE --}}
@@ -145,7 +148,8 @@
                                         </form>
 
                                         {{-- DELETE --}}
-                                        <button class="btn btn-danger btn-sm btn-delete" data-id="{{ $perusahaan->id }}">
+                                        <button class="btn btn-sm btn-icon btn-outline-danger btn-delete" data-id="{{ $perusahaan->id }}"
+                                            title="Hapus Perusahaan">
                                             <i class="bx bx-trash"></i>
                                         </button>
                                     </div>
@@ -299,6 +303,39 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
                         <button type="submit" class="btn btn-primary">Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= FILTER MODAL ================= -->
+    <div class="modal fade" id="modalFilter" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-md">
+            <div class="modal-content">
+                <form method="GET" action="{{ route('perusahaan.index') }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bx bx-filter-alt me-2 text-primary"></i> Filter Perusahaan & Cabang
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Pencarian</label>
+                                <input type="text" name="search" class="form-control"
+                                    placeholder="Cari berdasarkan kode / nama perusahaan..." value="{{ request('search') }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{{ route('perusahaan.index') }}" class="btn btn-secondary">
+                            <i class="bx bx-refresh me-1"></i> Reset
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-search me-1"></i> Terapkan Filter
+                        </button>
                     </div>
                 </form>
             </div>

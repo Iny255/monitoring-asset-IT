@@ -21,7 +21,27 @@
                             <small class="text-muted">Kelola transaksi pengadaan dan barang masuk dari supplier</small>
                         </div>
                     </div>
-                    <div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
+                            <i class="bx bx-filter-alt me-1"></i> Filter
+                        </button>
+                        <div class="dropdown">
+                            <button class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="bx bx-export me-1"></i> Export
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('transaksi-masuk.cetak', request()->query()) }}" target="_blank">
+                                        <i class="bx bxs-file-pdf text-danger me-2"></i> Export PDF
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('transaksi-masuk.exportExcel', request()->query()) }}">
+                                        <i class="bx bxs-file-export text-success me-2"></i> Export Excel
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                         @auth
                             @if (auth()->user()->role === 'petugas' || auth()->user()->role === 'super_admin')
                                 <a href="{{ route('transaksi-masuk.create') }}" class="btn btn-primary">
@@ -49,177 +69,21 @@
             </div>
         @endif
 
+        <x-company-filter-banner />
+
         <div class="card border-0 shadow-sm">
             <div class="card-body">
 
-            {{-- SEARCH --}}
-            {{-- FILTER LAPORAN --}}
-            <div class="card border mb-4">
-
-                <div class="card-header bg-light">
-                    <h6 class="mb-0 fw-bold">
-                        Filter Data Penerimaan Aset
-                    </h6>
-                </div>
-
-                <div class="card-body">
-
-                    <form method="GET" action="{{ route('transaksi-masuk.index') }}">
-
-                        <div class="row g-3">
-
-                            @if (auth()->user()->role === 'super_admin')
-                                <div class="col-md-3">
-
-                                    <label class="form-label">
-                                        Perusahaan
-                                    </label>
-
-                                    <select name="perusahaan_id" class="form-select">
-
-                                        <option value="">
-                                            Semua Perusahaan
-                                        </option>
-
-                                        @foreach ($perusahaans as $p)
-                                            <option value="{{ $p->id }}"
-                                                {{ request('perusahaan_id') == $p->id ? 'selected' : '' }}>
-                                                {{ $p->nama_perusahaan }}
-                                            </option>
-                                        @endforeach
-
-                                    </select>
-
-                                </div>
-                            @endif
-
-                            <div class="col-md-3">
-
-                                <label class="form-label">
-                                    Tanggal Awal
-                                </label>
-
-                                <input type="date" name="tanggal_awal" class="form-control"
-                                    value="{{ request('tanggal_awal') }}">
-
-                            </div>
-
-                            <div class="col-md-3">
-
-                                <label class="form-label">
-                                    Tanggal Akhir
-                                </label>
-
-                                <input type="date" name="tanggal_akhir" class="form-control"
-                                    value="{{ request('tanggal_akhir') }}">
-
-                            </div>
-                            <div class="col-md-3">
-
-                                <label class="form-label">
-                                    Supplier
-                                </label>
-
-                                <select name="supplier_id" class="form-select">
-
-                                    <option value="">
-                                        Semua Supplier
-                                    </option>
-
-                                    @foreach ($suppliers as $supplier)
-                                        <option value="{{ $supplier->id }}"
-                                            {{ request('supplier_id') == $supplier->id ? 'selected' : '' }}>
-
-                                            {{ $supplier->nama_supplier }}
-
-                                        </option>
-                                    @endforeach
-
-                                </select>
-
-                            </div>
-                            <div class="col-md-3">
-                                <label class="form-label">Jenis Masuk</label>
-
-                                <select name="jenis_masuk" class="form-select">
-                                    <option value="">Semua</option>
-
-                                    <option value="Pembelian"
-                                        {{ request('jenis_masuk') == 'Pembelian' ? 'selected' : '' }}>
-                                        Pembelian
-                                    </option>
-
-                                    <option value="Mutasi" {{ request('jenis_masuk') == 'Mutasi' ? 'selected' : '' }}>
-                                        Mutasi Antar Perusahaan
-                                    </option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-3">
-                                <label class="form-label">Status Aset</label>
-
-                                <select name="status_aset" class="form-select">
-                                    <option value="">Semua (Termasuk Dimutasi)</option>
-                                    <option value="aktif" {{ request('status_aset') == 'aktif' ? 'selected' : '' }}>
-                                        Aset Aktif di Perusahaan
-                                    </option>
-                                    <option value="dimutasi" {{ request('status_aset') == 'dimutasi' ? 'selected' : '' }}>
-                                        Aset Telah Dimutasi Keluar
-                                    </option>
-                                </select>
-                            </div>
-
-                            <div class="col-md-3">
-
-                                <label class="form-label">
-                                    Pencarian
-                                </label>
-
-                                <input type="text" name="search" class="form-control"
-                                    placeholder="Nama barang / merek / type / kode aset" value="{{ request('search') }}">
-
-                            </div>
-
-                        </div>
-
-                        <div class="mt-3 d-flex gap-2">
-
-                            <button type="submit" class="btn btn-primary">
-
-                                <i class="bx bx-search"></i>
-                                Tampilkan
-
-                            </button>
-
-                            <a href="{{ route('transaksi-masuk.index') }}" class="btn btn-secondary">
-
-                                <i class="bx bx-refresh"></i>
-                                Reset
-
-                            </a>
-
-                            <a href="{{ route('transaksi-masuk.cetak', request()->query()) }}" target="_blank"
-                                class="btn btn-danger">
-
-                                <i class="bx bx-printer"></i>
-                                Cetak PDF
-
-                            </a>
-                            <a href="{{ route('transaksi-masuk.exportExcel', request()->query()) }}"
-                                class="btn btn-success">
-
-                                <i class="bx bxs-file-export"></i>
-                                Export Excel
-
-                            </a>
-
-                        </div>
-
-                    </form>
-
-                </div>
-
-            </div>
+                @if(request()->anyFilled(['perusahaan_id', 'tanggal_awal', 'tanggal_akhir', 'supplier_id', 'jenis_masuk', 'status_aset', 'search']))
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge bg-label-primary px-3 py-2">
+                            <i class="bx bx-filter-alt me-1"></i> Filter Aktif
+                        </span>
+                        <a href="{{ route('transaksi-masuk.index') }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bx bx-x me-1"></i> Reset Filter
+                        </a>
+                    </div>
+                @endif
 
 
             <div class="table-responsive">
@@ -233,7 +97,6 @@
                                 <th>PERUSAHAAN</th>
                             @endif
                             <th>DATA ASET</th>
-                            <th>JENIS</th>
                             <th>ASAL</th>
                             <th>TGL PEMBELIAN</th>
                             <th>JUMLAH</th>
@@ -258,9 +121,7 @@
                                 {{-- PERUSAHAAN --}}
                                 @if (auth()->user()->role === 'super_admin')
                                     <td>
-
-                                        {{ $masuk->perusahaan->nama_perusahaan ?? '-' }}
-
+                                        <x-company-badge :perusahaan="$masuk->perusahaan" />
                                     </td>
                                 @endif
 
@@ -322,19 +183,6 @@
                                         {{ $masuk->dataAset->type ?? '-' }}
 
                                     </small>
-
-                                </td>
-                                <td class="text-center">
-
-                                    @if ($masuk->jenis_masuk == 'Pembelian')
-                                        <span class="badge bg-success">
-                                            Pembelian
-                                        </span>
-                                    @else
-                                        <span class="badge bg-info">
-                                            Mutasi
-                                        </span>
-                                    @endif
 
                                 </td>
 
@@ -419,27 +267,27 @@
                                     <div class="d-flex justify-content-center gap-1">
 
                                         <a href="{{ route('transaksi-masuk.show', $masuk->id) }}"
-                                            class="btn btn-info btn-sm" title="Lihat Detail">
+                                            class="btn btn-sm btn-icon btn-outline-primary" title="Lihat Detail">
                                             <i class="bx bx-show"></i>
                                         </a>
 
                                         @if (in_array(auth()->user()->role, ['petugas', 'super_admin']))
                                             @if ($isMapped)
-                                                <button type="button" class="btn btn-secondary btn-sm btn-edit-locked"
+                                                <button type="button" class="btn btn-sm btn-icon btn-outline-secondary btn-edit-locked"
                                                     title="Aset sudah di-mapping ke pengguna/ruangan (Terkunci)">
                                                     <i class="bx bx-lock-alt"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-secondary btn-sm btn-delete-locked"
+                                                <button type="button" class="btn btn-sm btn-icon btn-outline-secondary btn-delete-locked"
                                                     title="Aset sudah di-mapping (Tidak dapat dihapus)">
                                                     <i class="bx bx-lock-alt"></i>
                                                 </button>
                                             @else
-                                                <button type="button" class="btn btn-warning btn-sm btn-edit"
+                                                <button type="button" class="btn btn-sm btn-icon btn-outline-secondary btn-edit"
                                                     data-url="{{ route('transaksi-masuk.edit', $masuk->id) }}"
                                                     title="Edit Penerimaan Aset">
-                                                    <i class="bx bx-edit-alt"></i>
+                                                    <i class="bx bx-edit"></i>
                                                 </button>
-                                                <button type="button" class="btn btn-danger btn-sm btn-delete"
+                                                <button type="button" class="btn btn-sm btn-icon btn-outline-danger btn-delete"
                                                     data-id="{{ $masuk->id }}"
                                                     title="Hapus Penerimaan Aset">
                                                     <i class="bx bx-trash"></i>
@@ -488,6 +336,105 @@
         </div>
     </div>
 
+    <!-- ================= FILTER MODAL ================= -->
+    <div class="modal fade" id="modalFilter" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form method="GET" action="{{ route('transaksi-masuk.index') }}">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bx bx-filter-alt me-2 text-primary"></i> Filter Data Penerimaan Aset
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            @if (auth()->user()->role === 'super_admin')
+                                <div class="col-md-6">
+                                    <label class="form-label">Perusahaan</label>
+                                    <select name="perusahaan_id" class="form-select">
+                                        <option value="">Semua Perusahaan</option>
+                                        @foreach ($perusahaans as $p)
+                                            <option value="{{ $p->id }}"
+                                                {{ request('perusahaan_id') == $p->id ? 'selected' : '' }}>
+                                                {{ $p->nama_perusahaan }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            <div class="col-md-{{ auth()->user()->role === 'super_admin' ? '6' : '12' }}">
+                                <label class="form-label">Supplier</label>
+                                <select name="supplier_id" class="form-select">
+                                    <option value="">Semua Supplier</option>
+                                    @foreach ($suppliers as $supplier)
+                                        <option value="{{ $supplier->id }}"
+                                            {{ request('supplier_id') == $supplier->id ? 'selected' : '' }}>
+                                            {{ $supplier->nama_supplier }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal Awal</label>
+                                <input type="date" name="tanggal_awal" class="form-control"
+                                    value="{{ request('tanggal_awal') }}">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal Akhir</label>
+                                <input type="date" name="tanggal_akhir" class="form-control"
+                                    value="{{ request('tanggal_akhir') }}">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Jenis Masuk</label>
+                                <select name="jenis_masuk" class="form-select">
+                                    <option value="">Semua</option>
+                                    <option value="Pembelian"
+                                        {{ request('jenis_masuk') == 'Pembelian' ? 'selected' : '' }}>
+                                        Pembelian
+                                    </option>
+                                    <option value="Mutasi" {{ request('jenis_masuk') == 'Mutasi' ? 'selected' : '' }}>
+                                        Mutasi Antar Perusahaan
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Status Aset</label>
+                                <select name="status_aset" class="form-select">
+                                    <option value="">Semua (Termasuk Dimutasi)</option>
+                                    <option value="aktif" {{ request('status_aset') == 'aktif' ? 'selected' : '' }}>
+                                        Aset Aktif di Perusahaan
+                                    </option>
+                                    <option value="dimutasi" {{ request('status_aset') == 'dimutasi' ? 'selected' : '' }}>
+                                        Aset Telah Dimutasi Keluar
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Pencarian</label>
+                                <input type="text" name="search" class="form-control"
+                                    placeholder="Nama barang / merek / type / kode aset" value="{{ request('search') }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{{ route('transaksi-masuk.index') }}" class="btn btn-secondary">
+                            <i class="bx bx-refresh me-1"></i> Reset
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-search me-1"></i> Terapkan Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection
 
 

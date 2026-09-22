@@ -38,4 +38,9 @@ class Karyawan extends Model
   {
     return $this->hasMany(Peminjaman::class, 'karyawan_tujuan_id');
   }
+
+  public function mapings()
+  {
+    return $this->hasMany(Maping::class, 'karyawan_id');
+  }
 }

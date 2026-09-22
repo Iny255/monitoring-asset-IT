@@ -42,11 +42,17 @@ class HistoryMaintenanceController extends Controller
     */
 
     if ($request->filled('tanggal_awal')) {
-      $query->whereDate('tanggal', '>=', $request->tanggal_awal);
+      $query->where(function ($q) use ($request) {
+        $q->whereDate('tanggal', '>=', $request->tanggal_awal)
+          ->orWhere(fn($sub) => $sub->whereNull('tanggal')->whereDate('created_at', '>=', $request->tanggal_awal));
+      });
     }
 
     if ($request->filled('tanggal_akhir')) {
-      $query->whereDate('tanggal', '<=', $request->tanggal_akhir);
+      $query->where(function ($q) use ($request) {
+        $q->whereDate('tanggal', '<=', $request->tanggal_akhir)
+          ->orWhere(fn($sub) => $sub->whereNull('tanggal')->whereDate('created_at', '<=', $request->tanggal_akhir));
+      });
     }
 
     /*
@@ -167,11 +173,17 @@ class HistoryMaintenanceController extends Controller
     */
 
     if ($request->filled('tanggal_awal')) {
-      $query->whereDate('tanggal', '>=', $request->tanggal_awal);
+      $query->where(function ($q) use ($request) {
+        $q->whereDate('tanggal', '>=', $request->tanggal_awal)
+          ->orWhere(fn($sub) => $sub->whereNull('tanggal')->whereDate('created_at', '>=', $request->tanggal_awal));
+      });
     }
 
     if ($request->filled('tanggal_akhir')) {
-      $query->whereDate('tanggal', '<=', $request->tanggal_akhir);
+      $query->where(function ($q) use ($request) {
+        $q->whereDate('tanggal', '<=', $request->tanggal_akhir)
+          ->orWhere(fn($sub) => $sub->whereNull('tanggal')->whereDate('created_at', '<=', $request->tanggal_akhir));
+      });
     }
 
     /*
@@ -258,11 +270,17 @@ class HistoryMaintenanceController extends Controller
     }
 
     if ($request->filled('tanggal_awal')) {
-      $query->whereDate('tanggal', '>=', $request->tanggal_awal);
+      $query->where(function ($q) use ($request) {
+        $q->whereDate('tanggal', '>=', $request->tanggal_awal)
+          ->orWhere(fn($sub) => $sub->whereNull('tanggal')->whereDate('created_at', '>=', $request->tanggal_awal));
+      });
     }
 
     if ($request->filled('tanggal_akhir')) {
-      $query->whereDate('tanggal', '<=', $request->tanggal_akhir);
+      $query->where(function ($q) use ($request) {
+        $q->whereDate('tanggal', '<=', $request->tanggal_akhir)
+          ->orWhere(fn($sub) => $sub->whereNull('tanggal')->whereDate('created_at', '<=', $request->tanggal_akhir));
+      });
     }
 
     if ($request->filled('jenis')) {

@@ -75,16 +75,30 @@
 
                     </div>
 
-                    <div>
-
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
+                            <i class="bx bx-filter-alt me-1"></i> Filter
+                        </button>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bx bx-export me-1"></i> Export
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('history.hak-akses.export_excel', request()->query()) }}">
+                                        <i class="bx bxs-file-export me-2 text-success"></i> Export Excel
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('history.hak-akses.cetak', request()->query()) }}" target="_blank">
+                                        <i class="bx bxs-file-pdf me-2 text-danger"></i> Cetak PDF
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                         <a href="{{ route('maping.index') }}" class="btn btn-outline-secondary">
-
-                            <i class="bx bx-arrow-back me-1"></i>
-
-                            Kembali
-
+                            <i class="bx bx-arrow-back me-1"></i> Kembali
                         </a>
-
                     </div>
 
                 </div>
@@ -93,242 +107,18 @@
 
         </div>
 
-        {{-- ========================================================= --}}
-        {{-- FILTER --}}
-        {{-- ========================================================= --}}
+        <x-company-filter-banner />
 
-        <div class="card border-0 shadow-sm mb-4">
-
-            <div class="card-header bg-white">
-
-                <h5 class="fw-bold mb-0">
-
-                    <i class="bx bx-filter-alt me-2 text-primary"></i>
-
-                    Filter Data
-
-                </h5>
-
+        @if(request()->anyFilled(['perusahaan_id', 'jenis', 'access_id', 'aksi', 'tanggal_awal', 'tanggal_akhir', 'search']))
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge bg-label-primary px-3 py-2">
+                    <i class="bx bx-filter-alt me-1"></i> Filter Aktif
+                </span>
+                <a href="{{ route('history.hak-akses.index') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bx bx-x me-1"></i> Reset Filter
+                </a>
             </div>
-
-            <div class="card-body">
-
-                <form method="GET">
-
-                    <div class="row g-3">
-
-                        {{-- PERUSAHAAN --}}
-                        @if (auth()->user()->role == 'super_admin')
-
-                            <div class="col-md-3">
-
-                                <label class="form-label">
-                                    Perusahaan
-                                </label>
-
-                                <select name="perusahaan_id" class="form-select">
-
-                                    <option value="">
-                                        Semua Perusahaan
-                                    </option>
-
-                                    @foreach ($perusahaans as $perusahaan)
-                                        <option value="{{ $perusahaan->id }}"
-                                            {{ request('perusahaan_id') == $perusahaan->id ? 'selected' : '' }}>
-
-                                            {{ $perusahaan->nama_perusahaan }}
-
-                                        </option>
-                                    @endforeach
-
-                                </select>
-
-                            </div>
-
-                        @endif
-
-                        {{-- USER --}}
-                        <div class="col-md-3">
-
-                            <label class="form-label">
-
-                                User Asset
-
-                            </label>
-
-                            <input type="text" name="search" class="form-control"
-                                placeholder="Nama User, Kode Asset, No Inventaris..." value="{{ request('search') }}">
-
-                        </div>
-                        <div class="col-md-3">
-
-                            <label class="form-label">
-
-                                Jenis
-
-                            </label>
-
-                            <select name="jenis" id="jenis" class="form-select">
-
-                                <option value="">
-
-                                    Semua Jenis
-
-                                </option>
-
-                                <option value="PPN" {{ request('jenis') == 'PPN' ? 'selected' : '' }}>
-
-                                    Hak Akses PPN
-
-                                </option>
-
-                                <option value="NON PPN" {{ request('jenis') == 'NON PPN' ? 'selected' : '' }}>
-
-                                    Hak Akses NON PPN
-
-                                </option>
-
-                                <option value="Software" {{ request('jenis') == 'Software' ? 'selected' : '' }}>
-
-                                    Aplikasi
-
-                                </option>
-
-                            </select>
-
-                        </div>
-
-                        {{-- HAK AKSES --}}
-                        <div class="col-md-3">
-
-                            <label class="form-label">
-
-                                Hak Akses
-
-                            </label>
-
-                            <select id="access_id" name="access_id" class="form-select">
-
-                                <option value="">
-
-                                    Semua Hak Akses
-
-                                </option>
-
-                            </select>
-
-                        </div>
-
-                        {{-- AKSI --}}
-                        <div class="col-md-3">
-
-                            <label class="form-label">
-
-                                Aktivitas
-
-                            </label>
-
-                            <select name="aksi" class="form-select">
-
-                                <option value="">
-
-                                    Semua
-
-                                </option>
-
-                                <option value="tambah" {{ request('aksi') == 'tambah' ? 'selected' : '' }}>
-
-                                    Ditambahkan
-
-                                </option>
-
-                                <option value="hapus" {{ request('aksi') == 'hapus' ? 'selected' : '' }}>
-
-                                    Dihapus
-
-                                </option>
-
-                            </select>
-
-                        </div>
-
-                        {{-- TANGGAL --}}
-                        <div class="col-md-3">
-
-                            <label class="form-label">
-
-                                Tanggal Mulai
-
-                            </label>
-
-                            <input type="date" name="tanggal_awal" class="form-control"
-                                value="{{ request('tanggal_awal') }}">
-
-                        </div>
-
-                        <div class="col-md-3">
-
-                            <label class="form-label">
-
-                                Tanggal Akhir
-
-                            </label>
-
-                            <input type="date" name="tanggal_akhir" class="form-control"
-                                value="{{ request('tanggal_akhir') }}">
-
-                        </div>
-
-                        {{-- SEARCH --}}
-                        <div class="col-md-6">
-
-                            <label class="form-label">
-
-                                Pencarian
-
-                            </label>
-
-                            <input type="text" name="search" class="form-control"
-                                placeholder="Cari asset, user atau hak akses..." value="{{ request('search') }}">
-
-                        </div>
-
-                    </div>
-
-                    <div class="mt-3 d-flex align-items-center gap-2 flex-wrap">
-
-                        <button type="submit" class="btn btn-primary">
-
-                            <i class="bx bx-search-alt me-1"></i> Filter
-
-                        </button>
-
-                        <a href="{{ route('history.hak-akses.index') }}" class="btn btn-outline-secondary">
-
-                            <i class="bx bx-reset me-1"></i> Reset
-
-                        </a>
-                        <a href="{{ route('history.hak-akses.cetak', request()->query()) }}" target="_blank"
-                            class="btn btn-danger">
-
-                            <i class="bx bxs-file-pdf me-1"></i> Cetak PDF
-
-                        </a>
-                        <a href="{{ route('history.hak-akses.export_excel', request()->query()) }}"
-                            class="btn btn-success">
-
-                            <i class="bx bxs-file-export me-1"></i> Export Excel
-
-                        </a>
-
-                    </div>
-
-
-                </form>
-
-            </div>
-
-        </div>
+        @endif
 
         {{-- ========================================================= --}}
         {{-- TABEL HISTORY --}}
@@ -373,6 +163,10 @@
 
                             <th width="60">No</th>
 
+                            @if (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan)
+                                <th width="150">Perusahaan</th>
+                            @endif
+
                             <th width="150">Tanggal</th>
 
                             <th width="170">Asset</th>
@@ -401,6 +195,12 @@
                                     {{ $loop->iteration + ($histories->currentPage() - 1) * $histories->perPage() }}
 
                                 </td>
+
+                                @if (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan)
+                                    <td>
+                                        <x-company-badge :perusahaan="$history->maping?->perusahaan" />
+                                    </td>
+                                @endif
 
                                 <td>
 
@@ -526,7 +326,7 @@
 
                             <tr>
 
-                                <td colspan="8">
+                                <td colspan="{{ (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan) ? 9 : 8 }}">
 
                                     <div class="text-center py-5">
 
@@ -590,6 +390,98 @@
 
         </div>
 
+    {{-- Modal Filter --}}
+    <div class="modal fade" id="modalFilter" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bx bx-filter-alt me-2 text-primary"></i> Filter History Hak Akses
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="GET" action="{{ route('history.hak-akses.index') }}">
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            {{-- SEARCH --}}
+                            <div class="col-12">
+                                <label class="form-label">Pencarian</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bx bx-search"></i></span>
+                                    <input type="text" name="search" class="form-control"
+                                        placeholder="Cari asset, user atau hak akses..." value="{{ request('search') }}">
+                                </div>
+                            </div>
+
+                            {{-- PERUSAHAAN --}}
+                            @if (auth()->user()->role == 'super_admin')
+                                <div class="col-md-6">
+                                    <label class="form-label">Perusahaan</label>
+                                    <select name="perusahaan_id" class="form-select">
+                                        <option value="">Semua Perusahaan</option>
+                                        @foreach ($perusahaans as $perusahaan)
+                                            <option value="{{ $perusahaan->id }}"
+                                                {{ request('perusahaan_id') == $perusahaan->id ? 'selected' : '' }}>
+                                                {{ $perusahaan->nama_perusahaan }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            {{-- JENIS --}}
+                            <div class="col-md-6">
+                                <label class="form-label">Jenis</label>
+                                <select name="jenis" id="jenis" class="form-select">
+                                    <option value="">Semua Jenis</option>
+                                    <option value="PPN" {{ request('jenis') == 'PPN' ? 'selected' : '' }}>Hak Akses PPN</option>
+                                    <option value="NON PPN" {{ request('jenis') == 'NON PPN' ? 'selected' : '' }}>Hak Akses NON PPN</option>
+                                    <option value="Software" {{ request('jenis') == 'Software' ? 'selected' : '' }}>Aplikasi</option>
+                                </select>
+                            </div>
+
+                            {{-- HAK AKSES --}}
+                            <div class="col-md-6">
+                                <label class="form-label">Hak Akses</label>
+                                <select id="access_id" name="access_id" class="form-select">
+                                    <option value="">Semua Hak Akses</option>
+                                </select>
+                            </div>
+
+                            {{-- AKSI --}}
+                            <div class="col-md-6">
+                                <label class="form-label">Aktivitas</label>
+                                <select name="aksi" class="form-select">
+                                    <option value="">Semua</option>
+                                    <option value="tambah" {{ request('aksi') == 'tambah' ? 'selected' : '' }}>Ditambahkan</option>
+                                    <option value="hapus" {{ request('aksi') == 'hapus' ? 'selected' : '' }}>Dihapus</option>
+                                </select>
+                            </div>
+
+                            {{-- TANGGAL AWAL --}}
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal Mulai</label>
+                                <input type="date" name="tanggal_awal" class="form-control"
+                                    value="{{ request('tanggal_awal') }}">
+                            </div>
+
+                            {{-- TANGGAL AKHIR --}}
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal Akhir</label>
+                                <input type="date" name="tanggal_akhir" class="form-control"
+                                    value="{{ request('tanggal_akhir') }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{{ route('history.hak-akses.index') }}" class="btn btn-outline-secondary">Reset</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-filter-alt me-1"></i> Terapkan Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
 @endsection

@@ -48,6 +48,8 @@
         </div>
     @endif
 
+    <x-company-filter-banner />
+
     {{-- SUMMARY CARDS PER KATEGORI (SESUAI TEMA PERUSAHAAN) --}}
     <div class="row g-3 mb-4">
         {{-- Total Semua Aset --}}

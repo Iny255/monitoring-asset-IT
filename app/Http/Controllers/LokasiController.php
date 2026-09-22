@@ -26,23 +26,44 @@ class LokasiController extends Controller
     $perusahaanId = $request->perusahaan_id;
 
     $perusahaans = $user->role === 'super_admin' ? Perusahaan::all() : collect();
+    $isGrouped = ($user->role === 'super_admin' && empty($perusahaanId));
 
-    $query = Lokasi::with('perusahaan');
+    if ($isGrouped) {
+      $query = Lokasi::select(
+          'lokasis.nama_lokasi',
+          DB::raw('MIN(lokasis.id) as id'),
+          DB::raw('COUNT(DISTINCT lokasis.id_perusahaan) as total_perusahaan'),
+          DB::raw('GROUP_CONCAT(DISTINCT perusahaans.nama_perusahaan ORDER BY perusahaans.nama_perusahaan ASC SEPARATOR "||") as daftar_perusahaan')
+        )
+        ->leftJoin('perusahaans', 'perusahaans.id', '=', 'lokasis.id_perusahaan')
+        ->groupBy('lokasis.nama_lokasi');
 
-    if ($user->role !== 'super_admin') {
-      $query->where('id_perusahaan', $user->id_perusahaan);
-    } elseif ($perusahaanId) {
-      $query->where('id_perusahaan', $perusahaanId);
+      if ($search) {
+        $query->where('lokasis.nama_lokasi', 'like', "%{$search}%");
+      }
+
+      $lokasis = $query->orderBy('lokasis.nama_lokasi', 'asc')
+        ->paginate(10)
+        ->appends($request->query());
+    } else {
+      $query = Lokasi::with('perusahaan');
+
+      if ($user->role !== 'super_admin') {
+        $query->where('id_perusahaan', $user->id_perusahaan);
+      } elseif ($perusahaanId) {
+        $query->where('id_perusahaan', $perusahaanId);
+      }
+
+      if ($search) {
+        $query->where('nama_lokasi', 'like', "%{$search}%");
+      }
+
+      $lokasis = $query->latest()->paginate(10)->appends($request->query());
     }
 
-    if ($search) {
-      $query->where('nama_lokasi', 'like', "%{$search}%");
-    }
-
-    $lokasis = $query->latest()->paginate(10)->appends($request->query());
-
-    return view('content.dashboard.lokasi.index', compact('lokasis', 'perusahaans', 'perusahaanId'));
+    return view('content.dashboard.lokasi.index', compact('lokasis', 'perusahaans', 'perusahaanId', 'isGrouped'));
   }
+
   public function detailPerusahaan(Request $request)
   {
     $request->validate([
@@ -50,6 +71,7 @@ class LokasiController extends Controller
     ]);
 
     $data = Lokasi::with('perusahaan')
+      ->withCount('maping')
       ->where('nama_lokasi', $request->nama_lokasi)
       ->orderBy('id_perusahaan')
       ->get();
@@ -75,11 +97,18 @@ class LokasiController extends Controller
     $perusahaanId = $user->role === 'super_admin' ? $request->id_perusahaan : $user->id_perusahaan;
 
     $validated = $request->validate([
-      'nama_lokasi' => 'required|string|max:50',
+      'nama_lokasi' => [
+        'required',
+        'string',
+        'max:50',
+        Rule::unique('lokasis')->where(fn($q) => $q->where('id_perusahaan', $perusahaanId)),
+      ],
       'id_perusahaan' => $user->role === 'super_admin' ? 'required' : 'nullable',
+    ], [
+      'nama_lokasi.unique' => 'Nama lokasi sudah terdaftar pada perusahaan yang dipilih.',
     ]);
 
-    $validated['nama_lokasi'] = strtoupper($validated['nama_lokasi']);
+    $validated['nama_lokasi'] = strtoupper(trim($validated['nama_lokasi']));
     try {
       $validated['id_perusahaan'] = $perusahaanId;
 
@@ -126,17 +155,32 @@ class LokasiController extends Controller
     }
 
     $validated = $request->validate([
-      'nama_lokasi' => 'required|string|max:50',
+      'nama_lokasi' => [
+        'required',
+        'string',
+        'max:50',
+        Rule::unique('lokasis')
+          ->where(fn($q) => $q->where('id_perusahaan', $perusahaanId))
+          ->ignore($lokasi->id),
+      ],
+      'id_perusahaan' => $user->role === 'super_admin' ? 'required' : 'nullable',
+    ], [
+      'nama_lokasi.unique' => 'Nama lokasi sudah terdaftar pada perusahaan tersebut.',
     ]);
 
-    $validated['nama_lokasi'] = strtoupper($validated['nama_lokasi']);
+    $validated['nama_lokasi'] = strtoupper(trim($validated['nama_lokasi']));
     $validated['id_perusahaan'] = $perusahaanId;
 
-    $lokasi->update($validated);
+    try {
+      $lokasi->update($validated);
 
-    return redirect()
-      ->route('lokasi.index')
-      ->with('success', 'Data lokasi diperbarui.');
+      return redirect()
+        ->route('lokasi.index')
+        ->with('success', 'Data lokasi diperbarui.');
+    } catch (\Exception $e) {
+      Log::error($e->getMessage());
+      return back()->with('error', 'Gagal memperbarui data.');
+    }
   }
 
   /**
@@ -152,8 +196,13 @@ class LokasiController extends Controller
       abort(403);
     }
 
-    $lokasi->delete();
+    try {
+      $lokasi->delete();
 
-    return back()->with('success', 'Lokasi berhasil dihapus');
+      return back()->with('success', 'Lokasi berhasil dihapus');
+    } catch (\Exception $e) {
+      Log::error($e->getMessage());
+      return back()->with('error', 'Gagal menghapus: Lokasi ini masih digunakan pada data aset atau transaksi.');
+    }
   }
 }

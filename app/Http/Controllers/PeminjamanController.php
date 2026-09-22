@@ -52,11 +52,25 @@ class PeminjamanController extends Controller
     */
 
     if ($request->filled('tanggal_awal')) {
-      $query->whereDate('tanggal_pinjam', '>=', $request->tanggal_awal);
+      $tglAwal = $request->tanggal_awal;
+      $query->where(function ($q) use ($tglAwal) {
+        $q->whereDate('tanggal_pinjam', '>=', $tglAwal)
+          ->orWhere(function ($sub) use ($tglAwal) {
+            $sub->whereNull('tanggal_pinjam')
+              ->whereDate('created_at', '>=', $tglAwal);
+          });
+      });
     }
 
     if ($request->filled('tanggal_akhir')) {
-      $query->whereDate('tanggal_pinjam', '<=', $request->tanggal_akhir);
+      $tglAkhir = $request->tanggal_akhir;
+      $query->where(function ($q) use ($tglAkhir) {
+        $q->whereDate('tanggal_pinjam', '<=', $tglAkhir)
+          ->orWhere(function ($sub) use ($tglAkhir) {
+            $sub->whereNull('tanggal_pinjam')
+              ->whereDate('created_at', '<=', $tglAkhir);
+          });
+      });
     }
 
     /*
@@ -498,11 +512,25 @@ class PeminjamanController extends Controller
     */
 
     if ($request->filled('tanggal_awal')) {
-      $query->whereDate('tanggal_pinjam', '>=', $request->tanggal_awal);
+      $tglAwal = $request->tanggal_awal;
+      $query->where(function ($q) use ($tglAwal) {
+        $q->whereDate('tanggal_pinjam', '>=', $tglAwal)
+          ->orWhere(function ($sub) use ($tglAwal) {
+            $sub->whereNull('tanggal_pinjam')
+              ->whereDate('created_at', '>=', $tglAwal);
+          });
+      });
     }
 
     if ($request->filled('tanggal_akhir')) {
-      $query->whereDate('tanggal_pinjam', '<=', $request->tanggal_akhir);
+      $tglAkhir = $request->tanggal_akhir;
+      $query->where(function ($q) use ($tglAkhir) {
+        $q->whereDate('tanggal_pinjam', '<=', $tglAkhir)
+          ->orWhere(function ($sub) use ($tglAkhir) {
+            $sub->whereNull('tanggal_pinjam')
+              ->whereDate('created_at', '<=', $tglAkhir);
+          });
+      });
     }
 
     /*

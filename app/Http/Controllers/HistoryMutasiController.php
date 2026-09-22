@@ -76,11 +76,25 @@ class HistoryMutasiController extends Controller
         */
 
     if ($request->filled('tanggal_awal')) {
-      $query->whereDate('tanggal_mutasi', '>=', $request->tanggal_awal);
+      $tglAwal = $request->tanggal_awal;
+      $query->where(function ($q) use ($tglAwal) {
+        $q->whereDate('tanggal_mutasi', '>=', $tglAwal)
+          ->orWhere(function ($sub) use ($tglAwal) {
+            $sub->whereNull('tanggal_mutasi')
+              ->whereDate('created_at', '>=', $tglAwal);
+          });
+      });
     }
 
     if ($request->filled('tanggal_akhir')) {
-      $query->whereDate('tanggal_mutasi', '<=', $request->tanggal_akhir);
+      $tglAkhir = $request->tanggal_akhir;
+      $query->where(function ($q) use ($tglAkhir) {
+        $q->whereDate('tanggal_mutasi', '<=', $tglAkhir)
+          ->orWhere(function ($sub) use ($tglAkhir) {
+            $sub->whereNull('tanggal_mutasi')
+              ->whereDate('created_at', '<=', $tglAkhir);
+          });
+      });
     }
 
     /*
@@ -196,11 +210,25 @@ class HistoryMutasiController extends Controller
     }
 
     if ($request->filled('tanggal_awal')) {
-      $query->whereDate('tanggal_mutasi', '>=', $request->tanggal_awal);
+      $tglAwal = $request->tanggal_awal;
+      $query->where(function ($q) use ($tglAwal) {
+        $q->whereDate('tanggal_mutasi', '>=', $tglAwal)
+          ->orWhere(function ($sub) use ($tglAwal) {
+            $sub->whereNull('tanggal_mutasi')
+              ->whereDate('created_at', '>=', $tglAwal);
+          });
+      });
     }
 
     if ($request->filled('tanggal_akhir')) {
-      $query->whereDate('tanggal_mutasi', '<=', $request->tanggal_akhir);
+      $tglAkhir = $request->tanggal_akhir;
+      $query->where(function ($q) use ($tglAkhir) {
+        $q->whereDate('tanggal_mutasi', '<=', $tglAkhir)
+          ->orWhere(function ($sub) use ($tglAkhir) {
+            $sub->whereNull('tanggal_mutasi')
+              ->whereDate('created_at', '<=', $tglAkhir);
+          });
+      });
     }
 
     if (auth()->user()->role == 'super_admin' && $request->filled('perusahaan_id')) {

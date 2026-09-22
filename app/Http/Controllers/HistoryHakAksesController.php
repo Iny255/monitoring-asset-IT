@@ -85,8 +85,12 @@ class HistoryHakAksesController extends Controller
         |--------------------------------------------------------------------------
         */
 
-    if ($request->filled('tanggal_awal') && $request->filled('tanggal_akhir')) {
-      $query->whereBetween('created_at', [$request->tanggal_awal, $request->tanggal_akhir]);
+    $tanggalAwal = $request->get('tanggal_awal', $request->get('tanggal_mulai'));
+    if (!empty($tanggalAwal)) {
+      $query->whereDate('created_at', '>=', $tanggalAwal);
+    }
+    if ($request->filled('tanggal_akhir')) {
+      $query->whereDate('created_at', '<=', $request->tanggal_akhir);
     }
 
     /*
@@ -228,8 +232,9 @@ class HistoryHakAksesController extends Controller
     |--------------------------------------------------------------------------
     */
 
-    if ($request->filled('tanggal_mulai')) {
-      $query->whereDate('created_at', '>=', $request->tanggal_mulai);
+    $tanggalAwal = $request->get('tanggal_awal', $request->get('tanggal_mulai'));
+    if (!empty($tanggalAwal)) {
+      $query->whereDate('created_at', '>=', $tanggalAwal);
     }
 
     if ($request->filled('tanggal_akhir')) {
@@ -307,11 +312,10 @@ class HistoryHakAksesController extends Controller
     }
 
     $tanggalAwal = $request->get('tanggal_awal', $request->get('tanggal_mulai'));
-    if ($tanggalAwal && $request->filled('tanggal_akhir')) {
-      $query->whereBetween('created_at', [$tanggalAwal, $request->tanggal_akhir]);
-    } elseif ($tanggalAwal) {
+    if (!empty($tanggalAwal)) {
       $query->whereDate('created_at', '>=', $tanggalAwal);
-    } elseif ($request->filled('tanggal_akhir')) {
+    }
+    if ($request->filled('tanggal_akhir')) {
       $query->whereDate('created_at', '<=', $request->tanggal_akhir);
     }
 

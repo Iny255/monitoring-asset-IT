@@ -21,23 +21,53 @@ class DataAsetController extends Controller
     $search = $request->search;
     $perusahaanId = $request->perusahaan_id;
 
-    $query = DataAset::with(['kategori', 'perusahaan']);
+    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+    $isGrouped = ($user->role === 'super_admin' && empty($perusahaanId));
 
-    // FILTER PERUSAHAAN
-    if ($user->role !== 'super_admin') {
-      $query->where('perusahaan_id', $user->id_perusahaan);
-    } elseif ($perusahaanId) {
-      $query->where('perusahaan_id', $perusahaanId);
+    if ($isGrouped) {
+      $query = DataAset::select(
+          'data_asets.merek',
+          'data_asets.type',
+          DB::raw('MIN(kategoris.nama_barang) as nama_barang'),
+          DB::raw('MIN(data_asets.warna) as warna'),
+          DB::raw('MIN(data_asets.id) as id'),
+          DB::raw('COUNT(DISTINCT data_asets.perusahaan_id) as total_perusahaan'),
+          DB::raw('GROUP_CONCAT(DISTINCT perusahaans.nama_perusahaan ORDER BY perusahaans.nama_perusahaan ASC SEPARATOR "||") as daftar_perusahaan')
+        )
+        ->leftJoin('kategoris', 'kategoris.id', '=', 'data_asets.kategori_id')
+        ->leftJoin('perusahaans', 'perusahaans.id', '=', 'data_asets.perusahaan_id')
+        ->groupBy('data_asets.merek', 'data_asets.type');
+
+      if ($search) {
+        $query->where(function ($q) use ($search) {
+          $q->where('data_asets.merek', 'like', "%{$search}%")
+            ->orWhere('data_asets.type', 'like', "%{$search}%")
+            ->orWhere('kategoris.nama_barang', 'like', "%{$search}%");
+        });
+      }
+
+      $dataAsets = $query->orderBy('data_asets.merek', 'asc')
+        ->paginate(10)
+        ->appends($request->query());
+    } else {
+      $query = DataAset::with(['kategori', 'perusahaan']);
+
+      // FILTER PERUSAHAAN
+      if ($user->role !== 'super_admin') {
+        $query->where('perusahaan_id', $user->id_perusahaan);
+      } elseif ($perusahaanId) {
+        $query->where('perusahaan_id', $perusahaanId);
+      }
+
+      // SEARCH
+      if ($search) {
+        $query->where(function ($q) use ($search) {
+          $q->where('merek', 'like', "%{$search}%")->orWhere('type', 'like', "%{$search}%");
+        });
+      }
+
+      $dataAsets = $query->latest()->paginate(10)->appends($request->query());
     }
-
-    // SEARCH
-    if ($search) {
-      $query->where(function ($q) use ($search) {
-        $q->where('merek', 'like', "%{$search}%")->orWhere('type', 'like', "%{$search}%");
-      });
-    }
-
-    $dataAsets = $query->latest()->paginate(10)->appends($request->query());
 
     if ($user->role == 'super_admin') {
       $kategoris = Kategori::with('perusahaan')->orderBy('nama_barang')->get();
@@ -47,9 +77,24 @@ class DataAsetController extends Controller
         ->get();
     }
 
-    $perusahaans = Perusahaan::all();
+    return view('content.dashboard.data-aset.index', compact('dataAsets', 'kategoris', 'perusahaans', 'perusahaanId', 'isGrouped'));
+  }
 
-    return view('content.dashboard.data-aset.index', compact('dataAsets', 'kategoris', 'perusahaans'));
+  public function detailPerusahaan(Request $request)
+  {
+    $request->validate([
+      'merek' => 'required',
+      'type' => 'required',
+    ]);
+
+    $data = DataAset::with(['perusahaan', 'kategori'])
+      ->withCount('masuks')
+      ->where('merek', $request->merek)
+      ->where('type', $request->type)
+      ->orderBy('perusahaan_id')
+      ->get();
+
+    return response()->json($data);
   }
 
   /**
@@ -155,9 +200,13 @@ class DataAsetController extends Controller
   {
     $aset = DataAset::findOrFail($id);
 
-    $aset->delete();
-
-    return back()->with('success', 'Data aset berhasil dihapus.');
+    try {
+      $aset->delete();
+      return back()->with('success', 'Data aset berhasil dihapus.');
+    } catch (\Exception $e) {
+      Log::error($e->getMessage());
+      return back()->with('error', 'Gagal menghapus: Merek & Tipe ini masih digunakan dalam transaksi/inventaris aset.');
+    }
   }
   public function getKategori(string $id)
   {

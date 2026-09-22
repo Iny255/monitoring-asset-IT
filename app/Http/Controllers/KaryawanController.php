@@ -22,39 +22,69 @@ class KaryawanController extends Controller
     $search = $request->search;
     $perusahaanId = $request->perusahaan_id;
 
-    $perusahaans = Perusahaan::all();
+    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+    $isGrouped = ($user->role === 'super_admin' && empty($perusahaanId));
 
-    $query = Karyawan::with('perusahaan');
+    if ($isGrouped) {
+      $query = Karyawan::select(
+          'karyawans.kode_karyawan',
+          'karyawans.nama_karyawan',
+          DB::raw('MIN(karyawans.jabatan) as jabatan'),
+          DB::raw('MIN(karyawans.divisi) as divisi'),
+          DB::raw('MIN(karyawans.id) as id'),
+          DB::raw('COUNT(DISTINCT karyawans.id_perusahaan) as total_perusahaan'),
+          DB::raw('GROUP_CONCAT(DISTINCT perusahaans.nama_perusahaan ORDER BY perusahaans.nama_perusahaan ASC SEPARATOR "||") as daftar_perusahaan')
+        )
+        ->leftJoin('perusahaans', 'perusahaans.id', '=', 'karyawans.id_perusahaan')
+        ->groupBy('karyawans.kode_karyawan', 'karyawans.nama_karyawan');
 
-    if ($user->role !== 'super_admin') {
-      $query->where('id_perusahaan', $user->id_perusahaan);
-    } elseif ($perusahaanId) {
-      $query->where('id_perusahaan', $perusahaanId);
+      if ($search) {
+        $query->where(function ($q) use ($search) {
+          $q->where('karyawans.nama_karyawan', 'like', "%{$search}%")->orWhere('karyawans.kode_karyawan', 'like', "%{$search}%");
+        });
+      }
+
+      $karyawans = $query
+        ->orderBy('karyawans.nama_karyawan', 'asc')
+        ->paginate(10)
+        ->appends($request->query());
+    } else {
+      $query = Karyawan::with('perusahaan');
+
+      if ($user->role !== 'super_admin') {
+        $query->where('id_perusahaan', $user->id_perusahaan);
+      } elseif ($perusahaanId) {
+        $query->where('id_perusahaan', $perusahaanId);
+      }
+
+      if ($search) {
+        $query->where(function ($q) use ($search) {
+          $q->where('nama_karyawan', 'like', "%{$search}%")->orWhere('kode_karyawan', 'like', "%{$search}%");
+        });
+      }
+
+      $karyawans = $query
+        ->latest()
+        ->paginate(10)
+        ->appends($request->query());
     }
 
-    if ($search) {
-      $query->where(function ($q) use ($search) {
-        $q->where('nama_karyawan', 'like', "%{$search}%")->orWhere('kode_karyawan', 'like', "%{$search}%");
-      });
-    }
-
-    $karyawans = $query
-      ->latest()
-      ->paginate(10)
-      ->appends($request->query());
-
-    return view('content.dashboard.useraset.index', compact('karyawans', 'perusahaans', 'perusahaanId'));
+    return view('content.dashboard.useraset.index', compact('karyawans', 'perusahaans', 'perusahaanId', 'isGrouped'));
   }
+
   public function detailPerusahaan(Request $request)
   {
     $request->validate([
       'kode_karyawan' => 'required',
     ]);
 
-    return Karyawan::with('perusahaan')
+    $data = Karyawan::with('perusahaan')
+      ->withCount('mapings')
       ->where('kode_karyawan', $request->kode_karyawan)
       ->orderBy('id_perusahaan')
       ->get();
+
+    return response()->json($data);
   }
 
   /**
@@ -144,10 +174,15 @@ class KaryawanController extends Controller
       abort(403);
     }
 
-    $karyawan->delete();
+    try {
+      $karyawan->delete();
 
-    return redirect()
-      ->route('useraset.index')
-      ->with('success', 'Data berhasil dihapus.');
+      return redirect()
+        ->route('useraset.index')
+        ->with('success', 'Data berhasil dihapus.');
+    } catch (\Exception $e) {
+      Log::error($e->getMessage());
+      return back()->with('error', 'Gagal menghapus: Karyawan ini masih terikat dengan data pemakaian/peminjaman aset.');
+    }
   }
 }

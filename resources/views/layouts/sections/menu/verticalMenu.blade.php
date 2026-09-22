@@ -4,7 +4,7 @@
     // =====================================
     $menuPrimary = $theme['primary_color'] ?? '#0b2f57';
     $menuSecondary = $theme['secondary_color'] ?? '#154b87';
-    $menuLogo = $theme['logo'] ?? asset('assets/img/logo_sembilan.png');
+    $menuLogo = $theme['logo'] ?? asset('assets/img/logo_aset.png');
 @endphp
 
 <style>
@@ -14,10 +14,11 @@
     :root {
         --menu-primary: {{ $menuPrimary }};
         --menu-secondary: {{ $menuSecondary }};
+        --menu-primary-rgb: {{ $theme['primary_rgb'] ?? '11, 47, 87' }};
     }
 
     /* =====================================
-       SIDEBAR CONTAINER (LEBAR PROPORSIONAL & LEGA)
+       SIDEBAR CONTAINER (BERSIH & ELEGAN - MENU BACKGROUND PUTIH)
     ===================================== */
     .layout-menu,
     #layout-menu {
@@ -100,13 +101,13 @@
         #layout-menu {
             transform: translate3d(-100%, 0, 0) !important;
             transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-            z-index: 1060 !important;
+            z-index: 1200 !important; /* Wajib lebih tinggi dari navbar (1030-1075) */
             box-shadow: none !important;
         }
 
         html.layout-menu-expanded #layout-menu {
             transform: translate3d(0, 0, 0) !important;
-            box-shadow: 0 0 45px rgba(0, 0, 0, 0.35) !important;
+            box-shadow: 0 0 45px rgba(0, 0, 0, 0.45) !important;
         }
 
         /* Backdrop Overlay saat menu mobile terbuka */
@@ -118,8 +119,8 @@
             bottom: 0 !important;
             width: 100vw !important;
             height: 100vh !important;
-            background: rgba(0, 0, 0, 0.5) !important;
-            z-index: 1055 !important;
+            background: rgba(0, 0, 0, 0.55) !important;
+            z-index: 1150 !important; /* Di bawah sidebar (1200), di atas navbar */
             display: none !important;
             cursor: pointer !important;
         }
@@ -179,18 +180,18 @@
     }
 
     /* =====================================
-       BRAND LOGO AREA (UKURAN BESAR & JELAS)
+       BRAND LOGO AREA (BACKGROUND PUTIH BERSIH - SEJAJAR DENGAN NAVBAR ATAS)
     ===================================== */
     .layout-menu .app-brand {
-        flex: 0 0 150px !important;
-        height: 150px !important;
-        min-height: 150px !important;
-        max-height: 150px !important;
+        flex: 0 0 76px !important;
+        height: 76px !important;
+        min-height: 76px !important;
+        max-height: 76px !important;
         width: 100% !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        padding: 12px 18px !important;
+        padding: 10px 20px !important;
         background: #ffffff !important;
         border-bottom: 1px solid #f1f5f9 !important;
         box-sizing: border-box !important;
@@ -198,37 +199,41 @@
     }
 
     .layout-menu .app-brand-logo-wrapper {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
         width: 100% !important;
         height: 100% !important;
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
         text-decoration: none !important;
+        transition: transform 0.2s ease;
+    }
+
+    .layout-menu .app-brand-logo-wrapper:hover {
+        transform: scale(1.02);
     }
 
     .layout-menu .logo-sembilan {
-        max-width: 260px !important;
-        max-height: 125px !important;
+        max-width: 220px !important;
+        max-height: 48px !important;
         width: auto !important;
         height: auto !important;
         object-fit: contain !important;
         display: block !important;
-        transition: transform 0.2s ease;
-    }
-
-    .layout-menu .logo-sembilan:hover {
-        transform: scale(1.02);
     }
 
     /* =====================================
-       SCROLLABLE MENU CONTAINER (BISA DIGULIR DENGAN MOUSE)
+       SCROLLABLE MENU CONTAINER (MENU BACKGROUND PUTIH)
     ===================================== */
     .layout-menu .menu-inner,
     #sidebarMenuInner {
+        background: #ffffff !important;
         flex: 1 1 0% !important;
         min-height: 0 !important; /* KUNCI UTAMA flexbox agar bisa menggulir */
-        height: calc(100vh - 150px) !important;
-        max-height: calc(100vh - 150px) !important;
+        height: calc(100vh - 76px) !important;
+        max-height: calc(100vh - 76px) !important;
         width: 100% !important;
         display: flex !important;
         flex-direction: column !important;
@@ -269,10 +274,10 @@
 
     /* =====================================
        GROUP / SECTION HEADERS & SINGLE MENU LINKS
-       (TAMPILAN 100% SERAGAM & HARMONIS)
+       (CLEAN MINIMALIST CORPORATE STYLE)
     ===================================== */
     .layout-menu .menu-header-group {
-        margin-top: 10px;
+        margin-top: 8px;
         margin-bottom: 0;
         list-style: none;
         width: 100% !important;
@@ -285,30 +290,30 @@
 
     /* Jarak antar menu single berurutan yang kompak & proporsional */
     .layout-menu .menu-header-group.menu-single-item + .menu-header-group.menu-single-item {
-        margin-top: 6px !important;
+        margin-top: 4px !important;
     }
 
+    /* Section Header (Subtle, Clean, Jelas & Mudah Dibaca) */
     .layout-menu .menu-group-title {
         display: flex !important;
         align-items: center !important;
         width: 100% !important;
-        padding: 10px 16px !important;
-        border-radius: 10px !important;
-        background: rgba(11, 47, 87, 0.06) !important;
-        color: var(--menu-primary, #0b2f57) !important;
-        font-size: 15.5px !important;
+        padding: 16px 14px 8px 14px !important;
+        background: transparent !important;
+        color: #94a3b8 !important;
+        font-size: 0.82rem !important;
         font-weight: 700 !important;
         text-transform: uppercase !important;
-        letter-spacing: 0.6px !important;
-        border-left: 4px solid var(--menu-primary, #0b2f57) !important;
+        letter-spacing: 0.06em !important;
+        border: none !important;
         box-sizing: border-box !important;
         user-select: none;
     }
 
     .layout-menu .menu-group-title i {
-        font-size: 22px;
-        margin-right: 12px;
-        color: var(--menu-primary, #0b2f57);
+        font-size: 17px !important;
+        margin-right: 10px !important;
+        color: #94a3b8 !important;
         flex-shrink: 0;
         transition: all 0.2s ease;
     }
@@ -321,22 +326,42 @@
         display: flex !important;
         align-items: center !important;
         width: 100% !important;
-        color: var(--menu-primary, #0b2f57) !important;
+        padding: 10px 15px !important;
+        border-radius: 8px !important;
+        background: transparent !important;
+        color: #475569 !important;
+        font-size: 16px !important;
+        font-weight: 500 !important;
+        text-transform: none !important;
+        letter-spacing: normal !important;
+        border: none !important;
         box-sizing: border-box !important;
     }
 
+    .layout-menu a.menu-single-link i {
+        font-size: 22px !important;
+        margin-right: 12px !important;
+        color: #64748b !important;
+        flex-shrink: 0;
+        transition: all 0.2s ease;
+    }
+
     .layout-menu a.menu-single-link:hover {
-        background: rgba(11, 47, 87, 0.12) !important;
+        background: rgba(var(--menu-primary-rgb, 11, 47, 87), 0.08) !important;
         color: var(--menu-primary, #0b2f57) !important;
-        border-left: 4px solid var(--menu-primary, #0b2f57) !important;
-        transform: translateX(4px);
+    }
+
+    .layout-menu a.menu-single-link:hover i {
+        color: var(--menu-primary, #0b2f57) !important;
     }
 
     .layout-menu a.menu-single-link.active {
-        background: linear-gradient(135deg, var(--menu-primary, #0b2f57), var(--menu-secondary, #154b87)) !important;
+        background: var(--menu-primary, #0b2f57) !important;
+        background-color: var(--menu-primary, #0b2f57) !important;
         color: #ffffff !important;
-        box-shadow: 0 4px 14px rgba(11, 47, 87, 0.25) !important;
-        border-left: 4px solid #ffffff !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 3px 10px rgba(var(--menu-primary-rgb, 11, 47, 87), 0.25) !important;
     }
 
     .layout-menu a.menu-single-link.active i,
@@ -355,16 +380,16 @@
         width: 100% !important;
         box-sizing: border-box !important;
         padding: 0 !important;
-        margin: 4px 0 !important; /* Rata kiri tanpa indentasi & tanpa garis abu */
-        border-left: none !important; /* Hapus garis abu vertikal agar sejajar lurus dengan Dashboard */
+        margin: 3px 0 !important;
+        border-left: none !important;
         list-style: none;
     }
 
     /* =====================================
-       MENU LINKS (UKURAN LEGA & SEJAJAR DENGAN DASHBOARD)
+       MENU LINKS (BERSIH, PROPORSIONAL & TIDAK RAMAI)
     ===================================== */
     .layout-menu .menu-item {
-        margin-bottom: 4px;
+        margin-bottom: 3px;
         list-style: none;
         width: 100% !important;
         box-sizing: border-box !important;
@@ -375,21 +400,21 @@
         margin-bottom: 0 !important;
     }
 
-    /* Link Submenu (Di bawah grup) */
+    /* Link Submenu */
     .layout-menu .menu-link,
     .layout-menu .menu-item > .menu-link,
     .layout-menu .menu-sub .menu-item > .menu-link {
-        border-radius: 10px !important;
-        font-size: 16px !important;
+        border-radius: 8px !important;
+        font-size: 15.5px !important;
         font-weight: 500 !important;
-        padding: 10px 16px !important;
+        padding: 9.5px 15px !important;
         width: 100% !important;
-        color: #334155 !important;
+        color: #475569 !important;
         transition: all 0.2s ease !important;
         display: flex !important;
         align-items: center !important;
         text-decoration: none !important;
-        border-left: 4px solid transparent !important; /* Lebar & posisi sejajar sempurna dengan Dashboard */
+        border: none !important;
         box-sizing: border-box !important;
     }
 
@@ -412,10 +437,8 @@
     /* Hover State */
     .layout-menu .menu-link:hover,
     .layout-menu .menu-sub .menu-item > .menu-link:hover {
-        background: rgba(11, 47, 87, 0.08) !important;
+        background: rgba(var(--menu-primary-rgb, 11, 47, 87), 0.08) !important;
         color: var(--menu-primary, #0b2f57) !important;
-        border-left: 4px solid var(--menu-primary, #0b2f57) !important;
-        transform: translateX(4px);
     }
 
     .layout-menu .menu-link:hover i,
@@ -423,23 +446,64 @@
         color: var(--menu-primary, #0b2f57) !important;
     }
 
-    /* Active Link State */
+    /* Active Link State (Solid Corporate Accent) */
     .layout-menu .menu-item.active > .menu-link,
     .layout-menu .menu-sub .menu-item.active > .menu-link {
-        background: linear-gradient(135deg, var(--menu-primary, #0b2f57), var(--menu-secondary, #154b87)) !important;
+        background: var(--menu-primary, #0b2f57) !important;
+        background-color: var(--menu-primary, #0b2f57) !important;
         color: #ffffff !important;
         font-weight: 600 !important;
-        box-shadow: 0 4px 14px rgba(11, 47, 87, 0.25) !important;
-        border-left: 4px solid #ffffff !important;
+        border-radius: 8px !important;
+        border: none !important;
+        box-shadow: 0 3px 10px rgba(var(--menu-primary-rgb, 11, 47, 87), 0.25) !important;
     }
 
     .layout-menu .menu-item.active > .menu-link i,
-    .layout-menu .menu-sub .menu-item.active > .menu-link i {
+    .layout-menu .menu-sub .menu-item.active > .menu-link i,
+    .layout-menu .menu-item.active > .menu-link div,
+    .layout-menu .menu-sub .menu-item.active > .menu-link div {
         color: #ffffff !important;
     }
 
-    .layout-menu .menu-item.active > .menu-link div,
-    .layout-menu .menu-sub .menu-item.active > .menu-link div {
+    /* =====================================
+       DARK MODE SUPPORT UNTUK SIDEBAR
+    ===================================== */
+    .dark-style .layout-menu,
+    .dark-style #layout-menu {
+        background: #2b2c40 !important;
+        border-right-color: #444564 !important;
+    }
+
+    .dark-style .layout-menu .app-brand {
+        background: #2b2c40 !important;
+        border-bottom-color: #444564 !important;
+    }
+
+    .dark-style .layout-menu .app-brand-logo-wrapper {
+        background: transparent !important;
+    }
+
+    .dark-style .layout-menu .menu-group-title {
+        color: #64748b !important;
+    }
+
+    .dark-style .layout-menu .menu-group-title i {
+        color: #64748b !important;
+    }
+
+    .dark-style .layout-menu a.menu-single-link,
+    .dark-style .layout-menu .menu-link {
+        color: #cbd5e1 !important;
+    }
+
+    .dark-style .layout-menu a.menu-single-link i,
+    .dark-style .layout-menu .menu-link i {
+        color: #94a3b8 !important;
+    }
+
+    .dark-style .layout-menu a.menu-single-link:hover,
+    .dark-style .layout-menu .menu-link:hover {
+        background: rgba(255, 255, 255, 0.06) !important;
         color: #ffffff !important;
     }
 </style>
@@ -451,7 +515,7 @@
     ===================================== --}}
     <div class="app-brand demo">
         <a href="{{ url('/dashboard') }}" class="app-brand-logo-wrapper">
-            <img src="{{ $menuLogo }}" alt="Company Logo" class="logo-sembilan" onerror="this.onerror=null; this.src='{{ asset('assets/img/logo_sembilan.png') }}';">
+            <img src="{{ asset('assets/img/logo_aset.png') }}" alt="Monitoring Asset System" class="logo-sembilan">
         </a>
     </div>
 

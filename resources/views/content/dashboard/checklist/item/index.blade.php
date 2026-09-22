@@ -23,27 +23,23 @@
         </div>
     @endif
 
-    {{-- HERO HEADER --}}
-    <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body py-4">
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                <div class="d-flex align-items-center">
-                    <div class="avatar avatar-md bg-label-info me-3">
-                        <span class="avatar-initial rounded">
-                            <i class="bx bx-list-check fs-3"></i>
-                        </span>
-                    </div>
-                    <div>
-                        <h4 class="fw-bold mb-0">Master Item Checklist Pemeriksaan</h4>
-                        <small class="text-muted">Kelola poin-poin standar yang diperiksa pada setiap perangkat saat inspeksi berkala</small>
-                    </div>
-                </div>
-                <div>
-                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambahItem">
-                        <i class="bx bx-plus me-1"></i> Tambah Item Baru
-                    </button>
-                </div>
-            </div>
+    {{-- PAGE HEADER (CLEAN & MODERN) --}}
+    <div class="d-flex justify-content-between align-items-start align-items-md-center flex-column flex-md-row gap-2 mb-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small text-muted">
+                    <li class="breadcrumb-item"><a href="{{ route('dashboard') }}" class="text-secondary">Dashboard</a></li>
+                    <li class="breadcrumb-item text-secondary">Checklist Device</li>
+                    <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page">Master Item Cek</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold mb-0 text-dark">Master Item Checklist</h4>
+            <p class="text-muted small mb-0">Poin-poin standar pengecekan fisik perangkat saat inspeksi.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2 flex-wrap">
+            <button type="button" class="btn btn-sm btn-primary d-inline-flex align-items-center shadow-xs" data-bs-toggle="modal" data-bs-target="#modalTambahItem">
+                <i class="bx bx-plus me-1"></i> Tambah Item Baru
+            </button>
         </div>
     </div>
 
@@ -77,7 +73,7 @@
                 <thead class="table-light">
                     <tr>
                         <th class="text-center" style="width: 50px;">Urutan</th>
-                        @if (auth()->user()->role === 'super_admin')
+                        @if (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan)
                             <th>Target Perusahaan</th>
                         @endif
                         <th>Kategori</th>
@@ -96,7 +92,7 @@
                             @if (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan)
                                 <td>
                                     @if ($item->perusahaan)
-                                        <span class="badge bg-label-info">{{ $item->perusahaan?->nama_perusahaan }}</span>
+                                        <x-company-badge :perusahaan="$item->perusahaan" />
                                     @else
                                         <span class="badge bg-label-secondary">Global (Semua PT)</span>
                                     @endif

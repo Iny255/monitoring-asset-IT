@@ -27,4 +27,9 @@ class DataAset extends Model
   {
     return $this->belongsTo(Perusahaan::class);
   }
+
+  public function masuks()
+  {
+    return $this->hasMany(Masuk::class, 'data_aset_id');
+  }
 }

@@ -240,10 +240,25 @@ class LoginController extends Controller
     }
 
     // 5. Cek role kustom dari tabel roles
-    $roleRecord = $user->roleDefinition ?: (is_numeric($rawRole) ? \App\Models\Role::find((int) $rawRole) : \App\Models\Role::where('name', $userRole)->orWhere('name', $slugRole)->first());
+    $roleRecord = $user->roleDefinition
+      ?: (is_numeric($rawRole) ? \App\Models\Role::find((int) $rawRole)
+        : (\App\Models\Role::where('name', $userRole)->orWhere('name', $slugRole)->first()
+          ?: \App\Models\Role::whereRaw('LOWER(name) = ?', [strtolower($userRole)])->first()));
     if ($roleRecord) {
       if ($roleRecord->name === 'super_admin' || $roleRecord->can_manage_settings) {
         return redirect()->route('dashboard.superadmin');
+      }
+
+      if ($roleRecord->modules()->where('is_active', true)->where('url', 'dashboard/petugas')->exists()) {
+        return redirect()->route('dashboard.petugas');
+      }
+
+      if ($roleRecord->modules()->where('is_active', true)->where('url', 'dashboard/superadmin')->exists()) {
+        return redirect()->route('dashboard.superadmin');
+      }
+
+      if ($roleRecord->modules()->where('is_active', true)->where('url', 'dashboard/aset-saya')->exists()) {
+        return redirect()->route('aset-saya.index');
       }
 
       $firstModule = $roleRecord->modules()->where('is_active', true)->whereNotNull('url')->orderBy('order')->first();

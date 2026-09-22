@@ -135,7 +135,7 @@
                                 <option value="">-- Pilih Petugas IT (Opsional) --</option>
                                 @foreach ($petugasList as $p)
                                     <option value="{{ $p->id }}" {{ old('assigned_to', auth()->id()) == $p->id ? 'selected' : '' }}>
-                                        👤 {{ $p->name }} @if((in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan) && $p->perusahaan) ({{ $p->perusahaan?->nama_perusahaan }}) @endif
+                                        👤 {{ $p->name }}
                                     </option>
                                 @endforeach
                             </select>

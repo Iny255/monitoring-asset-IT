@@ -44,23 +44,26 @@ class AppServiceProvider extends ServiceProvider
           if ($isSuperAdmin) {
             foreach ($activeModules as $m) {
               if ($m->url) {
-                $cleanUrl = ltrim($m->url, '/');
+                $cleanUrl = trim($m->url, '/');
                 $allowedModuleUrls[] = $cleanUrl;
               }
             }
           } else {
-            $roleRecord = \App\Models\Role::where('name', $userRole)->first();
+            $roleRecord = $user->roleDefinition
+              ?: (\App\Models\Role::where('name', $userRole)->first()
+                ?: (\App\Models\Role::whereRaw('LOWER(name) = ?', [strtolower($userRole)])->first()
+                  ?: (is_numeric($rawRole) ? \App\Models\Role::find((int) $rawRole) : null)));
             $roleModules = $roleRecord ? $roleRecord->modules()->where('is_active', true)->get() : collect();
 
             foreach ($activeModules as $m) {
               if ($m->url && !$m->is_active) {
-                $inactiveUrls[] = ltrim($m->url, '/');
+                $inactiveUrls[] = trim($m->url, '/');
               }
             }
 
             foreach ($roleModules as $m) {
               if ($m->url) {
-                $allowedModuleUrls[] = ltrim($m->url, '/');
+                $allowedModuleUrls[] = trim($m->url, '/');
               }
             }
           }
@@ -68,17 +71,23 @@ class AppServiceProvider extends ServiceProvider
           $filterMenu = function ($items) use (&$filterMenu, $userRole, $rawRole, $isSuperAdmin, $canManageSettings, $allowedModuleUrls, $inactiveUrls) {
             $filtered = [];
             foreach ($items as $item) {
-              $itemUrl = isset($item->url) ? ltrim($item->url, '/') : null;
+              $itemUrl = isset($item->url) ? trim($item->url, '/') : null;
 
               // Dashboard khusus role masing-masing
-              if ($itemUrl === 'dashboard/petugas' && $userRole !== 'petugas') {
-                continue;
-              }
-              if ($itemUrl === 'dashboard/aset-saya' && !in_array($userRole, ['user', 'karyawan'])) {
-                continue;
-              }
-              if ($itemUrl === 'dashboard/superadmin' && !$isSuperAdmin) {
-                continue;
+              if ($isSuperAdmin) {
+                if ($itemUrl === 'dashboard/petugas' || $itemUrl === 'dashboard/aset-saya') {
+                  continue;
+                }
+              } else {
+                if ($itemUrl === 'dashboard/superadmin' && !in_array('dashboard/superadmin', $allowedModuleUrls)) {
+                  continue;
+                }
+                if ($itemUrl === 'dashboard/petugas' && !in_array('dashboard/petugas', $allowedModuleUrls) && $userRole !== 'petugas') {
+                  continue;
+                }
+                if ($itemUrl === 'dashboard/aset-saya' && !in_array('dashboard/aset-saya', $allowedModuleUrls) && !in_array($userRole, ['user', 'karyawan'])) {
+                  continue;
+                }
               }
 
               // JIKA SUPER ADMIN: TAMPILKAN SEMUA MENU & SUBMENU TANPA KECUALI
@@ -148,43 +157,88 @@ class AppServiceProvider extends ServiceProvider
       // SUPER ADMIN = PT SEMBILAN
       // =====================================
 
+      $hexToRgb = function ($hex) {
+        $hex = ltrim($hex ?? '#0b2f57', '#');
+        if (strlen($hex) == 3) {
+          $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        }
+        if (strlen($hex) >= 6) {
+          return hexdec(substr($hex, 0, 2)) . ', ' . hexdec(substr($hex, 2, 2)) . ', ' . hexdec(substr($hex, 4, 2));
+        }
+        return '11, 47, 87';
+      };
+
       $theme = [
-        'company_name' => 'PT Sembilan Matahari Sakti',
-
+        'company_id' => null,
+        'company_name' => 'Monitoring Aset Divisi IT',
         'primary_color' => '#0b2f57',
-
         'secondary_color' => '#154b87',
-
-        'logo' => asset('assets/img/logo_sembilan.png'),
+        'primary_rgb' => '11, 47, 87',
+        'logo' => asset('assets/img/logo_aset.png'),
+        'is_custom' => false,
       ];
 
       // =====================================
-      // USER LOGIN
+      // DETEKSI PERUSAHAAN AKTIF
+      // 1. Dari filter request di index (misal Super Admin memfilter perusahaan)
+      // 2. Dari parameter rute detail (misal checklist ruangan / jadwal)
+      // 3. Dari user login
       // =====================================
+      $activePerusahaan = null;
 
-      if (Auth::check()) {
-        $user = Auth::user();
-
-        // =====================================
-        // JIKA USER MEMILIKI PERUSAHAAN
-        // =====================================
-
-        $perusahaan = $user->perusahaan;
-
-        if ($perusahaan && ($user->role !== 'super_admin' || $user->id_perusahaan)) {
-          $primaryColor = $perusahaan->primary_color ?? ($perusahaan->parent?->primary_color ?? '#0b2f57');
-          $secondaryColor = $perusahaan->secondary_color ?? ($perusahaan->parent?->secondary_color ?? '#154b87');
-
-          $theme = [
-            'company_name' => $perusahaan->nama_perusahaan,
-
-            'primary_color' => $primaryColor,
-
-            'secondary_color' => $secondaryColor,
-
-            'logo' => $perusahaan->logo_url,
-          ];
+      $filterCompanyId = request('perusahaan_id') ?? request('perusahaan') ?? request('id_perusahaan');
+      if ($filterCompanyId && !in_array($filterCompanyId, ['all', 'semua', 'global', ''])) {
+        $filterCompany = Perusahaan::find($filterCompanyId);
+        if ($filterCompany) {
+          $activePerusahaan = $filterCompany;
         }
+      }
+
+      // Deteksi entitas perusahaan dari parameter rute (Checklist Ruangan & Jadwal)
+      if (!$activePerusahaan) {
+        $route = request()->route();
+        if ($route) {
+          $routeName = $route->getName();
+          if (str_starts_with($routeName ?? '', 'checklist.pemeriksaan.')) {
+            $ruanganId = $route->parameter('id') ?? $route->parameter('ruanganId') ?? $route->parameter('ruangan');
+            if ($ruanganId) {
+              $ruangan = is_object($ruanganId) ? $ruanganId : \App\Models\ChecklistRuangan::with('perusahaan', 'lokasi.perusahaan')->find($ruanganId);
+              if ($ruangan) {
+                $activePerusahaan = $ruangan->perusahaan ?? $ruangan->lokasi?->perusahaan;
+              }
+            }
+          } elseif (str_starts_with($routeName ?? '', 'checklist.jadwal.')) {
+            $jadwalId = $route->parameter('jadwal') ?? $route->parameter('id');
+            if ($jadwalId) {
+              $jadwal = is_object($jadwalId) ? $jadwalId : \App\Models\ChecklistJadwalRutin::with('perusahaan', 'lokasi.perusahaan')->find($jadwalId);
+              if ($jadwal) {
+                $activePerusahaan = $jadwal->perusahaan ?? $jadwal->lokasi?->perusahaan;
+              }
+            }
+          }
+        }
+      }
+
+      if (!$activePerusahaan && Auth::check()) {
+        $user = Auth::user();
+        if ($user->perusahaan && ($user->role !== 'super_admin' || $user->id_perusahaan)) {
+          $activePerusahaan = $user->perusahaan;
+        }
+      }
+
+      if ($activePerusahaan) {
+        $primaryColor = $activePerusahaan->primary_color ?? ($activePerusahaan->parent?->primary_color ?? '#0b2f57');
+        $secondaryColor = $activePerusahaan->secondary_color ?? ($activePerusahaan->parent?->secondary_color ?? '#154b87');
+
+        $theme = [
+          'company_id' => $activePerusahaan->id,
+          'company_name' => $activePerusahaan->nama_perusahaan,
+          'primary_color' => $primaryColor,
+          'secondary_color' => $secondaryColor,
+          'primary_rgb' => $hexToRgb($primaryColor),
+          'logo' => asset('assets/img/logo_aset.png'),
+          'is_custom' => true,
+        ];
       }
 
       // =====================================

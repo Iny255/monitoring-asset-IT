@@ -1,0 +1,150 @@
+/* ========================================================
+   CUSTOM OVERRIDES (Simpan di public/assets/css/custom.css)
+   ======================================================== */
+
+/* Memaksa Dropdown agar teks selalu terlihat */
+.dropdown-menu {
+    --bs-dropdown-link-color: #435971 !important;
+    --bs-dropdown-color: #435971 !important;
+    background-color: #ffffff !important;
+    border: 1px solid #dcdcdc !important;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+}
+
+/* Memastikan elemen teks di dalam dropdown terlihat jelas */
+.dropdown-menu .dropdown-item,
+.dropdown-menu .dropdown-item span,
+.dropdown-menu .dropdown-item i,
+.dropdown-menu .fw-medium,
+.dropdown-menu small {
+    color: #435971 !important;
+}
+
+/* Dark Mode Overrides di file custom.css (menimpa default) */
+html.dark-style .dropdown-menu {
+    --bs-dropdown-link-color: #e2e8f0 !important;
+    --bs-dropdown-color: #e2e8f0 !important;
+    background-color: #1e293b !important;
+    border: 1px solid #334155 !important;
+}
+
+html.dark-style .dropdown-menu .dropdown-item,
+html.dark-style .dropdown-menu .dropdown-item span,
+html.dark-style .dropdown-menu .dropdown-item i {
+    color: #e2e8f0 !important;
+}
+
+/* =========================
+   FIX DARK MODE BUTTON
+   ========================= */
+.dark-toggle-btn {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+    padding: 6px;
+    cursor: pointer !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease;
+}
+
+/* Hilangkan efek kotak saat hover/focus */
+.dark-toggle-btn:hover,
+.dark-toggle-btn:focus,
+.dark-toggle-btn:active {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Icon */
+.dark-toggle-btn i {
+    font-size: 22px;
+    color: #fff;
+}
+
+/* FOOTER GLOBAL */
+.app-footer {
+    background: #ffffff;
+    border-top: 1px solid #e5e7eb;
+    padding: 12px 20px;
+    font-size: 13px;
+    color: #6b7280;
+
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    z-index: 1000;
+}
+
+.footer-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* DARK MODE SUPPORT */
+html.dark-style .app-footer {
+    background: #1e293b;
+    border-top: 1px solid #334155;
+    color: #cbd5f5;
+}
+
+/* FOOTER GLOBAL */
+.app-footer {
+    background: #ffffff;
+    border-top: 1px solid #e5e7eb;
+    padding: 12px 20px;
+    font-size: 13px;
+    color: #6b7280;
+
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+
+    z-index: 1000;
+}
+
+.footer-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* DARK MODE SUPPORT */
+html.dark-style .app-footer {
+    background: #1e293b;
+    border-top: 1px solid #334155;
+    color: #cbd5f5;
+}
+
+.footer-global {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+
+    background: #ffffff;
+    border-top: 1px solid #e5e7eb;
+
+    padding: 10px 30px;
+
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    font-size: 13px;
+    color: #374151;
+    /* lebih gelap biar kebaca */
+
+    z-index: 9999;
+    /* ⬅️ penting biar tidak ketiban */
+}
+
+

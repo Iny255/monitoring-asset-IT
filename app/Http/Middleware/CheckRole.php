@@ -49,7 +49,10 @@ class CheckRole
 
     // 🌟 Cek izin dinamis dari modul database jika role kustom/berbeda
     $path = trim($request->path(), '/');
-    $roleDef = $user->roleDefinition ?: (is_numeric($rawRole) ? \App\Models\Role::find((int) $rawRole) : \App\Models\Role::where('name', $userRole)->first());
+    $roleDef = $user->roleDefinition
+      ?: (is_numeric($rawRole) ? \App\Models\Role::find((int) $rawRole)
+        : (\App\Models\Role::where('name', $userRole)->first()
+          ?: \App\Models\Role::whereRaw('LOWER(name) = ?', [strtolower($userRole)])->first()));
     if ($roleDef) {
       // Jika role punya hak can_manage_settings dan route menuju dashboard/settings
       if ($roleDef->can_manage_settings && str_starts_with($path, 'dashboard/settings')) {

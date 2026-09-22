@@ -67,7 +67,7 @@ class HistoryStokController extends Controller
         */
 
         $timeline->push([
-          'tanggal' => Carbon::parse($keluar->tgl_keluar),
+          'tanggal' => Carbon::parse($keluar->tgl_keluar ?? $keluar->created_at),
 
           'aktivitas' => 'KELUAR',
 
@@ -111,7 +111,7 @@ class HistoryStokController extends Controller
 
     foreach ($historyMutasi as $item) {
       $timeline->push([
-        'tanggal' => Carbon::parse($item->tanggal_mutasi),
+        'tanggal' => Carbon::parse($item->tanggal_mutasi ?? $item->created_at),
 
         'aktivitas' => 'MUTASI',
 
@@ -173,7 +173,7 @@ class HistoryStokController extends Controller
       }
 
       $timeline->push([
-        'tanggal' => Carbon::parse($item->tanggal_pencabutan),
+        'tanggal' => Carbon::parse($item->tanggal_pencabutan ?? $item->created_at),
 
         'aktivitas' => 'PENCABUTAN',
 
@@ -207,14 +207,16 @@ class HistoryStokController extends Controller
 
     if ($request) {
       if ($request->filled('tanggal_awal')) {
-        $timeline = $timeline->filter(function ($item) use ($request) {
-          return $item['tanggal']->gte(\Carbon\Carbon::parse($request->tanggal_awal));
+        $start = \Carbon\Carbon::parse($request->tanggal_awal)->startOfDay();
+        $timeline = $timeline->filter(function ($item) use ($start) {
+          return $item['tanggal']->gte($start);
         });
       }
 
       if ($request->filled('tanggal_akhir')) {
-        $timeline = $timeline->filter(function ($item) use ($request) {
-          return $item['tanggal']->lte(\Carbon\Carbon::parse($request->tanggal_akhir)->endOfDay());
+        $end = \Carbon\Carbon::parse($request->tanggal_akhir)->endOfDay();
+        $timeline = $timeline->filter(function ($item) use ($end) {
+          return $item['tanggal']->lte($end);
         });
       }
     }

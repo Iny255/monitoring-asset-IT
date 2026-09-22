@@ -45,108 +45,44 @@
                             <small class="text-muted">Rekapitulasi riwayat pengeluaran dan pemakaian unit aset di perusahaan</small>
                         </div>
                     </div>
-                    <div class="d-flex gap-2">
-                        <a href="{{ route('history.pemakaian.export.excel', request()->query()) }}" class="btn btn-outline-success">
-                            <i class="bx bxs-file-export me-1"></i> Export Excel
-                        </a>
-                        <a href="{{ route('history.pemakaian.cetak', request()->query()) }}" target="_blank" class="btn btn-outline-danger">
-                            <i class="bx bxs-file-pdf me-1"></i> Cetak PDF
-                        </a>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
+                            <i class="bx bx-filter-alt me-1"></i> Filter
+                        </button>
+                        <div class="dropdown">
+                            <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bx bx-export me-1"></i> Export
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('history.pemakaian.export.excel', request()->query()) }}">
+                                        <i class="bx bxs-file-export me-2 text-success"></i> Export Excel
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('history.pemakaian.cetak', request()->query()) }}" target="_blank">
+                                        <i class="bx bxs-file-pdf me-2 text-danger"></i> Cetak PDF
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
 
-        {{-- FILTER CARD --}}
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-body">
-                <form method="GET" action="{{ route('history.pemakaian.index') }}">
-                    <div class="row g-3">
-                        {{-- FILTER PERUSAHAAN (SUPER ADMIN) --}}
-                        @if ($user->role == 'super_admin')
-                            <div class="col-md-3">
-                                <label class="form-label fw-semibold">Perusahaan</label>
-                                <select name="perusahaan_id" class="form-select">
-                                    <option value="">-- Semua Perusahaan --</option>
-                                    @foreach ($perusahaans as $p)
-                                        <option value="{{ $p->id }}" {{ request('perusahaan_id') == $p->id ? 'selected' : '' }}>
-                                            {{ $p->nama_perusahaan }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        @endif
+        <x-company-filter-banner />
 
-                        {{-- FILTER KATEGORI --}}
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">Kategori Aset</label>
-                            <select name="kategori_id" class="form-select">
-                                <option value="">-- Semua Kategori --</option>
-                                @foreach ($kategoris as $k)
-                                    <option value="{{ $k->id }}" {{ request('kategori_id') == $k->id ? 'selected' : '' }}>
-                                        {{ $k->nama_barang }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        {{-- FILTER LOKASI --}}
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">Lokasi</label>
-                            <select name="lokasi_id" class="form-select">
-                                <option value="">-- Semua Lokasi --</option>
-                                @foreach ($lokasis as $lok)
-                                    <option value="{{ $lok->id }}" {{ request('lokasi_id') == $lok->id ? 'selected' : '' }}>
-                                        {{ $lok->nama_lokasi }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        {{-- FILTER USER ASET --}}
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">User Aset (Karyawan)</label>
-                            <select name="karyawan_id" class="form-select">
-                                <option value="">-- Semua Karyawan --</option>
-                                @foreach ($karyawans as $kar)
-                                    <option value="{{ $kar->id }}" {{ request('karyawan_id') == $kar->id ? 'selected' : '' }}>
-                                        {{ $kar->nama_karyawan }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-
-                        {{-- TANGGAL AWAL --}}
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">Tanggal Awal</label>
-                            <input type="date" name="tanggal_awal" class="form-control" value="{{ request('tanggal_awal') }}">
-                        </div>
-
-                        {{-- TANGGAL AKHIR --}}
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">Tanggal Akhir</label>
-                            <input type="date" name="tanggal_akhir" class="form-control" value="{{ request('tanggal_akhir') }}">
-                        </div>
-
-                        {{-- SEARCH BOX --}}
-                        <div class="col-md-4">
-                            <label class="form-label fw-semibold">Pencarian</label>
-                            <input type="text" name="search" class="form-control" placeholder="Cari Kode, Inventaris, User, Divisi..." value="{{ request('search') }}">
-                        </div>
-
-                        {{-- TOMBOL FILTER & RESET --}}
-                        <div class="col-md-2 d-flex align-items-end gap-2">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="bx bx-search me-1"></i> Filter
-                            </button>
-                            <a href="{{ route('history.pemakaian.index') }}" class="btn btn-label-secondary" title="Reset Filter">
-                                <i class="bx bx-refresh"></i>
-                            </a>
-                        </div>
-                    </div>
-                </form>
+        @if(request()->anyFilled(['perusahaan_id', 'kategori_id', 'lokasi_id', 'karyawan_id', 'tanggal_awal', 'tanggal_akhir', 'search']))
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge bg-label-primary px-3 py-2">
+                    <i class="bx bx-filter-alt me-1"></i> Filter Aktif
+                </span>
+                <a href="{{ route('history.pemakaian.index') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bx bx-x me-1"></i> Reset Filter
+                </a>
             </div>
-        </div>
+        @endif
 
         {{-- TABLE CARD --}}
         <div class="card border-0 shadow-sm">
@@ -156,6 +92,9 @@
                         <thead class="table-light">
                             <tr>
                                 <th width="50">NO</th>
+                                @if (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan)
+                                    <th>PERUSAHAAN</th>
+                                @endif
                                 <th>TGL KELUAR</th>
                                 <th>NO INVENTARIS</th>
                                 <th>DATA ASET</th>
@@ -171,6 +110,11 @@
                                     <td class="text-center font-monospace">
                                         {{ ($histories->currentPage() - 1) * $histories->perPage() + $loop->iteration }}
                                     </td>
+                                    @if (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan)
+                                        <td>
+                                            <x-company-badge :perusahaan="$item->perusahaan" />
+                                        </td>
+                                    @endif
                                     <td class="text-center">
                                         <span class="fw-semibold">
                                             {{ \Carbon\Carbon::parse($item->tgl_keluar)->format('d-m-Y') }}
@@ -224,7 +168,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="text-center py-5 text-muted">
+                                    <td colspan="{{ (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan) ? 9 : 8 }}" class="text-center py-5 text-muted">
                                         <i class="bx bx-info-circle fs-1 d-block mb-2"></i>
                                         Belum ada riwayat pemakaian aset yang ditemukan.
                                     </td>
@@ -243,5 +187,105 @@
             </div>
         </div>
 
+    </div>
+
+    {{-- Modal Filter --}}
+    <div class="modal fade" id="modalFilter" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bx bx-filter-alt me-2 text-primary"></i> Filter History Pemakaian
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="GET" action="{{ route('history.pemakaian.index') }}">
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            {{-- SEARCH BOX --}}
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Pencarian</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bx bx-search"></i></span>
+                                    <input type="text" name="search" class="form-control" placeholder="Cari Kode, Inventaris, User, Divisi..." value="{{ request('search') }}">
+                                </div>
+                            </div>
+
+                            {{-- FILTER PERUSAHAAN (SUPER ADMIN) --}}
+                            @if ($user->role == 'super_admin')
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Perusahaan</label>
+                                    <select name="perusahaan_id" class="form-select">
+                                        <option value="">-- Semua Perusahaan --</option>
+                                        @foreach ($perusahaans as $p)
+                                            <option value="{{ $p->id }}" {{ request('perusahaan_id') == $p->id ? 'selected' : '' }}>
+                                                {{ $p->nama_perusahaan }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            {{-- FILTER KATEGORI --}}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Kategori Aset</label>
+                                <select name="kategori_id" class="form-select">
+                                    <option value="">-- Semua Kategori --</option>
+                                    @foreach ($kategoris as $k)
+                                        <option value="{{ $k->id }}" {{ request('kategori_id') == $k->id ? 'selected' : '' }}>
+                                            {{ $k->nama_barang }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- FILTER LOKASI --}}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Lokasi</label>
+                                <select name="lokasi_id" class="form-select">
+                                    <option value="">-- Semua Lokasi --</option>
+                                    @foreach ($lokasis as $lok)
+                                        <option value="{{ $lok->id }}" {{ request('lokasi_id') == $lok->id ? 'selected' : '' }}>
+                                            {{ $lok->nama_lokasi }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- FILTER USER ASET --}}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">User Aset (Karyawan)</label>
+                                <select name="karyawan_id" class="form-select">
+                                    <option value="">-- Semua Karyawan --</option>
+                                    @foreach ($karyawans as $kar)
+                                        <option value="{{ $kar->id }}" {{ request('karyawan_id') == $kar->id ? 'selected' : '' }}>
+                                            {{ $kar->nama_karyawan }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            {{-- TANGGAL AWAL --}}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Tanggal Awal</label>
+                                <input type="date" name="tanggal_awal" class="form-control" value="{{ request('tanggal_awal') }}">
+                            </div>
+
+                            {{-- TANGGAL AKHIR --}}
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Tanggal Akhir</label>
+                                <input type="date" name="tanggal_akhir" class="form-control" value="{{ request('tanggal_akhir') }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{{ route('history.pemakaian.index') }}" class="btn btn-outline-secondary">Reset</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-filter-alt me-1"></i> Terapkan Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 @endsection

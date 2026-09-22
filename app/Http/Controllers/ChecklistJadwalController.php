@@ -2,45 +2,41 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\ChecklistJadwal;
+use App\Models\ChecklistJadwalRutin;
 use App\Models\ChecklistRuangan;
-use App\Models\ChecklistDevice;
-use App\Models\ChecklistDeviceItem;
 use App\Models\ChecklistItem;
 use App\Models\Lokasi;
-use App\Models\Maping;
 use App\Models\Perusahaan;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 class ChecklistJadwalController extends Controller
 {
+    /**
+     * Tampilkan Master Jadwal Rutin Mingguan
+     */
     public function index(Request $request)
     {
         $user = auth()->user();
 
-        $tahun = $request->get('tahun', date('Y'));
-        $bulan = $request->get('bulan', date('n'));
+        $filterHari = $request->get('hari');
         $lokasiId = $request->get('id_lokasi');
-        $status = $request->get('status');
+        $petugasId = $request->get('assigned_to');
         $perusahaanId = $request->get('id_perusahaan', $request->get('perusahaan_id'));
 
-        $query = ChecklistJadwal::with(['lokasi.perusahaan', 'assignedTo.perusahaan', 'perusahaan', 'checklistRuangan'])
-            ->where('tahun', $tahun);
+        $query = ChecklistJadwalRutin::with(['lokasi.perusahaan', 'assignedTo.perusahaan', 'perusahaan', 'creator']);
 
-        if (!empty($bulan)) {
-            $query->where('bulan', $bulan);
+        if (!empty($filterHari)) {
+            $query->where('hari', strtolower($filterHari));
         }
 
         if (!empty($lokasiId)) {
             $query->where('id_lokasi', $lokasiId);
         }
 
-        if (!empty($status)) {
-            $query->where('status', $status);
+        if (!empty($petugasId)) {
+            $query->where('assigned_to', $petugasId);
         }
 
         if ($user->role === 'super_admin') {
@@ -54,36 +50,43 @@ class ChecklistJadwalController extends Controller
             $query->where('id_perusahaan', $user->id_perusahaan);
         }
 
-        $jadwals = $query->orderBy('minggu_ke')->orderBy('tanggal_mulai')->paginate(15)->withQueryString();
+        $allRutins = $query->orderByRaw("FIELD(hari, 'senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu', 'minggu')")
+            ->orderBy('id_lokasi')
+            ->get();
+
+        // Kelompokkan per hari (Senin s/d Minggu)
+        $hariList = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu', 'minggu'];
+        $jadwalPerHari = [];
+        foreach ($hariList as $h) {
+            $jadwalPerHari[$h] = $allRutins->where('hari', $h);
+        }
 
         // Statistik
-        $baseStat = ChecklistJadwal::where('tahun', $tahun);
-        if (!empty($bulan)) {
-            $baseStat->where('bulan', $bulan);
-        }
-        if ($user->role === 'super_admin') {
-            if (!empty($perusahaanId)) {
-                $baseStat->where(function ($q) use ($perusahaanId) {
-                    $q->where('id_perusahaan', $perusahaanId)
-                      ->orWhereHas('lokasi', fn($lq) => $lq->where('id_perusahaan', $perusahaanId));
-                });
-            }
-        } else {
-            $baseStat->where('id_perusahaan', $user->id_perusahaan);
-        }
-
         $stats = [
-            'total' => (clone $baseStat)->count(),
-            'selesai' => (clone $baseStat)->where('status', 'selesai')->count(),
-            'berjalan' => (clone $baseStat)->where('status', 'berjalan')->count(),
-            'terjadwal' => (clone $baseStat)->where('status', 'terjadwal')->count(),
+            'total_jadwal' => $allRutins->count(),
+            'total_aktif' => $allRutins->where('is_active', true)->count(),
+            'total_lokasi' => $allRutins->pluck('id_lokasi')->unique()->count(),
+            'hari_terisi' => collect($jadwalPerHari)->filter(fn($col) => $col->count() > 0)->count(),
         ];
 
         $lokasis = Lokasi::with('perusahaan')->orderBy('nama_lokasi')->get();
-
         $perusahaans = $user->role === 'super_admin' ? Perusahaan::orderBy('nama_perusahaan')->get() : collect();
 
-        $petugasQuery = User::with('perusahaan')->whereIn('role', ['petugas', 'super_admin'])->orderBy('name');
+        $petugasQuery = User::with(['perusahaan', 'karyawan', 'roleDefinition'])
+            ->where(function ($q) {
+                $q->whereIn('role', ['petugas', 'teknisi', 'super_admin'])
+                  ->orWhereHas('roleDefinition', function ($rq) {
+                      $rq->whereIn('name', ['petugas', 'teknisi', 'super_admin']);
+                  })
+                  ->orWhereHas('karyawan', function ($kq) {
+                      $kq->where('divisi', 'LIKE', '%IT%')
+                         ->orWhere('divisi', 'LIKE', '%teknisi%')
+                         ->orWhere('jabatan', 'LIKE', '%IT%')
+                         ->orWhere('jabatan', 'LIKE', '%teknisi%');
+                  });
+            })
+            ->orderBy('name');
+
         if ($user->role !== 'super_admin') {
             $petugasQuery->where(function ($q) use ($user) {
                 $q->where('id_perusahaan', $user->id_perusahaan)->orWhere('role', 'super_admin');
@@ -91,21 +94,20 @@ class ChecklistJadwalController extends Controller
         }
         $petugasList = $petugasQuery->get();
 
-        $currentMonth = (int) date('n');
-        $currentYear = (int) date('Y');
         $masterItems = ChecklistItem::where('is_active', true)->orderBy('urutan')->get();
 
         return view('content.dashboard.checklist.jadwal.index', compact(
-            'jadwals',
-            'tahun',
-            'bulan',
+            'allRutins',
+            'jadwalPerHari',
+            'hariList',
             'stats',
             'lokasis',
             'perusahaans',
             'perusahaanId',
             'petugasList',
-            'currentMonth',
-            'currentYear',
+            'filterHari',
+            'lokasiId',
+            'petugasId',
             'masterItems'
         ));
     }
@@ -115,16 +117,17 @@ class ChecklistJadwalController extends Controller
         return redirect()->route('checklist.jadwal.index', ['tambah' => 1]);
     }
 
+    /**
+     * Simpan Jadwal Rutin Mingguan Baru (Input Sekali Berlaku Selamanya)
+     */
     public function store(Request $request)
     {
         $validationRules = [
+            'hari' => 'required|in:senin,selasa,rabu,kamis,jumat,sabtu,minggu',
             'id_lokasi' => 'required|exists:lokasis,id',
-            'tahun' => 'required|integer|min:2020|max:2099',
-            'bulan' => 'required|integer|min:1|max:12',
-            'minggu_ke' => 'required|integer|min:1|max:5',
-            'tanggal_mulai' => 'required|date',
-            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
             'assigned_to' => 'nullable|exists:users,id',
+            'jam_mulai' => 'nullable|date_format:H:i',
+            'jam_selesai' => 'nullable|date_format:H:i',
             'catatan' => 'nullable|string|max:1000',
         ];
 
@@ -138,109 +141,62 @@ class ChecklistJadwalController extends Controller
         $idPerusahaan = $lokasi->id_perusahaan
             ?? ($request->filled('id_perusahaan') ? $request->id_perusahaan : auth()->user()->id_perusahaan);
 
-        DB::beginTransaction();
-        try {
-            // Generate Kode Jadwal unik
-            $prefix = sprintf('JDW-%04d%02d-W%d', $request->tahun, $request->bulan, $request->minggu_ke);
-            $count = ChecklistJadwal::where('kode_jadwal', 'like', "{$prefix}-%")->count() + 1;
-            $kodeJadwal = sprintf('%s-%03d', $prefix, $count);
+        // Cek duplikasi: apakah ruangan ini sudah dijadwalkan di hari yang sama untuk perusahaan terkait
+        $exists = ChecklistJadwalRutin::where('id_perusahaan', $idPerusahaan)
+            ->where('id_lokasi', $request->id_lokasi)
+            ->where('hari', strtolower($request->hari))
+            ->exists();
 
-            $jadwal = ChecklistJadwal::create([
-                'kode_jadwal' => $kodeJadwal,
+        $hariIndo = ucfirst($request->hari);
+
+        if ($exists) {
+            return back()->withInput()->with('error', "Ruangan '{$lokasi->nama_lokasi}' sudah terdaftar dalam jadwal rutin hari {$hariIndo}.");
+        }
+
+        try {
+            ChecklistJadwalRutin::create([
                 'id_perusahaan' => $idPerusahaan,
                 'id_lokasi' => $request->id_lokasi,
-                'tahun' => $request->tahun,
-                'bulan' => $request->bulan,
-                'minggu_ke' => $request->minggu_ke,
-                'tanggal_mulai' => $request->tanggal_mulai,
-                'tanggal_selesai' => $request->tanggal_selesai,
+                'hari' => strtolower($request->hari),
                 'assigned_to' => $request->assigned_to,
-                'status' => 'terjadwal',
+                'jam_mulai' => $request->jam_mulai ?: '08:00',
+                'jam_selesai' => $request->jam_selesai ?: '17:00',
+                'is_active' => true,
                 'catatan' => $request->catatan,
                 'created_by' => auth()->id(),
             ]);
 
-            // Otomatis Inisiasi Data Pemeriksaan Ruangan
-            $ruangan = ChecklistRuangan::create([
-                'jadwal_id' => $jadwal->id,
-                'id_lokasi' => $request->id_lokasi,
-                'id_perusahaan' => $idPerusahaan,
-                'petugas_id' => $request->assigned_to,
-                'status' => 'belum_dicek',
-                'kondisi_ruangan' => 'semua_baik',
-                'total_device' => 0,
-                'total_checked' => 0,
-            ]);
-
-            // Ambil semua device mapping aktif di ruangan ini (sesuai perusahaan terkait)
-            $activeMappings = Maping::withoutGlobalScopes()
-                ->where('id_lokasi', $request->id_lokasi)
-                ->where('status', 'aktif')
-                ->when($idPerusahaan, fn($q) => $q->where('id_perusahaan', $idPerusahaan))
-                ->with(['karyawan', 'keluar.inventaris.dataAset'])
-                ->get();
-
-            // Default items checklist (hanya ambil global atau milik perusahaan yang bersangkutan)
-            $defaultItems = ChecklistItem::where('is_active', true)
-                ->where(function ($q) use ($idPerusahaan) {
-                    $q->whereNull('id_perusahaan')
-                      ->orWhere('id_perusahaan', $idPerusahaan);
-                })
-                ->orderBy('urutan')
-                ->get();
-
-            $totalDevices = 0;
-
-            foreach ($activeMappings as $mapping) {
-                $inventaris = $mapping->keluar?->inventaris;
-                if (!$inventaris) {
-                    continue;
-                }
-
-                $device = ChecklistDevice::create([
-                    'checklist_ruangan_id' => $ruangan->id,
-                    'maping_id' => $mapping->id,
-                    'inventaris_id' => $inventaris->id,
-                    'nama_pengguna' => $mapping->penerima,
-                    'status_device' => 'belum_dicek',
-                ]);
-
-                foreach ($defaultItems as $item) {
-                    ChecklistDeviceItem::create([
-                        'checklist_device_id' => $device->id,
-                        'nama_item' => $item->nama_item,
-                        'kategori_item' => $item->kategori,
-                        'is_ok' => true,
-                    ]);
-                }
-
-                $totalDevices++;
-            }
-
-            $ruangan->update([
-                'total_device' => $totalDevices,
-            ]);
-
-            DB::commit();
-
             return redirect()->route('checklist.jadwal.index')
-                ->with('success', "Jadwal {$jadwal->kode_jadwal} untuk lokasi {$lokasi->nama_lokasi} berhasil dibuat dengan {$totalDevices} device.");
+                ->with('success', "Jadwal rutin untuk {$lokasi->nama_lokasi} pada hari {$hariIndo} berhasil disimpan. Jadwal ini akan otomatis digunakan setiap minggu.");
         } catch (\Exception $e) {
-            DB::rollBack();
-            return back()->withInput()->with('error', 'Gagal membuat jadwal: ' . $e->getMessage());
+            return back()->withInput()->with('error', 'Gagal menyimpan jadwal rutin: ' . $e->getMessage());
         }
     }
 
-    public function edit(ChecklistJadwal $jadwal)
+    /**
+     * Form Edit Jadwal Rutin
+     */
+    public function edit($id)
     {
-        $jadwal->load(['lokasi.perusahaan', 'perusahaan', 'assignedTo']);
+        $jadwal = ChecklistJadwalRutin::with(['lokasi.perusahaan', 'perusahaan', 'assignedTo'])->findOrFail($id);
 
         $lokasis = Lokasi::with('perusahaan')
             ->when($jadwal->id_perusahaan, fn($q) => $q->where('id_perusahaan', $jadwal->id_perusahaan))
             ->orderBy('nama_lokasi')->get();
 
-        $petugasList = User::with('perusahaan')
-            ->whereIn('role', ['petugas', 'super_admin'])
+        $petugasList = User::with(['perusahaan', 'karyawan', 'roleDefinition'])
+            ->where(function ($q) {
+                $q->whereIn('role', ['petugas', 'teknisi', 'super_admin'])
+                  ->orWhereHas('roleDefinition', function ($rq) {
+                      $rq->whereIn('name', ['petugas', 'teknisi', 'super_admin']);
+                  })
+                  ->orWhereHas('karyawan', function ($kq) {
+                      $kq->where('divisi', 'LIKE', '%IT%')
+                         ->orWhere('divisi', 'LIKE', '%teknisi%')
+                         ->orWhere('jabatan', 'LIKE', '%IT%')
+                         ->orWhere('jabatan', 'LIKE', '%teknisi%');
+                  });
+            })
             ->when($jadwal->id_perusahaan, function ($q) use ($jadwal) {
                 $q->where(function ($sub) use ($jadwal) {
                     $sub->where('id_perusahaan', $jadwal->id_perusahaan)->orWhere('role', 'super_admin');
@@ -251,40 +207,76 @@ class ChecklistJadwalController extends Controller
         return view('content.dashboard.checklist.jadwal.edit', compact('jadwal', 'lokasis', 'petugasList'));
     }
 
-    public function update(Request $request, ChecklistJadwal $jadwal)
+    /**
+     * Update Jadwal Rutin
+     */
+    public function update(Request $request, $id)
     {
-        $request->validate([
-            'tanggal_mulai' => 'required|date',
-            'tanggal_selesai' => 'required|date|after_or_equal:tanggal_mulai',
+        $jadwal = ChecklistJadwalRutin::findOrFail($id);
+
+        $validationRules = [
+            'hari' => 'required|in:senin,selasa,rabu,kamis,jumat,sabtu,minggu',
+            'id_lokasi' => 'required|exists:lokasis,id',
             'assigned_to' => 'nullable|exists:users,id',
-            'status' => 'required|in:terjadwal,berjalan,selesai,terlewat',
+            'jam_mulai' => 'nullable',
+            'jam_selesai' => 'nullable',
+            'is_active' => 'required|boolean',
             'catatan' => 'nullable|string|max:1000',
-        ]);
+        ];
+
+        $request->validate($validationRules);
+
+        // Cek duplikasi jika mengubah hari atau lokasi
+        $exists = ChecklistJadwalRutin::where('id_perusahaan', $jadwal->id_perusahaan)
+            ->where('id_lokasi', $request->id_lokasi)
+            ->where('hari', strtolower($request->hari))
+            ->where('id', '!=', $id)
+            ->exists();
+
+        if ($exists) {
+            return back()->withInput()->with('error', "Ruangan tersebut sudah terdaftar pada jadwal hari " . ucfirst($request->hari) . ".");
+        }
 
         $jadwal->update([
-            'tanggal_mulai' => $request->tanggal_mulai,
-            'tanggal_selesai' => $request->tanggal_selesai,
+            'hari' => strtolower($request->hari),
+            'id_lokasi' => $request->id_lokasi,
             'assigned_to' => $request->assigned_to,
-            'status' => $request->status,
+            'jam_mulai' => $request->jam_mulai ?: '08:00',
+            'jam_selesai' => $request->jam_selesai ?: '17:00',
+            'is_active' => (bool) $request->is_active,
             'catatan' => $request->catatan,
         ]);
 
-        if ($jadwal->checklistRuangan) {
-            $jadwal->checklistRuangan->update([
-                'petugas_id' => $request->assigned_to,
-            ]);
-        }
-
         return redirect()->route('checklist.jadwal.index')
-            ->with('success', "Jadwal {$jadwal->kode_jadwal} berhasil diperbarui.");
+            ->with('success', "Jadwal rutin {$jadwal->lokasi->nama_lokasi} hari " . ucfirst($jadwal->hari) . " berhasil diperbarui.");
     }
 
-    public function destroy(ChecklistJadwal $jadwal)
+    /**
+     * Hapus Jadwal Rutin
+     */
+    public function destroy($id)
     {
-        $kode = $jadwal->kode_jadwal;
+        $jadwal = ChecklistJadwalRutin::findOrFail($id);
+        $namaLokasi = $jadwal->lokasi->nama_lokasi ?? 'Ruangan';
+        $hariIndo = ucfirst($jadwal->hari);
+
         $jadwal->delete();
 
         return redirect()->route('checklist.jadwal.index')
-            ->with('success', "Jadwal {$kode} berhasil dihapus.");
+            ->with('success', "Jadwal rutin {$namaLokasi} pada hari {$hariIndo} berhasil dihapus. Riwayat pelaksanaan checklist yang sudah ada tetap tersimpan aman.");
+    }
+
+    /**
+     * Toggle status aktif/non-aktif jadwal rutin
+     */
+    public function toggleStatus($id)
+    {
+        $jadwal = ChecklistJadwalRutin::findOrFail($id);
+        $jadwal->is_active = !$jadwal->is_active;
+        $jadwal->save();
+
+        $statusText = $jadwal->is_active ? 'diaktifkan' : 'dinonaktifkan';
+
+        return back()->with('success', "Jadwal rutin {$jadwal->lokasi->nama_lokasi} hari " . ucfirst($jadwal->hari) . " berhasil {$statusText}.");
     }
 }

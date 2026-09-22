@@ -174,8 +174,32 @@
                                     Vendor / Teknisi
                                 </label>
 
-                                <input type="text" class="form-control" name="vendor"
-                                    value="{{ old('vendor', $maintenance->vendor) }}">
+                                <select name="vendor" id="vendor" class="form-select @error('vendor') is-invalid @enderror">
+                                    <option value="">-- Pilih Vendor / Teknisi --</option>
+                                    @php
+                                        $currentVendor = old('vendor', $maintenance->vendor);
+                                        $foundInSuppliers = false;
+                                    @endphp
+                                    @if (isset($suppliers))
+                                        @foreach ($suppliers as $supplier)
+                                            @php
+                                                $isSelected = ($currentVendor == $supplier->nama_supplier);
+                                                if ($isSelected) $foundInSuppliers = true;
+                                            @endphp
+                                            <option value="{{ $supplier->nama_supplier }}" {{ $isSelected ? 'selected' : '' }}>
+                                                {{ $supplier->nama_supplier }}
+                                            </option>
+                                        @endforeach
+                                    @endif
+                                    @if ($currentVendor && !$foundInSuppliers)
+                                        <option value="{{ $currentVendor }}" selected>
+                                            {{ $currentVendor }} (Lama)
+                                        </option>
+                                    @endif
+                                </select>
+                                @error('vendor')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
 
                             </div>
 

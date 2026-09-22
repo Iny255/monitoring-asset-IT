@@ -28,7 +28,7 @@ class Perusahaan extends Model
     }
 
     if (!$logo) {
-      return asset('assets/img/logo_sembilan.png');
+      return asset('assets/img/logo_aset.png');
     }
 
     if (str_starts_with($logo, 'http://') || str_starts_with($logo, 'https://')) {

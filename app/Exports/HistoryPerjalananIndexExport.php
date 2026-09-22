@@ -23,7 +23,7 @@ class HistoryPerjalananIndexExport implements FromCollection, WithHeadings, Shou
             $namaPemakai = 'Belum dipakai';
             if ($inv->status == 'DIPAKAI' && $inv->keluarTerakhir) {
                 $maping = $inv->keluarTerakhir->maping;
-                if ($maping && $maping->status == 'aktif') {
+                if ($maping && in_array($maping->status, ['aktif', 'servis', 'maintenance'])) {
                     $namaPemakai = $maping->jenis_penerima == 'Perorangan' ? ($maping->karyawan?->nama_karyawan ?? '-') : ($maping->divisi ?? '-');
                 } else {
                     $namaPemakai = $inv->keluarTerakhir->jenis_penerima == 'Perorangan' ? ($inv->keluarTerakhir->karyawan?->nama_karyawan ?? '-') : ($inv->keluarTerakhir->divisi_klr ?? '-');

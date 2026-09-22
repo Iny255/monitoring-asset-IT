@@ -147,7 +147,7 @@
 
                     <td>
 
-                        {{ $item->tanggal->format('d-m-Y') }}
+                        {{ $item->tanggal ? $item->tanggal->format('d-m-Y') : ($item->created_at ? $item->created_at->format('d-m-Y') : '-') }}
 
                     </td>
 

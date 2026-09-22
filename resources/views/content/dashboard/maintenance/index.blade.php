@@ -21,7 +21,27 @@
                             <small class="text-muted">Kelola transaksi perbaikan, klaim garansi, dan perawatan aset</small>
                         </div>
                     </div>
-                    <div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
+                            <i class="bx bx-filter-alt me-1"></i> Filter
+                        </button>
+                        <div class="dropdown">
+                            <button class="btn btn-success dropdown-toggle" data-bs-toggle="dropdown">
+                                <i class="bx bx-export me-1"></i> Export
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('maintenance.cetak', request()->query()) }}" target="_blank">
+                                        <i class="bx bxs-file-pdf text-danger me-2"></i> Export PDF
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('maintenance.export_excel', request()->query()) }}">
+                                        <i class="bx bxs-file-export text-success me-2"></i> Export Excel
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
                         <a href="{{ route('maintenance.create') }}" class="btn btn-primary">
                             <i class="bx bx-plus me-1"></i> Input Service
                         </a>
@@ -30,181 +50,21 @@
             </div>
         </div>
 
+        <x-company-filter-banner />
+
         <div class="card border-0 shadow-sm">
-
-
-
-
-        <div class="card-body border-bottom">
-
-            <form action="{{ route('maintenance.index') }}" method="GET">
-
-                <div class="row">
-
-                    {{-- Perusahaan --}}
-                    @if (auth()->user()->role == 'super_admin')
-                        <div class="col-md-3 mb-3">
-                            <label class="form-label text-uppercase fw-semibold">
-                                Perusahaan
-                            </label>
-
-                            <select name="perusahaan_id" class="form-select">
-                                <option value="">Semua</option>
-
-                                @foreach ($perusahaans as $perusahaan)
-                                    <option value="{{ $perusahaan->id }}"
-                                        {{ request('perusahaan_id') == $perusahaan->id ? 'selected' : '' }}>
-                                        {{ $perusahaan->nama_perusahaan }}
-                                    </option>
-                                @endforeach
-
-                            </select>
-                        </div>
-                    @endif
-
-                    {{-- Tanggal Awal --}}
-                    <div class="col-md-3 mb-3">
-
-                        <label class="form-label text-uppercase fw-semibold">
-
-                            Tanggal Awal
-
-                        </label>
-
-                        <input type="date" name="tanggal_awal" class="form-control"
-                            value="{{ request('tanggal_awal') }}">
-
+            @if(request()->anyFilled(['perusahaan_id', 'tanggal_awal', 'tanggal_akhir', 'jenis', 'status', 'search']))
+                <div class="card-body pb-0">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge bg-label-primary px-3 py-2">
+                            <i class="bx bx-filter-alt me-1"></i> Filter Aktif
+                        </span>
+                        <a href="{{ route('maintenance.index') }}" class="btn btn-sm btn-outline-secondary">
+                            <i class="bx bx-x me-1"></i> Reset Filter
+                        </a>
                     </div>
-
-                    {{-- Tanggal Akhir --}}
-                    <div class="col-md-3 mb-3">
-
-                        <label class="form-label text-uppercase fw-semibold">
-
-                            Tanggal Akhir
-
-                        </label>
-
-                        <input type="date" name="tanggal_akhir" class="form-control"
-                            value="{{ request('tanggal_akhir') }}">
-
-                    </div>
-
-                    {{-- Jenis --}}
-                    <div class="col-md-3 mb-3">
-
-                        <label class="form-label text-uppercase fw-semibold">
-
-                            Jenis
-
-                        </label>
-
-                        <select name="jenis" class="form-select">
-
-                            <option value="">Semua</option>
-
-                            <option value="Service" {{ request('jenis') == 'Service' ? 'selected' : '' }}>
-                                Service
-                            </option>
-
-                            <option value="Maintenance" {{ request('jenis') == 'Maintenance' ? 'selected' : '' }}>
-                                Maintenance
-                            </option>
-
-                        </select>
-
-                    </div>
-
                 </div>
-                <div class="row">
-
-                    {{-- Status --}}
-                    <div class="col-md-3 mb-3">
-
-                        <label class="form-label text-uppercase fw-semibold">
-
-                            Status
-
-                        </label>
-
-                        <select name="status" class="form-select">
-
-                            <option value="">Semua</option>
-
-                            <option value="Pengajuan" {{ request('status') == 'Pengajuan' ? 'selected' : '' }}>
-                                Pengajuan
-                            </option>
-
-                            <option value="Diproses" {{ request('status') == 'Diproses' ? 'selected' : '' }}>
-                                Diproses
-                            </option>
-
-                            <option value="Selesai" {{ request('status') == 'Selesai' ? 'selected' : '' }}>
-                                Selesai
-                            </option>
-
-                            <option value="Tidak Dapat Diperbaiki"
-                                {{ request('status') == 'Tidak Dapat Diperbaiki' ? 'selected' : '' }}>
-                                Tidak Dapat Diperbaiki
-                            </option>
-
-                            <option value="Dibatalkan" {{ request('status') == 'Dibatalkan' ? 'selected' : '' }}>
-                                Dibatalkan
-                            </option>
-
-                        </select>
-
-                    </div>
-
-                    {{-- Search --}}
-                    <div class="col-md-7 mb-3">
-
-                        <label class="form-label text-uppercase fw-semibold">
-
-                            Cari
-
-                        </label>
-
-                        <input type="text" name="search" class="form-control"
-                            placeholder="Kode Service / Kode Aset / Jenis / Merek / Type / No Inventaris" value="{{ request('search') }}">
-
-                    </div>
-
-                    {{-- Tombol --}}
-                    <div class="col-12 d-flex align-items-center gap-2 flex-wrap mt-2">
-
-                        <button type="submit" class="btn btn-primary">
-
-                            <i class="bx bx-search me-1"></i> Filter
-
-                        </button>
-
-                        <a href="{{ route('maintenance.index') }}" class="btn btn-outline-secondary">
-
-                            <i class="bx bx-reset me-1"></i> Reset
-
-                        </a>
-
-                        <a href="{{ route('maintenance.cetak', request()->query()) }}" target="_blank"
-                            class="btn btn-danger">
-
-                            <i class="bx bxs-file-pdf me-1"></i> Cetak PDF
-
-                        </a>
-
-                        <a href="{{ route('maintenance.export_excel', request()->query()) }}"
-                            class="btn btn-success">
-
-                            <i class="bx bxs-file-export me-1"></i> Export Excel
-
-                        </a>
-
-                    </div>
-
-                </div>
-            </form>
-
-        </div>
+            @endif
         <div class="table-responsive">
 
             <table class="table table-hover">
@@ -220,7 +80,7 @@
                         <th>Tanggal</th>
 
                         <th>Kode Aset</th>
-                        @if (auth()->user()->role == 'super_admin')
+                        @if (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan)
                             <th>Perusahaan</th>
                         @endif
 
@@ -256,7 +116,7 @@
                             </td>
 
                             <td>
-                                {{ $item->tanggal->format('d-m-Y') }}
+                                {{ $item->tanggal ? $item->tanggal->format('d-m-Y') : ($item->created_at ? $item->created_at->format('d-m-Y') : '-') }}
                             </td>
 
                             <td>
@@ -282,7 +142,7 @@
                             </td>
                             @if (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan)
                                 <td>
-                                    {{ $item->inventaris?->perusahaan?->nama_perusahaan ?? '-' }}
+                                    <x-company-badge :perusahaan="$item->inventaris?->perusahaan" />
                                 </td>
                             @endif
 
@@ -323,11 +183,11 @@
 
                             <td class="text-center">
 
-                                <div class="btn-group shadow-sm" role="group">
+                                <div class="d-flex justify-content-center gap-1">
 
                                     {{-- Detail --}}
                                     <a href="{{ route('maintenance.show', $item->id) }}"
-                                        class="btn btn-info btn-sm text-white" data-bs-toggle="tooltip" title="Detail">
+                                        class="btn btn-sm btn-icon btn-outline-primary" data-bs-toggle="tooltip" title="Detail">
 
                                         <i class="bx bx-show"></i>
 
@@ -339,7 +199,7 @@
                                     @if ($item->status == 'Pengajuan')
                                         {{-- Edit --}}
                                         <a href="{{ route('maintenance.edit', $item->id) }}"
-                                            class="btn btn-warning btn-sm text-white" data-bs-toggle="tooltip"
+                                            class="btn btn-sm btn-icon btn-outline-secondary" data-bs-toggle="tooltip"
                                             title="Edit">
 
                                             <i class="bx bx-edit"></i>
@@ -353,7 +213,7 @@
                                             @csrf
                                             @method('PATCH')
 
-                                            <button type="button" class="btn btn-primary btn-sm btn-proses"
+                                            <button type="button" class="btn btn-sm btn-icon btn-outline-primary btn-proses"
                                                 data-id="{{ $item->id }}" data-kode="{{ $item->kode_service }}"
                                                 title="Proses">
 
@@ -368,10 +228,10 @@
                                             @csrf
                                             @method('PATCH')
 
-                                            <button class="btn btn-secondary btn-sm" data-bs-toggle="tooltip"
+                                            <button type="submit" class="btn btn-sm btn-icon btn-outline-secondary" data-bs-toggle="tooltip"
                                                 title="Batalkan">
 
-                                                <i class="bx bx-x-circle text-white"></i>
+                                                <i class="bx bx-x-circle"></i>
 
                                             </button>
 
@@ -385,7 +245,7 @@
                                             @csrf
                                             @method('DELETE')
 
-                                            <button type="button" class="btn btn-danger btn-sm btn-delete"
+                                            <button type="button" class="btn btn-sm btn-icon btn-outline-danger btn-delete"
                                                 data-id="{{ $item->id }}" data-kode="{{ $item->kode_service }}"
                                                 title="Hapus">
 
@@ -408,7 +268,7 @@
                                             @csrf
                                             @method('PATCH')
 
-                                            <button type="button" class="btn btn-success btn-sm btn-selesai"
+                                            <button type="button" class="btn btn-sm btn-icon btn-outline-success btn-selesai"
                                                 data-id="{{ $item->id }}" data-kode="{{ $item->kode_service }}"
                                                 title="Selesai">
 
@@ -425,7 +285,7 @@
                                             @csrf
                                             @method('PATCH')
 
-                                            <button type="button" class="btn btn-dark btn-sm btn-rusak"
+                                            <button type="button" class="btn btn-sm btn-icon btn-outline-dark btn-rusak"
                                                 data-id="{{ $item->id }}" data-kode="{{ $item->kode_service }}"
                                                 title="Tidak Dapat Diperbaiki">
 
@@ -463,6 +323,87 @@
             </div>
 
         </div>
+
+    <!-- ================= FILTER MODAL ================= -->
+    <div class="modal fade" id="modalFilter" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <form action="{{ route('maintenance.index') }}" method="GET">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="bx bx-filter-alt me-2 text-primary"></i> Filter Data Service & Maintenance
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            @if (auth()->user()->role == 'super_admin')
+                                <div class="col-md-6">
+                                    <label class="form-label text-uppercase fw-semibold">Perusahaan</label>
+                                    <select name="perusahaan_id" class="form-select">
+                                        <option value="">Semua</option>
+                                        @foreach ($perusahaans as $perusahaan)
+                                            <option value="{{ $perusahaan->id }}"
+                                                {{ request('perusahaan_id') == $perusahaan->id ? 'selected' : '' }}>
+                                                {{ $perusahaan->nama_perusahaan }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            <div class="col-md-{{ auth()->user()->role == 'super_admin' ? '6' : '12' }}">
+                                <label class="form-label text-uppercase fw-semibold">Jenis</label>
+                                <select name="jenis" class="form-select">
+                                    <option value="">Semua</option>
+                                    <option value="Service" {{ request('jenis') == 'Service' ? 'selected' : '' }}>Service</option>
+                                    <option value="Maintenance" {{ request('jenis') == 'Maintenance' ? 'selected' : '' }}>Maintenance</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label text-uppercase fw-semibold">Tanggal Awal</label>
+                                <input type="date" name="tanggal_awal" class="form-control"
+                                    value="{{ request('tanggal_awal') }}">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label text-uppercase fw-semibold">Tanggal Akhir</label>
+                                <input type="date" name="tanggal_akhir" class="form-control"
+                                    value="{{ request('tanggal_akhir') }}">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label text-uppercase fw-semibold">Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="">Semua</option>
+                                    <option value="Pengajuan" {{ request('status') == 'Pengajuan' ? 'selected' : '' }}>Pengajuan</option>
+                                    <option value="Diproses" {{ request('status') == 'Diproses' ? 'selected' : '' }}>Diproses</option>
+                                    <option value="Selesai" {{ request('status') == 'Selesai' ? 'selected' : '' }}>Selesai</option>
+                                    <option value="Tidak Dapat Diperbaiki" {{ request('status') == 'Tidak Dapat Diperbaiki' ? 'selected' : '' }}>Tidak Dapat Diperbaiki</option>
+                                    <option value="Dibatalkan" {{ request('status') == 'Dibatalkan' ? 'selected' : '' }}>Dibatalkan</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label text-uppercase fw-semibold">Cari</label>
+                                <input type="text" name="search" class="form-control"
+                                    placeholder="Kode Service / Kode Aset / Jenis / Merek / Type / No Inventaris" value="{{ request('search') }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{{ route('maintenance.index') }}" class="btn btn-secondary">
+                            <i class="bx bx-refresh me-1"></i> Reset
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-search me-1"></i> Terapkan Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     @endsection
     @section('page-script')

@@ -20,6 +20,7 @@ class ChecklistDevice extends Model
         'catatan_kendala',
         'maintenance_id',
         'checked_at',
+        'checked_by',
     ];
 
     protected $casts = [
@@ -46,8 +47,23 @@ class ChecklistDevice extends Model
         return $this->belongsTo(Maintenance::class, 'maintenance_id');
     }
 
+    public function checkedBy()
+    {
+        return $this->belongsTo(User::class, 'checked_by');
+    }
+
     public function items()
     {
         return $this->hasMany(ChecklistDeviceItem::class, 'checklist_device_id');
+    }
+
+    public function getIsCheckedAttribute(): bool
+    {
+        return in_array($this->status_device, ['normal', 'ada_kendala']);
+    }
+
+    public function getFormattedCheckedAtAttribute(): ?string
+    {
+        return $this->checked_at ? $this->checked_at->format('d M Y, H:i') : null;
     }
 }

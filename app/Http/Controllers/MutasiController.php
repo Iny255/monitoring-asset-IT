@@ -145,9 +145,9 @@ class MutasiController extends Controller
 |--------------------------------------------------------------------------
 */
 
-        $jenisPenerimaLama = $maping->jenis_penerima;
-        $karyawanLama = $maping->karyawan;
-        $divisiLama = $maping->divisi;
+        $jenisPenerimaLama = $maping->jenis_penerima ?? $maping->keluar?->jenis_penerima;
+        $karyawanLama = $maping->karyawan ?? $maping->keluar?->karyawan;
+        $divisiLama = $maping->divisi ?? $maping->keluar?->divisi_klr;
         $lokasiLama = $maping->lokasi;
         /*
     |--------------------------------------------------------------
@@ -170,9 +170,9 @@ class MutasiController extends Controller
 |--------------------------------------------------------------------------
 */
         if ($jenisPenerimaLama == 'Perorangan') {
-          $userLama = optional($karyawanLama)->nama_karyawan;
+          $userLama = optional($karyawanLama)->nama_karyawan ?? '-';
         } else {
-          $userLama = $divisiLama;
+          $userLama = $divisiLama ?? '-';
         }
 
         /*
@@ -228,6 +228,27 @@ class MutasiController extends Controller
 
           'created_by' => auth()->id(),
         ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | SINKRONISASI CHECKLIST DEVICE (PINDAH RUANGAN)
+        |--------------------------------------------------------------------------
+        */
+        if ($lokasiLama && $lokasiLama->id != $lokasiBaru->id) {
+          \App\Models\ChecklistDevice::where('maping_id', $maping->id)
+            ->where('status_device', 'belum_dicek')
+            ->whereHas('checklistRuangan', function ($rq) use ($lokasiLama) {
+              $rq->where('id_lokasi', $lokasiLama->id);
+            })
+            ->each(function ($dev) {
+              $ruangan = $dev->checklistRuangan;
+              $dev->items()->delete();
+              $dev->delete();
+              if ($ruangan) {
+                $ruangan->updateProgress();
+              }
+            });
+        }
 
         DB::commit();
 
@@ -522,10 +543,11 @@ class MutasiController extends Controller
 |--------------------------------------------------------------------------
 */
 
-      if ($maping->jenis_penerima == 'Perorangan') {
-        $userLama = optional($maping->karyawan)->nama_karyawan;
+      $jenisPenerimaLama = $maping->jenis_penerima ?? $maping->keluar?->jenis_penerima;
+      if ($jenisPenerimaLama == 'Perorangan') {
+        $userLama = optional($maping->karyawan ?? $maping->keluar?->karyawan)->nama_karyawan ?? '-';
       } else {
-        $userLama = $maping->divisi;
+        $userLama = ($maping->divisi ?? $maping->keluar?->divisi_klr) ?? '-';
       }
       /*
 |--------------------------------------------------------------------------
@@ -578,6 +600,22 @@ class MutasiController extends Controller
       $maping->update([
         'status' => 'selesai',
       ]);
+
+      /*
+      |--------------------------------------------------------------------------
+      | SINKRONISASI CHECKLIST DEVICE (HAPUS DARI CHECKLIST RUANGAN LAMA)
+      |--------------------------------------------------------------------------
+      */
+      \App\Models\ChecklistDevice::where('maping_id', $maping->id)
+        ->where('status_device', 'belum_dicek')
+        ->each(function ($dev) {
+          $ruangan = $dev->checklistRuangan;
+          $dev->items()->delete();
+          $dev->delete();
+          if ($ruangan) {
+            $ruangan->updateProgress();
+          }
+        });
 
       /*
 |--------------------------------------------------------------------------

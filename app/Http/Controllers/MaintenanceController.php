@@ -8,6 +8,7 @@ use App\Models\Maping;
 use App\Models\Peminjaman;
 use App\Models\Keluar;
 use App\Models\Perusahaan;
+use App\Models\Supplier;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -69,11 +70,25 @@ class MaintenanceController extends Controller
 */
 
     if ($request->filled('tanggal_awal')) {
-      $query->whereDate('tanggal', '>=', $request->tanggal_awal);
+      $tglAwal = $request->tanggal_awal;
+      $query->where(function ($q) use ($tglAwal) {
+        $q->whereDate('tanggal', '>=', $tglAwal)
+          ->orWhere(function ($sub) use ($tglAwal) {
+            $sub->whereNull('tanggal')
+              ->whereDate('created_at', '>=', $tglAwal);
+          });
+      });
     }
 
     if ($request->filled('tanggal_akhir')) {
-      $query->whereDate('tanggal', '<=', $request->tanggal_akhir);
+      $tglAkhir = $request->tanggal_akhir;
+      $query->where(function ($q) use ($tglAkhir) {
+        $q->whereDate('tanggal', '<=', $tglAkhir)
+          ->orWhere(function ($sub) use ($tglAkhir) {
+            $sub->whereNull('tanggal')
+              ->whereDate('created_at', '<=', $tglAkhir);
+          });
+      });
     }
 
     $maintenances = $query
@@ -96,6 +111,7 @@ class MaintenanceController extends Controller
       $inventarisList = collect();
       $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
       $kategoris = collect();
+      $suppliers = collect();
     } else {
       $inventarisList = collect();
       $perusahaans = collect();
@@ -105,12 +121,19 @@ class MaintenanceController extends Controller
         $kategoris = \App\Models\Kategori::whereIn('perusahaan_id', $accessibleIds)
           ->orderBy('nama_barang')
           ->get();
+        $suppliers = Supplier::whereIn('perusahaan_id', $accessibleIds)
+          ->orderBy('nama_supplier')
+          ->get();
       } elseif ($user->id_perusahaan) {
         $kategoris = \App\Models\Kategori::where('perusahaan_id', $user->id_perusahaan)
           ->orderBy('nama_barang')
           ->get();
+        $suppliers = Supplier::where('perusahaan_id', $user->id_perusahaan)
+          ->orderBy('nama_supplier')
+          ->get();
       } else {
         $kategoris = collect();
+        $suppliers = collect();
       }
     }
 
@@ -119,6 +142,7 @@ class MaintenanceController extends Controller
       'inventarisList' => $inventarisList,
       'perusahaans' => $perusahaans,
       'kategoris' => $kategoris,
+      'suppliers' => $suppliers,
     ]);
   }
   public function createFromMapping(Maping $maping)
@@ -149,11 +173,19 @@ class MaintenanceController extends Controller
         ->with('warning', 'Inventaris sedang dalam proses Service & Maintenance.');
     }
 
+    $suppliers = Supplier::where('perusahaan_id', $inventaris->perusahaan_id)
+      ->orderBy('nama_supplier')
+      ->get();
+    if ($suppliers->isEmpty()) {
+      $suppliers = Supplier::orderBy('nama_supplier')->get();
+    }
+
     return view('content.dashboard.maintenance.create', [
       'perusahaans' => Perusahaan::orderBy('nama_perusahaan')->get(),
       'inventaris' => $inventaris,
       'inventarisList' => collect(),
       'maping' => $maping,
+      'suppliers' => $suppliers,
     ]);
   }
   public function createFromPeminjaman(Peminjaman $peminjaman)
@@ -180,11 +212,19 @@ class MaintenanceController extends Controller
 
     $inventarisList = collect();
 
+    $suppliers = Supplier::where('perusahaan_id', $inventaris->perusahaan_id)
+      ->orderBy('nama_supplier')
+      ->get();
+    if ($suppliers->isEmpty()) {
+      $suppliers = Supplier::orderBy('nama_supplier')->get();
+    }
+
     return view('content.dashboard.maintenance.create', [
       'perusahaans' => Perusahaan::orderBy('nama_perusahaan')->get(),
       'inventaris' => $inventaris,
       'inventarisList' => collect(),
       'peminjaman' => $peminjaman,
+      'suppliers' => $suppliers,
     ]);
   }
   public function inventarisPerusahaan($id)
@@ -293,7 +333,7 @@ class MaintenanceController extends Controller
     }
     /*
 |--------------------------------------------------------------------------
-| CEK PEMINJAMAN TERAKHIR
+| CEK PEMINJAMAN TERAKHIR & MAPPING AKTIF
 |--------------------------------------------------------------------------
 */
 
@@ -302,6 +342,26 @@ class MaintenanceController extends Controller
       ->where('kondisi_kembali', 'Rusak')
       ->latest()
       ->first();
+
+    $maping = Maping::whereHas('keluar', function ($q) use ($request) {
+      $q->where('inventaris_id', $request->inventaris_id);
+    })
+      ->whereIn('status', ['aktif', 'dipinjam'])
+      ->latest()
+      ->first();
+
+    $asal = $request->asal;
+    if ($asal == 'Manual') {
+      if ($peminjaman) {
+        $asal = 'Peminjaman';
+      } elseif ($maping) {
+        $asal = 'Mapping';
+      }
+    }
+
+    $mapingId = $request->maping_id ?: optional($maping)->id;
+    $peminjamanId = $request->peminjaman_id ?: optional($peminjaman)->id;
+
     /*
 |--------------------------------------------------------------------------
 | GENERATE KODE SERVICE
@@ -323,15 +383,15 @@ class MaintenanceController extends Controller
     }
 
     $kodeService = $prefix . str_pad($nomor, 5, '0', STR_PAD_LEFT);
-    Maintenance::create([
+    $maintenance = Maintenance::create([
       'kode_service' => $kodeService,
       'inventaris_id' => $request->inventaris_id,
 
-      'asal' => $request->asal == 'Manual' && $peminjaman ? 'Peminjaman' : $request->asal,
+      'asal' => $asal,
 
-      'maping_id' => $request->maping_id,
+      'maping_id' => $mapingId,
 
-      'peminjaman_id' => $request->peminjaman_id ?? optional($peminjaman)->id,
+      'peminjaman_id' => $peminjamanId,
 
       'tanggal' => $request->tanggal,
       'jenis' => $request->jenis,
@@ -354,6 +414,7 @@ class MaintenanceController extends Controller
 
       'created_by' => Auth::id(),
     ]);
+
     /*
 |--------------------------------------------------------------------------
 | UPDATE STATUS MAPPING
@@ -361,13 +422,6 @@ class MaintenanceController extends Controller
 */
 
     $statusMaping = $request->jenis == 'Service' ? 'servis' : 'maintenance';
-
-    $maping = Maping::whereHas('keluar', function ($q) use ($request) {
-      $q->where('inventaris_id', $request->inventaris_id);
-    })
-      ->whereIn('status', ['aktif', 'dipinjam'])
-      ->latest()
-      ->first();
 
     if ($maping) {
       $maping->update([
@@ -570,6 +624,15 @@ class MaintenanceController extends Controller
 
     $maintenance->load(['inventaris.dataAset.kategori', 'inventaris.perusahaan']);
 
+    $perusahaanId = $maintenance->inventaris?->perusahaan_id;
+    $suppliers = $perusahaanId
+      ? Supplier::where('perusahaan_id', $perusahaanId)->orderBy('nama_supplier')->get()
+      : Supplier::orderBy('nama_supplier')->get();
+
+    if ($suppliers->isEmpty()) {
+      $suppliers = Supplier::orderBy('nama_supplier')->get();
+    }
+
     return view('content.dashboard.maintenance.edit', [
       'maintenance' => $maintenance,
       'inventaris' => $maintenance->inventaris,
@@ -578,6 +641,7 @@ class MaintenanceController extends Controller
       // agar hidden input asal tetap bekerja
       'maping' => $maintenance->maping,
       'peminjaman' => $maintenance->peminjaman,
+      'suppliers' => $suppliers,
     ]);
   }
 
@@ -807,11 +871,25 @@ class MaintenanceController extends Controller
     */
 
     if ($request->filled('tanggal_awal')) {
-      $query->whereDate('tanggal', '>=', $request->tanggal_awal);
+      $tglAwal = $request->tanggal_awal;
+      $query->where(function ($q) use ($tglAwal) {
+        $q->whereDate('tanggal', '>=', $tglAwal)
+          ->orWhere(function ($sub) use ($tglAwal) {
+            $sub->whereNull('tanggal')
+              ->whereDate('created_at', '>=', $tglAwal);
+          });
+      });
     }
 
     if ($request->filled('tanggal_akhir')) {
-      $query->whereDate('tanggal', '<=', $request->tanggal_akhir);
+      $tglAkhir = $request->tanggal_akhir;
+      $query->where(function ($q) use ($tglAkhir) {
+        $q->whereDate('tanggal', '<=', $tglAkhir)
+          ->orWhere(function ($sub) use ($tglAkhir) {
+            $sub->whereNull('tanggal')
+              ->whereDate('created_at', '<=', $tglAkhir);
+          });
+      });
     }
 
     $maintenances = $query->orderBy('tanggal', 'desc')->get();
@@ -873,11 +951,25 @@ class MaintenanceController extends Controller
     }
 
     if ($request->filled('tanggal_awal')) {
-      $query->whereDate('tanggal', '>=', $request->tanggal_awal);
+      $tglAwal = $request->tanggal_awal;
+      $query->where(function ($q) use ($tglAwal) {
+        $q->whereDate('tanggal', '>=', $tglAwal)
+          ->orWhere(function ($sub) use ($tglAwal) {
+            $sub->whereNull('tanggal')
+              ->whereDate('created_at', '>=', $tglAwal);
+          });
+      });
     }
 
     if ($request->filled('tanggal_akhir')) {
-      $query->whereDate('tanggal', '<=', $request->tanggal_akhir);
+      $tglAkhir = $request->tanggal_akhir;
+      $query->where(function ($q) use ($tglAkhir) {
+        $q->whereDate('tanggal', '<=', $tglAkhir)
+          ->orWhere(function ($sub) use ($tglAkhir) {
+            $sub->whereNull('tanggal')
+              ->whereDate('created_at', '<=', $tglAkhir);
+          });
+      });
     }
 
     $maintenances = $query->orderBy('tanggal', 'desc')->get();

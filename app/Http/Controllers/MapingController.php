@@ -69,13 +69,40 @@ class MapingController extends Controller
       });
     }
 
-    // FILTER RENTANG TANGGAL
-    if ($request->filled('tanggal_awal') && $request->filled('tanggal_akhir')) {
-      $query->whereBetween('tanggal_digunakan', [$request->tanggal_awal, $request->tanggal_akhir]);
-    } elseif ($request->filled('tanggal_awal')) {
-      $query->whereDate('tanggal_digunakan', '>=', $request->tanggal_awal);
-    } elseif ($request->filled('tanggal_akhir')) {
-      $query->whereDate('tanggal_digunakan', '<=', $request->tanggal_akhir);
+    // FILTER RENTANG TANGGAL TRANSAKSI (tanggal_digunakan / tgl_keluar / created_at)
+    if ($request->filled('tanggal_awal') || $request->filled('tanggal_akhir')) {
+      $query->where(function ($q) use ($request) {
+        $q->where(function ($sub) use ($request) {
+          $sub->whereNotNull('tanggal_digunakan');
+          if ($request->filled('tanggal_awal')) {
+            $sub->whereDate('tanggal_digunakan', '>=', $request->tanggal_awal);
+          }
+          if ($request->filled('tanggal_akhir')) {
+            $sub->whereDate('tanggal_digunakan', '<=', $request->tanggal_akhir);
+          }
+        })->orWhere(function ($sub) use ($request) {
+          $sub->whereNull('tanggal_digunakan')
+            ->whereHas('keluar', function ($kq) use ($request) {
+              if ($request->filled('tanggal_awal')) {
+                $kq->whereDate('tgl_keluar', '>=', $request->tanggal_awal);
+              }
+              if ($request->filled('tanggal_akhir')) {
+                $kq->whereDate('tgl_keluar', '<=', $request->tanggal_akhir);
+              }
+            });
+        })->orWhere(function ($sub) use ($request) {
+          $sub->whereNull('tanggal_digunakan')
+            ->whereDoesntHave('keluar')
+            ->where(function ($cq) use ($request) {
+              if ($request->filled('tanggal_awal')) {
+                $cq->whereDate('created_at', '>=', $request->tanggal_awal);
+              }
+              if ($request->filled('tanggal_akhir')) {
+                $cq->whereDate('created_at', '<=', $request->tanggal_akhir);
+              }
+            });
+        });
+      });
     }
 
     // FILTER TAHUN PEMBELIAN
@@ -949,6 +976,8 @@ class MapingController extends Controller
         ]);
       }
 
+      $oldLokasiId = $maping->id_lokasi;
+
       // Update di Maping
       $maping->update([
         'id_lokasi' => $request->id_lokasi,
@@ -965,6 +994,29 @@ class MapingController extends Controller
         'tanggal_digunakan' => $request->tanggal_digunakan,
         'catatan' => $request->catatan,
       ]);
+
+      // Sinkronisasi Checklist Device jika lokasi berubah
+      if ($oldLokasiId != $request->id_lokasi) {
+        \App\Models\ChecklistDevice::where('maping_id', $maping->id)
+          ->where('status_device', 'belum_dicek')
+          ->whereHas('checklistRuangan', function ($rq) use ($oldLokasiId) {
+            $rq->where('id_lokasi', $oldLokasiId);
+          })
+          ->each(function ($dev) {
+            $ruangan = $dev->checklistRuangan;
+            $dev->items()->delete();
+            $dev->delete();
+            if ($ruangan) {
+              $ruangan->updateProgress();
+            }
+          });
+      }
+
+      // Update nama pengguna di checklist device jika penerima diupdate
+      $newPenerima = $maping->penerima;
+      \App\Models\ChecklistDevice::where('maping_id', $maping->id)
+        ->where('status_device', 'belum_dicek')
+        ->update(['nama_pengguna' => $newPenerima]);
 
       DB::commit();
 
@@ -1018,7 +1070,19 @@ class MapingController extends Controller
         }
       }
 
-      // 3. Hapus data mapping
+      // 3. Bersihkan checklist device yang belum dicek terkait mapping ini
+      \App\Models\ChecklistDevice::where('maping_id', $maping->id)
+        ->where('status_device', 'belum_dicek')
+        ->each(function ($dev) {
+          $ruangan = $dev->checklistRuangan;
+          $dev->items()->delete();
+          $dev->delete();
+          if ($ruangan) {
+            $ruangan->updateProgress();
+          }
+        });
+
+      // 4. Hapus data mapping
       $maping->delete();
 
       // 4. Hapus data transaksi keluar terkait
@@ -1092,7 +1156,7 @@ class MapingController extends Controller
     $query = $this->buildMapingQuery($request);
 
     if (!$request->filled('status')) {
-      $query->where('status', 'aktif');
+      $query->where('status', '!=', 'selesai');
     }
 
     $mapings = $query->get()->sortBy(function ($item) {
@@ -1179,7 +1243,7 @@ class MapingController extends Controller
     $query = $this->buildMapingQuery($request);
 
     if (!$request->filled('status')) {
-      $query->where('status', 'aktif');
+      $query->where('status', '!=', 'selesai');
     }
 
     $mapings = $query->get()->sortBy(function ($item) {

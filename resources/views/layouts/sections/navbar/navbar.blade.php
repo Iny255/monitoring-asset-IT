@@ -8,162 +8,215 @@
     // dari AppServiceProvider
     // =====================================
 
-    $primaryColor = $theme['primary_color'] ?? '#0b2f57';
+    $primaryColor = !empty($theme['primary_color']) ? $theme['primary_color'] : '#0b2f57';
+    if (in_array(strtolower(trim($primaryColor)), ['#fff', '#ffffff', 'white', '#f8fafc', '#f1f5f9'])) {
+        $primaryColor = '#0b2f57';
+    }
 
-    $secondaryColor = $theme['secondary_color'] ?? '#154b87';
+    $secondaryColor = !empty($theme['secondary_color']) ? $theme['secondary_color'] : '#154b87';
 
-    $companyName =  'Monitoring Aset Divisi IT';
+    $companyName = !empty($theme['company_name']) ? trim($theme['company_name']) : 'Monitoring Aset Divisi IT';
+    if (empty($companyName)) {
+        $companyName = 'Monitoring Aset Divisi IT';
+    }
 
 @endphp
 
 
 <style>
     :root {
-
         --primary-theme: {{ $primaryColor }};
         --secondary-theme: {{ $secondaryColor }};
-
     }
 
-
     /* =====================================
-       NAVBAR
+       NAVBAR (TEMA PERUSAHAAN)
     ===================================== */
     .layout-navbar {
-
-        background:
-            linear-gradient(135deg,
-                var(--primary-theme),
-                var(--secondary-theme)) !important;
-
-        border-radius: 16px;
-
-        margin-top: 10px;
-
-        min-height: 72px;
-
-        box-shadow:
-            0 4px 18px rgba(0, 0, 0, .10);
-
+        background: linear-gradient(135deg, var(--primary-theme), var(--secondary-theme)) !important;
         border: none !important;
-
-        padding-left: 14px;
-
-        padding-right: 14px;
-
+        border-radius: 16px;
+        margin-top: 10px;
+        min-height: 76px;
+        height: 76px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+        padding-left: 20px;
+        padding-right: 20px;
+        display: flex !important;
+        align-items: center !important;
     }
 
-
     /* =====================================
-       TITLE
+       TITLE (PUTIH BERSIH & TEGAS)
     ===================================== */
-    .navbar-title {
-
-        color: white;
-
-        font-weight: 700;
-
-        font-size: 28px;
-
-        letter-spacing: .3px;
-
-        line-height: 1;
-
+    .navbar-title,
+    .layout-navbar .navbar-title,
+    .layout-navbar .nav-item .navbar-title,
+    .layout-navbar span.navbar-title {
+        color: #ffffff !important;
+        font-weight: 700 !important;
+        font-size: 22px !important;
+        letter-spacing: .4px !important;
+        line-height: 1.2 !important;
+        display: inline-block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
 
-
     /* =====================================
-       MENU ICON
+       MENU ICON / HAMBURGER (PUTIH TERANG)
     ===================================== */
     .layout-navbar .bx-menu {
-
-        color: white !important;
-
+        color: #ffffff !important;
         font-size: 28px;
-
+        transition: transform 0.2s ease, opacity 0.2s ease;
     }
 
+    .layout-navbar .bx-menu:hover {
+        opacity: 0.85;
+        transform: scale(1.05);
+    }
 
     /* =====================================
        DARK MODE BUTTON
     ===================================== */
     .dark-toggle-btn {
-
         border: none;
-
-        background: transparent;
-
-        color: white;
-
-        font-size: 24px;
-
+        background: rgba(255, 255, 255, 0.15);
+        color: #ffffff !important;
+        font-size: 22px;
         display: flex;
-
         align-items: center;
-
         justify-content: center;
-
         transition: .25s ease;
-
+        padding: 8px;
+        border-radius: 10px;
+        cursor: pointer !important;
+        user-select: none;
     }
-
 
     .dark-toggle-btn:hover {
-
-        transform: scale(1.08);
-
+        background: rgba(255, 255, 255, 0.25);
+        color: #ffffff !important;
+        transform: scale(1.05);
     }
 
+    .dark-toggle-btn i {
+        color: #ffffff !important;
+    }
 
     /* =====================================
        USER AVATAR
     ===================================== */
     .navbar-user-avatar {
-
         width: 42px;
-
         height: 42px;
-
         object-fit: cover;
-
         border-radius: 50%;
-
-        border: 2px solid rgba(255, 255, 255, .35);
-
-        box-shadow:
-            0 2px 10px rgba(0, 0, 0, .15);
-
+        border: 2px solid rgba(255, 255, 255, 0.6);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, .2);
     }
 
-
     /* =====================================
-       DROPDOWN
+       DROPDOWN (MENU POPUP TETAP BERSIH)
     ===================================== */
     .dropdown-user .dropdown-menu {
-
-        border: none;
-
+        border: 1px solid #e2e8f0;
         border-radius: 14px;
-
         overflow: hidden;
-
-        box-shadow:
-            0 8px 25px rgba(0, 0, 0, .12);
-
+        box-shadow: 0 10px 25px rgba(0, 0, 0, .12);
+        background: #ffffff !important;
     }
 
+    .dropdown-user .dropdown-menu .dropdown-item {
+        color: #334155 !important;
+    }
+
+    .dropdown-user .dropdown-menu .dropdown-item:hover {
+        background: #f1f5f9 !important;
+        color: var(--primary-theme, #0b2f57) !important;
+    }
+
+    .dropdown-user .dropdown-menu span,
+    .dropdown-user .dropdown-menu small,
+    .dropdown-user .dropdown-menu i {
+        color: #334155 !important;
+    }
+
+    .dropdown-user .dropdown-menu small.text-muted {
+        color: #64748b !important;
+    }
 
     /* =====================================
-       RESPONSIVE
+       DARK STYLE COMPATIBILITY
     ===================================== */
-    @media(max-width:768px) {
+    .dark-style .layout-navbar {
+        background: #1e1f2f !important;
+        border: 1px solid #32344d !important;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3) !important;
+    }
 
-        .navbar-title {
+    .dark-style .navbar-title {
+        color: #f1f5f9 !important;
+    }
 
-            font-size: 20px;
+    .dark-style .layout-navbar .bx-menu {
+        color: #cbd5e1 !important;
+    }
 
+    .dark-style .dark-toggle-btn {
+        background: rgba(255, 255, 255, 0.1) !important;
+        color: #cbd5e1 !important;
+    }
+
+    .dark-style .dropdown-user .dropdown-menu {
+        background: #2b2c40 !important;
+        border-color: #444564 !important;
+    }
+
+    .dark-style .dropdown-user .dropdown-menu .dropdown-item,
+    .dark-style .dropdown-user .dropdown-menu span,
+    .dark-style .dropdown-user .dropdown-menu i {
+        color: #cbd5e1 !important;
+    }
+
+    /* =====================================
+       RESPONSIVE & Z-INDEX FIX
+    ===================================== */
+    @media (max-width: 1199.98px) {
+        .layout-navbar,
+        #layout-navbar {
+            z-index: 1030 !important; /* Wajib di bawah sidebar offcanvas (1200) agar tidak menutupi menu */
+        }
+    }
+
+    @media (max-width: 768px) {
+        .layout-navbar {
+            min-height: 56px !important;
+            height: 56px !important;
+            margin-top: 6px !important;
+            border-radius: 12px !important;
+            padding-left: 14px !important;
+            padding-right: 14px !important;
         }
 
+        .navbar-title {
+            font-size: 16px !important;
+            white-space: nowrap !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            max-width: 200px !important;
+            display: inline-block !important;
+            vertical-align: middle;
+        }
+    }
+
+    @media (max-width: 420px) {
+        .navbar-title {
+            font-size: 14px !important;
+            max-width: 140px !important;
+        }
     }
 </style>
 
@@ -237,7 +290,7 @@
         {{-- DARK MODE --}}
         <li class="nav-item me-3">
 
-            <button id="darkModeToggle" class="dark-toggle-btn" type="button">
+            <button id="darkModeToggle" class="dark-toggle-btn" type="button" title="Ganti Mode Gelap / Terang" aria-label="Toggle theme">
 
                 <i id="darkIcon" class="bx bx-moon"></i>
 

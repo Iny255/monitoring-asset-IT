@@ -34,6 +34,8 @@
         </div>
     </div>
 
+    <x-company-filter-banner />
+
     {{-- TABLE KATEGORI --}}
     <div class="card border-0 shadow-sm">
         <div class="table-responsive">
@@ -61,17 +63,19 @@
                                 <span class="badge bg-label-info">{{ $cat->tickets_count ?? $cat->tickets()->count() }} Tiket</span>
                             </td>
                             <td class="text-center">
-                                <button type="button" class="btn btn-sm btn-icon btn-label-primary me-1" 
-                                        data-bs-toggle="modal" data-bs-target="#modalEditCategory{{ $cat->id }}" title="Edit">
-                                    <i class="bi bi-pencil"></i>
-                                </button>
-                                <form action="{{ route('ticket-categories.destroy', $cat->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori ini?');">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit" class="btn btn-sm btn-icon btn-label-danger" title="Hapus">
-                                        <i class="bi bi-trash"></i>
+                                <div class="d-flex justify-content-center gap-1">
+                                    <button type="button" class="btn btn-sm btn-icon btn-outline-secondary" 
+                                            data-bs-toggle="modal" data-bs-target="#modalEditCategory{{ $cat->id }}" title="Edit">
+                                        <i class="bx bx-edit"></i>
                                     </button>
-                                </form>
+                                    <form action="{{ route('ticket-categories.destroy', $cat->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus kategori ini?');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit" class="btn btn-sm btn-icon btn-outline-danger" title="Hapus">
+                                            <i class="bx bx-trash"></i>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
 

@@ -89,20 +89,31 @@
                     <td class="fw-bold">{{ $ruangan->lokasi->nama_lokasi ?? '-' }}</td>
                 </tr>
                 <tr>
-                    <td class="text-muted fw-semibold">Kode Jadwal:</td>
-                    <td class="font-monospace">{{ $ruangan->jadwal->kode_jadwal ?? '-' }}</td>
+                    <td class="text-muted fw-semibold">Jadwal Rutin:</td>
+                    <td>
+                        @if ($ruangan->jadwalRutin)
+                            📅 Rutin Hari {{ ucfirst($ruangan->jadwalRutin->hari) }} (Mingguan)
+                        @elseif ($ruangan->jadwal)
+                            {{ $ruangan->jadwal->kode_jadwal }} ({{ $ruangan->jadwal->periode_label }})
+                        @else
+                            Jadwal Rutin Mingguan
+                        @endif
+                    </td>
                 </tr>
                 <tr>
-                    <td class="text-muted fw-semibold">Periode Mingguan:</td>
-                    <td>{{ $ruangan->jadwal->periode_label ?? '-' }}</td>
+                    <td class="text-muted fw-semibold">Hari & Tanggal:</td>
+                    <td class="fw-semibold">
+                        {{ $ruangan->nama_hari ?: ucfirst($ruangan->hari ?: 'Hari Rutin') }}, 
+                        {{ $ruangan->tanggal_pemeriksaan ? $ruangan->tanggal_pemeriksaan->translatedFormat('d F Y') : ($ruangan->tanggal_cek ? $ruangan->tanggal_cek->translatedFormat('d F Y') : date('d F Y')) }}
+                    </td>
                 </tr>
             </table>
         </div>
         <div class="col-6">
             <table class="table table-sm table-borderless mb-0">
                 <tr>
-                    <td class="text-muted fw-semibold" style="width: 140px;">Petugas Pemeriksa:</td>
-                    <td class="fw-bold">{{ $ruangan->petugas->name ?? ($ruangan->jadwal->assignedTo->name ?? 'Belum Ditugaskan') }}</td>
+                    <td class="text-muted fw-semibold" style="width: 140px;">Petugas IT:</td>
+                    <td class="fw-bold">{{ $ruangan->petugas->name ?? ($ruangan->jadwalRutin->assignedTo->name ?? ($ruangan->jadwal->assignedTo->name ?? 'Belum Ditugaskan')) }}</td>
                 </tr>
                 <tr>
                     <td class="text-muted fw-semibold">Tanggal Pemeriksaan:</td>
@@ -127,12 +138,14 @@
     <table class="table table-bordered table-sm align-middle mb-4">
         <thead class="table-light text-center">
             <tr>
-                <th style="width: 35px;">No</th>
-                <th style="width: 130px;">Kode Aset</th>
-                <th>Nama / Merek & Tipe Device</th>
-                <th style="width: 100px;">Kategori</th>
+                <th style="width: 30px;">No</th>
+                <th style="width: 65px;">Bukti QR</th>
+                <th style="width: 120px;">Kode Aset</th>
+                <th>Nama / Tipe Device</th>
+                <th style="width: 90px;">Kategori</th>
                 <th>Pengguna Device</th>
-                <th style="width: 110px;">Kondisi Akhir</th>
+                <th style="width: 105px;">Kondisi Akhir</th>
+                <th style="width: 130px;">Waktu & Petugas</th>
                 <th>Catatan / Keterangan</th>
             </tr>
         </thead>
@@ -141,9 +154,20 @@
                 @php
                     $inv = $dev->inventaris;
                     $dAset = $inv?->dataAset;
+                    $mapping = $dev->maping;
+                    $qrUrl = $mapping ? route('maping.public_show', $mapping->uuid ?? $mapping->id) : null;
                 @endphp
                 <tr>
                     <td class="text-center">{{ $idx + 1 }}</td>
+                    <td class="text-center py-1">
+                        @if ($qrUrl)
+                            <div style="width: 46px; height: 46px; margin: 0 auto;">
+                                {!! \SimpleSoftwareIO\QrCode\Facades\QrCode::size(46)->generate($qrUrl) !!}
+                            </div>
+                        @else
+                            <span class="text-muted" style="font-size: 9px;">-</span>
+                        @endif
+                    </td>
                     <td class="font-monospace text-center">{{ $inv->kode_aset ?? '-' }}</td>
                     <td class="fw-semibold">{{ $dAset->nama_data_aset ?? '-' }}</td>
                     <td class="text-center">{{ $dAset->kategori->nama_kategori ?? '-' }}</td>
@@ -157,11 +181,19 @@
                             <span class="text-muted">Belum Dicek</span>
                         @endif
                     </td>
+                    <td style="font-size: 10px;">
+                        @if ($dev->checked_at)
+                            <div class="fw-semibold">{{ $dev->checked_at->format('d/m/Y H:i') }}</div>
+                            <small class="text-muted">{{ $dev->checkedBy?->name ?? ($ruangan->petugas?->name ?? '-') }}</small>
+                        @else
+                            <span class="text-muted">Belum diperiksa</span>
+                        @endif
+                    </td>
                     <td>{{ $dev->catatan_kendala ?? '-' }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="text-center py-3 text-muted">
+                    <td colspan="9" class="text-center py-3 text-muted">
                         Tidak ada device terdaftar di ruangan ini.
                     </td>
                 </tr>

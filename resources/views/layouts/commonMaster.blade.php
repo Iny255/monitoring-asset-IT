@@ -4,6 +4,23 @@
     data-base-url="{{ url('/') }}" data-framework="laravel" data-template="vertical-menu-laravel-template-free">
 
 <head>
+    <script>
+        // Inisialisasi tema instan sebelum render untuk mencegah FOUC (white flash)
+        (function() {
+            try {
+                var theme = localStorage.getItem('theme');
+                if (theme === 'dark') {
+                    document.documentElement.classList.add('dark-style');
+                    document.documentElement.classList.remove('light-style');
+                    document.documentElement.setAttribute('data-bs-theme', 'dark');
+                } else {
+                    document.documentElement.classList.add('light-style');
+                    document.documentElement.classList.remove('dark-style');
+                    document.documentElement.setAttribute('data-bs-theme', 'light');
+                }
+            } catch (e) {}
+        })();
+    </script>
 
     <meta charset="utf-8" />
 
@@ -41,28 +58,7 @@ minimum-scale=1.0, maximum-scale=1.0" />
     @include('layouts/sections/scriptsIncludes')
 
     <style>
-        /* NAVBAR BIRU */
 
-        .layout-navbar,
-        .navbar-detached,
-        .bg-navbar-theme {
-            /* Menggunakan warna biru solid dari logo untuk background */
-            background: #003060 !important;
-            /* Menghapus gradient agar solid seperti logo */
-            border: none !important;
-        }
-
-        .layout-navbar .nav-link,
-        .layout-navbar span,
-        .layout-navbar i {
-            /* Mempertahankan warna teks putih untuk kontras yang baik */
-            color: #fff !important;
-        }
-
-        .layout-navbar {
-            /* Menyesuaikan bayangan agar cocok dengan warna biru yang lebih gelap */
-            box-shadow: 0 4px 15px rgba(1, 33, 64, 0.35);
-        }
 
         /* SWEETALERT ZINDEX */
 
@@ -96,6 +92,12 @@ minimum-scale=1.0, maximum-scale=1.0" />
             padding: 12px 24px;
         }
 
+        .dark-style .app-footer {
+            background: #2b2c40 !important;
+            border-top-color: #444564 !important;
+            color: #a3a4cc !important;
+        }
+
         .footer-container {
             display: flex;
             justify-content: space-between;
@@ -126,51 +128,75 @@ minimum-scale=1.0, maximum-scale=1.0" />
     <!-- ========================= -->
 
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        (function() {
+            var html = document.documentElement;
 
-            const html = document.documentElement;
-            const toggleBtn = document.getElementById("darkModeToggle");
-            const icon = document.getElementById("darkIcon");
-
-            if (!toggleBtn) return;
-
-            function setDarkMode(isDark) {
+            function applyTheme(theme) {
+                var isDark = (theme === 'dark');
 
                 if (isDark) {
-
                     html.classList.add("dark-style");
-
-                    icon.classList.remove("bx-moon");
-                    icon.classList.add("bx-sun");
-
-                    localStorage.setItem("theme", "dark");
-
+                    html.classList.remove("light-style");
+                    html.setAttribute("data-bs-theme", "dark");
                 } else {
-
                     html.classList.remove("dark-style");
-
-                    icon.classList.remove("bx-sun");
-                    icon.classList.add("bx-moon");
-
-                    localStorage.setItem("theme", "light");
-
+                    html.classList.add("light-style");
+                    html.setAttribute("data-bs-theme", "light");
                 }
 
+                try {
+                    localStorage.setItem("theme", isDark ? "dark" : "light");
+                } catch (e) {}
+
+                // Sinkronkan semua ikon toggle mode malam di seluruh halaman
+                var icons = document.querySelectorAll("#darkIcon, .dark-toggle-btn i");
+                icons.forEach(function(icon) {
+                    if (isDark) {
+                        icon.classList.remove("bx-moon");
+                        icon.classList.add("bx-sun");
+                    } else {
+                        icon.classList.remove("bx-sun");
+                        icon.classList.add("bx-moon");
+                    }
+                });
+
+                // Dispatch event tema jika chart atau komponen lain membutuhkan re-render
+                window.dispatchEvent(new CustomEvent("themeChanged", { detail: { theme: isDark ? "dark" : "light" } }));
             }
 
-            const savedTheme = localStorage.getItem("theme");
+            function syncCurrentTheme() {
+                var currentTheme = "light";
+                try {
+                    var saved = localStorage.getItem("theme");
+                    if (saved) {
+                        currentTheme = saved;
+                    } else if (html.classList.contains("dark-style")) {
+                        currentTheme = "dark";
+                    }
+                } catch (e) {}
 
-            setDarkMode(savedTheme === "dark");
+                applyTheme(currentTheme);
+            }
 
-            toggleBtn.addEventListener("click", function() {
-
-                const isDark = html.classList.contains("dark-style");
-
-                setDarkMode(!isDark);
-
+            // Event delegation untuk tombol toggle mode malam (berfungsi di halaman mana pun dan tahan render dinamis)
+            document.addEventListener("click", function(e) {
+                var btn = e.target.closest("#darkModeToggle, .dark-toggle-btn");
+                if (btn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    var isCurrentlyDark = html.classList.contains("dark-style");
+                    applyTheme(isCurrentlyDark ? "light" : "dark");
+                }
             });
 
-        });
+            // Sinkronkan ikon dan state sesegera mungkin
+            if (document.readyState === "loading") {
+                document.addEventListener("DOMContentLoaded", syncCurrentTheme);
+            } else {
+                syncCurrentTheme();
+            }
+            window.addEventListener("load", syncCurrentTheme);
+        })();
     </script>
 
 

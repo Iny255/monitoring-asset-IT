@@ -11,6 +11,8 @@ use App\Models\HistoryPencabutan;
 use App\Models\Maintenance;
 use App\Models\HistoryHakAkses;
 use App\Models\Masuk;
+use App\Models\Maping;
+use App\Models\Peminjaman;
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
@@ -525,7 +527,7 @@ class HistoryPerjalananAsetController extends Controller
     // 1. Trace ke belakang (asal unit sebelum mutasi antar-perusahaan)
     $curr = $target;
     while ($curr && $curr->masuk && $curr->masuk->history_mutasi_id) {
-      $parentMutasi = HistoryMutasi::with('creator')->find($curr->masuk->history_mutasi_id);
+      $parentMutasi = HistoryMutasi::with(['creator', 'perusahaanAsal', 'perusahaanTujuan'])->find($curr->masuk->history_mutasi_id);
       if ($parentMutasi && $parentMutasi->inventaris_id) {
         $mutasiIds->push($parentMutasi->id);
         if (!$knownInvIds->contains($parentMutasi->inventaris_id)) {
@@ -555,7 +557,7 @@ class HistoryPerjalananAsetController extends Controller
     $queue = collect([$target->id]);
     while ($queue->isNotEmpty()) {
       $checkId = $queue->shift();
-      $childMutasis = HistoryMutasi::with('creator')
+      $childMutasis = HistoryMutasi::with(['creator', 'perusahaanAsal', 'perusahaanTujuan'])
         ->where('inventaris_id', $checkId)
         ->where('jenis_mutasi', 'antar_perusahaan')
         ->get();
@@ -590,31 +592,35 @@ class HistoryPerjalananAsetController extends Controller
     }
 
     // Mutasi internal unit ini + mutasi antar-perusahaan unit ini
-    $internalMutasis = HistoryMutasi::with('creator')
+    $internalMutasis = HistoryMutasi::with(['creator', 'perusahaanAsal', 'perusahaanTujuan'])
       ->whereIn('inventaris_id', $knownInvIds)
       ->where('jenis_mutasi', 'internal')
       ->get();
 
-    $antarMutasis = HistoryMutasi::with('creator')
+    $antarMutasis = HistoryMutasi::with(['creator', 'perusahaanAsal', 'perusahaanTujuan'])
       ->whereIn('id', $mutasiIds->unique())
       ->get();
 
     $mutasiTerkait = $internalMutasis->concat($antarMutasis)->unique('id');
     $allInvIds = $knownInvIds->unique()->toArray();
 
-    // 1. ASET MASUK (PROCUREMENT / MUTASI MASUK)
+    // 1. ASET MASUK (PROCUREMENT / PEMBELIAN AWAL SAJA)
     foreach ($allInventaris as $item) {
       if ($item->masuk) {
         $isMutasiMasuk = $item->masuk->jenis_masuk === 'Mutasi' || !empty($item->masuk->history_mutasi_id);
-        $keteranganMasuk = $isMutasiMasuk
-          ? 'Barang diterima hasil mutasi dari perusahaan: ' . ($item->masuk->perusahaanAsal?->nama_perusahaan ?? 'Perusahaan Asal')
-          : 'Barang diterima dari supplier: ' . ($item->masuk->supplier?->nama_supplier ?? 'Vendor');
+        // Jika data masuk merupakan hasil mutasi antar perusahaan, lewati agar timeline langsung menampilkan MUTASI
+        if ($isMutasiMasuk) {
+          continue;
+        }
+
+        $keteranganMasuk = 'Barang diterima dari supplier: ' . ($item->masuk->supplier?->nama_supplier ?? 'Vendor');
 
         $timeline->push([
           'tanggal' => Carbon::parse($item->masuk->tanggal_pembelian ?? $item->created_at),
           'aktivitas' => 'MASUK',
           'kode_aset' => $item->kode_aset,
           'inventaris' => $item->no_inventaris,
+          'perusahaan' => $item->perusahaan?->nama_perusahaan ?? '-',
           'user_lama' => null,
           'user_baru' => 'Stok Gudang',
           'lokasi_lama' => null,
@@ -628,7 +634,14 @@ class HistoryPerjalananAsetController extends Controller
     // 2. TRANSAKSI KELUAR (PEMAKAIAN)
     foreach ($allInventaris as $item) {
       if ($item->keluars) {
+        $isMutasiInventaris = $item->masuk && ($item->masuk->jenis_masuk === 'Mutasi' || !empty($item->masuk->history_mutasi_id));
+
         foreach ($item->keluars->sortBy('tgl_keluar') as $index => $keluar) {
+          // Jika inventaris ini berasal dari mutasi antar perusahaan, lewati keluar pertama karena sudah diwakili oleh mutasi
+          if ($isMutasiInventaris && $index === 0) {
+            continue;
+          }
+
           $penerima = $keluar->jenis_penerima == 'Perorangan' 
             ? ($keluar->karyawan?->nama_karyawan ?? '-') 
             : ($keluar->divisi_klr ?? '-');
@@ -638,11 +651,12 @@ class HistoryPerjalananAsetController extends Controller
             'aktivitas' => 'KELUAR',
             'kode_aset' => $item->kode_aset,
             'inventaris' => $item->no_inventaris,
+            'perusahaan' => $item->perusahaan?->nama_perusahaan ?? '-',
             'user_lama' => null,
             'user_baru' => $penerima,
             'lokasi_lama' => null,
             'lokasi_baru' => $keluar->lokasi?->nama_lokasi ?? '-',
-            'keterangan' => $index == 0 ? 'Aset pertama kali digunakan' : 'Aset digunakan kembali setelah pencabutan / mutasi',
+            'keterangan' => $index == 0 ? 'Aset pertama kali digunakan' : 'Aset digunakan kembali setelah pencabutan',
             'petugas' => $keluar->user?->name ?? 'Petugas',
           ]);
         }
@@ -651,9 +665,24 @@ class HistoryPerjalananAsetController extends Controller
 
     // 3. HISTORY MUTASI
     foreach ($mutasiTerkait as $item) {
+      $isAntar = $item->jenis_mutasi === 'antar_perusahaan';
+      $namaAsal = $item->perusahaanAsal?->nama_perusahaan ?? 'Perusahaan Asal';
+      $namaTujuan = $item->perusahaanTujuan?->nama_perusahaan ?? 'Perusahaan Tujuan';
+
+      $keteranganText = $isAntar
+        ? ('Mutasi Antar Perusahaan: ' . $namaAsal . ' → ' . $namaTujuan)
+        : 'Mutasi Internal';
+      if ($item->catatan) {
+        $keteranganText .= ' (' . $item->catatan . ')';
+      }
+
       $timeline->push([
         'tanggal' => Carbon::parse($item->tanggal_mutasi),
         'aktivitas' => 'MUTASI',
+        'is_antar_perusahaan' => $isAntar,
+        'perusahaan_asal' => $namaAsal,
+        'perusahaan_tujuan' => $namaTujuan,
+        'perusahaan' => $isAntar ? ($namaAsal . ' → ' . $namaTujuan) : ($item->perusahaanAsal?->nama_perusahaan ?? '-'),
         'kode_aset' => $item->kode_aset_baru ?? $item->kode_aset_lama,
         'kode_aset_lama' => $item->kode_aset_lama,
         'kode_aset_baru' => $item->kode_aset_baru,
@@ -662,29 +691,149 @@ class HistoryPerjalananAsetController extends Controller
         'user_baru' => $item->user_baru,
         'lokasi_lama' => $item->lokasi_lama,
         'lokasi_baru' => $item->lokasi_baru,
-        'keterangan' => ($item->jenis_mutasi == 'internal' ? 'Mutasi Internal' : 'Mutasi Antar Perusahaan') . ($item->catatan ? ' (' . $item->catatan . ')' : ''),
+        'keterangan' => $keteranganText,
         'petugas' => $item->creator?->name ?? 'Petugas',
       ]);
     }
 
     // 4. MAINTENANCE / SERVIS
     $maintenances = Maintenance::withoutGlobalScopes()
-      ->with('creator')
+      ->with([
+        'creator',
+        'maping.karyawan',
+        'maping.keluar.karyawan',
+        'maping.keluar.lokasi',
+        'maping.lokasi',
+        'peminjaman.karyawan',
+        'peminjaman.karyawanTujuan',
+      ])
       ->whereIn('inventaris_id', $allInvIds)
       ->orderBy('created_at')
       ->get();
 
     foreach ($maintenances as $maint) {
       $inv = $allInventaris->firstWhere('id', $maint->inventaris_id);
+      $tglServis = $maint->tanggal ? Carbon::parse($maint->tanggal) : Carbon::parse($maint->created_at);
+
+      // Cari nama user aset saat diservis
+      $userServis = null;
+
+      // 1. Cek dari relasi Maping langsung
+      if ($maint->maping) {
+        $userServis = $maint->maping->penerima
+          ?? $maint->maping->karyawan?->nama_karyawan
+          ?? $maint->maping->keluar?->karyawan?->nama_karyawan
+          ?? $maint->maping->divisi
+          ?? $maint->maping->keluar?->divisi_klr;
+      }
+
+      // 2. Cek dari relasi Peminjaman langsung
+      if (empty($userServis) && $maint->peminjaman) {
+        $userServis = $maint->peminjaman->karyawan?->nama_karyawan
+          ?? $maint->peminjaman->karyawanTujuan?->nama_karyawan;
+      }
+
+      // 3. Jika maping_id / peminjaman_id kosong (misal dibuat secara Manual), cari mapping terkait inventaris ini
+      $relatedMaping = null;
+      if (empty($userServis)) {
+        $relatedMaping = Maping::withoutGlobalScopes()
+          ->with(['karyawan', 'keluar.karyawan', 'lokasi', 'keluar.lokasi'])
+          ->whereHas('keluar', function ($q) use ($maint) {
+            $q->withoutGlobalScopes()->where('inventaris_id', $maint->inventaris_id);
+          })
+          ->where('created_at', '<=', $maint->created_at)
+          ->latest('created_at')
+          ->first();
+
+        if (!$relatedMaping) {
+          $relatedMaping = Maping::withoutGlobalScopes()
+            ->with(['karyawan', 'keluar.karyawan', 'lokasi', 'keluar.lokasi'])
+            ->whereHas('keluar', function ($q) use ($maint) {
+              $q->withoutGlobalScopes()->where('inventaris_id', $maint->inventaris_id);
+            })
+            ->latest('created_at')
+            ->first();
+        }
+
+        if ($relatedMaping) {
+          $userServis = $relatedMaping->penerima
+            ?? $relatedMaping->karyawan?->nama_karyawan
+            ?? $relatedMaping->keluar?->karyawan?->nama_karyawan
+            ?? $relatedMaping->divisi
+            ?? $relatedMaping->keluar?->divisi_klr;
+        }
+      }
+
+      // 4. Jika belum ada, cek data peminjaman inventaris ini
+      if (empty($userServis)) {
+        $relatedPinjam = Peminjaman::withoutGlobalScopes()
+          ->with(['karyawan', 'karyawanTujuan'])
+          ->where('inventaris_id', $maint->inventaris_id)
+          ->where('tanggal_pinjam', '<=', $tglServis)
+          ->latest('tanggal_pinjam')
+          ->first();
+
+        if ($relatedPinjam) {
+          $userServis = $relatedPinjam->karyawan?->nama_karyawan
+            ?? $relatedPinjam->karyawanTujuan?->nama_karyawan;
+        }
+      }
+
+      // 5. Jika belum ada, cek transaksi keluar inventaris ini
+      $relatedKeluar = null;
+      if (empty($userServis) && $inv?->keluars) {
+        $relatedKeluar = $inv->keluars
+          ->filter(function ($k) use ($tglServis) {
+            return Carbon::parse($k->tgl_keluar)->lte($tglServis);
+          })
+          ->sortByDesc('tgl_keluar')
+          ->first();
+
+        if (!$relatedKeluar) {
+          $relatedKeluar = $inv->keluars->sortByDesc('tgl_keluar')->first();
+        }
+
+        if ($relatedKeluar) {
+          $userServis = $relatedKeluar->jenis_penerima == 'Perorangan'
+            ? ($relatedKeluar->karyawan?->nama_karyawan ?? null)
+            : ($relatedKeluar->divisi_klr ?? null);
+        }
+      }
+
+      // 6. Jika masih belum ada, cek riwayat mutasi internal terakhir sebelum servis
+      if (empty($userServis)) {
+        $lastMutasi = $mutasiTerkait
+          ->where('inventaris_id', $maint->inventaris_id)
+          ->filter(function ($m) use ($tglServis) {
+            return Carbon::parse($m->tanggal_mutasi)->lte($tglServis);
+          })
+          ->sortByDesc('tanggal_mutasi')
+          ->first();
+
+        if ($lastMutasi && !empty($lastMutasi->user_baru) && $lastMutasi->user_baru !== '-') {
+          $userServis = $lastMutasi->user_baru;
+        }
+      }
+
+      // Cari lokasi asal sebelum diservis
+      $lokasiAsal = $maint->maping?->lokasi?->nama_lokasi
+        ?? $maint->maping?->keluar?->lokasi?->nama_lokasi
+        ?? $relatedMaping?->lokasi?->nama_lokasi
+        ?? $relatedMaping?->keluar?->lokasi?->nama_lokasi
+        ?? $relatedKeluar?->lokasi?->nama_lokasi;
+
+      $lokasiServis = $maint->vendor ? 'Servis: ' . $maint->vendor : 'Tempat Servis / Vendor';
+
       $timeline->push([
-        'tanggal' => Carbon::parse($maint->created_at),
+        'tanggal' => $tglServis,
         'aktivitas' => 'MAINTENANCE',
         'kode_aset' => $inv?->kode_aset ?? $target->kode_aset,
         'inventaris' => $inv?->no_inventaris ?? $target->no_inventaris,
-        'user_lama' => null,
-        'user_baru' => null,
-        'lokasi_lama' => null,
-        'lokasi_baru' => 'Tempat Servis / Vendor',
+        'perusahaan' => $inv?->perusahaan?->nama_perusahaan ?? $target->perusahaan?->nama_perusahaan ?? '-',
+        'user_lama' => $userServis,
+        'user_baru' => $userServis,
+        'lokasi_lama' => $lokasiAsal,
+        'lokasi_baru' => $lokasiServis,
         'keterangan' => 'Status: ' . $maint->status . ' - Keluhan: ' . ($maint->keluhan ?? $maint->deskripsi_kerusakan ?? 'Servis unit'),
         'petugas' => $maint->creator?->name ?? $maint->user?->name ?? 'Petugas Servis',
         'gambar' => $maint->gambar,
@@ -730,6 +879,7 @@ class HistoryPerjalananAsetController extends Controller
         'aktivitas' => 'PENCABUTAN',
         'kode_aset' => $inv?->kode_aset ?? $item->kode_aset ?? $target->kode_aset,
         'inventaris' => $inv?->no_inventaris ?? $item->no_inventaris ?? $target->no_inventaris,
+        'perusahaan' => $inv?->perusahaan?->nama_perusahaan ?? $target->perusahaan?->nama_perusahaan ?? '-',
         'user_lama' => $userPencabutan,
         'user_baru' => $userPencabutan,
         'lokasi_lama' => $lokasiLama,
@@ -786,6 +936,7 @@ class HistoryPerjalananAsetController extends Controller
         'aktivitas' => 'HAK AKSES',
         'kode_aset' => $inv?->kode_aset ?? $target->kode_aset,
         'inventaris' => $inv?->no_inventaris ?? $target->no_inventaris,
+        'perusahaan' => $inv?->perusahaan?->nama_perusahaan ?? $target->perusahaan?->nama_perusahaan ?? '-',
         'user_lama' => null,
         'user_baru' => $hakAkses->maping?->penerima ?? '-',
         'lokasi_lama' => null,

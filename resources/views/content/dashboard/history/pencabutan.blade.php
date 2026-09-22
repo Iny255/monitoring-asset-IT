@@ -67,13 +67,18 @@
 
                     </div>
 
-                    <a href="{{ route('maping.index') }}" class="btn btn-outline-secondary">
-
-                        <i class="bx bx-arrow-back me-1"></i>
-
-                        Kembali
-
-                    </a>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
+                            <i class="bx bx-filter-alt me-1"></i> Filter
+                        </button>
+                        <a href="{{ route('history.pencabutan.cetak', request()->query()) }}" target="_blank"
+                            class="btn btn-outline-danger">
+                            <i class="bx bxs-file-pdf me-1"></i> Cetak PDF
+                        </a>
+                        <a href="{{ route('maping.index') }}" class="btn btn-outline-secondary">
+                            <i class="bx bx-arrow-back me-1"></i> Kembali
+                        </a>
+                    </div>
 
                 </div>
 
@@ -81,120 +86,18 @@
 
         </div>
 
-        {{-- Filter --}}
-        <div class="card border-0 shadow-sm ">
+        <x-company-filter-banner />
 
-            <div class="card-header">
-
-                <strong>Filter Data</strong>
-
+        @if(request()->anyFilled(['perusahaan', 'tanggal_awal', 'tanggal_akhir', 'search']))
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge bg-label-primary px-3 py-2">
+                    <i class="bx bx-filter-alt me-1"></i> Filter Aktif
+                </span>
+                <a href="{{ route('history.pencabutan.index') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bx bx-x me-1"></i> Reset Filter
+                </a>
             </div>
-
-            <div class="card-body py-4">
-
-                <form method="GET">
-
-                    <div class="row g-3">
-
-                        {{-- Super Admin --}}
-                        @if (auth()->user()->role == 'super_admin')
-
-                            <div class="col-md-3">
-
-                                <label class="form-label">
-                                    Perusahaan
-                                </label>
-
-                                <select class="form-select" name="perusahaan">
-
-                                    <option value="">
-                                        Semua Perusahaan
-                                    </option>
-
-                                    @foreach ($perusahaans as $perusahaan)
-                                        <option value="{{ $perusahaan->id }}"
-                                            {{ request('perusahaan') == $perusahaan->id ? 'selected' : '' }}>
-
-                                            {{ $perusahaan->nama_perusahaan }}
-
-                                        </option>
-                                    @endforeach
-
-                                </select>
-
-                            </div>
-
-                        @endif
-
-                        <div class="col-md-2">
-
-                            <label class="form-label">
-                                Tanggal Awal
-                            </label>
-
-                            <input type="date" name="tanggal_awal" class="form-control"
-                                value="{{ request('tanggal_awal') }}">
-
-                        </div>
-
-                        <div class="col-md-2">
-
-                            <label class="form-label">
-                                Tanggal Akhir
-                            </label>
-
-                            <input type="date" name="tanggal_akhir" class="form-control"
-                                value="{{ request('tanggal_akhir') }}">
-
-                        </div>
-
-                        <div class="col-md-3">
-
-                            <label class="form-label">
-                                Cari
-                            </label>
-
-                            <input type="text" class="form-control" name="search"
-                                placeholder="Kode aset / User / Inventaris" value="{{ request('search') }}">
-
-                        </div>
-
-                        <div class="col-md-4 d-flex align-items-end">
-
-                            <button type="submit" class="btn btn-primary me-2">
-
-                                <i class="bx bx-search-alt"></i>
-
-                                Filter
-
-                            </button>
-
-                            <a href="{{ route('history.pencabutan.index') }}" class="btn btn-secondary me-2">
-
-                                <i class="bx bx-reset"></i>
-
-                                Reset
-
-                            </a>
-                            <a href="{{ route('history.pencabutan.cetak', request()->query()) }}" target="_blank"
-                                class="btn btn-success">
-
-                                <i class="bx bxs-file-pdf me-1"></i>
-
-                                Cetak PDF
-
-                            </a>
-
-                        </div>
-                    </div>
-
-            </div>
-
-            </form>
-
-        </div>
-
-    </div>
+        @endif
 
     {{-- Card Table --}}
     <div class="card shadow-sm ">
@@ -231,6 +134,10 @@
 
                             <th width="40">No</th>
 
+                            @if (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan)
+                                <th>Perusahaan</th>
+                            @endif
+
                             <th>Tanggal</th>
 
                             <th>Kode Aset</th>
@@ -262,10 +169,17 @@
 
                                 </td>
 
+                                @if (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan)
+                                    <td>
+                                        <x-company-badge :perusahaan="$history->perusahaan" />
+                                    </td>
+                                @endif
+
                                 <td>
-
-                                    {{ \Carbon\Carbon::parse($history->tanggal_pencabutan)->format('d-m-Y') }}
-
+                                    @php
+                                        $tglCabut = $history->tanggal_pencabutan ?? $history->created_at;
+                                    @endphp
+                                    {{ $tglCabut ? \Carbon\Carbon::parse($tglCabut)->format('d-m-Y') : '-' }}
                                 </td>
 
                                 <td>
@@ -341,7 +255,7 @@
 
                             <tr>
 
-                                <td colspan="9" class="text-center py-5">
+                                <td colspan="{{ (in_array(auth()->user()->role, ['super_admin', '1', 1]) || !auth()->user()->id_perusahaan) ? 10 : 9 }}" class="text-center py-5">
 
                                     <img src="{{ asset('assets/img/illustrations/page-misc-error-light.png') }}"
                                         width="140" class="mb-3">
@@ -541,4 +455,61 @@
         </div>
     @endforeach
 
+    {{-- Modal Filter --}}
+    <div class="modal fade" id="modalFilter" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bx bx-filter-alt me-2 text-primary"></i> Filter History Pencabutan
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="GET" action="{{ route('history.pencabutan.index') }}">
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Cari</label>
+                                <input type="text" class="form-control" name="search"
+                                    placeholder="Kode aset / User / Inventaris" value="{{ request('search') }}">
+                            </div>
+
+                            @if (auth()->user()->role == 'super_admin')
+                                <div class="col-md-6">
+                                    <label class="form-label">Perusahaan</label>
+                                    <select class="form-select" name="perusahaan">
+                                        <option value="">Semua Perusahaan</option>
+                                        @foreach ($perusahaans as $perusahaan)
+                                            <option value="{{ $perusahaan->id }}"
+                                                {{ request('perusahaan') == $perusahaan->id ? 'selected' : '' }}>
+                                                {{ $perusahaan->nama_perusahaan }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal Awal</label>
+                                <input type="date" name="tanggal_awal" class="form-control"
+                                    value="{{ request('tanggal_awal') }}">
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Tanggal Akhir</label>
+                                <input type="date" name="tanggal_akhir" class="form-control"
+                                    value="{{ request('tanggal_akhir') }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{{ route('history.pencabutan.index') }}" class="btn btn-outline-secondary">Reset</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-filter-alt me-1"></i> Terapkan Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 @endsection

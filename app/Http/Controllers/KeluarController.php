@@ -40,12 +40,26 @@ class KeluarController extends Controller
     }
 
     // FILTER TANGGAL
-    if ($request->tanggal_awal) {
-      $query->whereDate('tgl_keluar', '>=', $request->tanggal_awal);
+    if ($request->filled('tanggal_awal')) {
+      $tglAwal = $request->tanggal_awal;
+      $query->where(function ($q) use ($tglAwal) {
+        $q->whereDate('tgl_keluar', '>=', $tglAwal)
+          ->orWhere(function ($sub) use ($tglAwal) {
+            $sub->whereNull('tgl_keluar')
+              ->whereDate('created_at', '>=', $tglAwal);
+          });
+      });
     }
 
-    if ($request->tanggal_akhir) {
-      $query->whereDate('tgl_keluar', '<=', $request->tanggal_akhir);
+    if ($request->filled('tanggal_akhir')) {
+      $tglAkhir = $request->tanggal_akhir;
+      $query->where(function ($q) use ($tglAkhir) {
+        $q->whereDate('tgl_keluar', '<=', $tglAkhir)
+          ->orWhere(function ($sub) use ($tglAkhir) {
+            $sub->whereNull('tgl_keluar')
+              ->whereDate('created_at', '<=', $tglAkhir);
+          });
+      });
     }
     // FILTER KATEGORI
     if ($request->filled('kategori_id')) {
@@ -93,12 +107,26 @@ class KeluarController extends Controller
       $query->where('perusahaan_id', $request->perusahaan_id);
     }
 
-    if ($request->tanggal_awal) {
-      $query->whereDate('tgl_keluar', '>=', $request->tanggal_awal);
+    if ($request->filled('tanggal_awal')) {
+      $tglAwal = $request->tanggal_awal;
+      $query->where(function ($q) use ($tglAwal) {
+        $q->whereDate('tgl_keluar', '>=', $tglAwal)
+          ->orWhere(function ($sub) use ($tglAwal) {
+            $sub->whereNull('tgl_keluar')
+              ->whereDate('created_at', '>=', $tglAwal);
+          });
+      });
     }
 
-    if ($request->tanggal_akhir) {
-      $query->whereDate('tgl_keluar', '<=', $request->tanggal_akhir);
+    if ($request->filled('tanggal_akhir')) {
+      $tglAkhir = $request->tanggal_akhir;
+      $query->where(function ($q) use ($tglAkhir) {
+        $q->whereDate('tgl_keluar', '<=', $tglAkhir)
+          ->orWhere(function ($sub) use ($tglAkhir) {
+            $sub->whereNull('tgl_keluar')
+              ->whereDate('created_at', '<=', $tglAkhir);
+          });
+      });
     }
     // FILTER KATEGORI
     if ($request->filled('kategori_id')) {

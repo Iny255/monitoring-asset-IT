@@ -35,11 +35,25 @@ class HistoryPemakaianController extends Controller
 
     // FILTER TANGGAL
     if ($request->filled('tanggal_awal')) {
-      $query->whereDate('tgl_keluar', '>=', $request->tanggal_awal);
+      $tglAwal = $request->tanggal_awal;
+      $query->where(function ($q) use ($tglAwal) {
+        $q->whereDate('tgl_keluar', '>=', $tglAwal)
+          ->orWhere(function ($sub) use ($tglAwal) {
+            $sub->whereNull('tgl_keluar')
+              ->whereDate('created_at', '>=', $tglAwal);
+          });
+      });
     }
 
     if ($request->filled('tanggal_akhir')) {
-      $query->whereDate('tgl_keluar', '<=', $request->tanggal_akhir);
+      $tglAkhir = $request->tanggal_akhir;
+      $query->where(function ($q) use ($tglAkhir) {
+        $q->whereDate('tgl_keluar', '<=', $tglAkhir)
+          ->orWhere(function ($sub) use ($tglAkhir) {
+            $sub->whereNull('tgl_keluar')
+              ->whereDate('created_at', '<=', $tglAkhir);
+          });
+      });
     }
 
     // FILTER KATEGORI
@@ -130,11 +144,25 @@ class HistoryPemakaianController extends Controller
     }
 
     if ($request->filled('tanggal_awal')) {
-      $query->whereDate('tgl_keluar', '>=', $request->tanggal_awal);
+      $tglAwal = $request->tanggal_awal;
+      $query->where(function ($q) use ($tglAwal) {
+        $q->whereDate('tgl_keluar', '>=', $tglAwal)
+          ->orWhere(function ($sub) use ($tglAwal) {
+            $sub->whereNull('tgl_keluar')
+              ->whereDate('created_at', '>=', $tglAwal);
+          });
+      });
     }
 
     if ($request->filled('tanggal_akhir')) {
-      $query->whereDate('tgl_keluar', '<=', $request->tanggal_akhir);
+      $tglAkhir = $request->tanggal_akhir;
+      $query->where(function ($q) use ($tglAkhir) {
+        $q->whereDate('tgl_keluar', '<=', $tglAkhir)
+          ->orWhere(function ($sub) use ($tglAkhir) {
+            $sub->whereNull('tgl_keluar')
+              ->whereDate('created_at', '<=', $tglAkhir);
+          });
+      });
     }
 
     if ($request->filled('kategori_id')) {
@@ -193,11 +221,25 @@ class HistoryPemakaianController extends Controller
     }
 
     if ($request->filled('tanggal_awal')) {
-      $query->whereDate('tgl_keluar', '>=', $request->tanggal_awal);
+      $tglAwal = $request->tanggal_awal;
+      $query->where(function ($q) use ($tglAwal) {
+        $q->whereDate('tgl_keluar', '>=', $tglAwal)
+          ->orWhere(function ($sub) use ($tglAwal) {
+            $sub->whereNull('tgl_keluar')
+              ->whereDate('created_at', '>=', $tglAwal);
+          });
+      });
     }
 
     if ($request->filled('tanggal_akhir')) {
-      $query->whereDate('tgl_keluar', '<=', $request->tanggal_akhir);
+      $tglAkhir = $request->tanggal_akhir;
+      $query->where(function ($q) use ($tglAkhir) {
+        $q->whereDate('tgl_keluar', '<=', $tglAkhir)
+          ->orWhere(function ($sub) use ($tglAkhir) {
+            $sub->whereNull('tgl_keluar')
+              ->whereDate('created_at', '<=', $tglAkhir);
+          });
+      });
     }
 
     if ($request->filled('kategori_id')) {

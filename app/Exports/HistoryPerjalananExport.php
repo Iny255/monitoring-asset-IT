@@ -32,14 +32,33 @@ class HistoryPerjalananExport implements FromCollection, WithHeadings, ShouldAut
                 }
             }
 
+            // Format Aktivitas
+            $aktivitas = $item['aktivitas'] ?? '-';
+            if ($aktivitas === 'MUTASI') {
+                $aktivitas = !empty($item['is_antar_perusahaan']) ? 'MUTASI ANTAR PT' : 'MUTASI INTERNAL';
+            }
+
+            // Format Pengguna Terakhir
+            $penggunaTerakhir = $item['user_baru'] ?? $item['user_lama'] ?? '-';
+
+            // Format Lokasi & Perusahaan
+            $lokasiPerusahaan = ($item['perusahaan'] ?? '-') . ' - ' . ($item['lokasi_baru'] ?? $item['lokasi_lama'] ?? '-');
+            if (($item['aktivitas'] ?? '') === 'MUTASI') {
+                if (!empty($item['is_antar_perusahaan'])) {
+                    $lokasiPerusahaan = ($item['perusahaan_asal'] ?? '-') . ' [' . ($item['lokasi_lama'] ?? '-') . '] -> ' . ($item['perusahaan_tujuan'] ?? '-') . ' [' . ($item['lokasi_baru'] ?? '-') . ']';
+                } else {
+                    $lokasiPerusahaan = ($item['perusahaan'] ?? '-') . ' (' . ($item['lokasi_lama'] ?? '-') . ' -> ' . ($item['lokasi_baru'] ?? '-') . ')';
+                }
+            }
+
             return [
                 'No' => $index + 1,
                 'Tanggal' => $tanggal,
                 'Kode Aset' => $item['kode_aset'] ?? '-',
                 'No Inventaris' => $item['inventaris'] ?? '-',
-                'Aktivitas' => $item['aktivitas'] ?? '-',
-                'User Baru' => $item['user_baru'] ?? $item['user_lama'] ?? '-',
-                'Lokasi Baru' => $item['lokasi_baru'] ?? $item['lokasi_lama'] ?? '-',
+                'Aktivitas' => $aktivitas,
+                'Pengguna Terakhir' => $penggunaTerakhir,
+                'Lokasi & Perusahaan' => $lokasiPerusahaan,
                 'Hak Akses' => $item['hak_akses'] ?? '-',
                 'Keterangan' => $item['keterangan'] ?? '-',
                 'Petugas' => $item['petugas'] ?? '-',
@@ -55,8 +74,8 @@ class HistoryPerjalananExport implements FromCollection, WithHeadings, ShouldAut
             'KODE ASET',
             'NO INVENTARIS',
             'AKTIVITAS',
-            'USER BARU',
-            'LOKASI BARU',
+            'PENGGUNA TERAKHIR',
+            'LOKASI & PERUSAHAAN',
             'HAK AKSES',
             'KETERANGAN',
             'PETUGAS',

@@ -106,6 +106,26 @@
             </div>
         </div>
 
+        <x-company-filter-banner />
+
+        @if(request()->anyFilled(['tanggal_awal', 'tanggal_akhir', 'perusahaan_id', 'lokasi_id', 'kategori_id', 'status', 'karyawan_id', 'search', 'processor', 'ram', 'system', 'tahun', 'merek', 'type']))
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge bg-label-primary px-3 py-2">
+                    <i class="bx bx-filter-alt me-1"></i> Filter Aktif
+                    @if(request('tanggal_awal') && request('tanggal_akhir'))
+                        : {{ \Carbon\Carbon::parse(request('tanggal_awal'))->format('d-m-Y') }} s/d {{ \Carbon\Carbon::parse(request('tanggal_akhir'))->format('d-m-Y') }}
+                    @elseif(request('tanggal_awal'))
+                        : Mulai {{ \Carbon\Carbon::parse(request('tanggal_awal'))->format('d-m-Y') }}
+                    @elseif(request('tanggal_akhir'))
+                        : Sampai {{ \Carbon\Carbon::parse(request('tanggal_akhir'))->format('d-m-Y') }}
+                    @endif
+                </span>
+                <a href="{{ route('maping.index') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bx bx-x me-1"></i> Reset Filter
+                </a>
+            </div>
+        @endif
+
         <div class="card shadow-sm border-0">
             <div class="card-body">
 
@@ -246,10 +266,11 @@
                                     </td>
 
                                     {{-- TANGGAL DIGUNAKAN --}}
-                                    <td class="text-center">
-
-                                        {{ \Carbon\Carbon::parse($maping->tanggal_digunakan)->format('d-m-Y') }}
-
+                                    <td class="text-center font-monospace">
+                                        @php
+                                            $tglTransaksi = $maping->tanggal_digunakan ?? $maping->keluar?->tgl_keluar ?? $maping->created_at;
+                                        @endphp
+                                        {{ $tglTransaksi ? \Carbon\Carbon::parse($tglTransaksi)->format('d-m-Y') : '-' }}
                                     </td>
 
                                     {{-- STATUS --}}
@@ -302,9 +323,7 @@
                                     {{-- PERUSAHAAN --}}
                                     @if (auth()->user()->role == 'super_admin')
                                         <td>
-
-                                            {{ strtoupper($maping->perusahaan->nama_perusahaan ?? '-') }}
-
+                                            <x-company-badge :perusahaan="$maping->perusahaan" />
                                         </td>
                                     @endif
 
@@ -608,7 +627,7 @@
                                 <div class="col-md-4 mb-3">
 
                                     <label class="form-label">
-                                        Dari Tanggal Digunakan
+                                        Dari Tanggal Transaksi
                                     </label>
 
                                     <input type="date" name="tanggal_awal" class="form-control"
@@ -620,7 +639,7 @@
                                 <div class="col-md-4 mb-3">
 
                                     <label class="form-label">
-                                        Sampai Tanggal Digunakan
+                                        Sampai Tanggal Transaksi
                                     </label>
 
                                     <input type="date" name="tanggal_akhir" class="form-control"

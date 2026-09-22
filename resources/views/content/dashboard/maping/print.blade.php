@@ -121,6 +121,19 @@
             {{ $namaPerusahaan ?? 'SEMBILAN GROUP' }}
         </h4>
 
+        @if(request('tanggal_awal') || request('tanggal_akhir'))
+            <p style="text-align: center; margin: -10px 0 15px 0; font-size: 11px; color: #444;">
+                <strong>Periode Transaksi:</strong>
+                @if(request('tanggal_awal') && request('tanggal_akhir'))
+                    {{ \Carbon\Carbon::parse(request('tanggal_awal'))->format('d-m-Y') }} s/d {{ \Carbon\Carbon::parse(request('tanggal_akhir'))->format('d-m-Y') }}
+                @elseif(request('tanggal_awal'))
+                    Mulai {{ \Carbon\Carbon::parse(request('tanggal_awal'))->format('d-m-Y') }}
+                @else
+                    Sampai {{ \Carbon\Carbon::parse(request('tanggal_akhir'))->format('d-m-Y') }}
+                @endif
+            </p>
+        @endif
+
     </div>
 
     @php
@@ -270,6 +283,14 @@
 
                         <strong>Warna</strong> :
                         {{ $m->keluar->inventaris->dataAset->warna ?? '-' }}
+
+                        <br>
+
+                        <strong>Tgl Transaksi</strong> :
+                        @php
+                            $tglTransaksi = $m->tanggal_digunakan ?? $m->keluar?->tgl_keluar ?? $m->created_at;
+                        @endphp
+                        {{ $tglTransaksi ? \Carbon\Carbon::parse($tglTransaksi)->format('d-m-Y') : '-' }}
 
                     </td>
 

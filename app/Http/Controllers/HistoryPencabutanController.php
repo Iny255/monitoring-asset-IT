@@ -33,8 +33,18 @@ class HistoryPencabutanController extends Controller
         |--------------------------------------------------------------------------
         */
 
-    if ($request->filled('tanggal_awal') && $request->filled('tanggal_akhir')) {
-      $query->whereBetween('tanggal_pencabutan', [$request->tanggal_awal, $request->tanggal_akhir]);
+    if ($request->filled('tanggal_awal')) {
+      $query->where(function ($q) use ($request) {
+        $q->whereDate('tanggal_pencabutan', '>=', $request->tanggal_awal)
+          ->orWhere(fn($sub) => $sub->whereNull('tanggal_pencabutan')->whereDate('created_at', '>=', $request->tanggal_awal));
+      });
+    }
+
+    if ($request->filled('tanggal_akhir')) {
+      $query->where(function ($q) use ($request) {
+        $q->whereDate('tanggal_pencabutan', '<=', $request->tanggal_akhir)
+          ->orWhere(fn($sub) => $sub->whereNull('tanggal_pencabutan')->whereDate('created_at', '<=', $request->tanggal_akhir));
+      });
     }
 
     /*
@@ -90,11 +100,17 @@ class HistoryPencabutanController extends Controller
     */
 
     if ($request->filled('tanggal_awal')) {
-      $query->whereDate('tanggal_pencabutan', '>=', $request->tanggal_awal);
+      $query->where(function ($q) use ($request) {
+        $q->whereDate('tanggal_pencabutan', '>=', $request->tanggal_awal)
+          ->orWhere(fn($sub) => $sub->whereNull('tanggal_pencabutan')->whereDate('created_at', '>=', $request->tanggal_awal));
+      });
     }
 
     if ($request->filled('tanggal_akhir')) {
-      $query->whereDate('tanggal_pencabutan', '<=', $request->tanggal_akhir);
+      $query->where(function ($q) use ($request) {
+        $q->whereDate('tanggal_pencabutan', '<=', $request->tanggal_akhir)
+          ->orWhere(fn($sub) => $sub->whereNull('tanggal_pencabutan')->whereDate('created_at', '<=', $request->tanggal_akhir));
+      });
     }
 
     /*

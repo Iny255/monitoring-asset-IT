@@ -7,6 +7,8 @@ use App\Models\Perusahaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+
 class KategoriController extends Controller
 {
   /**
@@ -18,42 +20,66 @@ class KategoriController extends Controller
     $search = $request->search;
     $perusahaanId = $request->perusahaan_id;
 
-    $query = Kategori::with('perusahaan');
+    $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+    $isGrouped = ($user->role === 'super_admin' && empty($perusahaanId));
 
-    if ($user->role !== 'super_admin') {
-      $query->where('perusahaan_id', $user->id_perusahaan);
-    } elseif ($perusahaanId) {
-      $query->where('perusahaan_id', $perusahaanId);
+    if ($isGrouped) {
+      $query = Kategori::select(
+          'kategoris.nama_barang',
+          DB::raw('MIN(kategoris.kode_barang) as kode_barang'),
+          DB::raw('MIN(kategoris.id) as id'),
+          DB::raw('COUNT(DISTINCT kategoris.perusahaan_id) as total_perusahaan'),
+          DB::raw('GROUP_CONCAT(DISTINCT perusahaans.nama_perusahaan ORDER BY perusahaans.nama_perusahaan ASC SEPARATOR "||") as daftar_perusahaan')
+        )
+        ->leftJoin('perusahaans', 'perusahaans.id', '=', 'kategoris.perusahaan_id')
+        ->groupBy('kategoris.nama_barang');
+
+      if ($search) {
+        $query->where(function ($q) use ($search) {
+          $q->where('kategoris.nama_barang', 'like', "%{$search}%")
+            ->orWhere('kategoris.kode_barang', 'like', "%{$search}%");
+        });
+      }
+
+      $kategoris = $query->orderBy('kategoris.nama_barang', 'asc')
+        ->paginate(10)
+        ->appends($request->query());
+    } else {
+      $query = Kategori::with('perusahaan');
+
+      if ($user->role !== 'super_admin') {
+        $query->where('perusahaan_id', $user->id_perusahaan);
+      } elseif ($perusahaanId) {
+        $query->where('perusahaan_id', $perusahaanId);
+      }
+
+      if ($search) {
+        $query->where(function ($q) use ($search) {
+          $q->where('nama_barang', 'like', "%{$search}%")
+            ->orWhere('kode_barang', 'like', "%{$search}%");
+        });
+      }
+
+      $kategoris = $query->latest()->paginate(10)->appends($request->query());
     }
 
-    if ($search) {
-      $query->where(function ($q) use ($search) {
-        $q->where('nama_barang', 'like', "%{$search}%")
-          ->orWhere('kode_barang', 'like', "%{$search}%");
-      });
-    }
-
-    $kategoris = $query->latest()->paginate(10)->appends($request->query());
-
-    $perusahaans = Perusahaan::all();
-
-    return view('content.dashboard.aset.index', compact('kategoris', 'perusahaans', 'perusahaanId'));
+    return view('content.dashboard.aset.index', compact('kategoris', 'perusahaans', 'perusahaanId', 'isGrouped'));
   }
+
   public function detailPerusahaan(Request $request)
-{
+  {
     $request->validate([
-        'kode_barang' => 'required',
-        'nama_barang' => 'required',
+      'nama_barang' => 'required',
     ]);
 
     $data = Kategori::with('perusahaan')
-        ->where('kode_barang', $request->kode_barang)
-        ->where('nama_barang', $request->nama_barang)
-        ->orderBy('perusahaan_id')
-        ->get();
+      ->withCount('dataAsets')
+      ->where('nama_barang', $request->nama_barang)
+      ->orderBy('perusahaan_id')
+      ->get();
 
     return response()->json($data);
-}
+  }
 
   /**
    * Store a newly created resource in storage.
@@ -142,8 +168,12 @@ class KategoriController extends Controller
   public function destroy(int $id)
   {
     $kategori = Kategori::findOrFail($id);
-    $kategori->delete();
-
-    return back()->with('success', 'Data berhasil dihapus.');
+    try {
+      $kategori->delete();
+      return back()->with('success', 'Data berhasil dihapus.');
+    } catch (\Exception $e) {
+      Log::error($e->getMessage());
+      return back()->with('error', 'Gagal menghapus: Kategori ini masih digunakan pada data merek/tipe atau transaksi aset.');
+    }
   }
 }

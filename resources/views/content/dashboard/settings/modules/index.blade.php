@@ -34,6 +34,8 @@
         </div>
     @endif
 
+    <x-company-filter-banner />
+
     {{-- CARD 1: Role Pengelola Setting --}}
     <div class="card mb-4 shadow-sm border-0">
         <div class="card-header bg-label-primary py-3 d-flex justify-content-between align-items-center flex-wrap">

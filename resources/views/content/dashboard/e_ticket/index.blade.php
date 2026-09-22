@@ -34,7 +34,10 @@
                         <small class="text-muted">Kelola pengajuan tiket kendala IT, penanganan, dan penyelesaian masalah</small>
                     </div>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
+                        <i class="bx bx-filter-alt me-1"></i> Filter
+                    </button>
                     @if (in_array(Auth::user()->role, ['petugas', 'super_admin']))
                         <a href="{{ route('ticket-categories.index') }}" class="btn btn-outline-secondary">
                             <i class="bi bi-sliders me-1"></i> Kategori & SLA
@@ -47,6 +50,8 @@
             </div>
         </div>
     </div>
+
+    <x-company-filter-banner />
 
     {{-- STATS CARDS --}}
     <div class="row g-3 mb-4">
@@ -100,73 +105,19 @@
         </div>
     </div>
 
-    {{-- FILTER & TABLE CARD --}}
-    <div class="card border-0 shadow-sm">
-        <div class="card-body border-bottom">
-            <form action="{{ route('e-ticket.index') }}" method="GET">
-                <div class="row g-2">
-                    <div class="{{ auth()->user()->role === 'super_admin' ? 'col-md-3' : 'col-md-4' }}">
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0"><i class="bi bi-search"></i></span>
-                            <input type="text" name="search" class="form-control bg-light border-start-0" 
-                                   placeholder="Cari No Tiket, Judul, Pelapor..." value="{{ request('search') }}">
-                        </div>
-                    </div>
-
-                    @if (auth()->user()->role === 'super_admin')
-                        <div class="col-md-2">
-                            <select name="perusahaan_id" class="form-select bg-light">
-                                <option value="">-- Semua Perusahaan --</option>
-                                @foreach ($perusahaans as $pt)
-                                    <option value="{{ $pt->id }}" {{ request('perusahaan_id') == $pt->id ? 'selected' : '' }}>
-                                        {{ $pt->nama_perusahaan }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    @endif
-
-                    <div class="col-md-2">
-                        <select name="status" class="form-select bg-light">
-                            <option value="">-- Semua Status --</option>
-                            <option value="open" {{ request('status') == 'open' ? 'selected' : '' }}>Open</option>
-                            <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>In Progress</option>
-                            <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
-                            <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed</option>
-                            <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <select name="prioritas" class="form-select bg-light">
-                            <option value="">-- Semua Prioritas --</option>
-                            <option value="low" {{ request('prioritas') == 'low' ? 'selected' : '' }}>Low</option>
-                            <option value="medium" {{ request('prioritas') == 'medium' ? 'selected' : '' }}>Medium</option>
-                            <option value="high" {{ request('prioritas') == 'high' ? 'selected' : '' }}>High</option>
-                            <option value="urgent" {{ request('prioritas') == 'urgent' ? 'selected' : '' }}>Urgent</option>
-                        </select>
-                    </div>
-                    <div class="col-md-2">
-                        <select name="category_id" class="form-select bg-light">
-                            <option value="">-- Semua Kategori --</option>
-                            @foreach ($categories as $cat)
-                                <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
-                                    {{ $cat->nama_kategori }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-1 d-flex gap-1">
-                        <button type="submit" class="btn btn-primary w-100 px-2" title="Filter">
-                            <i class="bi bi-funnel"></i>
-                        </button>
-                        <a href="{{ route('e-ticket.index') }}" class="btn btn-outline-secondary px-2" title="Reset">
-                            <i class="bi bi-arrow-counterclockwise"></i>
-                        </a>
-                    </div>
-                </div>
-            </form>
+    @if(request()->anyFilled(['search', 'perusahaan_id', 'status', 'prioritas', 'category_id']))
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <span class="badge bg-label-primary px-3 py-2">
+                <i class="bx bx-filter-alt me-1"></i> Filter Aktif
+            </span>
+            <a href="{{ route('e-ticket.index') }}" class="btn btn-sm btn-outline-secondary">
+                <i class="bx bx-x me-1"></i> Reset Filter
+            </a>
         </div>
+    @endif
+
+    {{-- TABLE CARD --}}
+    <div class="card border-0 shadow-sm">
 
         {{-- DESKTOP TABLE TIKET --}}
         <div class="table-responsive d-none d-md-block">
@@ -197,7 +148,7 @@
                                 <small class="text-muted">{{ $tkt->created_at->format('d/m/Y H:i') }}</small>
                             </td>
                             <td>
-                                <span class="badge bg-label-secondary">{{ $tkt->perusahaan->nama_perusahaan ?? '-' }}</span>
+                                <x-company-badge :perusahaan="$tkt->perusahaan" />
                             </td>
                             <td>
                                 <div class="fw-semibold text-truncate" style="max-width: 250px;" title="{{ $tkt->judul }}">
@@ -263,7 +214,7 @@
                                 @endif
                             </td>
                             <td class="text-center">
-                                <a href="{{ route('e-ticket.show', $tkt->id) }}" class="btn btn-sm btn-icon btn-label-primary" title="Detail & Penanganan">
+                                <a href="{{ route('e-ticket.show', $tkt->id) }}" class="btn btn-sm btn-icon btn-outline-primary" title="Detail & Penanganan">
                                     <i class="bi bi-eye-fill"></i>
                                 </a>
                             </td>
@@ -317,6 +268,10 @@
                         </div>
                         <hr class="my-2">
                         <div class="row g-2 mb-3">
+                            <div class="col-12 mb-1">
+                                <small class="text-muted d-block mb-1">Perusahaan:</small>
+                                <x-company-badge :perusahaan="$tkt->perusahaan" size="small" />
+                            </div>
                             <div class="col-6">
                                 <small class="text-muted d-block mb-1">Kategori:</small>
                                 <span class="badge bg-label-info"><i class="bi bi-tag me-1"></i>{{ $tkt->category->nama_kategori ?? '-' }}</span>
@@ -483,6 +438,90 @@
                     <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
                     <button type="submit" class="btn btn-primary">
                         <i class="bi bi-send me-1"></i> Submit Tiket Helpdesk
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+{{-- Modal Filter --}}
+<div class="modal fade" id="modalFilter" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bx bx-filter-alt me-2 text-primary"></i> Filter Helpdesk E-Ticket
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('e-ticket.index') }}" method="GET">
+                <div class="modal-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Pencarian</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bx bx-search"></i></span>
+                                <input type="text" name="search" class="form-control" 
+                                       placeholder="Cari No Tiket, Judul, Pelapor..." value="{{ request('search') }}">
+                            </div>
+                        </div>
+
+                        @if (auth()->user()->role === 'super_admin')
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Perusahaan</label>
+                                <select name="perusahaan_id" class="form-select">
+                                    <option value="">-- Semua Perusahaan --</option>
+                                    @foreach ($perusahaans as $pt)
+                                        <option value="{{ $pt->id }}" {{ request('perusahaan_id') == $pt->id ? 'selected' : '' }}>
+                                            {{ $pt->nama_perusahaan }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Status</label>
+                            <select name="status" class="form-select">
+                                <option value="">-- Semua Status --</option>
+                                <option value="open" {{ request('status') == 'open' ? 'selected' : '' }}>Open</option>
+                                <option value="in_progress" {{ request('status') == 'in_progress' ? 'selected' : '' }}>In Progress</option>
+                                <option value="pending" {{ request('status') == 'pending' ? 'selected' : '' }}>Pending</option>
+                                <option value="resolved" {{ request('status') == 'resolved' ? 'selected' : '' }}>Resolved</option>
+                                <option value="closed" {{ request('status') == 'closed' ? 'selected' : '' }}>Closed</option>
+                                <option value="rejected" {{ request('status') == 'rejected' ? 'selected' : '' }}>Rejected</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Prioritas</label>
+                            <select name="prioritas" class="form-select">
+                                <option value="">-- Semua Prioritas --</option>
+                                <option value="low" {{ request('prioritas') == 'low' ? 'selected' : '' }}>Low</option>
+                                <option value="medium" {{ request('prioritas') == 'medium' ? 'selected' : '' }}>Medium</option>
+                                <option value="high" {{ request('prioritas') == 'high' ? 'selected' : '' }}>High</option>
+                                <option value="urgent" {{ request('prioritas') == 'urgent' ? 'selected' : '' }}>Urgent</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Kategori</label>
+                            <select name="category_id" class="form-select">
+                                <option value="">-- Semua Kategori --</option>
+                                @foreach ($categories as $cat)
+                                    <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
+                                        {{ $cat->nama_kategori }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <a href="{{ route('e-ticket.index') }}" class="btn btn-outline-secondary">Reset</a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bx bx-filter-alt me-1"></i> Terapkan Filter
                     </button>
                 </div>
             </form>

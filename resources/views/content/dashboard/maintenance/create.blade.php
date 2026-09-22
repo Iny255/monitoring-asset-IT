@@ -276,7 +276,23 @@
 
                                 </label>
 
-                                <input type="text" class="form-control" name="vendor" value="{{ old('vendor') }}">
+                                <select name="vendor" id="vendor" class="form-select @error('vendor') is-invalid @enderror">
+                                    @if (isset($suppliers) && $suppliers->count() > 0)
+                                        <option value="">-- Pilih Vendor / Teknisi --</option>
+                                        @foreach ($suppliers as $supplier)
+                                            <option value="{{ $supplier->nama_supplier }}" {{ old('vendor') == $supplier->nama_supplier ? 'selected' : '' }}>
+                                                {{ $supplier->nama_supplier }}
+                                            </option>
+                                        @endforeach
+                                    @elseif (auth()->user()->role == 'super_admin' && (!isset($inventaris) || !$inventaris))
+                                        <option value="">-- Pilih Perusahaan Terlebih Dahulu --</option>
+                                    @else
+                                        <option value="">-- Vendor Tidak Tersedia --</option>
+                                    @endif
+                                </select>
+                                @error('vendor')
+                                    <div class="invalid-feedback">{{ $message }}</div>
+                                @enderror
 
                             </div>
 
@@ -594,6 +610,9 @@
 
                 let perusahaan = $(this).val();
 
+                // Reset vendor
+                $('#vendor').html('<option value="">Memuat Vendor...</option>');
+
                 // Reset kategori
                 $('#kategori_id').html(
                     '<option value="">-- Pilih Jenis Aset --</option>'
@@ -615,8 +634,26 @@
                 $('#info_status').html('-');
 
                 if (!perusahaan) {
+                    $('#vendor').html('<option value="">-- Pilih Perusahaan Terlebih Dahulu --</option>');
                     return;
                 }
+
+                // Load Vendor dari Master Supplier
+                let oldVendor = "{{ old('vendor') }}";
+                $.get('/dashboard/get-supplier/' + perusahaan, function(data) {
+                    let option = '<option value="">-- Pilih Vendor / Teknisi --</option>';
+                    if (data && data.length > 0) {
+                        $.each(data, function(i, item) {
+                            let isSelected = (oldVendor && oldVendor === item.nama_supplier) ? 'selected' : '';
+                            option += `<option value="${item.nama_supplier}" ${isSelected}>${item.nama_supplier}</option>`;
+                        });
+                    } else {
+                        option = '<option value="">Vendor tidak tersedia untuk perusahaan ini</option>';
+                    }
+                    $('#vendor').html(option);
+                }).fail(function() {
+                    $('#vendor').html('<option value="">Gagal memuat vendor</option>');
+                });
 
                 $.get('/dashboard/get-kategori/' + perusahaan, function(data) {
 
@@ -637,6 +674,22 @@
                 });
 
             });
+
+            // Load vendor jika perusahaan_id sudah terpilih sejak awal
+            if ($('#perusahaan_id').length && $('#perusahaan_id').val() && !$('#vendor option:not([value=""])').length) {
+                let initPerusahaan = $('#perusahaan_id').val();
+                let oldVendor = "{{ old('vendor') }}";
+                $.get('/dashboard/get-supplier/' + initPerusahaan, function(data) {
+                    let option = '<option value="">-- Pilih Vendor / Teknisi --</option>';
+                    if (data && data.length > 0) {
+                        $.each(data, function(i, item) {
+                            let isSelected = (oldVendor && oldVendor === item.nama_supplier) ? 'selected' : '';
+                            option += `<option value="${item.nama_supplier}" ${isSelected}>${item.nama_supplier}</option>`;
+                        });
+                    }
+                    $('#vendor').html(option);
+                });
+            }
 
 
 

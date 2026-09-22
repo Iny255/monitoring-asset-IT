@@ -246,9 +246,9 @@
                             </label>
 
                             <input type="text" class="form-control"
-                                value="{{ $maping->keluar->jenis_penerima == 'Perorangan'
-                                    ? optional($maping->karyawan)->nama_karyawan
-                                    : $maping->keluar->divisi_klr }}"
+                                value="{{ (($maping->jenis_penerima ?? $maping->keluar?->jenis_penerima) == 'Perorangan'
+                                    ? ($maping->karyawan?->nama_karyawan ?? $maping->keluar?->karyawan?->nama_karyawan ?? '-')
+                                    : ($maping->divisi ?? $maping->keluar?->divisi_klr ?? '-')) }} ({{ $maping->jenis_penerima ?? $maping->keluar?->jenis_penerima ?? 'Perorangan' }})"
                                 readonly>
 
                         </div>
@@ -454,20 +454,24 @@
 
                             </div>
                             {{-- ================================================= --}}
-                            {{-- JENIS PENERIMA --}}
+                            {{-- JENIS PENERIMA BARU --}}
                             {{-- ================================================= --}}
 
                             <div class="col-md-4">
 
                                 <label class="form-label">
-                                    Jenis Penerima
+                                    Jenis Penerima Baru
+                                    <span class="text-danger">*</span>
                                 </label>
 
-                                <input type="text" class="form-control" value="{{ $maping->keluar->jenis_penerima }}"
-                                    readonly>
-
-                                <input type="hidden" name="jenis_penerima" id="jenis_penerima"
-                                    value="{{ $maping->keluar->jenis_penerima }}">
+                                <select name="jenis_penerima" id="jenis_penerima" class="form-select" required>
+                                    <option value="Perorangan" {{ old('jenis_penerima', $maping->keluar->jenis_penerima) == 'Perorangan' ? 'selected' : '' }}>
+                                        Perorangan
+                                    </option>
+                                    <option value="Perdivisi" {{ old('jenis_penerima', $maping->keluar->jenis_penerima) == 'Perdivisi' ? 'selected' : '' }}>
+                                        Perdivisi
+                                    </option>
+                                </select>
 
                             </div>
 
@@ -501,11 +505,19 @@
                                     <span class="text-danger">*</span>
                                 </label>
 
-                                <select name="divisi" id="divisi" class="form-select">
+                                <div class="input-group">
+                                    <select name="divisi" id="divisi" class="form-select">
+                                        <option value="">Pilih Divisi</option>
+                                    </select>
+                                    <button class="btn btn-outline-primary" type="button" id="btnToggleManualDivisi" title="Ketik nama divisi jika tidak ada di daftar">
+                                        <i class="bx bx-edit"></i> Ketik Manual
+                                    </button>
+                                </div>
 
-                                    <option value="">Pilih Divisi</option>
-
-                                </select>
+                                <div id="wrapperManualDivisi" class="mt-2" style="display:none;">
+                                    <input type="text" id="divisi_manual" class="form-control" placeholder="Ketik nama divisi tujuan...">
+                                    <small class="text-muted"><i class="bx bx-info-circle me-1"></i>Ketik nama divisi baru jika tidak tersedia di pilihan daftar.</small>
+                                </div>
 
                             </div>
 
@@ -734,9 +746,9 @@
 
                                                     <td>
 
-                                                        {{ $maping->keluar->jenis_penerima == 'Perorangan'
-                                                            ? optional($maping->karyawan)->nama_karyawan
-                                                            : $maping->keluar->divisi_klr }}
+                                                        {{ (($maping->jenis_penerima ?? $maping->keluar?->jenis_penerima) == 'Perorangan'
+                                                            ? ($maping->karyawan?->nama_karyawan ?? $maping->keluar?->karyawan?->nama_karyawan ?? '-')
+                                                            : ($maping->divisi ?? $maping->keluar?->divisi_klr ?? '-')) }} ({{ $maping->jenis_penerima ?? $maping->keluar?->jenis_penerima ?? 'Perorangan' }})
 
                                                     </td>
 
@@ -1133,37 +1145,31 @@
 
             const perusahaanAsal = {{ $maping->id_perusahaan }};
 
-            const jenisPenerima = $('#jenis_penerima').val();
-
-
             /*=====================================================
             =            TOGGLE PENERIMA
             =====================================================*/
 
             function togglePenerima() {
+                let jenis = $('#jenis_penerima').val();
 
-                if (jenisPenerima == "Perorangan") {
-
+                if (jenis == "Perorangan") {
                     $('#karyawanArea').show();
-
                     $('#divisiArea').hide();
-
                     $('#searchUser').prop('required', true);
-
                     $('#divisi').prop('required', false);
-
+                    $('#divisi_manual').prop('required', false);
                 } else {
-
                     $('#karyawanArea').hide();
-
                     $('#divisiArea').show();
-
                     $('#searchUser').prop('required', false);
-
-                    $('#divisi').prop('required', true);
-
+                    if ($('#wrapperManualDivisi').is(':visible')) {
+                        $('#divisi').prop('required', false);
+                        $('#divisi_manual').prop('required', true);
+                    } else {
+                        $('#divisi').prop('required', true);
+                        $('#divisi_manual').prop('required', false);
+                    }
                 }
-
             }
 
 
@@ -1362,6 +1368,41 @@
 
             });
 
+            /*=====================================================
+            =            JENIS PENERIMA
+            =====================================================*/
+
+            $('#jenis_penerima').change(function() {
+                resetUser();
+                $('#divisi').val('');
+                $('#divisi_manual').val('');
+                $('#wrapperManualDivisi').hide();
+                $('#btnToggleManualDivisi').html('<i class="bx bx-edit"></i> Ketik Manual');
+                togglePenerima();
+                updatePreview();
+            });
+
+            /*=====================================================
+            =            DIVISI MANUAL TOGGLE
+            =====================================================*/
+
+            $('#btnToggleManualDivisi').on('click', function() {
+                if ($('#wrapperManualDivisi').is(':visible')) {
+                    $('#wrapperManualDivisi').slideUp(150);
+                    $('#divisi_manual').val('');
+                    $(this).html('<i class="bx bx-edit"></i> Ketik Manual');
+                } else {
+                    $('#wrapperManualDivisi').slideDown(150);
+                    $(this).html('<i class="bx bx-list-ul"></i> Pilih Daftar');
+                    $('#divisi').val('');
+                }
+                togglePenerima();
+                updatePreview();
+            });
+
+            $('#divisi_manual').on('input keyup', function() {
+                updatePreview();
+            });
 
             /*=====================================================
             =            LOAD PERTAMA
@@ -1602,22 +1643,25 @@
                 let penerima = '-';
 
                 if ($('#jenis_penerima').val() == 'Perorangan') {
-
-                    penerima = $('#searchUser').val();
-
+                    let userVal = $('#searchUser').val().trim();
+                    if (userVal) {
+                        penerima = userVal + ' (Perorangan)';
+                    }
                 } else {
+                    let divVal = '';
+                    if ($('#wrapperManualDivisi').is(':visible') && $('#divisi_manual').val().trim() !== '') {
+                        divVal = $('#divisi_manual').val().trim();
+                    } else if ($('#divisi').val()) {
+                        divVal = $('#divisi option:selected').text().trim();
+                    }
 
-                    penerima = $('#divisi option:selected').text();
-
+                    if (divVal && divVal !== 'Pilih Divisi' && divVal !== 'Tidak ada divisi' && divVal !== 'Loading...') {
+                        penerima = 'Divisi ' + divVal + ' (Perdivisi)';
+                    }
                 }
 
-                if (
-                    penerima == '' ||
-                    penerima == 'Pilih Divisi'
-                ) {
-
+                if (!penerima) {
                     penerima = '-';
-
                 }
 
                 $('#previewUser').text(penerima);
@@ -1680,14 +1724,29 @@
 
                 } else {
 
-                    if ($('#divisi').val() == '') {
+                    let isManual = $('#wrapperManualDivisi').is(':visible');
+                    let divVal = isManual ? $('#divisi_manual').val().trim() : $('#divisi').val();
+
+                    if (!divVal || divVal === '') {
 
                         Swal.fire({
                             icon: 'warning',
-                            title: 'Divisi belum dipilih'
+                            title: 'Divisi tujuan belum dipilih atau diisi'
                         });
 
                         return;
+                    }
+
+                    // Jika user mengisi secara manual, sinkronisasikan opsi ke <select name="divisi"> agar terkirim di POST
+                    if (isManual) {
+                        let exists = $('#divisi option').filter(function() {
+                            return $(this).val().toLowerCase() === divVal.toLowerCase();
+                        });
+                        if (exists.length) {
+                            $('#divisi').val(exists.val());
+                        } else {
+                            $('#divisi').append(new Option(divVal, divVal, true, true));
+                        }
                     }
 
                 }
@@ -1696,17 +1755,21 @@
 
                 if ($('#jenis_penerima').val() == 'Perorangan') {
 
-                    namaUser = $('#searchUser').val();
+                    namaUser = ($('#searchUser').val().trim() || '-') + ' (Perorangan)';
 
                 } else {
 
-                    namaUser = $('#divisi option:selected').text();
+                    let divLabel = $('#wrapperManualDivisi').is(':visible') 
+                        ? $('#divisi_manual').val().trim() 
+                        : $('#divisi option:selected').text().trim();
+                    namaUser = 'Divisi ' + divLabel + ' (Perdivisi)';
 
                 }
 
                 if (
                     namaUser == '' ||
-                    namaUser == 'Pilih Divisi'
+                    namaUser == 'Pilih Divisi' ||
+                    namaUser == 'Divisi  (Perdivisi)'
                 ) {
 
                     namaUser = '-';
@@ -1842,7 +1905,11 @@ Mutasi akan diproses sesuai data di atas.
 
             $('#id_lokasi').change(updatePreview);
 
+            $('#jenis_penerima').change(updatePreview);
+
             $('#divisi').change(updatePreview);
+
+            $('#divisi_manual').on('input keyup', updatePreview);
 
             $('#searchUser').keyup(updatePreview);
 

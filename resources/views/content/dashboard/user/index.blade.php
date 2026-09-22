@@ -21,7 +21,10 @@
                             <small class="text-muted">Kelola akun pengguna dan hak akses peran (Super Admin, Petugas, User/Karyawan)</small>
                         </div>
                     </div>
-                    <div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
+                            <i class="bx bx-filter-alt me-1"></i> Filter
+                        </button>
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
                             <i class="bx bx-user-plus me-1"></i> Tambah User
                         </button>
@@ -55,19 +58,21 @@
             </div>
         @endif
 
+        @if(request()->filled('search'))
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge bg-label-primary px-3 py-2">
+                    <i class="bx bx-filter-alt me-1"></i> Filter Aktif
+                </span>
+                <a href="{{ url('/dashboard/user') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bx bx-x me-1"></i> Reset Filter
+                </a>
+            </div>
+        @endif
+
+        <x-company-filter-banner />
+
         <div class="card border-0 shadow-sm">
             <div class="card-body">
-
-            <!-- SEARCH -->
-            <form method="GET" action="{{ url('/dashboard/user') }}" class="row mb-3">
-                <div class="col-md-8">
-                    <input type="text" name="search" class="form-control" placeholder="Cari username/email"
-                        value="{{ request('search') }}">
-                </div>
-                <div class="col-md-2">
-                    <button class="btn btn-primary">Cari</button>
-                </div>
-            </form>
 
             <!-- TABLE -->
             <div class="table-responsive">
@@ -80,7 +85,7 @@
                             <th>Role</th>
                             <th>Profil Karyawan</th>
                             <th>Perusahaan</th>
-                            <th>Action</th>
+                            <th class="text-center" width="130">Aksi</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -114,7 +119,7 @@
                                     @if (in_array($user->role, ['super_admin', '1', 1]) || !$user->id_perusahaan)
                                         <span class="badge bg-label-primary">Semua Perusahaan</span>
                                     @elseif ($user->perusahaan)
-                                        <strong>{{ $user->perusahaan->nama_perusahaan }}</strong>
+                                        <x-company-badge :perusahaan="$user->perusahaan" />
                                         @if ($user->perusahaan->tipe === 'Cabang' || $user->perusahaan->parent_id)
                                             <br>
                                             <small class="text-muted"><i class="bx bx-git-branch me-1"></i>Cabang {{ $user->perusahaan->parent->nama_perusahaan ?? '' }}</small>
@@ -127,32 +132,35 @@
                                     @endif
                                 </td>
 
-                                <td>
-                                    <!-- EDIT -->
-                                    <button class="btn btn-warning btn-sm"
-                                        onclick='openEditModal(
-                                    {{ $user->id }},
-                                    @json($user->username),
-                                    @json($user->name),
-                                    @json($user->email),
-                                    @json($user->role),
-                                    {{ $user->id_perusahaan ?? 'null' }},
-                                    {{ $user->karyawan_id ?? 'null' }}
-                                )'>
-                                        <i class="bx bx-edit-alt"></i>
-                                    </button>
+                                <td class="text-center">
+                                    <div class="d-flex justify-content-center gap-1">
+                                        <!-- DETAIL -->
+                                        @if (auth()->user()->role === 'super_admin')
+                                            <a href="{{ url('/dashboard/user/' . $user->id) }}" class="btn btn-sm btn-icon btn-outline-primary" title="Detail Pengguna">
+                                                <i class="bx bx-show"></i>
+                                            </a>
+                                        @endif
 
-                                    <!-- DELETE -->
-                                    <button class="btn btn-danger btn-sm" onclick="confirmDelete({{ $user->id }})">
-                                        <i class="bx bx-trash"></i>
-                                    </button>
+                                        <!-- EDIT -->
+                                        <button class="btn btn-sm btn-icon btn-outline-secondary"
+                                            title="Edit Pengguna"
+                                            onclick='openEditModal(
+                                        {{ $user->id }},
+                                        @json($user->username),
+                                        @json($user->name),
+                                        @json($user->email),
+                                        @json($user->role),
+                                        {{ $user->id_perusahaan ?? 'null' }},
+                                        {{ $user->karyawan_id ?? 'null' }}
+                                    )'>
+                                            <i class="bx bx-edit"></i>
+                                        </button>
 
-                                    <!-- DETAIL -->
-                                    @if (auth()->user()->role === 'super_admin')
-                                        <a href="{{ url('/dashboard/user/' . $user->id) }}" class="btn btn-primary btn-sm">
-                                            <i class="bx bx-show"></i>
-                                        </a>
-                                    @endif
+                                        <!-- DELETE -->
+                                        <button class="btn btn-sm btn-icon btn-outline-danger" title="Hapus Pengguna" onclick="confirmDelete({{ $user->id }})">
+                                            <i class="bx bx-trash"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         @endforeach
@@ -337,6 +345,38 @@
 
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- ================= MODAL FILTER ================= -->
+    <div class="modal fade" id="modalFilter" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bx bx-filter-alt me-2 text-primary"></i> Filter User Sistem
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="GET" action="{{ url('/dashboard/user') }}">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Pencarian</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bx bx-search"></i></span>
+                                <input type="text" name="search" class="form-control" placeholder="Cari username atau email..."
+                                    value="{{ request('search') }}">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{{ url('/dashboard/user') }}" class="btn btn-outline-secondary">Reset</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-filter-alt me-1"></i> Terapkan Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 

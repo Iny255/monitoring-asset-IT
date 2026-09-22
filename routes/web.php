@@ -54,6 +54,10 @@ Route::get('/maping/{id}', [MapingController::class, 'publicShow'])
   ->name('maping.public_show');
 
 Route::middleware(['auth'])->group(function () {
+  Route::get('/dashboard', function () {
+    return redirect(auth()->user()->getDashboardUrl());
+  })->name('dashboard');
+
   /*
     |--------------------------------------------------------------------------
     | SUPER ADMIN
@@ -106,6 +110,9 @@ Route::middleware(['auth'])->group(function () {
       'supplier.detailPerusahaan'
     );
     Route::resource('/dashboard/supplier', SupplierController::class);
+    Route::get('/dashboard/data-aset/detail-perusahaan', [DataAsetController::class, 'detailPerusahaan'])->name(
+      'data-aset.detailPerusahaan'
+    );
     Route::resource('/dashboard/data-aset', DataAsetController::class);
     Route::get('/dashboard/hak-akses/detail-perusahaan', [AccessController::class, 'detailPerusahaan'])->name(
       'hak-akses.detailPerusahaan'
@@ -344,8 +351,9 @@ Route::middleware(['auth'])->group(function () {
   | CHECKLIST & PERAWATAN DEVICE (ROOM-CENTRIC)
   |--------------------------------------------------------------------------
   */
-  Route::prefix('dashboard/checklist')->name('checklist.')->middleware(['role:petugas,super_admin'])->group(function () {
-    // Jadwal Mingguan
+  Route::prefix('dashboard/checklist')->name('checklist.')->middleware(['role:petugas,super_admin,teknisi'])->group(function () {
+    // Jadwal Rutin Mingguan
+    Route::post('jadwal/{id}/toggle', [ChecklistJadwalController::class, 'toggleStatus'])->name('jadwal.toggle');
     Route::resource('jadwal', ChecklistJadwalController::class);
 
     // Pelaksanaan Checklist Device
@@ -354,6 +362,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('pemeriksaan/{id}/mark-all-ok', [ChecklistPemeriksaanController::class, 'markAllOk'])->name('pemeriksaan.mark-all-ok');
     Route::post('pemeriksaan/{ruanganId}/device/{deviceId}/mark-ok', [ChecklistPemeriksaanController::class, 'markDeviceOk'])->name('pemeriksaan.device.mark-ok');
     Route::post('pemeriksaan/{ruanganId}/device/{deviceId}/update', [ChecklistPemeriksaanController::class, 'updateDevice'])->name('pemeriksaan.device.update');
+    Route::get('pemeriksaan/{id}/sync-status', [ChecklistPemeriksaanController::class, 'syncStatus'])->name('pemeriksaan.sync-status');
     Route::get('pemeriksaan/{id}/cetak', [ChecklistPemeriksaanController::class, 'cetak'])->name('pemeriksaan.cetak');
 
     // Master Item Pemeriksaan

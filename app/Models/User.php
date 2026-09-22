@@ -66,13 +66,53 @@ class User extends Authenticatable
 
   public function getDashboardUrl()
   {
-    $currentRole = is_numeric($this->role) ? ($this->roleDefinition?->name ?? $this->role) : $this->role;
-    return match ($currentRole) {
-      'super_admin', '1' => '/dashboard/superadmin',
-      'petugas', '2' => '/dashboard/petugas',
-      'user', '3', 'karyawan', '4' => '/dashboard/e-ticket',
-      default => '/dashboard/e-ticket',
-    };
+    $rawRole = (string) ($this->attributes['role'] ?? $this->role ?? '');
+    $currentRole = is_numeric($rawRole) ? ($this->roleDefinition?->name ?? $rawRole) : $rawRole;
+    $normalizedRole = strtolower(str_replace([' ', '-'], '_', trim($currentRole)));
+
+    if (in_array($normalizedRole, ['super_admin', '1', 'superadmin']) || in_array($rawRole, ['1', 1])) {
+      return '/dashboard/superadmin';
+    }
+
+    if ($normalizedRole === 'petugas' || $rawRole === '2' || in_array($normalizedRole, ['petugas_it_support'])) {
+      return '/dashboard/petugas';
+    }
+
+    // Cek role dinamis dari relasi roleDefinition
+    $roleDef = $this->roleDefinition
+      ?: (\App\Models\Role::where('name', $currentRole)->first()
+        ?: (\App\Models\Role::whereRaw('LOWER(name) = ?', [strtolower($currentRole)])->first()
+          ?: (is_numeric($rawRole) ? \App\Models\Role::find((int) $rawRole) : null)));
+
+    if ($roleDef) {
+      if ($roleDef->name === 'super_admin' || $roleDef->can_manage_settings) {
+        return '/dashboard/superadmin';
+      }
+
+      // Cek apakah punya akses ke dashboard tertentu
+      if ($roleDef->hasModule('dashboard_petugas') || $roleDef->modules()->where('is_active', true)->where('url', 'dashboard/petugas')->exists()) {
+        return '/dashboard/petugas';
+      }
+
+      if ($roleDef->hasModule('dashboard_superadmin') || $roleDef->modules()->where('is_active', true)->where('url', 'dashboard/superadmin')->exists()) {
+        return '/dashboard/superadmin';
+      }
+
+      if ($roleDef->hasModule('dashboard_aset_saya') || $roleDef->modules()->where('is_active', true)->where('url', 'dashboard/aset-saya')->exists()) {
+        return '/dashboard/aset-saya';
+      }
+
+      $firstModule = $roleDef->modules()->where('is_active', true)->whereNotNull('url')->orderBy('order')->first();
+      if ($firstModule && $firstModule->url) {
+        return '/' . ltrim($firstModule->url, '/');
+      }
+    }
+
+    if (in_array($normalizedRole, ['user', 'karyawan', '3', '4'])) {
+      return '/dashboard/aset-saya';
+    }
+
+    return '/dashboard/aset-saya';
   }
 
   public function roleDefinition()

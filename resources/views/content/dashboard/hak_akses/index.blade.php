@@ -21,7 +21,10 @@
                             <small class="text-muted">Kelola master software, aplikasi, dan hak akses IT</small>
                         </div>
                     </div>
-                    <div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
+                            <i class="bx bx-filter-alt me-1"></i> Filter
+                        </button>
                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalTambah">
                             <i class="bx bx-plus me-1"></i> Tambah Hak Akses
                         </button>
@@ -45,141 +48,21 @@
             </div>
         @endif
 
+        <x-company-filter-banner />
+
+        @if(request()->anyFilled(['search', 'perusahaan', 'kategori', 'jenis', 'status']))
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge bg-label-primary px-3 py-2">
+                    <i class="bx bx-filter-alt me-1"></i> Filter Aktif
+                </span>
+                <a href="{{ route('hak-akses.index') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bx bx-x me-1"></i> Reset Filter
+                </a>
+            </div>
+        @endif
+
         <div class="card shadow-sm border-0">
             <div class="card-body">
-
-            <div class="card-body">
-
-                {{-- FILTER --}}
-                <form method="GET" class="row g-3 mb-4">
-
-                    <div class="col-md-4">
-
-                        <label class="form-label">
-                            Pencarian
-                        </label>
-
-                        <input type="text" name="search" class="form-control" placeholder="Cari nama hak akses..."
-                            value="{{ request('search') }}">
-
-                    </div>
-                    @if (auth()->user()->role == 'super_admin')
-                        <div class="col-md-3">
-                            <label class="form-label">Perusahaan</label>
-
-                            <select name="perusahaan" class="form-select">
-                                <option value="">Semua Perusahaan</option>
-
-                                @foreach ($perusahaans as $perusahaan)
-                                    <option value="{{ $perusahaan->id }}"
-                                        {{ request('perusahaan') == $perusahaan->id ? 'selected' : '' }}>
-                                        {{ $perusahaan->nama_perusahaan }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    @endif
-
-                    <div class="col-md-3">
-
-                        <label class="form-label">
-                            Kategori
-                        </label>
-
-                        <select name="kategori" class="form-select">
-
-                            <option value="">
-                                Semua
-                            </option>
-
-
-
-                            <option value="Aplikasi" {{ request('kategori') == 'Aplikasi' ? 'selected' : '' }}>
-
-                                Aplikasi
-
-                            </option>
-
-                            <option value="Hak Akses" {{ request('kategori') == 'Hak Akses' ? 'selected' : '' }}>
-
-                                Hak Akses
-
-                            </option>
-
-                        </select>
-
-                    </div>
-                    <div class="col-md-3">
-
-                        <label class="form-label">
-                            Jenis
-                        </label>
-
-                        <select name="jenis" class="form-select">
-
-                            <option value="">Semua</option>
-
-                            <option value="Software" {{ request('jenis') == 'Software' ? 'selected' : '' }}>
-                                Software
-                            </option>
-
-                            <option value="PPN" {{ request('jenis') == 'PPN' ? 'selected' : '' }}>
-                                PPN
-                            </option>
-
-                            <option value="NON PPN" {{ request('jenis') == 'NON PPN' ? 'selected' : '' }}>
-                                NON PPN
-                            </option>
-
-                        </select>
-
-                    </div>
-
-                    <div class="col-md-3">
-
-                        <label class="form-label">
-                            Status
-                        </label>
-
-                        <select name="status" class="form-select">
-
-                            <option value="">
-                                Semua
-                            </option>
-
-                            <option value="aktif" {{ request('status') == 'aktif' ? 'selected' : '' }}>
-
-                                Aktif
-
-                            </option>
-
-                            <option value="nonaktif" {{ request('status') == 'nonaktif' ? 'selected' : '' }}>
-
-                                Nonaktif
-
-                            </option>
-
-                        </select>
-
-                    </div>
-
-                    <div class="col-md-2 d-flex align-items-end gap-2">
-
-                        <button class="btn btn-primary w-100">
-
-                            <i class="bx bx-search"></i>
-
-                        </button>
-
-                        <a href="{{ route('hak-akses.index') }}" class="btn btn-secondary">
-
-                            Reset
-
-                        </a>
-
-                    </div>
-
-                </form>
 
                 {{-- TABLE --}}
                 <div class="table-responsive">
@@ -231,7 +114,7 @@
                                     @if (auth()->user()->role == 'super_admin')
                                         @if (request('perusahaan'))
                                             <td>
-                                                {{ $access->perusahaan->nama_perusahaan }}
+                                                <x-company-badge :perusahaan="$access->perusahaan" />
                                             </td>
                                         @else
                                             <td class="text-center">
@@ -249,7 +132,7 @@
                                         @endif
                                     @else
                                         <td>
-                                            {{ $access->perusahaan->nama_perusahaan ?? '-' }}
+                                            <x-company-badge :perusahaan="$access->perusahaan" />
                                         </td>
                                     @endif
 
@@ -313,17 +196,18 @@
                                     @if (!(auth()->user()->role == 'super_admin' && empty(request('perusahaan'))))
                                         <td class="text-center">
 
-                                            <div class="d-flex justify-content-center gap-2">
+                                            <div class="d-flex justify-content-center gap-1">
 
-                                                <button type="button" class="btn btn-warning btn-sm btn-edit"
+                                                <button type="button" class="btn btn-sm btn-icon btn-outline-secondary btn-edit"
                                                     data-id="{{ $access->id }}"
                                                     data-perusahaan="{{ $access->id_perusahaan }}"
                                                     data-kategori="{{ $access->kategori }}"
                                                     data-jenis="{{ $access->jenis }}"
                                                     data-nama="{{ $access->nama_akses }}"
-                                                    data-status="{{ $access->status }}">
+                                                    data-status="{{ $access->status }}"
+                                                    title="Edit Hak Akses">
 
-                                                    <i class="bx bx-edit-alt"></i>
+                                                    <i class="bx bx-edit"></i>
 
                                                 </button>
 
@@ -336,8 +220,9 @@
 
                                                 </form>
 
-                                                <button type="button" class="btn btn-danger btn-sm btn-delete"
-                                                    data-id="{{ $access->id }}">
+                                                <button type="button" class="btn btn-sm btn-icon btn-outline-danger btn-delete"
+                                                    data-id="{{ $access->id }}"
+                                                    title="Hapus Hak Akses">
 
                                                     <i class="bx bx-trash"></i>
 
@@ -380,6 +265,81 @@
         </div>
 
     </div>
+
+    <!-- ================= MODAL FILTER ================= -->
+    <div class="modal fade" id="modalFilter" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bx bx-filter-alt me-2 text-primary"></i> Filter Hak Akses & Aplikasi
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="GET" action="{{ route('hak-akses.index') }}">
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Pencarian</label>
+                                <input type="text" name="search" class="form-control" placeholder="Cari nama hak akses..."
+                                    value="{{ request('search') }}">
+                            </div>
+
+                            @if (auth()->user()->role == 'super_admin')
+                                <div class="col-md-6">
+                                    <label class="form-label">Perusahaan</label>
+                                    <select name="perusahaan" class="form-select">
+                                        <option value="">Semua Perusahaan</option>
+                                        @foreach ($perusahaans as $perusahaan)
+                                            <option value="{{ $perusahaan->id }}"
+                                                {{ request('perusahaan') == $perusahaan->id ? 'selected' : '' }}>
+                                                {{ $perusahaan->nama_perusahaan }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                            @endif
+
+                            <div class="col-md-6">
+                                <label class="form-label">Kategori</label>
+                                <select name="kategori" class="form-select">
+                                    <option value="">Semua</option>
+                                    <option value="Aplikasi" {{ request('kategori') == 'Aplikasi' ? 'selected' : '' }}>Aplikasi</option>
+                                    <option value="Hak Akses" {{ request('kategori') == 'Hak Akses' ? 'selected' : '' }}>Hak Akses</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Jenis</label>
+                                <select name="jenis" class="form-select">
+                                    <option value="">Semua</option>
+                                    <option value="Software" {{ request('jenis') == 'Software' ? 'selected' : '' }}>Software</option>
+                                    <option value="PPN" {{ request('jenis') == 'PPN' ? 'selected' : '' }}>PPN</option>
+                                    <option value="NON PPN" {{ request('jenis') == 'NON PPN' ? 'selected' : '' }}>NON PPN</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="">Semua</option>
+                                    <option value="aktif" {{ request('status') == 'aktif' ? 'selected' : '' }}>Aktif</option>
+                                    <option value="nonaktif" {{ request('status') == 'nonaktif' ? 'selected' : '' }}>Nonaktif</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{{ route('hak-akses.index') }}" class="btn btn-outline-secondary">Reset</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-filter-alt me-1"></i> Terapkan Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- ================= MODAL TAMBAH ================= -->
     <div class="modal fade" id="modalTambah" tabindex="-1">
         <div class="modal-dialog">

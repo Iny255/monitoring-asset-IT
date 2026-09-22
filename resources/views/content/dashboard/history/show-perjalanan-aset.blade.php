@@ -44,13 +44,27 @@
                         No. Inventaris: {{ $first->no_inventaris ?? '-' }} • {{ $first->dataAset->kategori->nama_barang ?? '-' }} • {{ $first->dataAset->merek ?? '-' }} {{ $first->dataAset->type ?? '-' }} • {{ $first->perusahaan->nama_perusahaan ?? '-' }}
                     </div>
                 </div>
-                <div class="d-flex gap-2 flex-wrap">
-                    <a href="{{ route('history.perjalanan.cetak', array_merge(['id' => $id], request()->query())) }}" target="_blank" class="btn btn-danger">
-                        <i class="bx bxs-file-pdf me-1"></i> Cetak PDF
-                    </a>
-                    <a href="{{ route('history.perjalanan.export_excel', array_merge(['id' => $id], request()->query())) }}" class="btn btn-success">
-                        <i class="bx bxs-file-export me-1"></i> Export Excel
-                    </a>
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
+                        <i class="bx bx-filter-alt me-1"></i> Filter
+                    </button>
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bx bx-export me-1"></i> Export
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{{ route('history.perjalanan.export_excel', array_merge(['id' => $id], request()->query())) }}">
+                                    <i class="bx bxs-file-export me-2 text-success"></i> Export Excel
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('history.perjalanan.cetak', array_merge(['id' => $id], request()->query())) }}" target="_blank">
+                                    <i class="bx bxs-file-pdf me-2 text-danger"></i> Cetak PDF
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     <a href="{{ route('history.perjalanan.index') }}" class="btn btn-outline-secondary">
                         <i class="bx bx-arrow-back me-1"></i> Kembali
                     </a>
@@ -156,10 +170,21 @@
             </div>
         </div>
 
-        {{-- TIMELINE TABLE & FILTER --}}
+        @if(request()->anyFilled(['tanggal_awal', 'tanggal_akhir', 'aktivitas']))
+            <div class="d-flex align-items-center gap-2 mb-3">
+                <span class="badge bg-label-primary px-3 py-2">
+                    <i class="bx bx-filter-alt me-1"></i> Filter Aktif
+                </span>
+                <a href="{{ route('history.perjalanan.show', $id) }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bx bx-x me-1"></i> Reset Filter
+                </a>
+            </div>
+        @endif
+
+        {{-- TIMELINE TABLE --}}
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-white border-bottom py-3">
-                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-3">
+                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                     <h5 class="fw-bold mb-0 text-primary">
                         <i class="bx bx-time-five me-2"></i> Timeline Kronologis Perjalanan Unit
                     </h5>
@@ -167,46 +192,6 @@
                         <input type="text" id="searchTimeline" class="form-control" placeholder="Cari user, aktivitas, keterangan...">
                     </div>
                 </div>
-
-                {{-- FORM FILTER --}}
-                <form method="GET" action="{{ route('history.perjalanan.show', $id) }}">
-                    <div class="row g-3 align-items-end">
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">Dari Tanggal</label>
-                            <input type="date" name="tanggal_awal" class="form-control" value="{{ request('tanggal_awal') }}">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">Sampai Tanggal</label>
-                            <input type="date" name="tanggal_akhir" class="form-control" value="{{ request('tanggal_akhir') }}">
-                        </div>
-                        <div class="col-md-3">
-                            <label class="form-label fw-semibold">Aktivitas</label>
-                            <select name="aktivitas" class="form-select">
-                                <option value="">-- Semua Aktivitas --</option>
-                                <option value="MASUK" {{ request('aktivitas') == 'MASUK' ? 'selected' : '' }}>MASUK (Penerimaan)</option>
-                                <option value="KELUAR" {{ request('aktivitas') == 'KELUAR' ? 'selected' : '' }}>KELUAR (Pemakaian)</option>
-                                <option value="HAK AKSES" {{ request('aktivitas') == 'HAK AKSES' ? 'selected' : '' }}>HAK AKSES & APLIKASI</option>
-                                <option value="MUTASI" {{ request('aktivitas') == 'MUTASI' ? 'selected' : '' }}>MUTASI</option>
-                                <option value="MAINTENANCE" {{ request('aktivitas') == 'MAINTENANCE' ? 'selected' : '' }}>MAINTENANCE / SERVIS</option>
-                                <option value="PENCABUTAN" {{ request('aktivitas') == 'PENCABUTAN' ? 'selected' : '' }}>PENCABUTAN</option>
-                            </select>
-                        </div>
-                        <div class="col-md-3 d-flex gap-2">
-                            <button type="submit" class="btn btn-primary w-100">
-                                <i class="bx bx-search me-1"></i> Filter
-                            </button>
-                            <a href="{{ route('history.perjalanan.show', $id) }}" class="btn btn-label-secondary">
-                                Reset
-                            </a>
-                            <a href="{{ route('history.perjalanan.cetak', array_merge(['id' => $id], request()->query())) }}" target="_blank" class="btn btn-danger" title="Cetak PDF">
-                                <i class="bx bxs-file-pdf me-1"></i> PDF
-                            </a>
-                            <a href="{{ route('history.perjalanan.export_excel', array_merge(['id' => $id], request()->query())) }}" class="btn btn-success" title="Export Excel">
-                                <i class="bx bxs-file-export me-1"></i> Excel
-                            </a>
-                        </div>
-                    </div>
-                </form>
             </div>
 
             <div class="card-body p-0">
@@ -216,9 +201,9 @@
                             <tr>
                                 <th width="110">TANGGAL</th>
                                 <th width="140">KODE ASET</th>
-                                <th width="130">AKTIVITAS</th>
+                                <th width="140">AKTIVITAS</th>
                                 <th>USER ASET</th>
-                                <th>LOKASI</th>
+                                <th>LOKASI & PERUSAHAAN</th>
                                 <th>HAK AKSES</th>
                                 <th>KETERANGAN</th>
                                 <th width="120">PETUGAS</th>
@@ -231,12 +216,14 @@
                                         {{ $item['tanggal']->format('d-m-Y') }}
                                     </td>
                                     <td>
-                                        @if ($item['aktivitas'] == 'MUTASI' && !empty($item['kode_aset_lama']) && $item['kode_aset_lama'] != $item['kode_aset_baru'])
-                                            <div class="fw-bold text-primary">{{ $item['kode_aset_lama'] }}</div>
-                                            <div class="text-center my-1"><i class="bx bx-down-arrow-alt text-secondary"></i></div>
-                                            <div class="fw-bold text-success">{{ $item['kode_aset_baru'] }}</div>
+                                        @if ($item['aktivitas'] == 'MUTASI' && !empty($item['kode_aset_lama']) && !empty($item['kode_aset_baru']) && $item['kode_aset_lama'] != $item['kode_aset_baru'])
+                                            <div class="d-flex flex-column gap-1">
+                                                <span class="badge bg-label-secondary font-monospace">{{ $item['kode_aset_lama'] }}</span>
+                                                <div class="text-center my-0"><i class="bx bx-down-arrow-alt text-primary"></i></div>
+                                                <span class="badge bg-label-success font-monospace">{{ $item['kode_aset_baru'] }}</span>
+                                            </div>
                                         @else
-                                            <strong class="font-monospace">{{ $item['kode_aset'] }}</strong>
+                                            <span class="badge bg-label-dark font-monospace">{{ $item['kode_aset'] }}</span>
                                         @endif
                                     </td>
                                     <td class="text-center">
@@ -251,7 +238,11 @@
                                                 <span class="badge bg-dark badge-status"><i class="bx bx-key me-1"></i> HAK AKSES</span>
                                                 @break
                                             @case('MUTASI')
-                                                <span class="badge bg-warning text-dark badge-status"><i class="bx bx-transfer me-1"></i> MUTASI</span>
+                                                @if(!empty($item['is_antar_perusahaan']))
+                                                    <span class="badge bg-info text-white badge-status"><i class="bx bx-buildings me-1"></i> MUTASI ANTAR PT</span>
+                                                @else
+                                                    <span class="badge bg-warning text-dark badge-status"><i class="bx bx-transfer me-1"></i> MUTASI INTERNAL</span>
+                                                @endif
                                                 @break
                                             @case('MAINTENANCE')
                                                 <span class="badge bg-info badge-status"><i class="bx bx-wrench me-1"></i> SERVIS</span>
@@ -264,16 +255,64 @@
                                         @endswitch
                                     </td>
                                     <td>
-                                        <div class="fw-semibold text-dark"><i class="bx bx-user me-1"></i>{{ $item['user_baru'] ?? $item['user_lama'] ?? '-' }}</div>
+                                        @if ($item['aktivitas'] == 'MUTASI' && !empty($item['user_lama']) && !empty($item['user_baru']) && $item['user_lama'] != $item['user_baru'])
+                                            <div class="d-flex flex-column gap-1">
+                                                <div class="small text-muted text-decoration-line-through">
+                                                    <i class="bx bx-user-minus text-danger me-1"></i>{{ $item['user_lama'] }}
+                                                </div>
+                                                <div class="fw-bold text-dark">
+                                                    <i class="bx bx-user-check text-success me-1"></i>{{ $item['user_baru'] }}
+                                                </div>
+                                            </div>
+                                        @else
+                                            <div class="fw-semibold text-dark">
+                                                <i class="bx bx-user me-1 text-primary"></i>{{ $item['user_baru'] ?? $item['user_lama'] ?? '-' }}
+                                            </div>
+                                        @endif
                                     </td>
                                     <td>
-                                        <div class="text-dark"><i class="bx bx-map-pin me-1"></i>{{ $item['lokasi_baru'] ?? $item['lokasi_lama'] ?? '-' }}</div>
+                                        @if ($item['aktivitas'] == 'MUTASI' && !empty($item['is_antar_perusahaan']))
+                                            <div class="d-flex flex-column gap-1">
+                                                <div class="d-flex align-items-center flex-wrap gap-1">
+                                                    <span class="badge bg-label-secondary small"><i class="bx bx-buildings me-1"></i>{{ $item['perusahaan_asal'] }}</span>
+                                                    <i class="bx bx-right-arrow-alt text-primary"></i>
+                                                    <span class="badge bg-label-primary small"><i class="bx bx-buildings me-1"></i>{{ $item['perusahaan_tujuan'] }}</span>
+                                                </div>
+                                                @if(!empty($item['lokasi_lama']) || !empty($item['lokasi_baru']))
+                                                    <div class="small text-muted">
+                                                        <i class="bx bx-map-pin text-danger me-1"></i>
+                                                        {{ $item['lokasi_lama'] ?? '-' }} &rarr; <span class="text-dark fw-semibold">{{ $item['lokasi_baru'] ?? '-' }}</span>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @elseif ($item['aktivitas'] == 'MUTASI')
+                                            <div class="d-flex flex-column gap-1">
+                                                <div class="small text-dark fw-semibold">
+                                                    <i class="bx bx-buildings text-secondary me-1"></i>{{ $item['perusahaan'] ?? '-' }}
+                                                </div>
+                                                @if(!empty($item['lokasi_lama']) || !empty($item['lokasi_baru']))
+                                                    <div class="small text-muted">
+                                                        <i class="bx bx-map-pin text-danger me-1"></i>
+                                                        {{ $item['lokasi_lama'] ?? '-' }} &rarr; <span class="text-dark fw-semibold">{{ $item['lokasi_baru'] ?? '-' }}</span>
+                                                    </div>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <div class="d-flex flex-column">
+                                                <div class="text-dark fw-semibold small">
+                                                    <i class="bx bx-buildings text-secondary me-1"></i>{{ $item['perusahaan'] ?? '-' }}
+                                                </div>
+                                                <div class="text-muted small">
+                                                    <i class="bx bx-map-pin text-danger me-1"></i>{{ $item['lokasi_baru'] ?? $item['lokasi_lama'] ?? '-' }}
+                                                </div>
+                                            </div>
+                                        @endif
                                     </td>
                                     <td>
                                         <div class="small fw-semibold text-dark">{{ $item['hak_akses'] ?? '-' }}</div>
                                     </td>
                                     <td>
-                                        {{ $item['keterangan'] }}
+                                        <div class="small">{{ $item['keterangan'] }}</div>
                                         @if (!empty($item['gambar']))
                                             <div class="mt-1">
                                                 <a href="{{ asset('storage/' . $item['gambar']) }}" target="_blank" class="badge bg-label-info text-info text-decoration-none">
@@ -307,6 +346,52 @@
             </div>
         </div>
 
+    </div>
+
+    {{-- Modal Filter --}}
+    <div class="modal fade" id="modalFilter" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="bx bx-filter-alt me-2 text-primary"></i> Filter Timeline Perjalanan Aset
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form method="GET" action="{{ route('history.perjalanan.show', $id) }}">
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Dari Tanggal</label>
+                                <input type="date" name="tanggal_awal" class="form-control" value="{{ request('tanggal_awal') }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Sampai Tanggal</label>
+                                <input type="date" name="tanggal_akhir" class="form-control" value="{{ request('tanggal_akhir') }}">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-semibold">Aktivitas</label>
+                                <select name="aktivitas" class="form-select">
+                                    <option value="">-- Semua Aktivitas --</option>
+                                    <option value="MASUK" {{ request('aktivitas') == 'MASUK' ? 'selected' : '' }}>MASUK (Penerimaan)</option>
+                                    <option value="KELUAR" {{ request('aktivitas') == 'KELUAR' ? 'selected' : '' }}>KELUAR (Pemakaian)</option>
+                                    <option value="HAK AKSES" {{ request('aktivitas') == 'HAK AKSES' ? 'selected' : '' }}>HAK AKSES & APLIKASI</option>
+                                    <option value="MUTASI" {{ request('aktivitas') == 'MUTASI' ? 'selected' : '' }}>MUTASI</option>
+                                    <option value="MAINTENANCE" {{ request('aktivitas') == 'MAINTENANCE' ? 'selected' : '' }}>MAINTENANCE / SERVIS</option>
+                                    <option value="PENCABUTAN" {{ request('aktivitas') == 'PENCABUTAN' ? 'selected' : '' }}>PENCABUTAN</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <a href="{{ route('history.perjalanan.show', $id) }}" class="btn btn-outline-secondary">Reset</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bx bx-filter-alt me-1"></i> Terapkan Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 
     <script>
