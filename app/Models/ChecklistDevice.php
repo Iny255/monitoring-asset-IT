@@ -29,12 +29,12 @@ class ChecklistDevice extends Model
 
     public function checklistRuangan()
     {
-        return $this->belongsTo(ChecklistRuangan::class, 'checklist_ruangan_id');
+        return $this->belongsTo(ChecklistRuangan::class, 'checklist_ruangan_id')->withoutGlobalScopes();
     }
 
     public function maping()
     {
-        return $this->belongsTo(Maping::class, 'maping_id');
+        return $this->belongsTo(Maping::class, 'maping_id')->withoutGlobalScopes();
     }
 
     public function inventaris()

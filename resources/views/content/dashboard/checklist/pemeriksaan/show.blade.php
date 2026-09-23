@@ -177,15 +177,16 @@
             @php
                 $inventaris = $device->inventaris;
                 $dataAset = $inventaris?->dataAset;
-                $kategori = $dataAset?->kategori?->nama_kategori ?? 'Aset';
+                $jenisAset = $dataAset?->kategori?->nama_barang ?? ($dataAset?->kategori?->nama_kategori ?? 'Perangkat IT');
+                $spekAset = trim(($dataAset?->merek ?? '') . ' ' . ($dataAset?->type ?? '') . ' ' . ($dataAset?->warna ?? ''));
                 $mapping = $device->maping;
                 $isChecked = in_array($device->status_device, ['normal', 'ada_kendala']);
                 $checkedBy = $device->checkedBy;
 
-                // Tentukan Icon berdasarkan kategori
-                $katLower = strtolower($kategori);
+                // Tentukan Icon berdasarkan jenis aset
+                $katLower = strtolower($jenisAset);
                 $icon = 'bx-laptop';
-                if (str_contains($katLower, 'pc') || str_contains($katLower, 'desktop') || str_contains($katLower, 'computer')) {
+                if (str_contains($katLower, 'pc') || str_contains($katLower, 'desktop') || str_contains($katLower, 'komputer') || str_contains($katLower, 'computer')) {
                     $icon = 'bx-desktop';
                 } elseif (str_contains($katLower, 'printer') || str_contains($katLower, 'scanner')) {
                     $icon = 'bx-printer';
@@ -226,9 +227,9 @@
                                 <div>
                                     <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
                                         <h6 class="fw-bold mb-0 text-dark">
-                                            {{ $dataAset->nama_data_aset ?? 'Perangkat IT' }}
+                                            {{ $jenisAset }}
                                         </h6>
-                                        <span class="badge bg-label-secondary fs-tiny">{{ $kategori }}</span>
+                                        <span class="badge bg-label-secondary fs-tiny">{{ $spekAset ?: '-' }}</span>
                                     </div>
                                     <div class="small text-muted font-monospace mb-1">
                                         <i class="bx bx-barcode me-1"></i>{{ $inventaris->kode_aset ?? '-' }}
@@ -264,8 +265,9 @@
                                             id="btnBuktiQr{{ $device->id }}"
                                             data-device-id="{{ $device->id }}"
                                             data-kode="{{ $inventaris->kode_aset ?? '-' }}"
-                                            data-nama="{{ $dataAset->nama_data_aset ?? 'Perangkat' }}"
-                                            data-kategori="{{ $kategori }}"
+                                            data-nama="{{ $jenisAset }}"
+                                            data-spek="{{ $spekAset }}"
+                                            data-kategori="{{ $jenisAset }}"
                                             data-user="{{ $device->nama_pengguna ?? ($mapping->penerima ?? 'Umum') }}"
                                             data-status="{{ $device->status_device }}"
                                             data-waktu="{{ $device->checked_at ? $device->checked_at->format('d M Y, H:i') : 'Belum Dicek' }}"
@@ -333,7 +335,7 @@
                                   id="formMarkDevice{{ $device->id }}"
                                   data-device-id="{{ $device->id }}"
                                   data-kode="{{ $inventaris->kode_aset ?? 'Device' }}"
-                                  data-nama="{{ $dataAset->nama_data_aset ?? 'Perangkat' }}"
+                                  data-nama="{{ $jenisAset }}{{ $spekAset ? ' ' . $spekAset : '' }}"
                                   data-status="{{ $device->status_device }}">
                                 @csrf
                                 <button type="button" 
@@ -1047,6 +1049,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         const kode = btn.dataset.kode || '-';
         const nama = btn.dataset.nama || '-';
+        const spek = btn.dataset.spek || '';
         const user = btn.dataset.user || '-';
         const status = btn.dataset.status || 'belum_dicek';
         const waktu = btn.dataset.waktu || '-';
@@ -1056,7 +1059,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const qrSvg = btn.dataset.qrSvg || null;
 
         document.getElementById('qrModalKodeAset').textContent = kode;
-        document.getElementById('qrModalNamaAset').textContent = nama;
+        document.getElementById('qrModalNamaAset').textContent = spek ? `${nama} (${spek})` : nama;
         document.getElementById('qrModalPengguna').textContent = user;
         document.getElementById('qrModalWaktu').textContent = waktu;
         document.getElementById('qrModalPetugas').textContent = petugas;
@@ -1264,8 +1267,15 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // Interval sinkronisasi background setiap 12 detik
-    syncTimer = setInterval(pollSync, 12000);
+    // Interval sinkronisasi background setiap 6 detik
+    syncTimer = setInterval(pollSync, 6000);
+
+    // Sinkronkan langsung saat tab aktif kembali setelah pengguna scan via smartphone
+    document.addEventListener('visibilitychange', function () {
+        if (!document.hidden) {
+            pollSync();
+        }
+    });
 });
 </script>
 @endsection

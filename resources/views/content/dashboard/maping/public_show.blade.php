@@ -10,6 +10,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <style>
         body {
@@ -346,22 +347,82 @@
                 {{-- ========================================================================= --}}
                 @php
                     $isItOfficer = auth()->check() && in_array(auth()->user()->role, ['petugas', 'teknisi', 'super_admin', '1', '2']);
+
+                    // Cek apakah hari ini perangkat ini sudah selesai diperiksa
+                    $todayChecked = $todayChecklist && in_array($todayChecklist->status_device, ['normal', 'ada_kendala']);
+                    if (!$todayChecked && $latestChecklist && in_array($latestChecklist->status_device, ['normal', 'ada_kendala']) && $latestChecklist->checked_at) {
+                        $todayChecked = $latestChecklist->checked_at->isToday();
+                    }
+                    $activeTodayChecklist = $todayChecked ? ($todayChecklist ?: $latestChecklist) : null;
                 @endphp
 
                 @if ($isItOfficer)
-                    {{-- Form Interaktif Petugas IT --}}
-                    <div class="it-check-box shadow-xs" id="itChecklistSection">
+                    {{-- Kartu Kunci Form Sekali Pakai (Jika sudah dicek hari ini) --}}
+                    @if ($todayChecked)
+                        <div class="card border-0 shadow-xs mb-4" id="lockedChecklistCard" 
+                             style="background: linear-gradient(135deg, #f0fdf4, #f8fafc); border: 1px solid #bbf7d0 !important; border-left: 6px solid {{ $activeTodayChecklist->status_device === 'normal' ? '#10b981' : '#ef4444' }} !important; border-radius: 16px;">
+                            <div class="card-body p-3 p-md-4">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                                    <div class="d-flex align-items-center gap-3">
+                                        <div class="rounded-circle d-flex align-items-center justify-content-center text-white" 
+                                             style="width: 46px; height: 46px; min-width: 46px; background: {{ $activeTodayChecklist->status_device === 'normal' ? '#10b981' : '#ef4444' }};">
+                                            <i class="bx {{ $activeTodayChecklist->status_device === 'normal' ? 'bx-check-double' : 'bx-error-circle' }} fs-2"></i>
+                                        </div>
+                                        <div>
+                                            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                                <span class="badge bg-success text-white px-2 py-1">
+                                                    <i class="bx bx-lock-alt me-1"></i> Form Selesai Digunakan Hari Ini
+                                                </span>
+                                                @if ($activeTodayChecklist->status_device === 'normal')
+                                                    <span class="badge bg-success">NORMAL (Kondisi Baik)</span>
+                                                @else
+                                                    <span class="badge bg-danger">ADA KENDALA</span>
+                                                @endif
+                                            </div>
+                                            <h6 class="fw-bold text-dark mb-1">Pemeriksaan perangkat telah selesai disimpan hari ini</h6>
+                                            <small class="text-muted">
+                                                Diperiksa oleh: <strong>{{ $activeTodayChecklist->checkedBy->name ?? 'Petugas IT' }}</strong> &bull; 
+                                                Waktu: <strong>{{ $activeTodayChecklist->checked_at ? $activeTodayChecklist->checked_at->format('H:i') : '-' }} WIB</strong>
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center shadow-xs" id="btnBukaRevisi">
+                                            <i class="bx bx-edit-alt me-1 fs-5"></i> Buka Kunci / Revisi Pengecekan
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
+
+                    {{-- Form Interaktif Petugas IT (Terkunci jika sudah dicek hari ini, terbuka jika belum atau saat revisi) --}}
+                    <div class="it-check-box shadow-xs" id="itChecklistSection" style="{{ $todayChecked ? 'display: none;' : '' }}">
                         <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
                             <div>
-                                <span class="badge bg-primary text-white mb-1 px-2 py-1">
-                                    <i class="bx bx-shield-quarter me-1"></i> Mode Petugas IT Lapangan
-                                </span>
+                                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                    <span class="badge bg-primary text-white px-2 py-1">
+                                        <i class="bx bx-shield-quarter me-1"></i> Mode Petugas IT Lapangan
+                                    </span>
+                                    @if ($todayChecked)
+                                        <span class="badge bg-warning text-dark px-2 py-1" id="badgeModeRevisi">
+                                            <i class="bx bx-edit me-1"></i> Mode Revisi Pemeriksaan
+                                        </span>
+                                    @endif
+                                </div>
                                 <h5 class="fw-bold text-dark mb-0">Input Pengecekan Device (Real-Time)</h5>
                                 <small class="text-muted">Masuk sebagai: <strong>{{ auth()->user()->name }}</strong> &bull; Lokasi: <strong>{{ $maping->lokasi->nama_lokasi ?? '-' }}</strong></small>
                             </div>
 
-                            {{-- Tombol Cepat 1-Klik "Tandai Semua Normal" --}}
-                            <div>
+                            <div class="d-flex gap-2 align-items-center flex-wrap">
+                                {{-- Tombol Kunci Kembali jika dalam mode revisi --}}
+                                @if ($todayChecked)
+                                    <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center shadow-xs" id="btnTutupRevisi">
+                                        <i class="bx bx-x me-1"></i> Kunci Kembali
+                                    </button>
+                                @endif
+
+                                {{-- Tombol Cepat 1-Klik "Tandai Semua Normal" --}}
                                 <form action="{{ route('maping.checklist.submit', $maping->uuid ?? $maping->id) }}" method="POST" id="formQuickNormal">
                                     @csrf
                                     <input type="hidden" name="status_device" value="normal">
@@ -383,14 +444,14 @@
                                     <div class="d-flex gap-3 mb-3">
                                         <div class="form-check form-check-inline">
                                             <input class="form-check-input" type="radio" name="status_device" id="statusNormal" value="normal" 
-                                                {{ ($latestChecklist?->status_device === 'normal' || !$latestChecklist || $latestChecklist->status_device === 'belum_dicek') ? 'checked' : '' }}>
+                                                {{ (($activeTodayChecklist ?? $latestChecklist)?->status_device === 'normal' || !($activeTodayChecklist ?? $latestChecklist) || ($activeTodayChecklist ?? $latestChecklist)->status_device === 'belum_dicek') ? 'checked' : '' }}>
                                             <label class="form-check-label fw-bold text-success" for="statusNormal">
                                                 <i class="bx bx-check-circle me-1"></i> NORMAL (Kondisi Baik)
                                             </label>
                                         </div>
                                         <div class="form-check form-check-inline">
                                             <input class="form-check-input" type="radio" name="status_device" id="statusKendala" value="ada_kendala"
-                                                {{ $latestChecklist?->status_device === 'ada_kendala' ? 'checked' : '' }}>
+                                                {{ ($activeTodayChecklist ?? $latestChecklist)?->status_device === 'ada_kendala' ? 'checked' : '' }}>
                                             <label class="form-check-label fw-bold text-danger" for="statusKendala">
                                                 <i class="bx bx-error me-1"></i> ADA KENDALA
                                             </label>
@@ -403,7 +464,8 @@
                                         @forelse ($masterItems as $mItem)
                                             @php
                                                 // Ambil status dari previous/today checklist jika ada
-                                                $checkedItem = $latestChecklist?->items->firstWhere('nama_item', $mItem->nama_item);
+                                                $refChecklist = $activeTodayChecklist ?? $latestChecklist;
+                                                $checkedItem = $refChecklist?->items->firstWhere('nama_item', $mItem->nama_item);
                                                 $isItemOk = $checkedItem ? (bool)$checkedItem->is_ok : true;
                                             @endphp
                                             <div class="col-6 col-md-4">
@@ -420,18 +482,18 @@
                                     </div>
 
                                     {{-- Catatan Kendala --}}
-                                    <div class="mb-3" id="catatanKendalaContainer" style="{{ $latestChecklist?->status_device === 'ada_kendala' ? '' : 'display: none;' }}">
+                                    <div class="mb-3" id="catatanKendalaContainer" style="{{ ($activeTodayChecklist ?? $latestChecklist)?->status_device === 'ada_kendala' ? '' : 'display: none;' }}">
                                         <label for="catatanKendala" class="form-label fw-bold text-danger small text-uppercase">
                                             <i class="bx bx-edit me-1"></i> Rincian Masalah / Catatan Kendala:
                                         </label>
                                         <textarea class="form-control" id="catatanKendala" name="catatan_kendala" rows="2" 
-                                            placeholder="Contoh: Kipas pendingin bising, port USB samping rusak, dll.">{{ $latestChecklist?->catatan_kendala }}</textarea>
+                                            placeholder="Contoh: Kipas pendingin bising, port USB samping rusak, dll.">{{ ($activeTodayChecklist ?? $latestChecklist)?->catatan_kendala }}</textarea>
                                     </div>
 
                                     {{-- Tombol Submit Form --}}
                                     <div class="d-flex justify-content-end gap-2">
                                         <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-xs" id="btnSubmitChecklist">
-                                            <i class="bx bx-save me-1"></i> Simpan Hasil Pengecekan
+                                            <i class="bx bx-save me-1"></i> {{ $todayChecked ? 'Simpan Revisi Pengecekan' : 'Simpan Hasil Pengecekan' }}
                                         </button>
                                     </div>
                                 </form>
@@ -509,7 +571,13 @@
                                 </tr>
                                 <tr>
                                     <th>Pengguna / User Aset</th>
-                                    <td>{{ $maping->penerima ?? '-' }}</td>
+                                    <td>
+                                        @if (in_array($maping->jenis_penerima, ['Per Divisi', 'Perdivisi']) || $maping->jenis_penerima !== 'Perorangan')
+                                            {{ strtoupper($maping->penerima ?? '-') }}
+                                        @else
+                                            {{ $maping->penerima ?? '-' }}
+                                        @endif
+                                    </td>
                                 </tr>
                                 <tr>
                                     <th>Lokasi Penempatan</th>
@@ -545,50 +613,37 @@
                 </div>
 
                 {{-- ========================================================================= --}}
-                {{-- 4. SPESIFIKASI & APLIKASI --}}
+                {{-- 4. SPESIFIKASI HARDWARE --}}
                 {{-- ========================================================================= --}}
                 <div class="row g-4 mt-2">
-                    <div class="col-md-6">
+                    <div class="col-12">
                         <div class="section-title">
                             <i class="bx bx-chip text-primary"></i> Spesifikasi Hardware
                         </div>
-                        <table class="table table-bordered mb-0">
-                            <tr>
-                                <th>Processor</th>
-                                <td>{{ $maping->processor ?? '-' }}</td>
-                            </tr>
-                            <tr>
-                                <th>RAM</th>
-                                <td>{{ $maping->ram ? $maping->ram . ' GB' : '-' }}</td>
-                            </tr>
-                            <tr>
-                                <th>Sistem Operasi</th>
-                                <td>{{ $maping->system ?? '-' }} {{ $maping->version ? '(' . $maping->version . ')' : '' }}</td>
-                            </tr>
-                            <tr>
-                                <th>Device ID</th>
-                                <td><small class="font-monospace">{{ $maping->device_id ?? '-' }}</small></td>
-                            </tr>
-                            <tr>
-                                <th>Produk ID</th>
-                                <td><small class="font-monospace">{{ $maping->produk_id ?? '-' }}</small></td>
-                            </tr>
-                        </table>
-                    </div>
-
-                    <div class="col-md-6">
-                        <div class="section-title">
-                            <i class="bx bx-window-alt text-primary"></i> Software & Lisensi Terpasang
+                        <div class="table-responsive">
+                            <table class="table table-bordered mb-0">
+                                <tr>
+                                    <th>Processor</th>
+                                    <td>{{ $maping->processor ?? '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>RAM</th>
+                                    <td>{{ $maping->ram ? $maping->ram . ' GB' : '-' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Sistem Operasi</th>
+                                    <td>{{ $maping->system ?? '-' }} {{ $maping->version ? '(' . $maping->version . ')' : '' }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Device ID</th>
+                                    <td><small class="font-monospace">{{ $maping->device_id ?? '-' }}</small></td>
+                                </tr>
+                                <tr>
+                                    <th>Produk ID</th>
+                                    <td><small class="font-monospace">{{ $maping->produk_id ?? '-' }}</small></td>
+                                </tr>
+                            </table>
                         </div>
-                        @if ($maping->aplikasi)
-                            <div class="alert alert-light border small text-dark mb-0" style="min-height: 160px; white-space: pre-wrap;">
-                                {!! nl2br(e($maping->aplikasi)) !!}
-                            </div>
-                        @else
-                            <div class="alert alert-light border small text-muted mb-0 d-flex align-items-center justify-content-center" style="min-height: 160px;">
-                                <span>Tidak ada catatan aplikasi khusus.</span>
-                            </div>
-                        @endif
                     </div>
                 </div>
 
@@ -631,9 +686,62 @@
                 formDetail.addEventListener('submit', function (e) {
                     if (radioKendala && radioKendala.checked && catatanInput && !catatanInput.value.trim()) {
                         e.preventDefault();
-                        alert('Silakan tuliskan catatan kendala atau masalah yang dialami perangkat ini.');
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire('Perhatian', 'Silakan tuliskan catatan kendala atau masalah yang dialami perangkat ini.', 'warning');
+                        } else {
+                            alert('Silakan tuliskan catatan kendala atau masalah yang dialami perangkat ini.');
+                        }
                         catatanInput.focus();
                     }
+                });
+            }
+
+            // Logika Tombol Buka Kunci / Revisi Form Sekali Pakai
+            const btnBukaRevisi = document.getElementById('btnBukaRevisi');
+            const btnTutupRevisi = document.getElementById('btnTutupRevisi');
+            const itChecklistSection = document.getElementById('itChecklistSection');
+            const lockedChecklistCard = document.getElementById('lockedChecklistCard');
+
+            function bukaFormRevisi() {
+                if (itChecklistSection) {
+                    itChecklistSection.style.display = 'block';
+                    itChecklistSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+                if (lockedChecklistCard) {
+                    lockedChecklistCard.style.display = 'none';
+                }
+            }
+
+            if (btnBukaRevisi) {
+                btnBukaRevisi.addEventListener('click', function () {
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            title: 'Buka Form Revisi?',
+                            text: 'Pemeriksaan hari ini sudah tersimpan. Buka kunci formulir untuk memperbarui atau merevisi hasil pengecekan?',
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonColor: '#2563eb',
+                            cancelButtonColor: '#64748b',
+                            confirmButtonText: '<i class="bx bx-edit me-1"></i> Ya, Buka Form Revisi',
+                            cancelButtonText: 'Batal',
+                            reverseButtons: true
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                bukaFormRevisi();
+                            }
+                        });
+                    } else {
+                        if (confirm('Buka kunci formulir untuk merevisi hasil checklist hari ini?')) {
+                            bukaFormRevisi();
+                        }
+                    }
+                });
+            }
+
+            if (btnTutupRevisi) {
+                btnTutupRevisi.addEventListener('click', function () {
+                    if (itChecklistSection) itChecklistSection.style.display = 'none';
+                    if (lockedChecklistCard) lockedChecklistCard.style.display = 'block';
                 });
             }
         });

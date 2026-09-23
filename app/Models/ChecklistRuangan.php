@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use App\Models\ChecklistDevice;
 use App\Models\ChecklistDeviceItem;
 use App\Models\ChecklistItem;
@@ -172,18 +173,19 @@ class ChecklistRuangan extends Model
             // - Mapping ID null atau data mapping tidak ada di database
             // - Mapping status bukan 'aktif' (misal: 'selesai' karena mutasi antar perusahaan, 'ditarik', dll)
             // - Lokasi mapping sudah bukan di lokasi ruangan ini lagi
-            // - Perusahaan mapping sudah bukan di perusahaan ruangan ini lagi
+            // - Perusahaan mapping sudah berbeda dari perusahaan ruangan ini
             // - Inventaris ditandai transfer (is_transfer = true)
             $isInvalid = !$device->maping_id
                 || !$m
                 || $m->status !== 'aktif'
                 || $m->id_lokasi != $this->id_lokasi
-                || ($this->id_perusahaan && $m->id_perusahaan != $this->id_perusahaan)
+                || ($this->id_perusahaan && $m->id_perusahaan && $m->id_perusahaan != $this->id_perusahaan)
                 || ($inv && $inv->is_transfer);
 
             if ($isInvalid) {
-                // Jika belum dicek oleh teknisi (atau ruangan belum selesai), bersihkan dari checklist!
-                if ($device->status_device === 'belum_dicek' || $this->status !== 'selesai') {
+                // JANGAN PERNAH hapus perangkat yang SUDAH DICEK (normal / ada_kendala)!
+                // Hanya bersihkan jika status_device memang masih 'belum_dicek'
+                if ($device->status_device === 'belum_dicek') {
                     $device->items()->delete();
                     $device->delete();
                     continue;
@@ -201,7 +203,11 @@ class ChecklistRuangan extends Model
 
         // 3. Tambahkan mapping aktif di lokasi ini yang belum ada di checklist ruangan
         $existingDeviceMappingIds = $this->checklistDevices()->pluck('maping_id')->filter()->toArray();
-        $missingMappings = $activeMappings->whereNotIn('id', $existingDeviceMappingIds);
+        $existingDeviceInventarisIds = $this->checklistDevices()->pluck('inventaris_id')->filter()->toArray();
+        $missingMappings = $activeMappings->filter(function ($mapping) use ($existingDeviceMappingIds, $existingDeviceInventarisIds) {
+            $invId = $mapping->keluar?->inventaris_id;
+            return !in_array($mapping->id, $existingDeviceMappingIds) && (!$invId || !in_array($invId, $existingDeviceInventarisIds));
+        });
 
         if ($missingMappings->isNotEmpty()) {
             $defaultItems = ChecklistItem::where('is_active', true)
@@ -237,7 +243,64 @@ class ChecklistRuangan extends Model
             }
         }
 
-        // 4. Update progress dan total_device
+        // 4. Sinkronkan status otomatis jika perangkat ini sudah diperiksa (misal dari Scan QR di lapangan hari ini)
+        $today = Carbon::now('Asia/Jakarta')->format('Y-m-d');
+        $targetDate = $this->tanggal_pemeriksaan ? $this->tanggal_pemeriksaan->format('Y-m-d') : $today;
+
+        $unverifiedDevices = $this->checklistDevices()->where('status_device', 'belum_dicek')->get();
+        foreach ($unverifiedDevices as $dev) {
+            $invId = $dev->inventaris_id;
+            $mapId = $dev->maping_id;
+
+            // Cari apakah perangkat ini sudah memiliki riwayat cek normal/kendala hari ini (misal via scan QR di lapangan)
+            $completedCheck = ChecklistDevice::withoutGlobalScopes()
+                ->where('id', '!=', $dev->id)
+                ->where(function ($q) use ($mapId, $invId) {
+                    if ($mapId) $q->where('maping_id', $mapId);
+                    if ($invId) {
+                        $mapId ? $q->orWhere('inventaris_id', $invId) : $q->where('inventaris_id', $invId);
+                    }
+                })
+                ->whereIn('status_device', ['normal', 'ada_kendala'])
+                ->where(function ($q) use ($today, $targetDate) {
+                    $q->whereDate('checked_at', $today)
+                      ->orWhereDate('checked_at', $targetDate)
+                      ->orWhereHas('checklistRuangan', function ($sub) use ($today, $targetDate) {
+                          $sub->whereDate('tanggal_pemeriksaan', $today)
+                              ->orWhereDate('tanggal_pemeriksaan', $targetDate)
+                              ->orWhereDate('tanggal_cek', $today);
+                      });
+                })
+                ->orderByDesc('checked_at')
+                ->orderByDesc('id')
+                ->first();
+
+            if ($completedCheck) {
+                $dev->update([
+                    'status_device' => $completedCheck->status_device,
+                    'catatan_kendala' => $completedCheck->catatan_kendala,
+                    'checked_at' => $completedCheck->checked_at ?: Carbon::now('Asia/Jakarta'),
+                    'checked_by' => $completedCheck->checked_by ?: auth()->id(),
+                ]);
+
+                // Sinkronkan item check
+                $checkItems = $completedCheck->items()->get();
+                if ($checkItems->isNotEmpty()) {
+                    foreach ($dev->items as $dItem) {
+                        $sourceItem = $checkItems->firstWhere('nama_item', $dItem->nama_item);
+                        if ($sourceItem) {
+                            $dItem->update(['is_ok' => $sourceItem->is_ok]);
+                        } elseif ($completedCheck->status_device === 'normal') {
+                            $dItem->update(['is_ok' => true]);
+                        }
+                    }
+                } elseif ($completedCheck->status_device === 'normal') {
+                    $dev->items()->update(['is_ok' => true]);
+                }
+            }
+        }
+
+        // 5. Update progress dan total_device
         $this->updateProgress();
     }
 

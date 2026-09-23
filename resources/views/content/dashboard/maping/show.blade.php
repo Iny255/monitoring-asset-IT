@@ -341,7 +341,13 @@
 
                                 <tr>
                                     <th>User Asset</th>
-                                     <td>{{ $maping->penerima ?? '-' }}</td>
+                                    <td>
+                                        @if (in_array($maping->jenis_penerima, ['Per Divisi', 'Perdivisi']) || $maping->jenis_penerima !== 'Perorangan')
+                                            {{ strtoupper($maping->penerima ?? '-') }}
+                                        @else
+                                            {{ $maping->penerima ?? '-' }}
+                                        @endif
+                                    </td>
                                 </tr>
 
                                 <tr>
@@ -930,7 +936,7 @@
                             <div class="mb-3 pb-2 border-bottom">
                                 <div class="small text-muted">Perangkat:</div>
                                 <div class="fw-bold text-dark fs-6">{{ $maping->keluar->inventaris->kode_aset ?? '-' }} ({{ $maping->keluar->inventaris->dataAset->kategori->nama_barang ?? 'Perangkat' }})</div>
-                                <div class="small text-muted">User: {{ $maping->penerima ?? '-' }} &bull; Lokasi: {{ $maping->lokasi->nama_lokasi ?? '-' }}</div>
+                                <div class="small text-muted">User: {{ (in_array($maping->jenis_penerima, ['Per Divisi', 'Perdivisi']) || $maping->jenis_penerima !== 'Perorangan') ? strtoupper($maping->penerima ?? '-') : ($maping->penerima ?? '-') }} &bull; Lokasi: {{ $maping->lokasi->nama_lokasi ?? '-' }}</div>
                             </div>
 
                             {{-- Pilihan Status --}}

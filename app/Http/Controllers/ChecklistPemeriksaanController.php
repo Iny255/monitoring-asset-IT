@@ -604,13 +604,15 @@ class ChecklistPemeriksaanController extends Controller
      */
     public function syncStatus($id)
     {
-        $ruangan = ChecklistRuangan::withoutGlobalScopes()->with([
+        $ruangan = ChecklistRuangan::withoutGlobalScopes()->findOrFail($id);
+        $ruangan->syncDevicesWithMapping();
+        $ruangan->load([
             'petugas',
             'checklistDevices.inventaris.dataAset.kategori',
             'checklistDevices.maping.karyawan',
             'checklistDevices.checkedBy',
             'checklistDevices.items'
-        ])->findOrFail($id);
+        ]);
 
         $devicesData = [];
         foreach ($ruangan->checklistDevices as $d) {
@@ -654,12 +656,17 @@ class ChecklistPemeriksaanController extends Controller
 
         $failedItems = $device->items->where('is_ok', false)->pluck('nama_item')->values()->toArray();
 
+        $dataAset = $device->inventaris?->dataAset;
+        $jenisAset = $dataAset?->kategori?->nama_barang ?? ($dataAset?->kategori?->nama_kategori ?? 'Perangkat IT');
+        $spekAset = trim(($dataAset?->merek ?? '') . ' ' . ($dataAset?->type ?? '') . ' ' . ($dataAset?->warna ?? ''));
+
         return [
             'id' => $device->id,
             'kode_aset' => $device->inventaris->kode_aset ?? '-',
             'no_inventaris' => $device->inventaris->no_inventaris ?? null,
-            'nama_aset' => $device->inventaris->dataAset->nama_data_aset ?? 'Perangkat IT',
-            'kategori' => $device->inventaris->dataAset->kategori->nama_kategori ?? 'Aset',
+            'nama_aset' => $jenisAset,
+            'spek_aset' => $spekAset ?: '-',
+            'kategori' => $jenisAset,
             'nama_pengguna' => $device->nama_pengguna ?? ($device->maping->penerima ?? '-'),
             'status_device' => $device->status_device,
             'catatan_kendala' => $device->catatan_kendala,

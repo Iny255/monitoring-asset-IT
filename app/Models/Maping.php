@@ -110,7 +110,7 @@ class Maping extends Model
       return optional($this->karyawan)->nama_karyawan ?? '-';
     }
 
-    return $this->divisi ?? '-';
+    return $this->divisi ? strtoupper($this->divisi) : '-';
   }
 
   public function getJenisPenerimaLabelAttribute()

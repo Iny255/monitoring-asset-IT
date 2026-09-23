@@ -154,6 +154,8 @@
                 @php
                     $inv = $dev->inventaris;
                     $dAset = $inv?->dataAset;
+                    $jenisAset = $dAset?->kategori?->nama_barang ?? ($dAset?->kategori?->nama_kategori ?? 'Perangkat IT');
+                    $spekAset = trim(($dAset?->merek ?? '') . ' ' . ($dAset?->type ?? '') . ' ' . ($dAset?->warna ?? ''));
                     $mapping = $dev->maping;
                     $qrUrl = $mapping ? route('maping.public_show', $mapping->uuid ?? $mapping->id) : null;
                 @endphp
@@ -169,8 +171,8 @@
                         @endif
                     </td>
                     <td class="font-monospace text-center">{{ $inv->kode_aset ?? '-' }}</td>
-                    <td class="fw-semibold">{{ $dAset->nama_data_aset ?? '-' }}</td>
-                    <td class="text-center">{{ $dAset->kategori->nama_kategori ?? '-' }}</td>
+                    <td class="fw-semibold">{{ $spekAset ?: ($jenisAset ?? '-') }}</td>
+                    <td class="text-center">{{ $jenisAset }}</td>
                     <td>{{ $dev->nama_pengguna ?? '-' }}</td>
                     <td class="text-center">
                         @if ($dev->status_device === 'normal')
