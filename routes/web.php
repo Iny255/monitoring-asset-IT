@@ -36,6 +36,7 @@ use App\Http\Controllers\UserAssetController;
 use App\Http\Controllers\ChecklistJadwalController;
 use App\Http\Controllers\ChecklistPemeriksaanController;
 use App\Http\Controllers\ChecklistItemController;
+use App\Http\Controllers\ChecklistDokumenPerawatanController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ModuleSettingController;
 
@@ -179,7 +180,7 @@ Route::middleware(['auth'])->group(function () {
       'inventarisByKategori',
     ])->name('peminjaman.inventaris');
     Route::get('/dashboard/peminjaman/cetak', [PeminjamanController::class, 'cetak'])->name('peminjaman.cetak');
-    Route::resource('/dashboard/peminjaman', PeminjamanController::class)->except(['destroy']);
+    Route::resource('/dashboard/peminjaman', PeminjamanController::class);
 
     Route::get('/dashboard/transaksi-masuk/history-stok/{dataAsetId}', [
       HistoryStokController::class,
@@ -262,6 +263,10 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/perjalanan-aset/{id}', [HistoryPerjalananAsetController::class, 'show'])->name('history.perjalanan.show');
         Route::get('/perjalanan-aset/{id}/cetak', [HistoryPerjalananAsetController::class, 'cetak'])->name('history.perjalanan.cetak');
         Route::get('/perjalanan-aset/{id}/export-excel', [HistoryPerjalananAsetController::class, 'exportExcel'])->name('history.perjalanan.export_excel');
+
+        // DOKUMEN PERAWATAN TAHUNAN DEVICE (F-IT-001/00 & F-IT-002/00)
+        Route::get('/perjalanan-aset/{id}/dokumen-perawatan', [ChecklistDokumenPerawatanController::class, 'cetak'])->name('history.perjalanan.dokumen_perawatan.cetak');
+        Route::get('/perjalanan-aset/{id}/dokumen-perawatan/excel', [ChecklistDokumenPerawatanController::class, 'exportExcel'])->name('history.perjalanan.dokumen_perawatan.excel');
 
         // HISTORY HAK AKSES (REDIRECT TO HISTORY PERJALANAN ASET)
         Route::get('/hak-akses', function () {

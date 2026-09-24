@@ -40,6 +40,9 @@ class HistoryPerjalananExport implements FromCollection, WithHeadings, ShouldAut
 
             // Format Pengguna Terakhir
             $penggunaTerakhir = $item['user_baru'] ?? $item['user_lama'] ?? '-';
+            if (in_array($item['aktivitas'] ?? '', ['PEMINJAMAN', 'PENGEMBALIAN PINJAMAN'])) {
+                $penggunaTerakhir = ($item['user_lama'] ?? '-') . ' -> ' . ($item['user_baru'] ?? '-');
+            }
 
             // Format Lokasi & Perusahaan
             $lokasiPerusahaan = ($item['perusahaan'] ?? '-') . ' - ' . ($item['lokasi_baru'] ?? $item['lokasi_lama'] ?? '-');
@@ -49,6 +52,8 @@ class HistoryPerjalananExport implements FromCollection, WithHeadings, ShouldAut
                 } else {
                     $lokasiPerusahaan = ($item['perusahaan'] ?? '-') . ' (' . ($item['lokasi_lama'] ?? '-') . ' -> ' . ($item['lokasi_baru'] ?? '-') . ')';
                 }
+            } elseif (in_array($item['aktivitas'] ?? '', ['PEMINJAMAN', 'PENGEMBALIAN PINJAMAN'])) {
+                $lokasiPerusahaan = ($item['perusahaan'] ?? '-') . ' (' . ($item['lokasi_lama'] ?? '-') . ' -> ' . ($item['lokasi_baru'] ?? '-') . ')';
             }
 
             return [

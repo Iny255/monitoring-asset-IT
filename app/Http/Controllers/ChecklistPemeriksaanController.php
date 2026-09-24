@@ -9,6 +9,7 @@ use App\Models\ChecklistDeviceItem;
 use App\Models\ChecklistItem;
 use App\Models\Lokasi;
 use App\Models\Maping;
+use App\Models\Peminjaman;
 use App\Models\Perusahaan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -243,7 +244,18 @@ class ChecklistPemeriksaanController extends Controller
                     ->with(['karyawan', 'keluar.inventaris.dataAset'])
                     ->get();
 
+                // Ambil peminjaman aktif di ruangan ini
+                $activeLoans = Peminjaman::where('status', 'Dipinjam')
+                    ->where('id_lokasi', $rutin->id_lokasi)
+                    ->whereHas('inventaris', function ($iq) use ($rutin) {
+                        $iq->where('is_transfer', false)
+                           ->when($rutin->id_perusahaan, fn($q) => $q->where('perusahaan_id', $rutin->id_perusahaan));
+                    })
+                    ->with(['inventaris.dataAset', 'karyawan', 'karyawanTujuan', 'perusahaanTujuan'])
+                    ->get();
+
                 $totalDevices = 0;
+                $processedInventarisIds = [];
 
                 // Filter master item sesuai perusahaan atau global
                 $lokasiItems = $defaultItems->filter(function ($item) use ($rutin) {
@@ -259,6 +271,7 @@ class ChecklistPemeriksaanController extends Controller
                     $device = ChecklistDevice::create([
                         'checklist_ruangan_id' => $ruangan->id,
                         'maping_id' => $mapping->id,
+                        'peminjaman_id' => null,
                         'inventaris_id' => $inventaris->id,
                         'nama_pengguna' => $mapping->penerima,
                         'status_device' => 'belum_dicek',
@@ -273,6 +286,35 @@ class ChecklistPemeriksaanController extends Controller
                         ]);
                     }
 
+                    $processedInventarisIds[] = $inventaris->id;
+                    $totalDevices++;
+                }
+
+                foreach ($activeLoans as $loan) {
+                    $inventaris = $loan->inventaris;
+                    if (!$inventaris || in_array($inventaris->id, $processedInventarisIds)) {
+                        continue;
+                    }
+
+                    $device = ChecklistDevice::create([
+                        'checklist_ruangan_id' => $ruangan->id,
+                        'maping_id' => null,
+                        'peminjaman_id' => $loan->id,
+                        'inventaris_id' => $inventaris->id,
+                        'nama_pengguna' => '[Pinjaman] ' . $loan->peminjam_nama,
+                        'status_device' => 'belum_dicek',
+                    ]);
+
+                    foreach ($lokasiItems as $item) {
+                        ChecklistDeviceItem::create([
+                            'checklist_device_id' => $device->id,
+                            'nama_item' => $item->nama_item,
+                            'kategori_item' => $item->kategori,
+                            'is_ok' => true,
+                        ]);
+                    }
+
+                    $processedInventarisIds[] = $inventaris->id;
                     $totalDevices++;
                 }
 
@@ -316,14 +358,23 @@ class ChecklistPemeriksaanController extends Controller
             'petugas.perusahaan',
             'checklistDevices.inventaris.dataAset.kategori',
             'checklistDevices.maping.karyawan',
+            'checklistDevices.peminjaman.karyawan',
+            'checklistDevices.peminjaman.perusahaanTujuan',
             'checklistDevices.checkedBy',
             'checklistDevices.items',
             'perusahaan'
         ])->findOrFail($id);
 
-        // Auto-sync data checklist ruangan dengan status terkini di Mapping (hapus device mutasi, tambah device baru, update user)
+        // Auto-sync data checklist ruangan dengan status terkini di Mapping & Peminjaman
         $ruangan->syncDevicesWithMapping();
-        $ruangan->load('checklistDevices.inventaris.dataAset.kategori', 'checklistDevices.maping.karyawan', 'checklistDevices.checkedBy', 'checklistDevices.items');
+        $ruangan->load([
+            'checklistDevices.inventaris.dataAset.kategori',
+            'checklistDevices.maping.karyawan',
+            'checklistDevices.peminjaman.karyawan',
+            'checklistDevices.peminjaman.perusahaanTujuan',
+            'checklistDevices.checkedBy',
+            'checklistDevices.items'
+        ]);
 
         // Auto-sync jika ada item baru di Master Item Cek yang belum masuk ke device yang sudah terbuat (sesuai perusahaan)
         $activeMasterItems = ChecklistItem::where('is_active', true)
@@ -631,7 +682,7 @@ class ChecklistPemeriksaanController extends Controller
      */
     private function formatDevicePayload(ChecklistDevice $device, ChecklistRuangan $ruangan): array
     {
-        $device->loadMissing(['inventaris.dataAset.kategori', 'maping.karyawan', 'checkedBy', 'items']);
+        $device->loadMissing(['inventaris.dataAset.kategori', 'maping.karyawan', 'peminjaman.karyawan', 'peminjaman.perusahaanTujuan', 'checkedBy', 'items']);
         $ruangan->refresh();
 
         $qrUrl = null;

@@ -229,6 +229,11 @@
                                         <h6 class="fw-bold mb-0 text-dark">
                                             {{ $jenisAset }}
                                         </h6>
+                                        @if ($device->is_pinjaman)
+                                            <span class="badge bg-label-info fs-tiny" title="Perangkat Pinjaman Sementara">
+                                                <i class="bx bx-time-five me-1"></i>PINJAMAN
+                                            </span>
+                                        @endif
                                         <span class="badge bg-label-secondary fs-tiny">{{ $spekAset ?: '-' }}</span>
                                     </div>
                                     <div class="small text-muted font-monospace mb-1">
@@ -258,37 +263,54 @@
                                     @endif
                                 </div>
 
-                                {{-- Tombol Bukti QR Code Mapping --}}
-                                @if ($mapping)
-                                    <button type="button" 
-                                            class="btn btn-xs btn-outline-primary btn-show-qr mt-1 d-inline-flex align-items-center"
-                                            id="btnBuktiQr{{ $device->id }}"
-                                            data-device-id="{{ $device->id }}"
-                                            data-kode="{{ $inventaris->kode_aset ?? '-' }}"
-                                            data-nama="{{ $jenisAset }}"
-                                            data-spek="{{ $spekAset }}"
-                                            data-kategori="{{ $jenisAset }}"
-                                            data-user="{{ $device->nama_pengguna ?? ($mapping->penerima ?? 'Umum') }}"
-                                            data-status="{{ $device->status_device }}"
-                                            data-waktu="{{ $device->checked_at ? $device->checked_at->format('d M Y, H:i') : 'Belum Dicek' }}"
-                                            data-petugas="{{ $checkedBy?->name ?? ($device->checked_at ? ($ruangan->petugas?->name ?? 'Petugas IT') : '-') }}"
-                                            data-kendala="{{ $device->catatan_kendala ?? '' }}"
-                                            data-qr-url="{{ $qrUrl }}">
-                                        <i class="bx bx-qr me-1"></i> Bukti QR
-                                    </button>
-                                @endif
+                                {{-- Tombol Bukti QR Code Mapping & Form F-IT --}}
+                                <div class="d-flex gap-1 mt-1 flex-wrap justify-content-end">
+                                    @if ($mapping)
+                                        <button type="button" 
+                                                class="btn btn-xs btn-outline-primary btn-show-qr d-inline-flex align-items-center"
+                                                id="btnBuktiQr{{ $device->id }}"
+                                                data-device-id="{{ $device->id }}"
+                                                data-kode="{{ $inventaris->kode_aset ?? '-' }}"
+                                                data-nama="{{ $jenisAset }}"
+                                                data-spek="{{ $spekAset }}"
+                                                data-kategori="{{ $jenisAset }}"
+                                                data-user="{{ $device->nama_pengguna ?? ($mapping->penerima ?? 'Umum') }}"
+                                                data-status="{{ $device->status_device }}"
+                                                data-waktu="{{ $device->checked_at ? $device->checked_at->format('d M Y, H:i') : 'Belum Dicek' }}"
+                                                data-petugas="{{ $checkedBy?->name ?? ($device->checked_at ? ($ruangan->petugas?->name ?? 'Petugas IT') : '-') }}"
+                                                data-kendala="{{ $device->catatan_kendala ?? '' }}"
+                                                data-qr-url="{{ $qrUrl }}">
+                                            <i class="bx bx-qr me-1"></i> Bukti QR
+                                        </button>
+                                    @endif
+                                    @if ($inventaris)
+                                        <a href="{{ route('history.perjalanan.dokumen_perawatan.cetak', ['id' => $inventaris->id, 'tahun' => date('Y')]) }}" 
+                                           target="_blank"
+                                           class="btn btn-xs btn-outline-secondary d-inline-flex align-items-center"
+                                           title="Cetak Form Perawatan Tahunan (F-IT-001/00 & F-IT-002/00)">
+                                            <i class="bx bx-file me-1"></i> Form F-IT
+                                        </a>
+                                    @endif
+                                </div>
                             </div>
                         </div>
 
                         {{-- USER PENGGUNA INFO --}}
                         <div class="p-2 mb-2 rounded bg-light border d-flex align-items-center justify-content-between">
                             <div class="d-flex align-items-center gap-2">
-                                <i class="bx bx-user-circle fs-4 text-primary"></i>
+                                <i class="bx {{ $device->is_pinjaman ? 'bx-briefcase text-info' : 'bx-user-circle text-primary' }} fs-4"></i>
                                 <div>
-                                    <small class="text-muted d-block" style="font-size: 0.73rem;">Pengguna Device:</small>
+                                    <small class="text-muted d-block" style="font-size: 0.73rem;">
+                                        {{ $device->is_pinjaman ? 'Peminjam Aset:' : 'Pengguna Device:' }}
+                                    </small>
                                     <span class="fw-semibold text-dark small" id="userDevice{{ $device->id }}">
                                         {{ $device->nama_pengguna ?? ($mapping->penerima ?? 'Umum / Belum Ditugaskan') }}
                                     </span>
+                                    @if ($device->is_pinjaman && $device->peminjaman)
+                                        <small class="text-info d-block" style="font-size: 0.72rem;">
+                                            <i class="bx bx-calendar-check me-1"></i>Batas kembali: {{ \Carbon\Carbon::parse($device->peminjaman->tanggal_rencana_kembali)->format('d M Y') }}
+                                        </small>
+                                    @endif
                                 </div>
                             </div>
                             @if ($mapping && $mapping->processor)

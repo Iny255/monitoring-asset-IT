@@ -65,6 +65,32 @@
                             </li>
                         </ul>
                     </div>
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bx bx-file-blank me-1"></i> Form Perawatan (F-IT)
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <h6 class="dropdown-header text-uppercase">Dokumen Tahunan ({{ date('Y') }})</h6>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('history.perjalanan.dokumen_perawatan.cetak', ['id' => $id, 'tahun' => date('Y')]) }}" target="_blank">
+                                    <i class="bx bx-printer me-2 text-primary"></i> Cetak PDF (F-IT-001 & 002)
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('history.perjalanan.dokumen_perawatan.excel', ['id' => $id, 'tahun' => date('Y')]) }}">
+                                    <i class="bx bxs-file-export me-2 text-success"></i> Download Excel (2 Sheet)
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{{ route('history.perjalanan.dokumen_perawatan.cetak', ['id' => $id, 'tahun' => date('Y'), 'blank' => 1]) }}" target="_blank">
+                                    <i class="bx bx-file me-2 text-secondary"></i> Cetak Form Kosong (Blank)
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
                     <a href="{{ route('history.perjalanan.index') }}" class="btn btn-outline-secondary">
                         <i class="bx bx-arrow-back me-1"></i> Kembali
                     </a>
@@ -168,6 +194,17 @@
                     </div>
                 </div>
             </div>
+            <div class="col-md col-sm-6">
+                <div class="card summary-card">
+                    <div class="card-body text-center p-3">
+                        <div class="summary-icon text-white mb-2" style="background-color: #0284c7;">
+                            <i class="bx bx-time-five"></i>
+                        </div>
+                        <small class="text-muted d-block">Peminjaman</small>
+                        <h4 class="fw-bold mb-0" style="color: #0284c7;">{{ $totalPeminjaman ?? 0 }}</h4>
+                    </div>
+                </div>
+            </div>
         </div>
 
         @if(request()->anyFilled(['tanggal_awal', 'tanggal_akhir', 'aktivitas']))
@@ -250,6 +287,12 @@
                                             @case('PENCABUTAN')
                                                 <span class="badge bg-danger badge-status"><i class="bx bx-power-off me-1"></i> PENCABUTAN</span>
                                                 @break
+                                            @case('PEMINJAMAN')
+                                                <span class="badge badge-status text-white" style="background-color: #0284c7;"><i class="bx bx-time-five me-1"></i> PEMINJAMAN</span>
+                                                @break
+                                            @case('PENGEMBALIAN PINJAMAN')
+                                                <span class="badge badge-status text-white" style="background-color: #059669;"><i class="bx bx-check-circle me-1"></i> PENGEMBALIAN</span>
+                                                @break
                                             @default
                                                 <span class="badge bg-secondary">{{ $item['aktivitas'] }}</span>
                                         @endswitch
@@ -262,6 +305,15 @@
                                                 </div>
                                                 <div class="fw-bold text-dark">
                                                     <i class="bx bx-user-check text-success me-1"></i>{{ $item['user_baru'] }}
+                                                </div>
+                                            </div>
+                                        @elseif (in_array($item['aktivitas'], ['PEMINJAMAN', 'PENGEMBALIAN PINJAMAN']))
+                                            <div class="d-flex flex-column gap-1">
+                                                <div class="small text-muted">
+                                                    <i class="bx bx-user me-1 text-secondary"></i>{{ $item['user_lama'] }}
+                                                </div>
+                                                <div class="fw-bold text-dark">
+                                                    <i class="bx bx-right-arrow-alt text-primary me-1"></i>{{ $item['user_baru'] }}
                                                 </div>
                                             </div>
                                         @else
@@ -297,6 +349,16 @@
                                                     </div>
                                                 @endif
                                             </div>
+                                        @elseif (in_array($item['aktivitas'], ['PEMINJAMAN', 'PENGEMBALIAN PINJAMAN']))
+                                            <div class="d-flex flex-column gap-1">
+                                                <div class="small text-dark fw-semibold">
+                                                    <i class="bx bx-buildings text-secondary me-1"></i>{{ $item['perusahaan'] ?? '-' }}
+                                                </div>
+                                                <div class="small text-muted">
+                                                    <i class="bx bx-map-pin text-danger me-1"></i>
+                                                    {{ $item['lokasi_lama'] ?? '-' }} &rarr; <span class="text-dark fw-semibold">{{ $item['lokasi_baru'] ?? '-' }}</span>
+                                                </div>
+                                            </div>
                                         @else
                                             <div class="d-flex flex-column">
                                                 <div class="text-dark fw-semibold small">
@@ -324,6 +386,13 @@
                                             <div class="mt-1">
                                                 <a href="{{ route('maintenance.show', $item['maintenance_id']) }}" class="small text-primary fw-semibold text-decoration-none" title="Lihat Detail Servis">
                                                     <i class="bx bx-show me-1"></i> Detail Servis
+                                                </a>
+                                            </div>
+                                        @endif
+                                        @if (!empty($item['peminjaman_id']))
+                                            <div class="mt-1">
+                                                <a href="{{ route('peminjaman.show', $item['peminjaman_id']) }}" class="small text-primary fw-semibold text-decoration-none" title="Lihat Detail Peminjaman">
+                                                    <i class="bx bx-show me-1"></i> Detail Peminjaman
                                                 </a>
                                             </div>
                                         @endif
@@ -379,6 +448,7 @@
                                     <option value="MUTASI" {{ request('aktivitas') == 'MUTASI' ? 'selected' : '' }}>MUTASI</option>
                                     <option value="MAINTENANCE" {{ request('aktivitas') == 'MAINTENANCE' ? 'selected' : '' }}>MAINTENANCE / SERVIS</option>
                                     <option value="PENCABUTAN" {{ request('aktivitas') == 'PENCABUTAN' ? 'selected' : '' }}>PENCABUTAN</option>
+                                    <option value="PEMINJAMAN" {{ request('aktivitas') == 'PEMINJAMAN' ? 'selected' : '' }}>PEMINJAMAN & PENGEMBALIAN</option>
                                 </select>
                             </div>
                         </div>

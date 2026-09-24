@@ -64,6 +64,7 @@
                                         </span>
                                     @break
 
+                                    @case('Dikembalikan')
                                     @case('Selesai')
                                         <span class="badge bg-success fs-6">
 
@@ -150,6 +151,38 @@
 
                             <input type="text" class="form-control"
                                 value="{{ \Carbon\Carbon::parse($peminjaman->tanggal_rencana_kembali)->translatedFormat('d F Y') }}"
+                                readonly>
+
+                        </div>
+
+                    </div>
+
+                    <div class="row">
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label text-uppercase fw-bold">
+
+                                Lokasi / Ruangan Penggunaan
+
+                            </label>
+
+                            <input type="text" class="form-control"
+                                value="{{ $peminjaman->lokasi->nama_lokasi ?? 'Tidak Terikat Ruangan / Luar Kantor' }}"
+                                readonly>
+
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+
+                            <label class="form-label text-uppercase fw-bold">
+
+                                Kondisi Saat Dipinjam
+
+                            </label>
+
+                            <input type="text" class="form-control"
+                                value="{{ $peminjaman->kondisi_pinjam ?? 'Baik' }}"
                                 readonly>
 
                         </div>

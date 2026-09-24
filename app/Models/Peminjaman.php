@@ -16,6 +16,7 @@ class Peminjaman extends Model
     'karyawan_id',
     'perusahaan_tujuan_id',
     'karyawan_tujuan_id',
+    'id_lokasi',
     'user_id',
     'tanggal_pinjam',
     'tanggal_rencana_kembali',
@@ -57,9 +58,40 @@ class Peminjaman extends Model
   {
     return $this->belongsTo(User::class);
   }
+
+  public function lokasi()
+  {
+    return $this->belongsTo(Lokasi::class, 'id_lokasi');
+  }
+
+  public function checklistDevices()
+  {
+    return $this->hasMany(ChecklistDevice::class, 'peminjaman_id');
+  }
+
   public function maintenanceTerakhir()
-{
+  {
     return $this->hasOne(Maintenance::class, 'peminjaman_id')
         ->latestOfMany();
-}
+  }
+
+  public function isDipinjam(): bool
+  {
+    return strtolower($this->status) === 'dipinjam';
+  }
+
+  public function isDikembalikan(): bool
+  {
+    return in_array(strtolower($this->status), ['dikembalikan', 'selesai']);
+  }
+
+  public function getPeminjamNamaAttribute(): string
+  {
+    if ($this->jenis_peminjaman === 'internal') {
+      return $this->karyawan?->nama_karyawan ?? '-';
+    }
+    $perusahaan = $this->perusahaanTujuan?->nama_perusahaan ?? '-';
+    $pj = $this->karyawanTujuan?->nama_karyawan ? " ({$this->karyawanTujuan->nama_karyawan})" : '';
+    return $perusahaan . $pj;
+  }
 }

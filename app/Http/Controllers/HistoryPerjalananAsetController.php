@@ -167,6 +167,7 @@ class HistoryPerjalananAsetController extends Controller
     $totalCabut = $timeline->where('aktivitas', 'PENCABUTAN')->count();
     $totalMaintenance = $timeline->where('aktivitas', 'MAINTENANCE')->count();
     $totalHakAkses = $timeline->where('aktivitas', 'HAK AKSES')->count();
+    $totalPeminjaman = $timeline->whereIn('aktivitas', ['PEMINJAMAN', 'PENGEMBALIAN PINJAMAN'])->count();
 
     return view('content.dashboard.history.show-perjalanan-aset', compact(
       'inventaris',
@@ -177,6 +178,7 @@ class HistoryPerjalananAsetController extends Controller
       'totalCabut',
       'totalMaintenance',
       'totalHakAkses',
+      'totalPeminjaman',
       'user',
       'id'
     ));
@@ -947,6 +949,79 @@ class HistoryPerjalananAsetController extends Controller
       ]);
     }
 
+    // 7. PEMINJAMAN & PENGEMBALIAN PINJAMAN
+    $historyPeminjaman = Peminjaman::withoutGlobalScopes()
+      ->with([
+        'user',
+        'karyawan',
+        'karyawanTujuan',
+        'perusahaanTujuan',
+        'lokasi',
+        'inventaris.perusahaan',
+      ])
+      ->whereIn('inventaris_id', $allInvIds)
+      ->orderBy('tanggal_pinjam')
+      ->get();
+
+    foreach ($historyPeminjaman as $pjm) {
+      $inv = $allInventaris->firstWhere('id', $pjm->inventaris_id);
+      $peminjamNama = $pjm->peminjam_nama;
+      $lokasiPinjam = $pjm->lokasi?->nama_lokasi ?? 'Luar Kantor / Mobile';
+      $ptTujuan = $pjm->perusahaanTujuan?->nama_perusahaan 
+        ?? $inv?->perusahaan?->nama_perusahaan 
+        ?? $target->perusahaan?->nama_perusahaan 
+        ?? '-';
+
+      $tglPinjam = Carbon::parse($pjm->tanggal_pinjam);
+      $tglRencana = $pjm->tanggal_rencana_kembali ? Carbon::parse($pjm->tanggal_rencana_kembali)->format('d-m-Y') : '-';
+
+      $ketPinjam = "Peminjaman [{$pjm->kode_peminjaman}]: Keperluan: {$pjm->keperluan} (Batas kembali: {$tglRencana})";
+      if (!empty($pjm->kondisi_pinjam)) {
+        $ketPinjam .= " • Kondisi Awal: {$pjm->kondisi_pinjam}";
+      }
+
+      // Catatan Peminjaman Keluar
+      $timeline->push([
+        'tanggal' => $tglPinjam,
+        'aktivitas' => 'PEMINJAMAN',
+        'kode_aset' => $inv?->kode_aset ?? $target->kode_aset,
+        'inventaris' => $inv?->no_inventaris ?? $target->no_inventaris,
+        'perusahaan' => $ptTujuan,
+        'user_lama' => 'Stok Gudang',
+        'user_baru' => $peminjamNama,
+        'lokasi_lama' => 'Gudang IT',
+        'lokasi_baru' => $lokasiPinjam,
+        'keterangan' => $ketPinjam,
+        'petugas' => $pjm->user?->name ?? 'Petugas IT',
+        'peminjaman_id' => $pjm->id,
+      ]);
+
+      // Catatan Saat Dikembalikan
+      if ($pjm->tanggal_kembali || in_array(strtolower($pjm->status), ['dikembalikan', 'selesai', 'hilang'])) {
+        $tglKembali = $pjm->tanggal_kembali ? Carbon::parse($pjm->tanggal_kembali) : Carbon::parse($pjm->updated_at);
+        $kondisiKembali = $pjm->kondisi_kembali ?? ($pjm->status === 'Hilang' ? 'Hilang' : 'Baik');
+        $ketKembali = "Pengembalian [{$pjm->kode_peminjaman}]: Kondisi: {$kondisiKembali}";
+        if (!empty($pjm->keterangan_kembali)) {
+          $ketKembali .= " • Catatan: {$pjm->keterangan_kembali}";
+        }
+
+        $timeline->push([
+          'tanggal' => $tglKembali,
+          'aktivitas' => 'PENGEMBALIAN PINJAMAN',
+          'kode_aset' => $inv?->kode_aset ?? $target->kode_aset,
+          'inventaris' => $inv?->no_inventaris ?? $target->no_inventaris,
+          'perusahaan' => $ptTujuan,
+          'user_lama' => $peminjamNama,
+          'user_baru' => 'Stok Gudang',
+          'lokasi_lama' => $lokasiPinjam,
+          'lokasi_baru' => 'Gudang IT',
+          'keterangan' => $ketKembali,
+          'petugas' => $pjm->user?->name ?? 'Petugas IT',
+          'peminjaman_id' => $pjm->id,
+        ]);
+      }
+    }
+
     // FILTER TANGGAL
     if ($request) {
       if ($request->filled('tanggal_awal')) {
@@ -975,6 +1050,9 @@ class HistoryPerjalananAsetController extends Controller
       if ($request->filled('aktivitas')) {
         $aktivitasVal = strtoupper($request->aktivitas);
         $timeline = $timeline->filter(function ($item) use ($aktivitasVal) {
+          if ($aktivitasVal === 'PEMINJAMAN') {
+            return in_array(strtoupper($item['aktivitas']), ['PEMINJAMAN', 'PENGEMBALIAN PINJAMAN']);
+          }
           return strtoupper($item['aktivitas']) === $aktivitasVal;
         });
       }

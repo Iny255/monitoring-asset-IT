@@ -160,12 +160,22 @@
                             <span class="badge" style="background: #dc2626;">PENCABUTAN</span>
                         @elseif($item['aktivitas'] == 'MAINTENANCE')
                             <span class="badge" style="background: #0891b2;">SERVIS</span>
+                        @elseif($item['aktivitas'] == 'HAK AKSES')
+                            <span class="badge" style="background: #334155;">HAK AKSES</span>
+                        @elseif($item['aktivitas'] == 'PEMINJAMAN')
+                            <span class="badge" style="background: #0284c7;">PEMINJAMAN</span>
+                        @elseif($item['aktivitas'] == 'PENGEMBALIAN PINJAMAN')
+                            <span class="badge" style="background: #059669;">PENGEMBALIAN</span>
                         @else
                             <span class="badge" style="background: #475569;">{{ $item['aktivitas'] }}</span>
                         @endif
                     </td>
                     <td>
-                        <strong>{{ $item['user_baru'] ?? $item['user_lama'] ?? '-' }}</strong>
+                        @if(in_array($item['aktivitas'] ?? '', ['PEMINJAMAN', 'PENGEMBALIAN PINJAMAN']))
+                            <div>{{ $item['user_lama'] }} &rarr; <strong>{{ $item['user_baru'] }}</strong></div>
+                        @else
+                            <strong>{{ $item['user_baru'] ?? $item['user_lama'] ?? '-' }}</strong>
+                        @endif
                     </td>
                     <td>
                         @if(($item['aktivitas'] ?? '') == 'MUTASI' && !empty($item['is_antar_perusahaan']))
@@ -178,6 +188,9 @@
                             @if(!empty($item['lokasi_lama']) || !empty($item['lokasi_baru']))
                                 <small style="color: #64748b;">{{ $item['lokasi_lama'] ?? '-' }} &rarr; {{ $item['lokasi_baru'] ?? '-' }}</small>
                             @endif
+                        @elseif(in_array(($item['aktivitas'] ?? ''), ['PEMINJAMAN', 'PENGEMBALIAN PINJAMAN']))
+                            <div><strong>{{ $item['perusahaan'] ?? '-' }}</strong></div>
+                            <small style="color: #64748b;">{{ $item['lokasi_lama'] ?? '-' }} &rarr; {{ $item['lokasi_baru'] ?? '-' }}</small>
                         @else
                             <div><strong>{{ $item['perusahaan'] ?? '-' }}</strong></div>
                             <small style="color: #64748b;">{{ $item['lokasi_baru'] ?? $item['lokasi_lama'] ?? '-' }}</small>

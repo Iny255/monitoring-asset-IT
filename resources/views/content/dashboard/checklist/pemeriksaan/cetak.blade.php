@@ -169,8 +169,12 @@
                         @else
                             <span class="text-muted" style="font-size: 9px;">-</span>
                         @endif
+                    <td class="font-monospace text-center">
+                        {{ $inv->kode_aset ?? '-' }}
+                        @if ($dev->is_pinjaman)
+                            <div style="font-size: 8px; color: #0288d1; font-weight: bold;">[PINJAMAN]</div>
+                        @endif
                     </td>
-                    <td class="font-monospace text-center">{{ $inv->kode_aset ?? '-' }}</td>
                     <td class="fw-semibold">{{ $spekAset ?: ($jenisAset ?? '-') }}</td>
                     <td class="text-center">{{ $jenisAset }}</td>
                     <td>{{ $dev->nama_pengguna ?? '-' }}</td>

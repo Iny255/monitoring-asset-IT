@@ -230,6 +230,21 @@
 
                         </div>
 
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Lokasi / Ruangan</label>
+                                <input type="text" class="form-control"
+                                    value="{{ $peminjaman->lokasi->nama_lokasi ?? 'Tidak Terikat Ruangan / Luar Kantor' }}"
+                                    readonly>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Kondisi Awal Saat Dipinjam</label>
+                                <input type="text" class="form-control"
+                                    value="{{ $peminjaman->kondisi_pinjam ?? 'Baik' }}"
+                                    readonly>
+                            </div>
+                        </div>
+
                         <div class="mb-4">
 
                             <label class="form-label">

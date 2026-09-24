@@ -257,16 +257,51 @@
 
                         </div>
 
+                        {{-- Lokasi & Kondisi Pinjam --}}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    Lokasi / Ruangan Penggunaan <span class="badge bg-label-info ms-1">Checklist</span>
+                                </label>
+                                <select class="form-select" name="id_lokasi" id="id_lokasi">
+                                    <option value="">-- Tidak Terikat Ruangan / Luar Kantor --</option>
+                                    @foreach ($lokasis as $lokasi)
+                                        <option value="{{ $lokasi->id }}" {{ old('id_lokasi') == $lokasi->id ? 'selected' : '' }}>
+                                            {{ $lokasi->nama_lokasi }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                                <small class="text-muted d-block mt-1">
+                                    <i class="bx bx-info-circle me-1"></i> Jika dipilih, otomatis masuk jadwal checklist ruangan ini.
+                                </small>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label">
+                                    Kondisi Saat Dipinjam
+                                </label>
+                                <select class="form-select" name="kondisi_pinjam" id="kondisi_pinjam">
+                                    <option value="Baik" {{ old('kondisi_pinjam', 'Baik') == 'Baik' ? 'selected' : '' }}>Baik / Siap Pakai</option>
+                                    <option value="Normal" {{ old('kondisi_pinjam') == 'Normal' ? 'selected' : '' }}>Normal (Lecet Pemakaian)</option>
+                                    <option value="Perlu Perhatian" {{ old('kondisi_pinjam') == 'Perlu Perhatian' ? 'selected' : '' }}>Khusus / Perlu Perhatian</option>
+                                </select>
+                                <small class="text-muted d-block mt-1">
+                                    <i class="bx bx-check-shield me-1"></i> Kondisi fisik aset saat serah terima.
+                                </small>
+                            </div>
+                        </div>
+
                         {{-- Keperluan --}}
-                        <div class="col-md-12">
+                        <div class="col-md-12 mb-3">
 
                             <label class="form-label">
 
                                 Keperluan
+                                <span class="text-danger">*</span>
 
                             </label>
 
-                            <textarea name="keperluan" rows="4" class="form-control"></textarea>
+                            <textarea name="keperluan" rows="3" class="form-control" placeholder="Contoh: Penggunaan laptop operasional sementara selama device utama diservis..." required>{{ old('keperluan') }}</textarea>
 
                         </div>
 

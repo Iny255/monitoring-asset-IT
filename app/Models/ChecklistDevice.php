@@ -14,6 +14,7 @@ class ChecklistDevice extends Model
     protected $fillable = [
         'checklist_ruangan_id',
         'maping_id',
+        'peminjaman_id',
         'inventaris_id',
         'nama_pengguna',
         'status_device',
@@ -35,6 +36,11 @@ class ChecklistDevice extends Model
     public function maping()
     {
         return $this->belongsTo(Maping::class, 'maping_id')->withoutGlobalScopes();
+    }
+
+    public function peminjaman()
+    {
+        return $this->belongsTo(Peminjaman::class, 'peminjaman_id');
     }
 
     public function inventaris()
@@ -60,6 +66,11 @@ class ChecklistDevice extends Model
     public function getIsCheckedAttribute(): bool
     {
         return in_array($this->status_device, ['normal', 'ada_kendala']);
+    }
+
+    public function getIsPinjamanAttribute(): bool
+    {
+        return !empty($this->peminjaman_id);
     }
 
     public function getFormattedCheckedAtAttribute(): ?string

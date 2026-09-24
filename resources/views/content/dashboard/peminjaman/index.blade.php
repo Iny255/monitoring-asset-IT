@@ -224,6 +224,14 @@
                                                 </small>
                                             @endif
 
+                                            @if ($item->lokasi)
+                                                <div class="mt-1">
+                                                    <span class="badge bg-label-info font-monospace py-0 px-1" style="font-size: 0.72rem;" title="Lokasi Ruangan Penggunaan">
+                                                        <i class="bx bx-map-pin me-1"></i>{{ $item->lokasi->nama_lokasi }}
+                                                    </span>
+                                                </div>
+                                            @endif
+
                                         </td>
 
                                         <td>
@@ -307,6 +315,15 @@
                                                         </a>
                                                     @endif
                                                 @endif
+
+                                                {{-- Hapus --}}
+                                                <form action="{{ route('peminjaman.destroy', $item->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Apakah Anda yakin ingin menghapus data peminjaman {{ $item->kode_peminjaman }}?\n\n(Status inventaris akan dikembalikan menjadi TERSEDIA jika masih dipinjam)');">
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <button type="submit" class="btn btn-sm btn-icon btn-outline-danger" data-bs-toggle="tooltip" title="Hapus">
+                                                        <i class="bx bx-trash"></i>
+                                                    </button>
+                                                </form>
 
                                             </div>
 
@@ -407,6 +424,18 @@
                             </div>
 
                             <div class="col-md-6">
+                                <label class="form-label">Lokasi / Ruangan</label>
+                                <select name="id_lokasi" class="form-select">
+                                    <option value="">Semua Lokasi</option>
+                                    @foreach ($lokasis as $lok)
+                                        <option value="{{ $lok->id }}" {{ request('id_lokasi') == $lok->id ? 'selected' : '' }}>
+                                            {{ $lok->nama_lokasi }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+
+                            <div class="col-md-12">
                                 <label class="form-label">Cari</label>
                                 <input type="text" name="search" class="form-control"
                                     placeholder="Kode / Inventaris / Peminjam" value="{{ request('search') }}">

@@ -9,6 +9,7 @@ use App\Models\ChecklistDevice;
 use App\Models\ChecklistDeviceItem;
 use App\Models\ChecklistItem;
 use App\Models\Maping;
+use App\Models\Peminjaman;
 
 class ChecklistRuangan extends Model
 {
@@ -160,14 +161,50 @@ class ChecklistRuangan extends Model
             ->with(['karyawan', 'keluar.inventaris.dataAset'])
             ->get();
 
+        // 1b. Ambil seluruh peminjaman aset yang aktif di lokasi ruangan ini
+        $activeLoans = Peminjaman::where('status', 'Dipinjam')
+            ->where('id_lokasi', $this->id_lokasi)
+            ->whereHas('inventaris', function ($iq) {
+                $iq->where('is_transfer', false)
+                   ->when($this->id_perusahaan, fn($q) => $q->where('perusahaan_id', $this->id_perusahaan));
+            })
+            ->with(['inventaris.dataAset', 'karyawan', 'karyawanTujuan', 'perusahaanTujuan'])
+            ->get();
+
         // 2. Ambil seluruh device yang saat ini tercatat di checklist ruangan ini
         $currentDevices = $this->checklistDevices()
-            ->with(['maping.keluar.inventaris', 'inventaris', 'items'])
+            ->with(['maping.keluar.inventaris', 'peminjaman.inventaris', 'inventaris', 'items'])
             ->get();
 
         foreach ($currentDevices as $device) {
-            $m = $device->maping;
             $inv = $device->inventaris;
+
+            // Jika device berasal dari transaksi peminjaman
+            if ($device->is_pinjaman) {
+                $loan = $device->peminjaman;
+                $isInvalidLoan = !$loan
+                    || strtolower($loan->status) !== 'dipinjam'
+                    || $loan->id_lokasi != $this->id_lokasi
+                    || ($inv && $inv->is_transfer);
+
+                if ($isInvalidLoan) {
+                    if ($device->status_device === 'belum_dicek') {
+                        $device->items()->delete();
+                        $device->delete();
+                        continue;
+                    }
+                } else {
+                    $peminjamNama = $loan->peminjam_nama ? "[Pinjaman] {$loan->peminjam_nama}" : '[Pinjaman]';
+                    if ($device->nama_pengguna !== $peminjamNama) {
+                        $device->nama_pengguna = $peminjamNama;
+                        $device->save();
+                    }
+                }
+                continue;
+            }
+
+            // Jika device berasal dari mapping tetap
+            $m = $device->maping;
 
             // Kriteria perangkat tidak valid di ruangan ini lagi:
             // - Mapping ID null atau data mapping tidak ada di database
@@ -201,15 +238,21 @@ class ChecklistRuangan extends Model
             }
         }
 
-        // 3. Tambahkan mapping aktif di lokasi ini yang belum ada di checklist ruangan
+        // 3. Tambahkan mapping aktif & peminjaman aktif di lokasi ini yang belum ada di checklist ruangan
         $existingDeviceMappingIds = $this->checklistDevices()->pluck('maping_id')->filter()->toArray();
+        $existingDeviceLoanIds = $this->checklistDevices()->pluck('peminjaman_id')->filter()->toArray();
         $existingDeviceInventarisIds = $this->checklistDevices()->pluck('inventaris_id')->filter()->toArray();
+
         $missingMappings = $activeMappings->filter(function ($mapping) use ($existingDeviceMappingIds, $existingDeviceInventarisIds) {
             $invId = $mapping->keluar?->inventaris_id;
             return !in_array($mapping->id, $existingDeviceMappingIds) && (!$invId || !in_array($invId, $existingDeviceInventarisIds));
         });
 
-        if ($missingMappings->isNotEmpty()) {
+        $missingLoans = $activeLoans->filter(function ($loan) use ($existingDeviceLoanIds, $existingDeviceInventarisIds) {
+            return !in_array($loan->id, $existingDeviceLoanIds) && !in_array($loan->inventaris_id, $existingDeviceInventarisIds);
+        });
+
+        if ($missingMappings->isNotEmpty() || $missingLoans->isNotEmpty()) {
             $defaultItems = ChecklistItem::where('is_active', true)
                 ->where(function ($q) {
                     $q->whereNull('id_perusahaan')
@@ -218,6 +261,7 @@ class ChecklistRuangan extends Model
                 ->orderBy('urutan')
                 ->get();
 
+            // Insert missing mappings
             foreach ($missingMappings as $mapping) {
                 $inventaris = $mapping->keluar?->inventaris;
                 if (!$inventaris) {
@@ -227,6 +271,7 @@ class ChecklistRuangan extends Model
                 $newDevice = ChecklistDevice::create([
                     'checklist_ruangan_id' => $this->id,
                     'maping_id' => $mapping->id,
+                    'peminjaman_id' => null,
                     'inventaris_id' => $inventaris->id,
                     'nama_pengguna' => $mapping->penerima,
                     'status_device' => 'belum_dicek',
@@ -240,6 +285,36 @@ class ChecklistRuangan extends Model
                         'is_ok' => true,
                     ]);
                 }
+
+                $existingDeviceInventarisIds[] = $inventaris->id;
+            }
+
+            // Insert missing loans
+            foreach ($missingLoans as $loan) {
+                $inv = $loan->inventaris;
+                if (!$inv || in_array($inv->id, $existingDeviceInventarisIds)) {
+                    continue;
+                }
+
+                $newDevice = ChecklistDevice::create([
+                    'checklist_ruangan_id' => $this->id,
+                    'maping_id' => null,
+                    'peminjaman_id' => $loan->id,
+                    'inventaris_id' => $inv->id,
+                    'nama_pengguna' => '[Pinjaman] ' . $loan->peminjam_nama,
+                    'status_device' => 'belum_dicek',
+                ]);
+
+                foreach ($defaultItems as $item) {
+                    ChecklistDeviceItem::create([
+                        'checklist_device_id' => $newDevice->id,
+                        'nama_item' => $item->nama_item,
+                        'kategori_item' => $item->kategori,
+                        'is_ok' => true,
+                    ]);
+                }
+
+                $existingDeviceInventarisIds[] = $inv->id;
             }
         }
 

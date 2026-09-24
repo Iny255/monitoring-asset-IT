@@ -6,10 +6,14 @@ use App\Models\Inventaris;
 use App\Models\Karyawan;
 use App\Models\Perusahaan;
 use App\Models\Kategori;
+use App\Models\Lokasi;
 use App\Models\Peminjaman;
+use App\Models\ChecklistDevice;
+use App\Models\ChecklistRuangan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Http\JsonResponse;
 use App\Exports\PeminjamanExport;
 use Maatwebsite\Excel\Facades\Excel;
@@ -25,6 +29,7 @@ class PeminjamanController extends Controller
       'karyawan',
       'karyawanTujuan',
       'perusahaanTujuan',
+      'lokasi',
       'maintenanceTerakhir',
     ]);
 
@@ -95,6 +100,16 @@ class PeminjamanController extends Controller
 
     /*
     |--------------------------------------------------------------------------
+    | FILTER LOKASI
+    |--------------------------------------------------------------------------
+    */
+
+    if ($request->filled('id_lokasi')) {
+      $query->where('id_lokasi', $request->id_lokasi);
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | FILTER PENCARIAN
     |--------------------------------------------------------------------------
     */
@@ -119,6 +134,10 @@ class PeminjamanController extends Controller
 
           ->orWhereHas('perusahaanTujuan', function ($per) use ($search) {
             $per->where('nama_perusahaan', 'like', "%{$search}%");
+          })
+
+          ->orWhereHas('lokasi', function ($lok) use ($search) {
+            $lok->where('nama_lokasi', 'like', "%{$search}%");
           });
       });
     }
@@ -135,7 +154,15 @@ class PeminjamanController extends Controller
       ->appends(request()->query());
     $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
 
-    return view('content.dashboard.peminjaman.index', compact('peminjamans', 'perusahaans'));
+    if (auth()->user()->role == 'super_admin') {
+      $lokasis = Lokasi::orderBy('nama_lokasi')->get();
+    } else {
+      $lokasis = Lokasi::where('id_perusahaan', auth()->user()->id_perusahaan)
+        ->orderBy('nama_lokasi')
+        ->get();
+    }
+
+    return view('content.dashboard.peminjaman.index', compact('peminjamans', 'perusahaans', 'lokasis'));
   }
   public function exportExcel(Request $request)
   {
@@ -168,12 +195,16 @@ class PeminjamanController extends Controller
     }
     if (auth()->user()->role == 'super_admin') {
       $perusahaans = Perusahaan::orderBy('nama_perusahaan')->get();
+      $lokasis = Lokasi::orderBy('nama_lokasi')->get();
     } else {
       $perusahaans = Perusahaan::where('id', '!=', auth()->user()->id_perusahaan)
         ->orderBy('nama_perusahaan')
         ->get();
+      $lokasis = Lokasi::where('id_perusahaan', auth()->user()->id_perusahaan)
+        ->orderBy('nama_lokasi')
+        ->get();
     }
-    return view('content.dashboard.peminjaman.create', compact('kategoris', 'inventaris', 'karyawans', 'perusahaans'));
+    return view('content.dashboard.peminjaman.create', compact('kategoris', 'inventaris', 'karyawans', 'perusahaans', 'lokasis'));
   }
   public function kategoriByPerusahaan($id)
   {
@@ -287,6 +318,8 @@ class PeminjamanController extends Controller
       'tanggal_pinjam' => 'required|date',
       'tanggal_rencana_kembali' => 'required|date|after_or_equal:tanggal_pinjam',
       'keperluan' => 'required|string|max:500',
+      'id_lokasi' => 'nullable|exists:lokasis,id',
+      'kondisi_pinjam' => 'nullable|string|max:100',
 
       'karyawan_id' => 'required_if:jenis_peminjaman,internal|nullable|exists:karyawans,id',
 
@@ -341,7 +374,7 @@ class PeminjamanController extends Controller
         |--------------------------------------------------------------------------
         */
 
-      Peminjaman::create([
+      $peminjaman = Peminjaman::create([
         'kode_peminjaman' => $kode,
 
         'inventaris_id' => $inventaris->id,
@@ -355,6 +388,8 @@ class PeminjamanController extends Controller
 
         'karyawan_tujuan_id' => $request->jenis_peminjaman == 'antar_perusahaan' ? $request->karyawan_tujuan_id : null,
 
+        'id_lokasi' => $request->id_lokasi,
+
         'user_id' => auth()->id(),
 
         'tanggal_pinjam' => $request->tanggal_pinjam,
@@ -362,6 +397,8 @@ class PeminjamanController extends Controller
         'tanggal_rencana_kembali' => $request->tanggal_rencana_kembali,
 
         'keperluan' => $request->keperluan,
+
+        'kondisi_pinjam' => $request->kondisi_pinjam ?: 'Baik',
 
         'status' => 'Dipinjam',
       ]);
@@ -375,6 +412,17 @@ class PeminjamanController extends Controller
       $inventaris->update([
         'status' => 'DIPINJAM',
       ]);
+
+      // Sinkronkan ke checklist ruangan jika ruangan sedang aktif / belum selesai
+      if ($peminjaman->id_lokasi) {
+        $activeRuangans = ChecklistRuangan::withoutGlobalScopes()
+          ->where('id_lokasi', $peminjaman->id_lokasi)
+          ->where('status', '!=', 'selesai')
+          ->get();
+        foreach ($activeRuangans as $r) {
+          $r->syncDevicesWithMapping();
+        }
+      }
 
       DB::commit();
 
@@ -401,6 +449,7 @@ class PeminjamanController extends Controller
       'karyawan',
       'karyawanTujuan',
       'perusahaanTujuan',
+      'lokasi',
       'user',
     ]);
 
@@ -418,6 +467,7 @@ class PeminjamanController extends Controller
       'karyawan',
       'karyawanTujuan',
       'perusahaanTujuan',
+      'lokasi',
     ]);
 
     return view('content.dashboard.peminjaman.pengembalian', compact('peminjaman'));
@@ -460,6 +510,25 @@ class PeminjamanController extends Controller
         'status' => $statusInventaris,
       ]);
 
+      // Bersihkan perangkat checklist yang belum dicek di ruangan asal peminjaman
+      $affectedRuanganIds = ChecklistDevice::where('peminjaman_id', $peminjaman->id)
+        ->where('status_device', 'belum_dicek')
+        ->pluck('checklist_ruangan_id')
+        ->unique()
+        ->toArray();
+
+      ChecklistDevice::where('peminjaman_id', $peminjaman->id)
+        ->where('status_device', 'belum_dicek')
+        ->each(function ($dev) {
+          $dev->items()->delete();
+          $dev->delete();
+        });
+
+      foreach ($affectedRuanganIds as $rId) {
+        $ruangan = ChecklistRuangan::withoutGlobalScopes()->find($rId);
+        $ruangan?->updateProgress();
+      }
+
       DB::commit();
 
       return redirect()
@@ -467,8 +536,8 @@ class PeminjamanController extends Controller
         ->with('success', 'Pengembalian aset berhasil disimpan.');
     } catch (\Exception $e) {
       DB::rollBack();
-
-      dd($e->getMessage(), $e->getFile(), $e->getLine());
+      Log::error('Pengembalian aset error: ' . $e->getMessage());
+      return back()->with('error', 'Gagal memproses pengembalian: ' . $e->getMessage());
     }
   }
   public function cetak(Request $request)
@@ -479,6 +548,7 @@ class PeminjamanController extends Controller
       'karyawan',
       'karyawanTujuan',
       'perusahaanTujuan',
+      'lokasi',
     ]);
 
     /*
@@ -609,6 +679,45 @@ class PeminjamanController extends Controller
    */
   public function destroy(string $id)
   {
-    //
+    DB::beginTransaction();
+    try {
+      $peminjaman = Peminjaman::findOrFail($id);
+      $inventaris = $peminjaman->inventaris;
+
+      // Hapus checklist devices yang terkait dan belum dicek
+      $affectedRuanganIds = ChecklistDevice::where('peminjaman_id', $peminjaman->id)
+        ->where('status_device', 'belum_dicek')
+        ->pluck('checklist_ruangan_id')
+        ->unique()
+        ->toArray();
+
+      ChecklistDevice::where('peminjaman_id', $peminjaman->id)
+        ->where('status_device', 'belum_dicek')
+        ->each(function ($dev) {
+          $dev->items()->delete();
+          $dev->delete();
+        });
+
+      foreach ($affectedRuanganIds as $rId) {
+        $ruangan = ChecklistRuangan::withoutGlobalScopes()->find($rId);
+        $ruangan?->updateProgress();
+      }
+
+      // Kembalikan status inventaris jika masih berstatus DIPINJAM
+      if ($inventaris && $inventaris->status === 'DIPINJAM') {
+        $inventaris->update(['status' => 'TERSEDIA']);
+      }
+
+      $peminjaman->delete();
+      DB::commit();
+
+      return redirect()
+        ->route('peminjaman.index')
+        ->with('success', 'Data peminjaman berhasil dihapus.');
+    } catch (\Exception $e) {
+      DB::rollBack();
+      Log::error('Gagal menghapus peminjaman: ' . $e->getMessage());
+      return back()->with('error', 'Gagal menghapus peminjaman: ' . $e->getMessage());
+    }
   }
 }
