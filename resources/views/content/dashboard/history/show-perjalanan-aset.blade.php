@@ -143,7 +143,7 @@
                 <div class="card summary-card">
                     <div class="card-body text-center p-3">
                         <div class="summary-icon bg-primary text-white mb-2">
-                            <i class="bx bx-box-arrow-up"></i>
+                            <i class="bx bx-log-out-circle"></i>
                         </div>
                         <small class="text-muted d-block">Total Keluar</small>
                         <h4 class="text-primary fw-bold mb-0">{{ $totalKeluar }}</h4>
@@ -266,10 +266,10 @@
                                     <td class="text-center">
                                         @switch($item['aktivitas'])
                                             @case('MASUK')
-                                                <span class="badge bg-success badge-status"><i class="bx bx-box-arrow-in-down me-1"></i> MASUK</span>
+                                                <span class="badge bg-success badge-status"><i class="bx bx-log-in-circle me-1"></i> MASUK</span>
                                                 @break
                                             @case('KELUAR')
-                                                <span class="badge bg-primary badge-status"><i class="bx bx-box-arrow-up me-1"></i> KELUAR</span>
+                                                <span class="badge bg-primary badge-status"><i class="bx bx-log-out-circle me-1"></i> KELUAR</span>
                                                 @break
                                             @case('HAK AKSES')
                                                 <span class="badge bg-dark badge-status"><i class="bx bx-key me-1"></i> HAK AKSES</span>

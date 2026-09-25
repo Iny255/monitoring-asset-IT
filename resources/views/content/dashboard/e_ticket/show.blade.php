@@ -65,7 +65,12 @@
                                     <span class="badge bg-secondary">LOW</span>
                             @endswitch
                         </div>
-                        <small class="text-muted">Dibuat pada {{ $ticket->created_at->format('d F Y, H:i') }} WIB oleh {{ $ticket->user->name ?? 'N/A' }}</small>
+                        <small class="text-muted">
+                            Dibuat pada {{ $ticket->created_at->format('d F Y, H:i') }} WIB oleh <strong class="text-dark">{{ $ticket->pelapor_name }}</strong>
+                            @if ($ticket->is_public)
+                                <span class="badge bg-label-warning ms-1">Link Publik</span>
+                            @endif
+                        </small>
                     </div>
                 </div>
             </div>
@@ -195,6 +200,58 @@
 
         {{-- SIDEBAR ACTION CONTROL --}}
         <div class="col-lg-4">
+            {{-- INFORMASI PELAPOR CARD --}}
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0 fw-bold"><i class="bx bx-user me-2 text-primary"></i> Data Pelapor</h5>
+                    @if ($ticket->is_public)
+                        <span class="badge bg-warning text-dark">Tiket Publik</span>
+                    @else
+                        <span class="badge bg-label-primary">User Internal</span>
+                    @endif
+                </div>
+                <div class="card-body py-3">
+                    <div class="mb-3">
+                        <span class="d-block text-secondary small">Nama Pelapor:</span>
+                        <strong class="text-dark fs-6">{{ $ticket->pelapor_name }}</strong>
+                    </div>
+                    @if ($ticket->karyawan)
+                        <div class="mb-3">
+                            <span class="d-block text-secondary small">Divisi / Jabatan:</span>
+                            <span class="text-dark fw-semibold">{{ $ticket->karyawan->divisi ?? '-' }} • {{ $ticket->karyawan->jabatan ?? '-' }}</span>
+                        </div>
+                    @endif
+                    <div class="mb-3">
+                        <span class="d-block text-secondary small">Perusahaan:</span>
+                        <span class="text-dark fw-semibold">{{ $ticket->perusahaan->nama_perusahaan ?? '-' }}</span>
+                    </div>
+                    @if ($ticket->kontak_pelapor)
+                        @php
+                            $cleanWa = preg_replace('/[^0-9]/', '', $ticket->kontak_pelapor);
+                            if (str_starts_with($cleanWa, '0')) {
+                                $cleanWa = '62' . substr($cleanWa, 1);
+                            }
+                            $msgWa = urlencode('Halo ' . $ticket->pelapor_name . ', kami dari Tim IT Support terkait laporan tiket Anda #' . $ticket->nomor_tiket . ' (' . $ticket->judul . ')');
+                        @endphp
+                        <div class="mb-3">
+                            <span class="d-block text-secondary small">Kontak WhatsApp:</span>
+                            <div class="d-flex align-items-center gap-2 mt-1">
+                                <span class="fw-bold text-dark">{{ $ticket->kontak_pelapor }}</span>
+                                <a href="https://wa.me/{{ $cleanWa }}?text={{ $msgWa }}" target="_blank" class="btn btn-sm btn-success py-1 px-2 d-flex align-items-center gap-1">
+                                    <i class="bx bxl-whatsapp"></i> Chat WA
+                                </a>
+                            </div>
+                        </div>
+                    @endif
+                    @if ($ticket->email_pelapor)
+                        <div>
+                            <span class="d-block text-secondary small">Email:</span>
+                            <a href="mailto:{{ $ticket->email_pelapor }}" class="text-primary">{{ $ticket->email_pelapor }}</a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
             @if (in_array(auth()->user()->role, ['petugas', 'super_admin']))
                 {{-- STATUS & ASSIGNEE CONTROL FOR ADMIN/PETUGAS --}}
                 <div class="card border-0 shadow-sm mb-4">
@@ -222,12 +279,20 @@
                                 <label class="form-label fw-semibold">Assign ke Petugas IT</label>
                                 <select name="assigned_to" class="form-select">
                                     <option value="">-- Belum Ditugaskan --</option>
+                                    @if ($ticket->assignee && !$petugasList->contains('id', $ticket->assigned_to))
+                                        <option value="{{ $ticket->assignee->id }}" selected>
+                                            {{ $ticket->assignee->name }} ({{ strtoupper($ticket->assignee->role) }}) [Saat Ini]
+                                        </option>
+                                    @endif
                                     @foreach ($petugasList as $ptg)
                                         <option value="{{ $ptg->id }}" {{ $ticket->assigned_to == $ptg->id ? 'selected' : '' }}>
                                             {{ $ptg->name }} ({{ strtoupper($ptg->role) }})
                                         </option>
                                     @endforeach
                                 </select>
+                                <small class="text-muted mt-1 d-block" style="font-size: 11px;">
+                                    <i class="bx bx-info-circle me-1"></i>Hanya user dengan role <strong>Teknisi</strong> yang muncul pada opsi penugasan.
+                                </small>
                             </div>
 
                             <button type="submit" class="btn btn-primary w-100">

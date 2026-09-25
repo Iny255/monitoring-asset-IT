@@ -74,7 +74,7 @@ class User extends Authenticatable
       return '/dashboard/superadmin';
     }
 
-    if ($normalizedRole === 'petugas' || $rawRole === '2' || in_array($normalizedRole, ['petugas_it_support'])) {
+    if ($normalizedRole === 'petugas' || $rawRole === '2' || in_array($normalizedRole, ['petugas_it_support', 'teknisi'])) {
       return '/dashboard/petugas';
     }
 

@@ -42,6 +42,9 @@
                         <a href="{{ route('ticket-categories.index') }}" class="btn btn-outline-secondary">
                             <i class="bi bi-sliders me-1"></i> Kategori & SLA
                         </a>
+                        <a href="{{ route('public.ticket.create') }}" target="_blank" class="btn btn-outline-info" title="Buka Form Tiket Publik (Tanpa Login)">
+                            <i class="bx bx-link-external me-1"></i> Link Form Publik
+                        </a>
                     @endif
                     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalCreateTicket">
                         <i class="bi bi-plus-circle me-1"></i> Buat Tiket Baru
@@ -144,8 +147,26 @@
                                 </a>
                             </td>
                             <td>
-                                <div class="fw-semibold">{{ $tkt->user->name ?? 'User N/A' }}</div>
-                                <small class="text-muted">{{ $tkt->created_at->format('d/m/Y H:i') }}</small>
+                                <div class="d-flex align-items-center gap-1 flex-wrap">
+                                    <span class="fw-semibold text-dark">{{ $tkt->pelapor_name }}</span>
+                                    @if ($tkt->is_public)
+                                        <span class="badge bg-label-warning px-1 py-0" style="font-size: 10px;" title="Diajukan melalui link publik">Publik</span>
+                                    @endif
+                                </div>
+                                <div class="d-flex align-items-center gap-2 mt-1">
+                                    <small class="text-muted">{{ $tkt->created_at->format('d/m/Y H:i') }}</small>
+                                    @if ($tkt->kontak_pelapor)
+                                        @php
+                                            $cleanWa = preg_replace('/[^0-9]/', '', $tkt->kontak_pelapor);
+                                            if (str_starts_with($cleanWa, '0')) {
+                                                $cleanWa = '62' . substr($cleanWa, 1);
+                                            }
+                                        @endphp
+                                        <a href="https://wa.me/{{ $cleanWa }}?text={{ urlencode('Halo ' . $tkt->pelapor_name . ', terkait tiket ' . $tkt->nomor_tiket) }}" target="_blank" class="text-success" title="Chat WhatsApp: {{ $tkt->kontak_pelapor }}">
+                                            <i class="bx bxl-whatsapp fs-6"></i>
+                                        </a>
+                                    @endif
+                                </div>
                             </td>
                             <td>
                                 <x-company-badge :perusahaan="$tkt->perusahaan" />
@@ -268,6 +289,20 @@
                         </div>
                         <hr class="my-2">
                         <div class="row g-2 mb-3">
+                            <div class="col-12 mb-1">
+                                <small class="text-muted d-block mb-1">Pelapor:</small>
+                                <div class="d-flex align-items-center gap-1 flex-wrap">
+                                    <span class="fw-semibold text-dark">{{ $tkt->pelapor_name }}</span>
+                                    @if ($tkt->is_public)
+                                        <span class="badge bg-label-warning px-1 py-0" style="font-size: 10px;">Publik</span>
+                                    @endif
+                                    @if ($tkt->kontak_pelapor)
+                                        <a href="https://wa.me/{{ preg_replace('/[^0-9]/', '', $tkt->kontak_pelapor) }}" target="_blank" class="text-success ms-1">
+                                            <i class="bx bxl-whatsapp fs-6"></i>
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
                             <div class="col-12 mb-1">
                                 <small class="text-muted d-block mb-1">Perusahaan:</small>
                                 <x-company-badge :perusahaan="$tkt->perusahaan" size="small" />

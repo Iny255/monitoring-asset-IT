@@ -29,6 +29,13 @@ class RoleAndModuleSeeder extends Seeder
                 'is_system' => true,
             ],
             [
+                'name' => 'teknisi',
+                'display_name' => 'Teknisi IT',
+                'description' => 'Petugas / Teknisi IT penanganan tiket kendala dan service maintenance aset.',
+                'can_manage_settings' => false,
+                'is_system' => true,
+            ],
+            [
                 'name' => 'user',
                 'display_name' => 'User / Karyawan (Pelapor Tiket)',
                 'description' => 'Pengguna umum pelapor tiket helpdesk dan melihat inventaris aset sendiri.',
@@ -318,6 +325,15 @@ class RoleAndModuleSeeder extends Seeder
             'ticket_category',
         ];
         $assign('petugas', $petugasModuleCodes);
+        $assign('teknisi', [
+            'dashboard_petugas',
+            'trx_maintenance',
+            'checklist_pelaksanaan',
+            'history_perjalanan',
+            'ticket_list',
+            'trx_peminjaman',
+            'trx_mapping',
+        ]);
 
         // User & Karyawan
         $userModuleCodes = [

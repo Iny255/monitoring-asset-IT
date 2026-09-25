@@ -39,6 +39,7 @@ use App\Http\Controllers\ChecklistItemController;
 use App\Http\Controllers\ChecklistDokumenPerawatanController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\ModuleSettingController;
+use App\Http\Controllers\PublicTicketController;
 
 Route::get('/', function () {
   return redirect('/login');
@@ -58,6 +59,19 @@ Route::post('/maping/{id}/checklist', [MapingController::class, 'submitChecklist
   ->where('id', '[a-zA-Z0-9\-]+')
   ->middleware(['auth', 'role:petugas,super_admin,teknisi'])
   ->name('maping.checklist.submit');
+
+/*
+|--------------------------------------------------------------------------
+| E-TICKET PUBLIK (AKSES TAUTAN TANPA LOGIN)
+|--------------------------------------------------------------------------
+*/
+Route::prefix('tiket')->name('public.ticket.')->group(function () {
+  Route::get('/', [PublicTicketController::class, 'create'])->name('create');
+  Route::post('/', [PublicTicketController::class, 'store'])->name('store')->middleware('throttle:30,1');
+  Route::get('/tracking/{nomorTiket}', [PublicTicketController::class, 'tracking'])->name('tracking');
+  Route::get('/api/search-karyawan', [PublicTicketController::class, 'searchKaryawan'])->name('api.search_karyawan');
+  Route::get('/api/karyawan/{id}/assets', [PublicTicketController::class, 'getKaryawanAssets'])->name('api.karyawan_assets');
+});
 
 Route::middleware(['auth'])->group(function () {
   Route::get('/dashboard', function () {
@@ -89,7 +103,7 @@ Route::middleware(['auth'])->group(function () {
     | PETUGAS (SUPERADMIN JUGA BISA)
     |--------------------------------------------------------------------------
     */
-  Route::middleware(['role:petugas,super_admin'])->group(function () {
+  Route::middleware(['role:petugas,super_admin,teknisi'])->group(function () {
     Route::get('/dashboard/petugas', [DashboardPetugasController::class, 'petugas'])->name('dashboard.petugas');
     Route::get('/dashboard/aset/detail-perusahaan', [KategoriController::class, 'detailPerusahaan'])->name(
       'aset.detailPerusahaan'
@@ -339,7 +353,7 @@ Route::middleware(['auth'])->group(function () {
   | E-TICKETING HELPDESK IT SUPPORT
   |--------------------------------------------------------------------------
   */
-  Route::prefix('dashboard/e-ticket')->name('e-ticket.')->middleware(['role:user,karyawan,petugas,super_admin'])->group(function () {
+  Route::prefix('dashboard/e-ticket')->name('e-ticket.')->middleware(['role:user,karyawan,petugas,teknisi,super_admin'])->group(function () {
     Route::get('/', [TicketController::class, 'index'])->name('index');
     Route::get('/create', [TicketController::class, 'create'])->name('create');
     Route::post('/', [TicketController::class, 'store'])->name('store');
@@ -349,7 +363,7 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/{id}/convert-maintenance', [TicketController::class, 'convertToMaintenance'])->name('convert-maintenance');
   });
 
-  Route::prefix('dashboard/ticket-categories')->name('ticket-categories.')->middleware(['role:petugas,super_admin'])->group(function () {
+  Route::prefix('dashboard/ticket-categories')->name('ticket-categories.')->middleware(['role:petugas,teknisi,super_admin'])->group(function () {
     Route::get('/', [TicketCategoryController::class, 'index'])->name('index');
     Route::post('/', [TicketCategoryController::class, 'store'])->name('store');
     Route::put('/{id}', [TicketCategoryController::class, 'update'])->name('update');

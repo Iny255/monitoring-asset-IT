@@ -25,12 +25,17 @@ class Ticket extends Model
         'assigned_to',
         'maintenance_id',
         'lampiran',
+        'nama_pelapor',
+        'kontak_pelapor',
+        'email_pelapor',
+        'is_public',
         'responded_at',
         'resolved_at',
         'closed_at',
     ];
 
     protected $casts = [
+        'is_public' => 'boolean',
         'responded_at' => 'datetime',
         'resolved_at' => 'datetime',
         'closed_at' => 'datetime',
@@ -98,5 +103,27 @@ class Ticket extends Model
     public function replies()
     {
         return $this->hasMany(TicketReply::class)->orderBy('created_at', 'asc');
+    }
+
+    public function getPelaporNameAttribute(): string
+    {
+        if ($this->karyawan) {
+            return $this->karyawan->nama_karyawan;
+        }
+
+        if ($this->nama_pelapor) {
+            return $this->nama_pelapor;
+        }
+
+        if ($this->user) {
+            return $this->user->name;
+        }
+
+        return 'Pelapor Publik';
+    }
+
+    public function getPelaporContactAttribute(): ?string
+    {
+        return $this->kontak_pelapor ?? null;
     }
 }

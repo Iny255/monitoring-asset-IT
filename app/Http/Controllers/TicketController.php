@@ -10,6 +10,7 @@ use App\Models\Karyawan;
 use App\Models\Lokasi;
 use App\Models\Perusahaan;
 use App\Models\User;
+use App\Models\Role;
 use App\Models\Maintenance;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -54,6 +55,11 @@ class TicketController extends Controller
             $query->where(function ($q) use ($search) {
                 $q->where('nomor_tiket', 'like', "%{$search}%")
                   ->orWhere('judul', 'like', "%{$search}%")
+                  ->orWhere('nama_pelapor', 'like', "%{$search}%")
+                  ->orWhere('kontak_pelapor', 'like', "%{$search}%")
+                  ->orWhereHas('karyawan', function ($qk) use ($search) {
+                      $qk->where('nama_karyawan', 'like', "%{$search}%");
+                  })
                   ->orWhereHas('user', function ($qu) use ($search) {
                       $qu->where('name', 'like', "%{$search}%");
                   });
@@ -211,7 +217,23 @@ class TicketController extends Controller
             'replies.user'
         ])->findOrFail($id);
 
-        $petugasList = User::whereIn('role', ['petugas', 'super_admin'])->orderBy('name')->get();
+        // Ambil role ID untuk teknisi jika terdaftar di tabel roles
+        $teknisiRoleIds = Role::where(function ($qr) {
+            $qr->whereRaw('LOWER(name) = ?', ['teknisi'])
+               ->orWhereRaw('LOWER(display_name) LIKE ?', ['%teknisi%']);
+        })->pluck('id')->toArray();
+
+        // Ambil data user dengan role teknisi
+        $petugasList = User::where(function ($q) use ($teknisiRoleIds) {
+            $q->whereRaw('LOWER(role) = ?', ['teknisi']);
+            if (!empty($teknisiRoleIds)) {
+                $q->orWhereIn('role', $teknisiRoleIds);
+            }
+            $q->orWhereHas('roleDefinition', function ($qr) {
+                $qr->whereRaw('LOWER(name) = ?', ['teknisi'])
+                   ->orWhereRaw('LOWER(display_name) LIKE ?', ['%teknisi%']);
+            });
+        })->orderBy('name')->get();
 
         return view('content.dashboard.e_ticket.show', compact('ticket', 'petugasList'));
     }
