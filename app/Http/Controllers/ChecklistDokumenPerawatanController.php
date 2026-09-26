@@ -316,6 +316,11 @@ class ChecklistDokumenPerawatanController extends Controller
         if (!$isBlank) {
             // A. Petakan hasil checklist ke Matriks F-IT-001/00 dan F-IT-002/00
             foreach ($deviceChecks as $dev) {
+                // Abaikan jika device belum dicek
+                if ($dev->status_device === 'belum_dicek') {
+                    continue;
+                }
+
                 $tgl = $dev->checked_at
                     ? Carbon::parse($dev->checked_at)
                     : ($dev->checklistRuangan?->tanggal_pemeriksaan ? Carbon::parse($dev->checklistRuangan->tanggal_pemeriksaan) : null);
@@ -326,18 +331,19 @@ class ChecklistDokumenPerawatanController extends Controller
 
                 $bulan = (int) $tgl->format('n'); // 1 s/d 12
                 $minggu = min(4, (int) ceil($tgl->day / 7)); // 1 s/d 4
+                $tglVal = $tgl->format('j/n'); // Format tgl/bln (misal: '24/9', '5/9')
 
                 // Matriks F-IT-001/00
                 if ($dev->items->isNotEmpty()) {
                     foreach ($dev->items as $devItem) {
                         $itemName = $devItem->nama_item;
-                        // Simbol centang ✔ jika is_ok, ✖ jika ada kendala
-                        $symbol = $devItem->is_ok ? '✔' : '✖';
+                        // Otomatis diisi tanggal pengecekan jika selesai/OK (bukan centang), ✖ jika ada kendala
+                        $symbol = $devItem->is_ok ? $tglVal : '✖';
                         $matrix[$itemName][$bulan][$minggu] = $symbol;
                     }
                 } else {
                     // Fallback jika tidak ada sub-item
-                    $symbol = ($dev->status_device === 'normal') ? '✔' : ($dev->status_device === 'ada_kendala' ? '✖' : null);
+                    $symbol = ($dev->status_device === 'normal') ? $tglVal : ($dev->status_device === 'ada_kendala' ? '✖' : null);
                     if ($symbol) {
                         foreach ($jenisPerawatanList as $itemName) {
                             if (empty($matrix[$itemName][$bulan][$minggu])) {

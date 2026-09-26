@@ -149,7 +149,7 @@ minimum-scale=1.0, maximum-scale=1.0" />
                 } catch (e) {}
 
                 // Sinkronkan semua ikon toggle mode malam di seluruh halaman
-                var icons = document.querySelectorAll("#darkIcon, .dark-toggle-btn i");
+                var icons = document.querySelectorAll("#darkIcon, #darkModeToggle i");
                 icons.forEach(function(icon) {
                     if (isDark) {
                         icon.classList.remove("bx-moon");
@@ -180,7 +180,7 @@ minimum-scale=1.0, maximum-scale=1.0" />
 
             // Event delegation untuk tombol toggle mode malam (berfungsi di halaman mana pun dan tahan render dinamis)
             document.addEventListener("click", function(e) {
-                var btn = e.target.closest("#darkModeToggle, .dark-toggle-btn");
+                var btn = e.target.closest("#darkModeToggle");
                 if (btn) {
                     e.preventDefault();
                     e.stopPropagation();

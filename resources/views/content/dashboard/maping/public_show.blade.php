@@ -17,92 +17,104 @@
             font-family: 'Public Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f1f5f9;
             color: #1e293b;
-            padding: 16px 8px 40px;
+            padding: 12px 6px 36px;
+            font-size: 13px;
+            line-height: 1.5;
         }
 
         .asset-card {
-            max-width: 960px;
+            max-width: 900px;
             margin: auto;
             border: none;
-            border-radius: 20px;
+            border-radius: 16px;
             overflow: hidden;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, .06);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .05);
             background: #fff;
         }
 
         .asset-header {
             background: linear-gradient(135deg, #1e40af, #2563eb);
             color: white;
-            padding: 24px 28px;
+            padding: 16px 20px;
         }
 
         .asset-title {
-            font-size: 24px;
+            font-size: 17px;
             font-weight: 700;
+            letter-spacing: -0.2px;
         }
 
         .asset-image {
             width: 100%;
-            height: 250px;
-            object-fit: cover;
-            border-radius: 12px;
+            aspect-ratio: 3 / 4;
+            max-height: 380px;
+            object-fit: contain;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            display: block;
+            margin: 0 auto;
         }
 
         .table th {
-            width: 38%;
+            width: 35%;
             background: #f8fafc;
             color: #475569;
-            font-size: 13px;
+            font-size: 11.5px;
             font-weight: 600;
+            padding: 6px 10px;
+            vertical-align: middle;
         }
 
         .table td {
             color: #0f172a;
             font-weight: 500;
-            font-size: 13.5px;
+            font-size: 12px;
+            padding: 6px 10px;
+            vertical-align: middle;
         }
 
         .section-title {
-            font-size: 16px;
+            font-size: 13.5px;
             font-weight: 700;
             color: #1e3a8a;
-            margin-bottom: 12px;
+            margin-bottom: 8px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 5px;
         }
 
         /* Checklist Status Box */
         .checklist-banner {
-            border-radius: 16px;
-            padding: 20px;
+            border-radius: 12px;
+            padding: 14px 16px;
             border: 1px solid rgba(0,0,0,0.05);
-            margin-bottom: 24px;
+            margin-bottom: 18px;
         }
 
         .checklist-banner.status-normal {
             background: linear-gradient(135deg, #ecfdf5, #f0fdf4);
-            border-left: 6px solid #10b981;
+            border-left: 5px solid #10b981;
         }
 
         .checklist-banner.status-kendala {
             background: linear-gradient(135deg, #fef2f2, #fff1f2);
-            border-left: 6px solid #ef4444;
+            border-left: 5px solid #ef4444;
         }
 
         .checklist-banner.status-belum {
             background: linear-gradient(135deg, #f8fafc, #f1f5f9);
-            border-left: 6px solid #94a3b8;
+            border-left: 5px solid #94a3b8;
         }
 
         .item-chip {
             display: inline-flex;
             align-items: center;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
+            padding: 3px 8px;
+            border-radius: 14px;
+            font-size: 11px;
             font-weight: 600;
-            margin: 3px;
+            margin: 2px;
         }
 
         .item-chip.ok {
@@ -118,19 +130,20 @@
         /* IT Form Section */
         .it-check-box {
             background: #f8fafc;
-            border: 2px dashed #93c5fd;
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 24px;
+            border: 1.5px dashed #93c5fd;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 20px;
         }
 
         .btn-quick-ok {
             background: #10b981;
             color: white;
             font-weight: 600;
+            font-size: 12px;
             border: none;
-            padding: 10px 18px;
-            border-radius: 10px;
+            padding: 6px 12px;
+            border-radius: 8px;
             transition: all .2s;
         }
         .btn-quick-ok:hover {
@@ -142,8 +155,9 @@
         .custom-check-pill {
             cursor: pointer;
             border: 1px solid #cbd5e1;
-            border-radius: 10px;
-            padding: 10px 14px;
+            border-radius: 8px;
+            padding: 6px 10px;
+            font-size: 11.5px;
             transition: all .2s;
             background: white;
             display: flex;
@@ -171,48 +185,63 @@
             <div class="asset-header">
                 <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                     <div>
-                        <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
-                            <span class="badge px-2 py-1" style="background: rgba(255, 255, 255, 0.2); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35);">
+                        <div class="d-flex align-items-center gap-1.5 mb-1 flex-wrap">
+                            <span class="badge px-2 py-0.5" style="background: rgba(255, 255, 255, 0.2); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35); font-size: 11px;">
                                 <i class="bx bx-qr me-1"></i> QR Barcode Terpadu
                             </span>
                             @if ($maping->perusahaan)
-                                <span class="badge px-2 py-1" style="background: rgba(255, 255, 255, 0.2); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35);">
+                                <span class="badge px-2 py-0.5" style="background: rgba(255, 255, 255, 0.2); color: #ffffff; border: 1px solid rgba(255, 255, 255, 0.35); font-size: 11px;">
                                     {{ strtoupper($maping->perusahaan->nama_perusahaan) }}
                                 </span>
                             @endif
                         </div>
-                        <h1 class="asset-title mb-1 text-white">
+                        <h1 class="asset-title mb-0.5 text-white">
                             {{ strtoupper($maping->keluar->inventaris->dataAset->kategori->nama_barang ?? 'Perangkat IT') }}
-                            <small class="fs-6 fw-normal opacity-75">({{ $maping->keluar->inventaris->dataAset->merek ?? '' }} {{ $maping->keluar->inventaris->dataAset->type ?? '' }})</small>
+                            <small class="fw-normal opacity-75" style="font-size: 12.5px;">({{ $maping->keluar->inventaris->dataAset->merek ?? '' }} {{ $maping->keluar->inventaris->dataAset->type ?? '' }})</small>
                         </h1>
-                        <div class="text-white-50 small">
+                        <div class="text-white-50" style="font-size: 11.5px;">
                             Monitoring Asset & Real-Time Inspection System
                         </div>
                     </div>
 
-                    <div class="text-md-end d-flex flex-column align-items-md-end gap-1">
+                    <div class="text-md-end d-flex flex-column align-items-md-end gap-1.5">
                         @if (auth()->check())
-                            <a href="{{ route('dashboard') }}" class="btn btn-sm btn-light text-primary fw-semibold shadow-xs">
-                                <i class="bx bx-home-alt me-1"></i> Buka Dashboard
-                            </a>
+                            <div class="d-flex align-items-center gap-1.5 flex-wrap justify-content-end">
+                                @if (isset($checklistRuangan) && $checklistRuangan)
+                                    <a href="{{ route('checklist.pemeriksaan.show', $checklistRuangan->id) }}" class="btn btn-sm btn-warning text-dark fw-bold shadow-xs py-1.5 px-3 d-inline-flex align-items-center" style="font-size: 12px; border-radius: 8px;">
+                                        <i class="bx bx-arrow-back me-1 fs-6"></i> Kembali ke Ruangan ({{ $checklistRuangan->lokasi->nama_lokasi ?? 'Checklist' }})
+                                    </a>
+                                @else
+                                    <a href="{{ route('checklist.pemeriksaan.index') }}" class="btn btn-sm btn-warning text-dark fw-bold shadow-xs py-1.5 px-3 d-inline-flex align-items-center" style="font-size: 12px; border-radius: 8px;">
+                                        <i class="bx bx-arrow-back me-1 fs-6"></i> Kembali ke Menu Checklist
+                                    </a>
+                                @endif
+                                <a href="{{ route('dashboard') }}" class="btn btn-sm btn-light text-primary fw-semibold shadow-xs py-1 px-2.5" style="font-size: 11.5px;">
+                                    <i class="bx bx-home-alt me-1"></i> Dashboard
+                                </a>
+                            </div>
+                        @else
+                            <button type="button" onclick="window.history.back()" class="btn btn-sm btn-light text-primary fw-semibold shadow-xs py-1 px-2.5" style="font-size: 11.5px;">
+                                <i class="bx bx-arrow-back me-1"></i> Kembali
+                            </button>
                         @endif
                     </div>
                 </div>
 
                 {{-- Badges Identitas Ringkas --}}
-                <div class="d-flex flex-wrap gap-2 mt-3 pt-2 border-top border-white border-opacity-25">
-                    <span class="badge bg-light text-dark px-3 py-2 fs-6">
+                <div class="d-flex flex-wrap gap-2 mt-2 pt-2 border-top border-white border-opacity-25">
+                    <span class="badge bg-light text-dark px-2.5 py-1" style="font-size: 12px;">
                         <i class="bx bx-barcode me-1 text-primary"></i> Kode Aset: <strong>{{ $maping->keluar->inventaris->kode_aset ?? '-' }}</strong>
                     </span>
                     @if ($maping->keluar?->inventaris?->no_inventaris)
-                        <span class="badge bg-warning text-dark px-3 py-2 fs-6">
+                        <span class="badge bg-warning text-dark px-2.5 py-1" style="font-size: 12px;">
                             No. Inv: <strong>{{ $maping->keluar->inventaris->no_inventaris }}</strong>
                         </span>
                     @endif
                 </div>
             </div>
 
-            <div class="card-body p-4">
+            <div class="card-body p-3 p-sm-4">
 
                 {{-- ALERT PESAN FEEDBACK --}}
                 @if (session('success'))
@@ -228,6 +257,35 @@
                     </div>
                 @endif
 
+                {{-- BANNER INFORMASI STATUS PEMINJAMAN AKTIF --}}
+                @if (isset($activeLoan) && $activeLoan)
+                    <div class="alert alert-info border-0 shadow-sm d-flex align-items-start gap-3 mb-3 p-3" style="border-radius: 12px; background: linear-gradient(135deg, #eff6ff, #dbeafe); color: #1e40af;">
+                        <div class="rounded-circle bg-primary bg-opacity-20 p-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width: 42px; height: 42px;">
+                            <i class="bx bx-time-five text-primary fs-3"></i>
+                        </div>
+                        <div class="flex-grow-1 min-w-0">
+                            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                <span class="badge bg-primary text-white px-2 py-0.5" style="font-size: 11px;">
+                                    <i class="bx bx-transfer-alt me-1"></i> STATUS: SEDANG DIPINJAM
+                                </span>
+                                <span class="text-muted small">No. Pinjam: <strong>{{ $activeLoan->kode_peminjaman ?? '-' }}</strong></span>
+                            </div>
+                            <div class="fw-bold text-dark" style="font-size: 13.5px;">
+                                Peminjam: {{ $activeLoan->peminjam_nama }}
+                            </div>
+                            <div class="text-secondary small mt-1 d-flex flex-wrap gap-x-3 gap-y-1">
+                                <span><i class="bx bx-calendar me-1"></i>Tgl Pinjam: {{ $activeLoan->tanggal_pinjam ? \Carbon\Carbon::parse($activeLoan->tanggal_pinjam)->translatedFormat('d M Y') : '-' }}</span>
+                                @if ($activeLoan->tanggal_rencana_kembali)
+                                    <span><i class="bx bx-calendar-check me-1"></i>Rencana Kembali: {{ \Carbon\Carbon::parse($activeLoan->tanggal_rencana_kembali)->translatedFormat('d M Y') }}</span>
+                                @endif
+                                @if ($activeLoan->keperluan)
+                                    <span><i class="bx bx-detail me-1"></i>Keperluan: {{ $activeLoan->keperluan }}</span>
+                                @endif
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 {{-- ========================================================================= --}}
                 {{-- 1. INFORMASI CHECKLIST & PENGECEKAN SECARA REALTIME --}}
                 {{-- ========================================================================= --}}
@@ -240,37 +298,37 @@
                 <div class="checklist-banner {{ $statusClass }}">
                     <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
                         <div>
-                            <div class="text-uppercase small fw-bold text-muted mb-1 d-flex align-items-center gap-1">
+                            <div class="text-uppercase fw-bold text-muted mb-1 d-flex align-items-center gap-1" style="font-size: 11px;">
                                 <i class="bx bx-broadcast text-primary"></i> Status Pengecekan Device Real-Time
                             </div>
                             <div class="d-flex align-items-center gap-2 flex-wrap">
                                 @if ($isNormal)
-                                    <h3 class="fw-bold text-success mb-0 d-flex align-items-center">
-                                        <i class="bx bxs-check-circle me-1 fs-2"></i> NORMAL (Kondisi Baik)
-                                    </h3>
+                                    <h5 class="fw-bold text-success mb-0 d-flex align-items-center" style="font-size: 15.5px;">
+                                        <i class="bx bxs-check-circle me-1" style="font-size: 20px;"></i> NORMAL (Kondisi Baik)
+                                    </h5>
                                 @elseif ($hasKendala)
-                                    <h3 class="fw-bold text-danger mb-0 d-flex align-items-center">
-                                        <i class="bx bxs-error-circle me-1 fs-2"></i> ADA KENDALA
-                                    </h3>
+                                    <h5 class="fw-bold text-danger mb-0 d-flex align-items-center" style="font-size: 15.5px;">
+                                        <i class="bx bxs-error-circle me-1" style="font-size: 20px;"></i> ADA KENDALA
+                                    </h5>
                                 @else
-                                    <h3 class="fw-bold text-secondary mb-0 d-flex align-items-center">
-                                        <i class="bx bx-time-five me-1 fs-2"></i> BELUM DICEK PERIODE INI
-                                    </h3>
+                                    <h5 class="fw-bold text-secondary mb-0 d-flex align-items-center" style="font-size: 15.5px;">
+                                        <i class="bx bx-time-five me-1" style="font-size: 20px;"></i> BELUM DICEK PERIODE INI
+                                    </h5>
                                 @endif
                             </div>
                         </div>
 
                         <div class="text-md-end">
                             @if ($latestChecklist && $latestChecklist->checked_at)
-                                <div class="small text-muted">Pemeriksaan Terakhir:</div>
-                                <div class="fw-bold text-dark fs-6">
+                                <div class="text-muted" style="font-size: 11px;">Pemeriksaan Terakhir:</div>
+                                <div class="fw-bold text-dark" style="font-size: 12.5px;">
                                     {{ $latestChecklist->checked_at->translatedFormat('d F Y, H:i') }} WIB
                                 </div>
-                                <div class="small text-muted mt-1">
-                                    Oleh: <span class="badge bg-primary text-white fw-semibold">{{ $latestChecklist->checkedBy->name ?? 'Petugas IT' }}</span>
+                                <div class="text-muted mt-1" style="font-size: 11px;">
+                                    Oleh: <span class="badge bg-primary text-white fw-semibold px-2 py-0.5" style="font-size: 11px;">{{ $latestChecklist->checkedBy->name ?? 'Petugas IT' }}</span>
                                 </div>
                             @else
-                                <span class="badge bg-secondary">Belum ada riwayat cek</span>
+                                <span class="badge bg-secondary" style="font-size: 11px;">Belum ada riwayat cek</span>
                             @endif
                         </div>
                     </div>
@@ -359,36 +417,36 @@
                 @if ($isItOfficer)
                     {{-- Kartu Kunci Form Sekali Pakai (Jika sudah dicek hari ini) --}}
                     @if ($todayChecked)
-                        <div class="card border-0 shadow-xs mb-4" id="lockedChecklistCard" 
-                             style="background: linear-gradient(135deg, #f0fdf4, #f8fafc); border: 1px solid #bbf7d0 !important; border-left: 6px solid {{ $activeTodayChecklist->status_device === 'normal' ? '#10b981' : '#ef4444' }} !important; border-radius: 16px;">
-                            <div class="card-body p-3 p-md-4">
-                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                                    <div class="d-flex align-items-center gap-3">
+                        <div class="card border-0 shadow-xs mb-3" id="lockedChecklistCard" 
+                             style="background: linear-gradient(135deg, #f0fdf4, #f8fafc); border: 1px solid #bbf7d0 !important; border-left: 5px solid {{ $activeTodayChecklist->status_device === 'normal' ? '#10b981' : '#ef4444' }} !important; border-radius: 12px;">
+                            <div class="card-body p-3">
+                                <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                    <div class="d-flex align-items-center gap-2.5">
                                         <div class="rounded-circle d-flex align-items-center justify-content-center text-white" 
-                                             style="width: 46px; height: 46px; min-width: 46px; background: {{ $activeTodayChecklist->status_device === 'normal' ? '#10b981' : '#ef4444' }};">
-                                            <i class="bx {{ $activeTodayChecklist->status_device === 'normal' ? 'bx-check-double' : 'bx-error-circle' }} fs-2"></i>
+                                             style="width: 38px; height: 38px; min-width: 38px; background: {{ $activeTodayChecklist->status_device === 'normal' ? '#10b981' : '#ef4444' }}; font-size: 18px;">
+                                            <i class="bx {{ $activeTodayChecklist->status_device === 'normal' ? 'bx-check-double' : 'bx-error-circle' }}"></i>
                                         </div>
                                         <div>
-                                            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                                                <span class="badge bg-success text-white px-2 py-1">
+                                            <div class="d-flex align-items-center gap-1.5 flex-wrap mb-1">
+                                                <span class="badge bg-success text-white px-2 py-0.5" style="font-size: 10.5px;">
                                                     <i class="bx bx-lock-alt me-1"></i> Form Selesai Digunakan Hari Ini
                                                 </span>
                                                 @if ($activeTodayChecklist->status_device === 'normal')
-                                                    <span class="badge bg-success">NORMAL (Kondisi Baik)</span>
+                                                    <span class="badge bg-success px-2 py-0.5" style="font-size: 10.5px;">NORMAL (Kondisi Baik)</span>
                                                 @else
-                                                    <span class="badge bg-danger">ADA KENDALA</span>
+                                                    <span class="badge bg-danger px-2 py-0.5" style="font-size: 10.5px;">ADA KENDALA</span>
                                                 @endif
                                             </div>
-                                            <h6 class="fw-bold text-dark mb-1">Pemeriksaan perangkat telah selesai disimpan hari ini</h6>
-                                            <small class="text-muted">
+                                            <h6 class="fw-bold text-dark mb-0.5" style="font-size: 13px;">Pemeriksaan perangkat telah selesai disimpan hari ini</h6>
+                                            <small class="text-muted" style="font-size: 11px;">
                                                 Diperiksa oleh: <strong>{{ $activeTodayChecklist->checkedBy->name ?? 'Petugas IT' }}</strong> &bull; 
                                                 Waktu: <strong>{{ $activeTodayChecklist->checked_at ? $activeTodayChecklist->checked_at->format('H:i') : '-' }} WIB</strong>
                                             </small>
                                         </div>
                                     </div>
                                     <div>
-                                        <button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center shadow-xs" id="btnBukaRevisi">
-                                            <i class="bx bx-edit-alt me-1 fs-5"></i> Buka Kunci / Revisi Pengecekan
+                                        <button type="button" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center shadow-xs" id="btnBukaRevisi" style="font-size: 11.5px; padding: 4px 10px;">
+                                            <i class="bx bx-edit-alt me-1" style="font-size: 14px;"></i> Buka Kunci / Revisi
                                         </button>
                                     </div>
                                 </div>
@@ -398,26 +456,26 @@
 
                     {{-- Form Interaktif Petugas IT (Terkunci jika sudah dicek hari ini, terbuka jika belum atau saat revisi) --}}
                     <div class="it-check-box shadow-xs" id="itChecklistSection" style="{{ $todayChecked ? 'display: none;' : '' }}">
-                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2.5">
                             <div>
-                                <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
-                                    <span class="badge bg-primary text-white px-2 py-1">
+                                <div class="d-flex align-items-center gap-1.5 flex-wrap mb-1">
+                                    <span class="badge bg-primary text-white px-2 py-0.5" style="font-size: 10.5px;">
                                         <i class="bx bx-shield-quarter me-1"></i> Mode Petugas IT Lapangan
                                     </span>
                                     @if ($todayChecked)
-                                        <span class="badge bg-warning text-dark px-2 py-1" id="badgeModeRevisi">
+                                        <span class="badge bg-warning text-dark px-2 py-0.5" id="badgeModeRevisi" style="font-size: 10.5px;">
                                             <i class="bx bx-edit me-1"></i> Mode Revisi Pemeriksaan
                                         </span>
                                     @endif
                                 </div>
-                                <h5 class="fw-bold text-dark mb-0">Input Pengecekan Device (Real-Time)</h5>
-                                <small class="text-muted">Masuk sebagai: <strong>{{ auth()->user()->name }}</strong> &bull; Lokasi: <strong>{{ $maping->lokasi->nama_lokasi ?? '-' }}</strong></small>
+                                <h6 class="fw-bold text-dark mb-0" style="font-size: 14px;">Input Pengecekan Device (Real-Time)</h6>
+                                <small class="text-muted" style="font-size: 11px;">Masuk sebagai: <strong>{{ auth()->user()->name }}</strong> &bull; Lokasi: <strong>{{ $maping->lokasi->nama_lokasi ?? '-' }}</strong></small>
                             </div>
 
                             <div class="d-flex gap-2 align-items-center flex-wrap">
                                 {{-- Tombol Kunci Kembali jika dalam mode revisi --}}
                                 @if ($todayChecked)
-                                    <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center shadow-xs" id="btnTutupRevisi">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center shadow-xs" id="btnTutupRevisi" style="font-size: 11.5px; padding: 4px 10px;">
                                         <i class="bx bx-x me-1"></i> Kunci Kembali
                                     </button>
                                 @endif
@@ -427,7 +485,7 @@
                                     @csrf
                                     <input type="hidden" name="status_device" value="normal">
                                     <button type="submit" class="btn btn-quick-ok d-inline-flex align-items-center shadow-sm">
-                                        <i class="bx bx-check-double me-1 fs-5"></i> 1-Klik: Tandai Semua Normal
+                                        <i class="bx bx-check-double me-1" style="font-size: 15px;"></i> 1-Klik: Tandai Semua Normal
                                     </button>
                                 </form>
                             </div>
@@ -440,26 +498,26 @@
                                     @csrf
 
                                     {{-- Radio Status Perangkat --}}
-                                    <label class="form-label fw-bold text-dark small text-uppercase">Pilih Status Kondisi Perangkat:</label>
-                                    <div class="d-flex gap-3 mb-3">
+                                    <label class="form-label fw-bold text-dark text-uppercase mb-1" style="font-size: 11px;">Pilih Status Kondisi Perangkat:</label>
+                                    <div class="d-flex gap-3 mb-2.5">
                                         <div class="form-check form-check-inline">
                                             <input class="form-check-input" type="radio" name="status_device" id="statusNormal" value="normal" 
                                                 {{ (($activeTodayChecklist ?? $latestChecklist)?->status_device === 'normal' || !($activeTodayChecklist ?? $latestChecklist) || ($activeTodayChecklist ?? $latestChecklist)->status_device === 'belum_dicek') ? 'checked' : '' }}>
-                                            <label class="form-check-label fw-bold text-success" for="statusNormal">
+                                            <label class="form-check-label fw-bold text-success" for="statusNormal" style="font-size: 12px;">
                                                 <i class="bx bx-check-circle me-1"></i> NORMAL (Kondisi Baik)
                                             </label>
                                         </div>
                                         <div class="form-check form-check-inline">
                                             <input class="form-check-input" type="radio" name="status_device" id="statusKendala" value="ada_kendala"
                                                 {{ ($activeTodayChecklist ?? $latestChecklist)?->status_device === 'ada_kendala' ? 'checked' : '' }}>
-                                            <label class="form-check-label fw-bold text-danger" for="statusKendala">
+                                            <label class="form-check-label fw-bold text-danger" for="statusKendala" style="font-size: 12px;">
                                                 <i class="bx bx-error me-1"></i> ADA KENDALA
                                             </label>
                                         </div>
                                     </div>
 
                                     {{-- Checklist Items Master --}}
-                                    <label class="form-label fw-bold text-dark small text-uppercase">Item Komponen Yang Diperiksa:</label>
+                                    <label class="form-label fw-bold text-dark text-uppercase mb-1" style="font-size: 11px;">Item Komponen Yang Diperiksa:</label>
                                     <div class="row g-2 mb-3">
                                         @forelse ($masterItems as $mItem)
                                             @php
@@ -470,12 +528,12 @@
                                             @endphp
                                             <div class="col-6 col-md-4">
                                                 <label class="custom-check-pill w-100">
-                                                    <span class="check-label small">{{ $mItem->nama_item }}</span>
+                                                    <span class="check-label">{{ $mItem->nama_item }}</span>
                                                     <input type="checkbox" name="items[{{ $mItem->id }}]" value="1" class="form-check-input ms-2" {{ $isItemOk ? 'checked' : '' }}>
                                                 </label>
                                             </div>
                                         @empty
-                                            <div class="col-12 text-muted small">
+                                            <div class="col-12 text-muted" style="font-size: 11px;">
                                                 Item standar: Fisik, Layar, Keyboard/Mouse, Jaringan, OS & Software.
                                             </div>
                                         @endforelse
@@ -483,16 +541,16 @@
 
                                     {{-- Catatan Kendala --}}
                                     <div class="mb-3" id="catatanKendalaContainer" style="{{ ($activeTodayChecklist ?? $latestChecklist)?->status_device === 'ada_kendala' ? '' : 'display: none;' }}">
-                                        <label for="catatanKendala" class="form-label fw-bold text-danger small text-uppercase">
+                                        <label for="catatanKendala" class="form-label fw-bold text-danger text-uppercase mb-1" style="font-size: 11px;">
                                             <i class="bx bx-edit me-1"></i> Rincian Masalah / Catatan Kendala:
                                         </label>
-                                        <textarea class="form-control" id="catatanKendala" name="catatan_kendala" rows="2" 
+                                        <textarea class="form-control" id="catatanKendala" name="catatan_kendala" rows="2" style="font-size: 12px;"
                                             placeholder="Contoh: Kipas pendingin bising, port USB samping rusak, dll.">{{ ($activeTodayChecklist ?? $latestChecklist)?->catatan_kendala }}</textarea>
                                     </div>
 
                                     {{-- Tombol Submit Form --}}
                                     <div class="d-flex justify-content-end gap-2">
-                                        <button type="submit" class="btn btn-primary px-4 fw-semibold shadow-xs" id="btnSubmitChecklist">
+                                        <button type="submit" class="btn btn-primary fw-semibold shadow-xs" id="btnSubmitChecklist" style="font-size: 12px; padding: 6px 16px;">
                                             <i class="bx bx-save me-1"></i> {{ $todayChecked ? 'Simpan Revisi Pengecekan' : 'Simpan Hasil Pengecekan' }}
                                         </button>
                                     </div>
@@ -502,15 +560,15 @@
                     </div>
                 @else
                     {{-- Banner Ajakan Login untuk Petugas IT yang belum login --}}
-                    <div class="card border-0 bg-light p-3 rounded-3 mb-4 d-flex flex-row align-items-center justify-content-between flex-wrap gap-2">
+                    <div class="card border-0 bg-light p-2.5 rounded-3 mb-3 d-flex flex-row align-items-center justify-content-between flex-wrap gap-2">
                         <div class="d-flex align-items-center gap-2">
-                            <i class="bx bx-shield-quarter text-primary fs-3"></i>
+                            <i class="bx bx-shield-quarter text-primary" style="font-size: 24px;"></i>
                             <div>
-                                <strong class="text-dark d-block">Petugas IT yang sedang bertugas?</strong>
-                                <small class="text-muted">Masuk ke sistem untuk mengisi atau memperbarui checklist perangkat ini langsung di lapangan.</small>
+                                <strong class="text-dark d-block" style="font-size: 12.5px;">Petugas IT yang sedang bertugas?</strong>
+                                <small class="text-muted" style="font-size: 11px;">Masuk ke sistem untuk mengisi atau memperbarui checklist perangkat ini langsung di lapangan.</small>
                             </div>
                         </div>
-                        <a href="{{ route('login', ['redirect' => request()->getRequestUri()]) }}" class="btn btn-sm btn-primary fw-semibold px-3 py-2 shadow-xs">
+                        <a href="{{ route('login', ['redirect' => request()->getRequestUri()]) }}" class="btn btn-sm btn-primary fw-semibold px-2.5 py-1.5 shadow-xs" style="font-size: 11.5px;">
                             <i class="bx bx-log-in-circle me-1"></i> Login Petugas IT
                         </a>
                     </div>
@@ -521,22 +579,27 @@
                 {{-- ========================================================================= --}}
                 <div class="row g-4 align-items-start mt-1">
 
-                    {{-- FOTO ASET --}}
+                    {{-- FOTO ASET (PORTRAIT VIEW) --}}
                     <div class="col-lg-4">
                         <div class="card shadow-xs border">
                             <div class="card-header bg-light py-2">
-                                <strong class="small text-muted text-uppercase">Foto Perangkat</strong>
+                                <strong class="small text-muted text-uppercase" style="font-size: 11px;">Foto Perangkat</strong>
                             </div>
-                            <div class="card-body p-3 text-center">
+                            <div class="card-body p-2.5 text-center">
                                 @php
                                     $gambarPath = $maping->keluar?->gambar;
                                     $hasGambar = $gambarPath && (file_exists(public_path('storage/' . $gambarPath)) || \Illuminate\Support\Facades\Storage::disk('public')->exists($gambarPath));
                                 @endphp
 
                                 @if ($hasGambar)
-                                    <img src="{{ asset('storage/' . $gambarPath) }}" alt="Foto Asset" class="asset-image img-fluid rounded">
+                                    <a href="{{ asset('storage/' . $gambarPath) }}" target="_blank" title="Klik untuk memperbesar foto">
+                                        <img src="{{ asset('storage/' . $gambarPath) }}" alt="Foto Asset" class="asset-image img-fluid">
+                                    </a>
+                                    <small class="text-muted d-block mt-1.5" style="font-size: 10.5px;">
+                                        <i class="bx bx-zoom-in me-1"></i> Klik foto untuk memperbesar
+                                    </small>
                                 @else
-                                    <div class="d-flex flex-column align-items-center justify-content-center bg-light rounded py-4 px-2 text-muted" style="min-height:180px; border: 2px dashed #cbd5e1;">
+                                    <div class="d-flex flex-column align-items-center justify-content-center bg-light rounded py-4 px-2 text-muted" style="aspect-ratio: 3 / 4; max-height: 380px; border: 2px dashed #cbd5e1;">
                                         <i class="bx bx-image-alt fs-1 text-secondary mb-1"></i>
                                         <span class="fw-semibold small">Tidak Ada Foto Perangkat</span>
                                         <small class="text-muted text-center" style="font-size: 11px;">Foto belum diunggah saat serah terima aset</small>
@@ -588,6 +651,15 @@
                                     <td>{{ $maping->perusahaan->nama_perusahaan ?? '-' }}</td>
                                 </tr>
                                 <tr>
+                                    <th>Tanggal Pembelian</th>
+                                    <td>
+                                        @php
+                                            $tglPembelian = $maping->keluar?->inventaris?->masuk?->tanggal_pembelian;
+                                        @endphp
+                                        <strong>{{ $tglPembelian ? \Carbon\Carbon::parse($tglPembelian)->format('d-m-Y') : '-' }}</strong>
+                                    </td>
+                                </tr>
+                                <tr>
                                     <th>Tanggal Digunakan</th>
                                     <td>{{ $maping->tanggal_digunakan ? \Carbon\Carbon::parse($maping->tanggal_digunakan)->format('d-m-Y') : '-' }}</td>
                                 </tr>
@@ -595,15 +667,15 @@
                                     <th>Status Asset</th>
                                     <td>
                                         @if ($maping->status == 'servis')
-                                            <span class="badge bg-secondary">SERVIS</span>
+                                            <span class="badge bg-secondary" style="font-size: 11px; padding: 3px 8px;">SERVIS</span>
                                         @elseif($maping->status == 'dipinjam')
-                                            <span class="badge bg-warning text-dark">DIPINJAM</span>
+                                            <span class="badge bg-warning text-dark" style="font-size: 11px; padding: 3px 8px;">DIPINJAM</span>
                                         @elseif($maping->status == 'selesai')
-                                            <span class="badge bg-danger">NON AKTIF</span>
+                                            <span class="badge bg-danger" style="font-size: 11px; padding: 3px 8px;">NON AKTIF</span>
                                         @elseif($maping->status == 'maintenance')
-                                            <span class="badge bg-info">MAINTENANCE</span>
+                                            <span class="badge bg-info" style="font-size: 11px; padding: 3px 8px;">MAINTENANCE</span>
                                         @else
-                                            <span class="badge bg-success">AKTIF</span>
+                                            <span class="badge bg-success" style="font-size: 11px; padding: 3px 8px;">AKTIF</span>
                                         @endif
                                     </td>
                                 </tr>
@@ -636,21 +708,43 @@
                                 </tr>
                                 <tr>
                                     <th>Device ID</th>
-                                    <td><small class="font-monospace">{{ $maping->device_id ?? '-' }}</small></td>
+                                    <td><small class="font-monospace" style="font-size: 11px;">{{ $maping->device_id ?? '-' }}</small></td>
                                 </tr>
                                 <tr>
                                     <th>Produk ID</th>
-                                    <td><small class="font-monospace">{{ $maping->produk_id ?? '-' }}</small></td>
+                                    <td><small class="font-monospace" style="font-size: 11px;">{{ $maping->produk_id ?? '-' }}</small></td>
                                 </tr>
                             </table>
                         </div>
+                    </div>
+                {{-- BOTTOM ACTION NAVIGATION / KEMBALI KE CHECKLIST RUANGAN --}}
+                <div class="card border-0 shadow-xs mt-4" style="background: linear-gradient(135deg, #f8fafc, #f1f5f9); border-radius: 12px; border: 1px solid #e2e8f0 !important;">
+                    <div class="card-body p-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        @if (auth()->check())
+                            @if (isset($checklistRuangan) && $checklistRuangan)
+                                <a href="{{ route('checklist.pemeriksaan.show', $checklistRuangan->id) }}" class="btn btn-warning text-dark fw-bold d-inline-flex align-items-center shadow-xs">
+                                    <i class="bx bx-arrow-back me-1.5 fs-5"></i> Kembali ke Ruangan Pelaksanaan Checklist ({{ $checklistRuangan->lokasi->nama_lokasi ?? 'Ruangan' }})
+                                </a>
+                            @else
+                                <a href="{{ route('checklist.pemeriksaan.index') }}" class="btn btn-warning text-dark fw-bold d-inline-flex align-items-center shadow-xs">
+                                    <i class="bx bx-arrow-back me-1.5 fs-5"></i> Kembali ke Menu Checklist Ruangan
+                                </a>
+                            @endif
+                            <a href="{{ route('dashboard') }}" class="btn btn-outline-secondary d-inline-flex align-items-center">
+                                <i class="bx bx-home-alt me-1"></i> Buka Dashboard
+                            </a>
+                        @else
+                            <button type="button" onclick="window.history.back()" class="btn btn-outline-secondary d-inline-flex align-items-center">
+                                <i class="bx bx-arrow-back me-1"></i> Kembali
+                            </button>
+                        @endif
                     </div>
                 </div>
 
             </div>
 
             {{-- FOOTER --}}
-            <div class="card-footer bg-light text-center py-3 text-muted small">
+            <div class="card-footer bg-light text-center py-2.5 text-muted" style="font-size: 11px;">
                 &copy; {{ date('Y') }} Sembilan Group &bull; Sistem Monitoring & Checklist Device IT Real-Time
             </div>
 

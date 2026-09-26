@@ -77,4 +77,25 @@ class ChecklistDevice extends Model
     {
         return $this->checked_at ? $this->checked_at->format('d M Y, H:i') : null;
     }
+
+    /**
+     * Dapatkan mapping aset terkait, baik dari maping_id langsung atau dari inventaris peminjaman.
+     */
+    public function getResolvedMapingAttribute()
+    {
+        if ($this->maping) {
+            return $this->maping;
+        }
+
+        if ($this->inventaris_id) {
+            return Maping::withoutGlobalScopes()
+                ->whereHas('keluar', function ($q) {
+                    $q->where('inventaris_id', $this->inventaris_id);
+                })
+                ->latest('id')
+                ->first();
+        }
+
+        return null;
+    }
 }

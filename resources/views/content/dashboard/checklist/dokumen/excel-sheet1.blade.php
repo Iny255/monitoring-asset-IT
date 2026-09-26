@@ -74,7 +74,7 @@
                 </td>
                 @for ($b = 1; $b <= 12; $b++)
                     @for ($m = 1; $m <= 4; $m++)
-                        <td style="text-align: center; vertical-align: middle;">
+                        <td style="text-align: center; vertical-align: middle; mso-number-format:'\@';">
                             @if ($itemText && !$isBlank && !empty($matrix[$itemText][$b][$m]))
                                 {{ $matrix[$itemText][$b][$m] === '✔' ? 'v' : ($matrix[$itemText][$b][$m] === '✖' ? 'x' : $matrix[$itemText][$b][$m]) }}
                             @endif

@@ -539,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const statusEl = document.getElementById('qr-reader-status');
         if (statusEl) statusEl.textContent = 'Barcode terdeteksi: ' + decodedText + '. Membuka halaman...';
 
-        if (decodedText.includes('/maping/')) {
+        if (decodedText.includes('/maping/') || decodedText.includes('/peminjaman/')) {
             window.location.href = decodedText;
         } else {
             window.location.href = "{{ url('/maping') }}/" + encodeURIComponent(decodedText.trim());

@@ -129,7 +129,41 @@ class PublicTicketController extends Controller
             }
         }
 
-        // 2. Ambil dari Peminjaman Aktif (Perangkat Sementara)
+        // 2. Fallback: Transaksi Keluar langsung Perorangan (jika ada unit DIPAKAI belum dimapping)
+        $keluars = Keluar::with(['inventaris.dataAset.kategori', 'lokasi'])
+            ->where('karyawan_id', $karyawanId)
+            ->where(function ($jq) {
+                $jq->where('jenis_penerima', 'Perorangan')
+                   ->orWhereNull('jenis_penerima');
+            })
+            ->whereHas('inventaris', function ($q) {
+                $q->where('status', 'DIPAKAI');
+            })
+            ->whereDoesntHave('maping')
+            ->get();
+
+        foreach ($keluars as $klr) {
+            $inv = $klr->inventaris;
+            if ($inv && !$assets->contains('inventaris_id', $inv->id)) {
+                $catName = $inv->dataAset?->kategori?->nama_barang ?? 'Perangkat IT';
+                $assets->push([
+                    'inventaris_id' => $inv->id,
+                    'kode_aset' => $inv->kode_aset ?? '-',
+                    'no_inventaris' => $inv->no_inventaris ?? '-',
+                    'kategori' => $catName,
+                    'category_group' => $this->detectCategoryGroup($catName),
+                    'merek' => $inv->dataAset?->merek ?? '-',
+                    'type' => $inv->dataAset?->type ?? '-',
+                    'lokasi' => $klr->lokasi?->nama_lokasi ?? '-',
+                    'lokasi_id' => $klr->lokasi_id,
+                    'tipe_alokasi' => 'Perangkat Diserahkan',
+                    'badge_class' => 'bg-label-success',
+                    'icon' => $this->detectCategoryIcon($catName),
+                ]);
+            }
+        }
+
+        // 3. Ambil dari Peminjaman Aktif (Perangkat Sementara)
         $loans = Peminjaman::with([
             'inventaris.dataAset.kategori'
         ])
@@ -161,7 +195,10 @@ class PublicTicketController extends Controller
             }
         }
 
-        // 3. Ambil dari Mapping Perdivisi yang sesuai divisi karyawan
+        // 4. Kumpulkan grup kategori perangkat personal yang sudah dipegang karyawan secara perorangan/pinjaman
+        $ownedPersonalGroups = $assets->pluck('category_group')->unique()->toArray();
+
+        // 5. Ambil dari Mapping Perdivisi yang sesuai divisi karyawan
         if (!empty($karyawan->divisi)) {
             $divisiClean = trim($karyawan->divisi);
             $divisiAliases = $this->getDivisionAliases($divisiClean);
@@ -186,12 +223,25 @@ class PublicTicketController extends Controller
                 $inv = $dmap->keluar?->inventaris;
                 if ($inv && !$assets->contains('inventaris_id', $inv->id)) {
                     $catName = $inv->dataAset?->kategori?->nama_barang ?? 'Perangkat IT';
+                    $group = $this->detectCategoryGroup($catName);
+
+                    // ATURAN HIRARKI (Dedicated vs Shared Asset):
+                    // Jika perangkat bertipe personal (seperti smartphone/HP, laptop, PC)
+                    // dan karyawan SUDAH memiliki perangkat sejenis secara perorangan/pinjaman,
+                    // maka jangan tampilkan perangkat divisi sejenis tersebut (sembunyikan).
+                    // Perangkat divisi hanya muncul jika karyawan BELUM memiliki perangkat personal tersebut,
+                    // atau jika perangkat bersifat shared/bersama (seperti printer, scanner, jaringan, monitor).
+                    $isPersonalDevice = in_array($group, ['smartphone', 'laptop', 'pc']);
+                    if ($isPersonalDevice && in_array($group, $ownedPersonalGroups)) {
+                        continue;
+                    }
+
                     $assets->push([
                         'inventaris_id' => $inv->id,
                         'kode_aset' => $inv->kode_aset ?? '-',
                         'no_inventaris' => $inv->no_inventaris ?? '-',
                         'kategori' => $catName,
-                        'category_group' => $this->detectCategoryGroup($catName),
+                        'category_group' => $group,
                         'merek' => $inv->dataAset?->merek ?? '-',
                         'type' => $inv->dataAset?->type ?? '-',
                         'lokasi' => $dmap->lokasi?->nama_lokasi ?? ($dmap->divisi ?? '-'),
@@ -201,40 +251,6 @@ class PublicTicketController extends Controller
                         'icon' => $this->detectCategoryIcon($catName),
                     ]);
                 }
-            }
-        }
-
-        // 4. Fallback: Transaksi Keluar langsung (jika ada unit DIPAKAI belum dimapping)
-        $keluars = Keluar::with(['inventaris.dataAset.kategori', 'lokasi'])
-            ->where('karyawan_id', $karyawanId)
-            ->where(function ($jq) {
-                $jq->where('jenis_penerima', 'Perorangan')
-                   ->orWhereNull('jenis_penerima');
-            })
-            ->whereHas('inventaris', function ($q) {
-                $q->where('status', 'DIPAKAI');
-            })
-            ->whereDoesntHave('maping')
-            ->get();
-
-        foreach ($keluars as $klr) {
-            $inv = $klr->inventaris;
-            if ($inv && !$assets->contains('inventaris_id', $inv->id)) {
-                $catName = $inv->dataAset?->kategori?->nama_barang ?? 'Perangkat IT';
-                $assets->push([
-                    'inventaris_id' => $inv->id,
-                    'kode_aset' => $inv->kode_aset ?? '-',
-                    'no_inventaris' => $inv->no_inventaris ?? '-',
-                    'kategori' => $catName,
-                    'category_group' => $this->detectCategoryGroup($catName),
-                    'merek' => $inv->dataAset?->merek ?? '-',
-                    'type' => $inv->dataAset?->type ?? '-',
-                    'lokasi' => $klr->lokasi?->nama_lokasi ?? '-',
-                    'lokasi_id' => $klr->lokasi_id,
-                    'tipe_alokasi' => 'Perangkat Diserahkan',
-                    'badge_class' => 'bg-label-success',
-                    'icon' => $this->detectCategoryIcon($catName),
-                ]);
             }
         }
 
@@ -358,7 +374,7 @@ class PublicTicketController extends Controller
         if (str_contains($k, 'printer') || str_contains($k, 'scanner') || str_contains($k, 'cetak')) {
             return 'printer';
         }
-        if (str_contains($k, 'hp') || str_contains($k, 'handphone') || str_contains($k, 'smartphone') || str_contains($k, 'phone') || str_contains($k, 'tablet') || str_contains($k, 'ipad')) {
+        if (str_contains($k, 'hp') || str_contains($k, 'handphone') || str_contains($k, 'smartphone') || str_contains($k, 'phone') || str_contains($k, 'ponsel') || str_contains($k, 'tablet') || str_contains($k, 'ipad')) {
             return 'smartphone';
         }
         if (str_contains($k, 'monitor') || str_contains($k, 'display') || str_contains($k, 'layar')) {
@@ -385,7 +401,7 @@ class PublicTicketController extends Controller
         if (str_contains($k, 'printer') || str_contains($k, 'scanner') || str_contains($k, 'cetak')) {
             return 'bx bx-printer';
         }
-        if (str_contains($k, 'hp') || str_contains($k, 'handphone') || str_contains($k, 'smartphone') || str_contains($k, 'phone') || str_contains($k, 'tablet') || str_contains($k, 'ipad')) {
+        if (str_contains($k, 'hp') || str_contains($k, 'handphone') || str_contains($k, 'smartphone') || str_contains($k, 'phone') || str_contains($k, 'ponsel') || str_contains($k, 'tablet') || str_contains($k, 'ipad')) {
             return 'bx bx-mobile-alt';
         }
         if (str_contains($k, 'monitor') || str_contains($k, 'display') || str_contains($k, 'layar')) {

@@ -526,12 +526,14 @@
 
         @php
             $authUser = Auth::user();
+            
             $authRawRole = (string) ($authUser->role ?? '');
             $authUserRole = is_numeric($authRawRole) ? ($authUser->roleDefinition?->name ?? $authRawRole) : $authRawRole;
             $authNormRole = strtolower(str_replace([' ', '-'], '_', trim($authUserRole)));
             $isSuperAdmin = in_array($authNormRole, ['super_admin', '1', 'superadmin'])
                 || in_array($authRawRole, ['super_admin', '1', 1, 'superadmin'])
                 || ($authUser->roleDefinition && $authUser->roleDefinition->name === 'super_admin');
+        
         @endphp
 
         @foreach ($menuData->menu as $menu)
@@ -557,11 +559,20 @@
                          GROUP SECTION HEADER (DENGAN SUBMENU)
                     ===================================== --}}
                     <li class="menu-header-group">
-                        <div class="menu-group-title">
+                        <div class="menu-group-title d-flex align-items-center">
                             @if (isset($menu->icon))
                                 <i class="{{ $menu->icon }}"></i>
                             @endif
-                            <span>{{ isset($menu->name) ? __($menu->name) : '' }}</span>
+                            <span class="flex-grow-1">{{ isset($menu->name) ? __($menu->name) : '' }}</span>
+
+                            @if (isset($menu->slug) && $menu->slug === 'e-ticket')
+                                <span id="eTicketGroupBadge"
+                                      class="badge bg-danger rounded-pill ms-auto {{ ($initialOpenTicketCount ?? 0) > 0 ? '' : 'd-none' }}"
+                                      style="font-size: 0.68rem; padding: 2px 7px;"
+                                      title="{{ $initialOpenTicketCount ?? 0 }} Tiket Open Baru">
+                                    {{ $initialOpenTicketCount ?? 0 }}
+                                </span>
+                            @endif
                         </div>
 
                         {{-- SUBMENU ITEMS (SELALU TERBUKA) --}}

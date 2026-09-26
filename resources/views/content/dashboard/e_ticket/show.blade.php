@@ -295,8 +295,38 @@
                                 </small>
                             </div>
 
+                            <div class="border rounded p-2.5 bg-light mb-3">
+                                <span class="fw-bold small text-dark d-block mb-1">
+                                    <i class="bx bx-notepad text-primary me-1"></i> Data Laporan Troubleshoot
+                                </span>
+                                <small class="text-muted d-block mb-2" style="font-size: 11px;">
+                                    Data di bawah akan tercatat pada lembar <em>Checklist Temuan &amp; Tindakan Troubleshoot</em>.
+                                </small>
+
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold mb-1">Tindakan Perbaikan</label>
+                                    <input type="text" name="tindakan_perbaikan" class="form-control form-control-sm"
+                                           placeholder="Contoh: Update driver / Repair file excel"
+                                           value="{{ old('tindakan_perbaikan', $ticket->tindakan_perbaikan) }}">
+                                </div>
+
+                                <div class="mb-2">
+                                    <label class="form-label small fw-semibold mb-1">Tindakan Pencegahan</label>
+                                    <input type="text" name="tindakan_pencegahan" class="form-control form-control-sm"
+                                           placeholder="Default: -"
+                                           value="{{ old('tindakan_pencegahan', $ticket->tindakan_pencegahan ?? '-') }}">
+                                </div>
+
+                                <div>
+                                    <label class="form-label small fw-semibold mb-1">Verifikasi &amp; Validasi</label>
+                                    <input type="text" name="verifikasi" class="form-control form-control-sm"
+                                           placeholder="Contoh: Telah dilakukan update driver"
+                                           value="{{ old('verifikasi', $ticket->verifikasi) }}">
+                                </div>
+                            </div>
+
                             <button type="submit" class="btn btn-primary w-100">
-                                <i class="bi bi-check-circle me-1"></i> Simpan Perubahan Status
+                                <i class="bi bi-check-circle me-1"></i> Simpan Perubahan Tiket
                             </button>
                         </form>
                     </div>

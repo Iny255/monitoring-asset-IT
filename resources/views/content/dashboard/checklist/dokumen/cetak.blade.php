@@ -87,6 +87,16 @@
             font-size: 12px;
         }
 
+        .check-date {
+            color: #0f172a;
+            font-weight: 700;
+            font-size: 8.5px;
+            display: inline-block;
+            line-height: 1;
+            white-space: nowrap;
+            letter-spacing: -0.3px;
+        }
+
         .header-identitas td {
             font-size: 10.5px;
         }
@@ -270,14 +280,14 @@
                         </td>
                         @for ($b = 1; $b <= 12; $b++)
                             @for ($m = 1; $m <= 4; $m++)
-                                <td class="text-center" style="padding: 1px; font-size: 11px;">
+                                <td class="text-center" style="padding: 1px 0; font-size: 10px; white-space: nowrap;">
                                     @if ($itemText && !$isBlank && !empty($matrix[$itemText][$b][$m]))
                                         @if ($matrix[$itemText][$b][$m] === '✔')
                                             <span class="check-ok">&#10003;</span>
                                         @elseif ($matrix[$itemText][$b][$m] === '✖')
                                             <span class="check-ng">&#10007;</span>
                                         @else
-                                            {{ $matrix[$itemText][$b][$m] }}
+                                            <span class="check-date">{{ $matrix[$itemText][$b][$m] }}</span>
                                         @endif
                                     @else
                                         &nbsp;

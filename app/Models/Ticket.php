@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class Ticket extends Model
@@ -22,6 +23,9 @@ class Ticket extends Model
         'deskripsi',
         'prioritas',
         'status',
+        'tindakan_perbaikan',
+        'tindakan_pencegahan',
+        'verifikasi',
         'assigned_to',
         'maintenance_id',
         'lampiran',
@@ -125,5 +129,85 @@ class Ticket extends Model
     public function getPelaporContactAttribute(): ?string
     {
         return $this->kontak_pelapor ?? null;
+    }
+
+    public function getPerangkatNameAttribute(): string
+    {
+        if ($this->inventaris) {
+            $kode = $this->inventaris->kode_aset;
+            $namaAset = $this->inventaris->dataAset?->nama_aset ?? $this->inventaris->dataAset?->kategori?->nama_barang ?? '';
+            if ($kode && $namaAset) {
+                return "{$namaAset} ({$kode})";
+            }
+            return $kode ?: ($namaAset ?: '-');
+        }
+        return '-';
+    }
+
+    public function getDivisiPelaporAttribute(): string
+    {
+        if ($this->karyawan && !empty($this->karyawan->divisi)) {
+            return $this->karyawan->divisi;
+        }
+        if ($this->user && !empty($this->user->divisi)) {
+            return $this->user->divisi;
+        }
+        return '-';
+    }
+
+    public function getTindakanPerbaikanFormattedAttribute(): string
+    {
+        if (!empty($this->tindakan_perbaikan)) {
+            return $this->tindakan_perbaikan;
+        }
+
+        // Fallback: Cari balasan dari petugas IT / reply terakhir
+        $lastItReply = $this->replies()
+            ->where(function ($q) {
+                $q->where('user_id', '!=', $this->user_id)
+                  ->orWhere('is_internal_note', 1);
+            })
+            ->latest()
+            ->first();
+
+        if ($lastItReply && !empty($lastItReply->pesan)) {
+            return Str::limit(strip_tags($lastItReply->pesan), 150);
+        }
+
+        if ($this->maintenance && !empty($this->maintenance->tindakan)) {
+            return $this->maintenance->tindakan;
+        }
+
+        return in_array($this->status, ['resolved', 'closed']) ? 'Penanganan kendala selesai' : '-';
+    }
+
+    public function getTindakanPencegahanFormattedAttribute(): string
+    {
+        if (!empty($this->tindakan_pencegahan)) {
+            return $this->tindakan_pencegahan;
+        }
+        return '-';
+    }
+
+    public function getVerifikasiFormattedAttribute(): string
+    {
+        if (!empty($this->verifikasi)) {
+            return $this->verifikasi;
+        }
+
+        if (in_array($this->status, ['resolved', 'closed'])) {
+            $tindakan = $this->tindakan_perbaikan_formatted;
+            if ($tindakan && $tindakan !== '-' && $tindakan !== 'Penanganan kendala selesai') {
+                return 'Telah dilakukan ' . lcfirst($tindakan);
+            }
+            return 'Telah diverifikasi dan selesai ditangani';
+        }
+
+        return '-';
+    }
+
+    public function isStatusOk(): bool
+    {
+        return in_array($this->status, ['resolved', 'closed']);
     }
 }

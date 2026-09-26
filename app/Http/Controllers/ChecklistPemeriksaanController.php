@@ -7,6 +7,7 @@ use App\Models\ChecklistRuangan;
 use App\Models\ChecklistDevice;
 use App\Models\ChecklistDeviceItem;
 use App\Models\ChecklistItem;
+use App\Models\Inventaris;
 use App\Models\Lokasi;
 use App\Models\Maping;
 use App\Models\Peminjaman;
@@ -15,6 +16,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class ChecklistPemeriksaanController extends Controller
@@ -687,8 +689,23 @@ class ChecklistPemeriksaanController extends Controller
 
         $qrUrl = null;
         $qrSvg = null;
-        if ($device->maping) {
-            $qrUrl = route('maping.public_show', $device->maping->uuid ?? $device->maping->id);
+        $mapping = $device->maping ?? $device->resolved_maping;
+        $qrUrl = null;
+        $qrSvg = null;
+        $linkLabel = 'Buka Informasi Aset';
+
+        if ($mapping) {
+            $qrUrl = route('maping.public_show', ['id' => $mapping->uuid ?? $mapping->id, 'ruangan_id' => $ruangan->id]);
+            $linkLabel = 'Buka Informasi Mapping & Pengecekan';
+        } elseif ($device->peminjaman_id) {
+            $qrUrl = route('peminjaman.show', ['id' => $device->peminjaman_id, 'ruangan_id' => $ruangan->id]);
+            $linkLabel = 'Buka Informasi Peminjaman Aset';
+        } elseif ($device->inventaris) {
+            $qrUrl = route('history.perjalanan.dokumen_perawatan.cetak', ['id' => $device->inventaris->id, 'tahun' => date('Y')]);
+            $linkLabel = 'Buka Form Perawatan Aset';
+        }
+
+        if ($qrUrl) {
             try {
                 $qrSvg = (string) QrCode::size(160)->generate($qrUrl);
             } catch (\Exception $e) {
@@ -727,6 +744,12 @@ class ChecklistPemeriksaanController extends Controller
             'checked_by_name' => $device->checkedBy?->name ?? ($device->checked_at ? (auth()->user()?->name ?? 'Petugas IT') : null),
             'qr_url' => $qrUrl,
             'qr_svg' => $qrSvg,
+            'qr_base64' => !empty($qrSvg) ? base64_encode($qrSvg) : null,
+            'is_pinjaman' => (bool) $device->is_pinjaman,
+            'peminjaman_id' => $device->peminjaman_id,
+            'mapping_id' => $mapping?->id,
+            'mapping_uuid' => $mapping?->uuid,
+            'link_label' => $linkLabel,
             'items' => $itemsDetail,
             'failed_items' => $failedItems,
             'has_kendala' => $device->status_device === 'ada_kendala',
@@ -761,11 +784,294 @@ class ChecklistPemeriksaanController extends Controller
             'petugas',
             'checklistDevices.inventaris.dataAset.kategori',
             'checklistDevices.maping.karyawan',
+            'checklistDevices.peminjaman.karyawan',
+            'checklistDevices.peminjaman.perusahaanTujuan',
             'checklistDevices.checkedBy',
             'checklistDevices.items',
             'perusahaan'
         ])->findOrFail($id);
 
         return view('content.dashboard.checklist.pemeriksaan.cetak', compact('ruangan'));
+    }
+
+    /**
+     * Cari identitas perangkat dari hasil scan QR/Barcode (Cek sesi saat ini, mapping, atau pinjaman).
+     */
+    public function scanLookup(Request $request, $id)
+    {
+        $ruangan = ChecklistRuangan::with(['checklistDevices.inventaris'])->findOrFail($id);
+        $rawInput = trim($request->input('code', ''));
+
+        if (empty($rawInput)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Kode atau QR barcode tidak boleh kosong.',
+            ], 422);
+        }
+
+        // Jika input berupa URL, ambil identifier di bagian akhir path
+        $identifier = $rawInput;
+        if (filter_var($rawInput, FILTER_VALIDATE_URL) || str_contains($rawInput, '/')) {
+            $parsedPath = parse_url($rawInput, PHP_URL_PATH);
+            if ($parsedPath) {
+                $segments = array_values(array_filter(explode('/', $parsedPath)));
+                $identifier = end($segments) ?: $rawInput;
+            }
+        }
+        $identifier = trim($identifier);
+
+        // 1. Cek apakah perangkat SUDAH ADA di sesi ruangan ini
+        $existingDeviceInRoom = $ruangan->checklistDevices->first(function ($device) use ($identifier, $rawInput) {
+            $inv = $device->inventaris;
+            $kode = strtolower($inv?->kode_aset ?? '');
+            $noInv = strtolower($inv?->no_inventaris ?? '');
+            $devMaping = $device->maping ?? $device->resolved_maping;
+            $mapUuid = strtolower($devMaping?->uuid ?? '');
+            $mapId = (string) ($devMaping?->id ?? '');
+            $pjmId = (string) ($device->peminjaman_id ?? '');
+            $pjmKode = strtolower($device->peminjaman?->kode_peminjaman ?? '');
+
+            $targetIdent = strtolower($identifier);
+            $targetRaw = strtolower($rawInput);
+
+            return ($kode && ($kode === $targetIdent || str_contains($targetRaw, $kode)))
+                || ($noInv && ($noInv === $targetIdent || str_contains($targetRaw, $noInv)))
+                || ($mapUuid && ($mapUuid === $targetIdent || str_contains($targetRaw, $mapUuid)))
+                || ($mapId && ($mapId === $targetIdent || str_contains($targetRaw, "/maping/{$mapId}") || str_contains($targetRaw, "/{$mapId}")))
+                || ($pjmKode && ($pjmKode === $targetIdent || str_contains($targetRaw, $pjmKode)))
+                || ($pjmId && ($pjmId === $targetIdent || str_contains($targetRaw, "/peminjaman/{$pjmId}")));
+        });
+
+        if ($existingDeviceInRoom) {
+            return response()->json([
+                'success' => true,
+                'already_in_room' => true,
+                'can_add' => false,
+                'device_id' => $existingDeviceInRoom->id,
+                'kode_aset' => $existingDeviceInRoom->inventaris?->kode_aset ?? '-',
+                'message' => 'Perangkat sudah terdaftar di sesi checklist ruangan ini.',
+            ]);
+        }
+
+        // 2. Jika belum ada di ruangan ini, cari di database sistem:
+        // 2a. Cari di Mapping
+        $mapping = Maping::withoutGlobalScopes()->with(['keluar.inventaris.dataAset.kategori', 'lokasi', 'perusahaan'])
+            ->where(function ($q) use ($identifier, $rawInput) {
+                if (Str::isUuid($identifier)) {
+                    $q->where('uuid', $identifier);
+                } else {
+                    $q->where('id', $identifier)->orWhere('uuid', $identifier);
+                }
+                $q->orWhereHas('keluar.inventaris', function ($iq) use ($identifier, $rawInput) {
+                    $iq->where('kode_aset', $identifier)
+                       ->orWhere('no_inventaris', $identifier)
+                       ->orWhere('kode_aset', $rawInput)
+                       ->orWhere('no_inventaris', $rawInput);
+                });
+            })
+            ->first();
+
+        // 2b. Cari di Peminjaman
+        $loan = Peminjaman::with(['inventaris.dataAset.kategori', 'karyawan', 'karyawanTujuan', 'perusahaanTujuan', 'lokasi'])
+            ->where(function ($q) use ($identifier, $rawInput) {
+                $q->where('kode_peminjaman', $identifier)
+                  ->orWhere('kode_peminjaman', $rawInput)
+                  ->orWhere('id', $identifier);
+            })
+            ->orWhereHas('inventaris', function ($iq) use ($identifier, $rawInput) {
+                $iq->where('kode_aset', $identifier)
+                   ->orWhere('no_inventaris', $identifier)
+                   ->orWhere('kode_aset', $rawInput)
+                   ->orWhere('no_inventaris', $rawInput);
+            })
+            ->latest('id')
+            ->first();
+
+        // 2c. Cari di Inventaris langsung jika belum ketemu
+        $inventaris = $mapping?->keluar?->inventaris ?? $loan?->inventaris;
+        if (!$inventaris) {
+            $inventaris = Inventaris::with('dataAset.kategori')
+                ->where('kode_aset', $identifier)
+                ->orWhere('no_inventaris', $identifier)
+                ->orWhere('kode_aset', $rawInput)
+                ->orWhere('no_inventaris', $rawInput)
+                ->orWhere('id', $identifier)
+                ->first();
+        }
+
+        if (!$inventaris) {
+            return response()->json([
+                'success' => false,
+                'already_in_room' => false,
+                'can_add' => false,
+                'message' => 'Data perangkat tidak ditemukan di database sistem aset.',
+            ], 404);
+        }
+
+        // Cek lagi apakah inventaris_id sudah ada di sesi ruangan ini
+        $dupDevice = $ruangan->checklistDevices()->where('inventaris_id', $inventaris->id)->first();
+        if ($dupDevice) {
+            return response()->json([
+                'success' => true,
+                'already_in_room' => true,
+                'can_add' => false,
+                'device_id' => $dupDevice->id,
+                'kode_aset' => $inventaris->kode_aset ?? '-',
+                'message' => 'Perangkat sudah terdaftar di sesi checklist ruangan ini.',
+            ]);
+        }
+
+        // Cek pinjaman aktif untuk inventaris ini
+        $activeLoan = $loan && in_array(strtolower($loan->status), ['dipinjam', 'menunggu_pengembalian'])
+            ? $loan
+            : Peminjaman::with(['karyawan', 'karyawanTujuan', 'perusahaanTujuan', 'lokasi'])
+                ->where('inventaris_id', $inventaris->id)
+                ->whereIn('status', ['dipinjam', 'Dipinjam', 'menunggu_pengembalian'])
+                ->latest('id')
+                ->first();
+
+        if (!$mapping) {
+            $mapping = Maping::withoutGlobalScopes()->with(['lokasi', 'perusahaan'])
+                ->whereHas('keluar', fn($q) => $q->where('inventaris_id', $inventaris->id))
+                ->latest('id')
+                ->first();
+        }
+
+        $dataAset = $inventaris->dataAset;
+        $jenisAset = $dataAset?->kategori?->nama_barang ?? ($dataAset?->kategori?->nama_kategori ?? 'Perangkat IT');
+        $merekType = trim(($dataAset?->merek ?? '') . ' ' . ($dataAset?->type ?? ''));
+
+        $statusTeks = $activeLoan
+            ? "Perangkat Pinjaman (Peminjam: {$activeLoan->peminjam_nama})"
+            : ($mapping ? "Mapping Asal: " . ($mapping->lokasi?->nama_lokasi ?? '-') : 'Inventaris Perusahaan');
+
+        return response()->json([
+            'success' => true,
+            'already_in_room' => false,
+            'can_add' => true,
+            'device_info' => [
+                'inventaris_id' => $inventaris->id,
+                'maping_id' => $mapping?->id,
+                'peminjaman_id' => $activeLoan?->id,
+                'kode_aset' => $inventaris->kode_aset ?? '-',
+                'no_inventaris' => $inventaris->no_inventaris ?? null,
+                'nama_barang' => $jenisAset,
+                'merek_type' => $merekType,
+                'is_loan' => (bool) $activeLoan,
+                'peminjam' => $activeLoan ? $activeLoan->peminjam_nama : null,
+                'lokasi_asal' => $mapping?->lokasi?->nama_lokasi ?? 'Tidak Terpetakan',
+                'status_teks' => $statusTeks,
+            ],
+            'message' => 'Perangkat ditemukan di sistem dan dapat ditambahkan ke ruangan ini.',
+        ]);
+    }
+
+    /**
+     * Tambahkan perangkat hasil scan barcode ke sesi checklist ruangan saat ini.
+     */
+    public function addScannedDevice(Request $request, $id)
+    {
+        $ruangan = ChecklistRuangan::findOrFail($id);
+        $inventarisId = $request->input('inventaris_id');
+
+        if (!$inventarisId) {
+            return response()->json(['success' => false, 'message' => 'ID inventaris tidak valid.'], 422);
+        }
+
+        // Cek jika sudah terdaftar
+        $existing = $ruangan->checklistDevices()->where('inventaris_id', $inventarisId)->first();
+        if ($existing) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Perangkat sudah ada di sesi ruangan ini.',
+                'device_id' => $existing->id,
+            ]);
+        }
+
+        $inventaris = Inventaris::with('dataAset')->findOrFail($inventarisId);
+        $peminjamanId = $request->input('peminjaman_id');
+        $mapingId = $request->input('maping_id');
+
+        // Jika tidak dikirim peminjamanId, cek apakah ada pinjaman aktif
+        if (!$peminjamanId) {
+            $activeLoan = Peminjaman::where('inventaris_id', $inventarisId)
+                ->whereIn('status', ['dipinjam', 'Dipinjam', 'menunggu_pengembalian'])
+                ->latest('id')
+                ->first();
+            if ($activeLoan) {
+                $peminjamanId = $activeLoan->id;
+            }
+        }
+
+        // Jika tidak dikirim mapingId dan bukan pinjaman, cari mapping aktifnya
+        if (!$mapingId && !$peminjamanId) {
+            $mapping = Maping::withoutGlobalScopes()
+                ->whereHas('keluar', fn($q) => $q->where('inventaris_id', $inventarisId))
+                ->latest('id')
+                ->first();
+            if ($mapping) {
+                $mapingId = $mapping->id;
+            }
+        }
+
+        $namaPengguna = '-';
+        if ($peminjamanId) {
+            $loan = Peminjaman::find($peminjamanId);
+            $namaPengguna = $loan ? "[Pinjaman] {$loan->peminjam_nama}" : '[Pinjaman]';
+            // Perbarui lokasi pinjaman ke ruangan ini agar sinkron
+            if ($loan && $ruangan->id_lokasi) {
+                $loan->id_lokasi = $ruangan->id_lokasi;
+                $loan->save();
+            }
+        } elseif ($mapingId) {
+            $m = Maping::withoutGlobalScopes()->find($mapingId);
+            $namaPengguna = $m?->penerima ?? '-';
+        }
+
+        DB::beginTransaction();
+        try {
+            $device = ChecklistDevice::create([
+                'checklist_ruangan_id' => $ruangan->id,
+                'maping_id' => $mapingId,
+                'peminjaman_id' => $peminjamanId,
+                'inventaris_id' => $inventaris->id,
+                'nama_pengguna' => $namaPengguna,
+                'status_device' => 'belum_dicek',
+            ]);
+
+            // Tambahkan master item aktif
+            $masterItems = ChecklistItem::where('is_active', true)
+                ->where(function ($q) use ($ruangan) {
+                    $q->whereNull('id_perusahaan')
+                      ->orWhere('id_perusahaan', $ruangan->id_perusahaan);
+                })
+                ->orderBy('urutan')
+                ->get();
+
+            foreach ($masterItems as $item) {
+                ChecklistDeviceItem::create([
+                    'checklist_device_id' => $device->id,
+                    'nama_item' => $item->nama_item,
+                    'kategori_item' => $item->kategori,
+                    'is_ok' => true,
+                ]);
+            }
+
+            $ruangan->updateProgress();
+            DB::commit();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Perangkat berhasil ditambahkan ke sesi ruangan ini!',
+                'device_id' => $device->id,
+            ]);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('Error adding scanned device: ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambahkan perangkat: ' . $e->getMessage(),
+            ], 500);
+        }
     }
 }

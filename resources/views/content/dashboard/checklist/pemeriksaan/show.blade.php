@@ -25,6 +25,23 @@
         height: auto !important;
         max-width: 170px;
     }
+    @media (max-width: 575.98px) {
+        .device-avatar {
+            width: 38px !important;
+            height: 38px !important;
+            min-width: 38px !important;
+        }
+        .device-avatar i {
+            font-size: 1.35rem !important;
+        }
+        .device-card .btn-xs {
+            font-size: 0.72rem !important;
+            padding: 3px 8px !important;
+        }
+        .check-info-box {
+            font-size: 0.78rem !important;
+        }
+    }
 </style>
 @endsection
 
@@ -94,11 +111,11 @@
                 </span>
             </p>
         </div>
-        <div class="d-flex align-items-center gap-2 flex-wrap">
-            <a href="{{ route('checklist.pemeriksaan.index') }}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center shadow-xs">
+        <div class="d-flex align-items-center gap-2 flex-wrap w-100 w-sm-auto">
+            <a href="{{ route('checklist.pemeriksaan.index') }}" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center justify-content-center shadow-xs flex-grow-1 flex-sm-grow-0">
                 <i class="bx bx-arrow-back me-1"></i> Kembali ke Daftar
             </a>
-            <a href="{{ route('checklist.pemeriksaan.cetak', $ruangan->id) }}" target="_blank" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center shadow-xs">
+            <a href="{{ route('checklist.pemeriksaan.cetak', $ruangan->id) }}" target="_blank" class="btn btn-sm btn-outline-primary d-inline-flex align-items-center justify-content-center shadow-xs flex-grow-1 flex-sm-grow-0">
                 <i class="bx bx-printer me-1"></i> Cetak Berita Acara
             </a>
         </div>
@@ -106,13 +123,13 @@
 
     {{-- COMPACT PROGRESS & ACTION BAR (REALTIME INTERACTIVE) --}}
     <div class="card border-0 shadow-sm mb-4">
-        <div class="card-body py-3 px-4">
+        <div class="card-body py-3 px-3 px-sm-4">
             <div class="row align-items-center gy-3">
                 
                 {{-- Progress Bar --}}
                 <div class="col-12 col-md-6">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                        <span class="small fw-semibold text-muted">Progres Pengecekan Perangkat:</span>
+                    <div class="d-flex justify-content-between align-items-center mb-1 flex-wrap gap-1">
+                        <span class="small fw-semibold text-muted">Progres Pengecekan:</span>
                         <span id="progressStatsText" class="fw-bold fs-6 {{ $ruangan->persentase == 100 ? 'text-success' : 'text-primary' }}">
                             {{ $ruangan->total_checked }} / {{ $ruangan->total_device }} Device ({{ $ruangan->persentase }}%)
                         </span>
@@ -130,9 +147,9 @@
                 </div>
 
                 {{-- Action Buttons (Scan QR Kamera & 1-Click Massal) --}}
-                <div class="col-12 col-md-6 d-flex justify-content-md-end gap-2 flex-wrap">
+                <div class="col-12 col-md-6 d-flex flex-column flex-sm-row justify-content-md-end gap-2">
                     {{-- Tombol Scan QR Kamera Lapangan --}}
-                    <button type="button" class="btn btn-sm btn-outline-primary py-2 px-3 d-inline-flex align-items-center justify-content-center" id="btnOpenScanner">
+                    <button type="button" class="btn btn-sm btn-outline-primary py-2 px-3 d-inline-flex align-items-center justify-content-center w-100 w-sm-auto shadow-xs" id="btnOpenScanner">
                         <i class="bx bx-camera me-1 fs-5"></i> Scan QR Perangkat
                     </button>
 
@@ -140,11 +157,11 @@
                         <form action="{{ route('checklist.pemeriksaan.mark-all-ok', $ruangan->id) }}" 
                               method="POST" 
                               id="formMarkAll"
-                              class="d-inline-block">
+                              class="w-100 w-sm-auto mb-0">
                             @csrf
                             <button type="button" 
                                     id="btnMarkAll" 
-                                    class="btn btn-sm {{ $ruangan->status === 'selesai' ? 'btn-outline-danger' : 'btn-success' }} py-2 px-3 d-inline-flex align-items-center justify-content-center" 
+                                    class="btn btn-sm {{ $ruangan->status === 'selesai' ? 'btn-outline-danger' : 'btn-success' }} py-2 px-3 d-inline-flex align-items-center justify-content-center w-100 shadow-xs text-nowrap" 
                                     data-action="{{ $ruangan->status === 'selesai' ? 'reset' : 'mark_all' }}">
                                 @if ($ruangan->status === 'selesai')
                                     <i class="bx bx-undo me-1"></i> Batalkan Semua Normal (Reset)
@@ -161,7 +178,7 @@
     </div>
 
     {{-- DAFTAR DEVICE HEADER --}}
-    <div class="d-flex justify-content-between align-items-center mb-3">
+    <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <h6 class="fw-bold mb-0 text-dark fs-6">
             <i class="bx bx-devices me-1 text-primary"></i> Daftar Perangkat ({{ $ruangan->checklistDevices->count() }} Unit)
         </h6>
@@ -179,7 +196,7 @@
                 $dataAset = $inventaris?->dataAset;
                 $jenisAset = $dataAset?->kategori?->nama_barang ?? ($dataAset?->kategori?->nama_kategori ?? 'Perangkat IT');
                 $spekAset = trim(($dataAset?->merek ?? '') . ' ' . ($dataAset?->type ?? '') . ' ' . ($dataAset?->warna ?? ''));
-                $mapping = $device->maping;
+                $mapping = $device->maping ?? $device->resolved_maping;
                 $isChecked = in_array($device->status_device, ['normal', 'ada_kendala']);
                 $checkedBy = $device->checkedBy;
 
@@ -206,7 +223,33 @@
                     ? 'bg-label-success' 
                     : ($device->status_device === 'ada_kendala' ? 'bg-label-danger' : 'bg-label-warning');
 
-                $qrUrl = $mapping ? route('maping.public_show', $mapping->uuid ?? $mapping->id) : '';
+                $isPinjaman = (bool) $device->is_pinjaman;
+                $loan = $device->peminjaman;
+                if ($mapping) {
+                    $qrUrl = route('maping.public_show', ['id' => $mapping->uuid ?? $mapping->id, 'ruangan_id' => $ruangan->id]);
+                    $linkLabel = 'Buka Informasi Mapping & Pengecekan';
+                } elseif ($device->peminjaman_id) {
+                    $qrUrl = route('peminjaman.show', ['id' => $device->peminjaman_id, 'ruangan_id' => $ruangan->id]);
+                    $linkLabel = 'Buka Informasi Peminjaman Aset';
+                } elseif ($inventaris) {
+                    $qrUrl = route('history.perjalanan.dokumen_perawatan.cetak', ['id' => $inventaris->id, 'tahun' => date('Y')]);
+                    $linkLabel = 'Buka Form Perawatan Aset';
+                } else {
+                    $qrUrl = '';
+                    $linkLabel = 'Buka Informasi Aset';
+                }
+
+                $qrSvg = '';
+                $qrBase64 = '';
+                if ($qrUrl) {
+                    try {
+                        $qrSvg = (string) \SimpleSoftwareIO\QrCode\Facades\QrCode::size(160)->generate($qrUrl);
+                        $qrBase64 = base64_encode($qrSvg);
+                    } catch (\Exception $e) {
+                        $qrSvg = '';
+                        $qrBase64 = '';
+                    }
+                }
             @endphp
 
             <div class="col-12 col-lg-6" id="colDevice{{ $device->id }}">
@@ -214,18 +257,23 @@
                      id="cardDevice{{ $device->id }}"
                      data-device-id="{{ $device->id }}"
                      data-kode="{{ $inventaris->kode_aset ?? '' }}"
+                     data-no-inventaris="{{ $inventaris->no_inventaris ?? '' }}"
+                     data-inventaris-id="{{ $inventaris->id ?? '' }}"
                      data-mapping-id="{{ $mapping->id ?? '' }}"
-                     data-mapping-uuid="{{ $mapping->uuid ?? '' }}">
+                     data-mapping-uuid="{{ $mapping->uuid ?? '' }}"
+                     data-peminjaman-id="{{ $device->peminjaman_id ?? '' }}"
+                     data-peminjaman-kode="{{ $loan->kode_peminjaman ?? '' }}">
                     
                     {{-- CARD BODY: DEVICE INFO & USER --}}
-                    <div class="card-body p-4">
-                        <div class="d-flex justify-content-between align-items-start gap-2 mb-3">
-                            <div class="d-flex align-items-start gap-3">
-                                <div class="avatar avatar-md {{ $avatarBg }} rounded device-avatar" id="avatarDevice{{ $device->id }}">
+                    <div class="card-body p-3 p-sm-4">
+                        {{-- BARIS 1: AVATAR, IDENTITAS PERANGKAT & STATUS BADGE --}}
+                        <div class="d-flex justify-content-between align-items-start gap-2 mb-2">
+                            <div class="d-flex align-items-start gap-2 gap-sm-3 min-w-0 flex-grow-1">
+                                <div class="avatar avatar-md {{ $avatarBg }} rounded device-avatar flex-shrink-0" id="avatarDevice{{ $device->id }}">
                                     <i class="bx {{ $icon }} fs-3"></i>
                                 </div>
-                                <div>
-                                    <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                <div class="min-w-0 flex-grow-1">
+                                    <div class="d-flex align-items-center gap-1 flex-wrap mb-1">
                                         <h6 class="fw-bold mb-0 text-dark">
                                             {{ $jenisAset }}
                                         </h6>
@@ -234,64 +282,71 @@
                                                 <i class="bx bx-time-five me-1"></i>PINJAMAN
                                             </span>
                                         @endif
-                                        <span class="badge bg-label-secondary fs-tiny">{{ $spekAset ?: '-' }}</span>
                                     </div>
-                                    <div class="small text-muted font-monospace mb-1">
-                                        <i class="bx bx-barcode me-1"></i>{{ $inventaris->kode_aset ?? '-' }}
-                                        @if ($inventaris->no_inventaris)
-                                            <span class="text-muted">({{ $inventaris->no_inventaris }})</span>
-                                        @endif
+                                    <div class="d-flex align-items-center gap-1 flex-wrap">
+                                        <span class="badge bg-label-secondary fs-tiny text-start" style="white-space: normal;">{{ $spekAset ?: '-' }}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            {{-- Status Badge Device & Bukti QR Code Button --}}
-                            <div class="text-end d-flex flex-column align-items-end gap-1">
-                                <div id="statusBadgeContainer{{ $device->id }}">
-                                    @if ($device->status_device === 'normal')
-                                        <span class="badge bg-success text-white py-1 px-2">
-                                            <i class="bx bx-check me-1"></i> NORMAL
-                                        </span>
-                                    @elseif ($device->status_device === 'ada_kendala')
-                                        <span class="badge bg-danger text-white py-1 px-2">
-                                            <i class="bx bx-x me-1"></i> KENDALA
-                                        </span>
-                                    @else
-                                        <span class="badge bg-label-warning py-1 px-2">
-                                            <i class="bx bx-time me-1"></i> BELUM DICEK
-                                        </span>
-                                    @endif
-                                </div>
+                            {{-- Status Badge Device (Tetap utuh di pojok kanan atas) --}}
+                            <div class="flex-shrink-0 text-end" id="statusBadgeContainer{{ $device->id }}">
+                                @if ($device->status_device === 'normal')
+                                    <span class="badge bg-success text-white py-1 px-2 text-nowrap">
+                                        <i class="bx bx-check me-1"></i> NORMAL
+                                    </span>
+                                @elseif ($device->status_device === 'ada_kendala')
+                                    <span class="badge bg-danger text-white py-1 px-2 text-nowrap">
+                                        <i class="bx bx-x me-1"></i> KENDALA
+                                    </span>
+                                @else
+                                    <span class="badge bg-label-warning py-1 px-2 text-nowrap">
+                                        <i class="bx bx-time me-1"></i> BELUM DICEK
+                                    </span>
+                                @endif
+                            </div>
+                        </div>
 
-                                {{-- Tombol Bukti QR Code Mapping & Form F-IT --}}
-                                <div class="d-flex gap-1 mt-1 flex-wrap justify-content-end">
-                                    @if ($mapping)
-                                        <button type="button" 
-                                                class="btn btn-xs btn-outline-primary btn-show-qr d-inline-flex align-items-center"
-                                                id="btnBuktiQr{{ $device->id }}"
-                                                data-device-id="{{ $device->id }}"
-                                                data-kode="{{ $inventaris->kode_aset ?? '-' }}"
-                                                data-nama="{{ $jenisAset }}"
-                                                data-spek="{{ $spekAset }}"
-                                                data-kategori="{{ $jenisAset }}"
-                                                data-user="{{ $device->nama_pengguna ?? ($mapping->penerima ?? 'Umum') }}"
-                                                data-status="{{ $device->status_device }}"
-                                                data-waktu="{{ $device->checked_at ? $device->checked_at->format('d M Y, H:i') : 'Belum Dicek' }}"
-                                                data-petugas="{{ $checkedBy?->name ?? ($device->checked_at ? ($ruangan->petugas?->name ?? 'Petugas IT') : '-') }}"
-                                                data-kendala="{{ $device->catatan_kendala ?? '' }}"
-                                                data-qr-url="{{ $qrUrl }}">
-                                            <i class="bx bx-qr me-1"></i> Bukti QR
-                                        </button>
-                                    @endif
-                                    @if ($inventaris)
-                                        <a href="{{ route('history.perjalanan.dokumen_perawatan.cetak', ['id' => $inventaris->id, 'tahun' => date('Y')]) }}" 
-                                           target="_blank"
-                                           class="btn btn-xs btn-outline-secondary d-inline-flex align-items-center"
-                                           title="Cetak Form Perawatan Tahunan (F-IT-001/00 & F-IT-002/00)">
-                                            <i class="bx bx-file me-1"></i> Form F-IT
-                                        </a>
-                                    @endif
-                                </div>
+                        {{-- BARIS 2: KODE ASET & TOMBOL AKSI BUKTI QR / FORM F-IT --}}
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2 pb-2 border-bottom">
+                            <div class="small text-muted font-monospace">
+                                <i class="bx bx-barcode me-1"></i><strong class="text-dark">{{ $inventaris->kode_aset ?? '-' }}</strong>
+                                @if ($inventaris->no_inventaris)
+                                    <span class="text-muted">({{ $inventaris->no_inventaris }})</span>
+                                @endif
+                            </div>
+
+                            {{-- Tombol Bukti QR Code Mapping & Form F-IT --}}
+                            <div class="d-flex gap-1 align-items-center flex-wrap ms-auto">
+                                @if ($mapping || $device->peminjaman_id || $qrUrl)
+                                    <button type="button" 
+                                            class="btn btn-xs btn-outline-primary btn-show-qr d-inline-flex align-items-center py-1 px-2 shadow-xs"
+                                            id="btnBuktiQr{{ $device->id }}"
+                                            data-device-id="{{ $device->id }}"
+                                            data-kode="{{ $inventaris->kode_aset ?? '-' }}"
+                                            data-nama="{{ $jenisAset }}"
+                                            data-spek="{{ $spekAset }}"
+                                            data-kategori="{{ $jenisAset }}"
+                                            data-user="{{ $device->nama_pengguna ?? ($mapping->penerima ?? ($loan ? $loan->peminjam_nama : 'Umum')) }}"
+                                            data-status="{{ $device->status_device }}"
+                                            data-waktu="{{ $device->checked_at ? $device->checked_at->format('d M Y, H:i') : 'Belum Dicek' }}"
+                                            data-petugas="{{ $checkedBy?->name ?? ($device->checked_at ? ($ruangan->petugas?->name ?? 'Petugas IT') : '-') }}"
+                                            data-kendala="{{ $device->catatan_kendala ?? '' }}"
+                                            data-qr-url="{{ $qrUrl }}"
+                                            data-qr-base64="{{ $qrBase64 }}"
+                                            data-is-pinjaman="{{ $isPinjaman ? '1' : '0' }}"
+                                            data-link-label="{{ $linkLabel }}">
+                                        <i class="bx bx-qr me-1"></i> Bukti QR
+                                    </button>
+                                @endif
+                                @if ($inventaris)
+                                    <a href="{{ route('history.perjalanan.dokumen_perawatan.cetak', ['id' => $inventaris->id, 'tahun' => date('Y')]) }}" 
+                                       target="_blank"
+                                       class="btn btn-xs btn-outline-secondary d-inline-flex align-items-center py-1 px-2 shadow-xs"
+                                       title="Cetak Form Perawatan Tahunan (F-IT-001/00 & F-IT-002/00)">
+                                        <i class="bx bx-file me-1"></i> Form F-IT
+                                    </a>
+                                @endif
                             </div>
                         </div>
 
@@ -504,13 +559,13 @@
 </div>
 
 {{-- ========================================================================= --}}
-{{-- MODAL 1: BUKTI VERIFIKASI DIGITAL (QR CODE MAPPING)                       --}}
+{{-- MODAL 1: BUKTI VERIFIKASI DIGITAL (QR CODE MAPPING & PINJAMAN)            --}}
 {{-- ========================================================================= --}}
 <div class="modal fade" id="modalBuktiQR" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered" style="max-width: 400px;">
         <div class="modal-content border-0 shadow-lg">
             <div class="modal-header border-0 pb-0 justify-content-between">
-                <span class="badge bg-label-success px-2 py-1 rounded-pill small">
+                <span class="badge bg-label-success px-2 py-1 rounded-pill small" id="qrModalBadgeHeader">
                     <i class="bx bx-check-shield me-1"></i> BUKTI CHECKLIST RESMI
                 </span>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
@@ -525,8 +580,8 @@
                         <span class="visually-hidden">Loading...</span>
                     </div>
                 </div>
-                <div class="small text-muted mb-3 font-monospace" style="font-size: 0.75rem;">
-                    Scan QR ini untuk melihat data live aset pada sistem Mapping.
+                <div class="small text-muted mb-3 font-monospace" style="font-size: 0.75rem;" id="qrModalSubtitle">
+                    Scan QR ini untuk melihat data live aset pada sistem.
                 </div>
 
                 {{-- Detail Sertifikat Checklist --}}
@@ -544,7 +599,7 @@
                         <span class="fw-semibold text-dark" id="qrModalPetugas">-</span>
                     </div>
                     <div class="d-flex justify-content-between mb-1 pb-1 border-bottom">
-                        <span class="text-muted">Pengguna:</span>
+                        <span class="text-muted" id="qrModalPenggunaLabel">Pengguna:</span>
                         <span class="fw-semibold text-dark" id="qrModalPengguna">-</span>
                     </div>
                     <div class="d-flex justify-content-between" id="qrModalKendalaWrap">
@@ -555,7 +610,7 @@
 
                 <div class="d-grid gap-2">
                     <a href="#" id="qrModalLinkAset" target="_blank" class="btn btn-sm btn-primary">
-                        <i class="bx bx-link-external me-1"></i> Buka Informasi Mapping Aset
+                        <i class="bx bx-link-external me-1"></i> <span id="qrModalLinkText">Buka Informasi Mapping Aset</span>
                     </a>
                 </div>
             </div>
@@ -712,11 +767,11 @@ document.addEventListener('DOMContentLoaded', function () {
         const badgeContainer = document.getElementById(`statusBadgeContainer${device.id}`);
         if (badgeContainer) {
             if (device.status_device === 'normal') {
-                badgeContainer.innerHTML = '<span class="badge bg-success text-white py-1 px-2"><i class="bx bx-check me-1"></i> NORMAL</span>';
+                badgeContainer.innerHTML = '<span class="badge bg-success text-white py-1 px-2 text-nowrap"><i class="bx bx-check me-1"></i> NORMAL</span>';
             } else if (device.status_device === 'ada_kendala') {
-                badgeContainer.innerHTML = '<span class="badge bg-danger text-white py-1 px-2"><i class="bx bx-x me-1"></i> KENDALA</span>';
+                badgeContainer.innerHTML = '<span class="badge bg-danger text-white py-1 px-2 text-nowrap"><i class="bx bx-x me-1"></i> KENDALA</span>';
             } else {
-                badgeContainer.innerHTML = '<span class="badge bg-label-warning py-1 px-2"><i class="bx bx-time me-1"></i> BELUM DICEK</span>';
+                badgeContainer.innerHTML = '<span class="badge bg-label-warning py-1 px-2 text-nowrap"><i class="bx bx-time me-1"></i> BELUM DICEK</span>';
             }
         }
 
@@ -728,7 +783,10 @@ document.addEventListener('DOMContentLoaded', function () {
             btnBuktiQr.dataset.petugas = device.checked_by_name || '-';
             btnBuktiQr.dataset.kendala = device.catatan_kendala || '';
             if (device.qr_url) btnBuktiQr.dataset.qrUrl = device.qr_url;
+            if (device.qr_base64) btnBuktiQr.dataset.qrBase64 = device.qr_base64;
             if (device.qr_svg) btnBuktiQr.dataset.qrSvg = device.qr_svg;
+            if (device.is_pinjaman !== undefined) btnBuktiQr.dataset.isPinjaman = device.is_pinjaman ? '1' : '0';
+            if (device.link_label) btnBuktiQr.dataset.linkLabel = device.link_label;
         }
 
         // Update Audit Info Box
@@ -1078,7 +1136,10 @@ document.addEventListener('DOMContentLoaded', function () {
         const petugas = btn.dataset.petugas || '-';
         const kendala = btn.dataset.kendala || '';
         const qrUrl = btn.dataset.qrUrl || '#';
+        const qrBase64 = btn.dataset.qrBase64 || null;
         const qrSvg = btn.dataset.qrSvg || null;
+        const isPinjaman = btn.dataset.isPinjaman === '1';
+        const linkLabel = btn.dataset.linkLabel || (isPinjaman ? 'Buka Informasi Peminjaman Aset' : 'Buka Informasi Mapping Aset');
 
         document.getElementById('qrModalKodeAset').textContent = kode;
         document.getElementById('qrModalNamaAset').textContent = spek ? `${nama} (${spek})` : nama;
@@ -1086,6 +1147,30 @@ document.addEventListener('DOMContentLoaded', function () {
         document.getElementById('qrModalWaktu').textContent = waktu;
         document.getElementById('qrModalPetugas').textContent = petugas;
         document.getElementById('qrModalLinkAset').href = qrUrl;
+
+        const elSubtitle = document.getElementById('qrModalSubtitle');
+        if (elSubtitle) {
+            elSubtitle.textContent = isPinjaman 
+                ? 'Scan QR ini untuk melihat data transaksi peminjaman aset pada sistem.' 
+                : 'Scan QR ini untuk melihat data live aset pada sistem Mapping.';
+        }
+
+        const elPenggunaLabel = document.getElementById('qrModalPenggunaLabel');
+        if (elPenggunaLabel) {
+            elPenggunaLabel.textContent = isPinjaman ? 'Peminjam:' : 'Pengguna:';
+        }
+
+        const elLinkText = document.getElementById('qrModalLinkText');
+        if (elLinkText) {
+            elLinkText.textContent = linkLabel;
+        }
+
+        const badgeHeader = document.getElementById('qrModalBadgeHeader');
+        if (badgeHeader) {
+            badgeHeader.innerHTML = isPinjaman
+                ? '<i class="bx bx-check-shield me-1"></i> BUKTI CHECKLIST (PINJAMAN)'
+                : '<i class="bx bx-check-shield me-1"></i> BUKTI CHECKLIST RESMI';
+        }
 
         // Status Badge in Modal
         const elStatus = document.getElementById('qrModalStatus');
@@ -1107,13 +1192,30 @@ document.addEventListener('DOMContentLoaded', function () {
             wrapKendala.classList.add('d-none');
         }
 
-        // Render QR Code SVG
+        // Render QR Code (Gunakan Base64 Data URI agar tampil sebagai gambar dan tidak terkena issue escaping)
         const containerSvg = document.getElementById('qrModalSvgContainer');
-        if (qrSvg) {
-            containerSvg.innerHTML = qrSvg;
+        if (qrBase64) {
+            containerSvg.innerHTML = `<img src="data:image/svg+xml;base64,${qrBase64}" alt="QR Code" style="width: 160px; height: 160px; display: inline-block;">`;
+        } else if (qrSvg) {
+            let cleanSvg = qrSvg;
+            if (cleanSvg.includes('&lt;') && cleanSvg.includes('&gt;')) {
+                const txt = document.createElement('textarea');
+                txt.innerHTML = cleanSvg;
+                cleanSvg = txt.value;
+            }
+            cleanSvg = cleanSvg.replace(/<\?xml.*?\?>/i, '').trim();
+            if (cleanSvg.startsWith('<svg')) {
+                containerSvg.innerHTML = cleanSvg;
+            } else {
+                try {
+                    containerSvg.innerHTML = `<img src="data:image/svg+xml;base64,${btoa(cleanSvg)}" alt="QR Code" style="width: 160px; height: 160px; display: inline-block;">`;
+                } catch (err) {
+                    containerSvg.innerHTML = cleanSvg;
+                }
+            }
         } else if (qrUrl && qrUrl !== '#') {
             // Gunakan SVG generator online jika belum terisi di dataset
-            containerSvg.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrUrl)}" alt="QR Code" style="width: 170px; height: 170px;">`;
+            containerSvg.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(qrUrl)}" alt="QR Code" style="width: 160px; height: 160px; display: inline-block;">`;
         } else {
             containerSvg.innerHTML = '<span class="text-muted small">QR Code tidak tersedia.</span>';
         }
@@ -1196,67 +1298,212 @@ document.addEventListener('DOMContentLoaded', function () {
         const statusEl = document.getElementById('qr-reader-status');
         if (statusEl) statusEl.textContent = 'QR Berhasil dibaca: ' + decodedText;
 
-        // Cari kartu device yang cocok
+        const textClean = (decodedText || '').trim();
+        const textLower = textClean.toLowerCase();
+
+        // 1. Cari kartu device di halaman ini (DOM matching)
         let matchedCard = null;
         const allCards = document.querySelectorAll('.device-card');
 
         allCards.forEach(card => {
             const kode = (card.dataset.kode || '').trim().toLowerCase();
+            const noInv = (card.dataset.noInventaris || '').trim().toLowerCase();
             const uuid = (card.dataset.mappingUuid || '').trim().toLowerCase();
             const id = (card.dataset.mappingId || '').trim();
-            const textLower = decodedText.toLowerCase();
+            const pjmId = (card.dataset.peminjamanId || '').trim();
+            const pjmKode = (card.dataset.peminjamanKode || '').trim().toLowerCase();
 
+            // Cek apakah decoded text cocok dengan salah satu identifier
             if ((kode && textLower.includes(kode)) || 
+                (noInv && textLower.includes(noInv)) ||
                 (uuid && textLower.includes(uuid)) || 
-                (id && textLower.includes(`/maping/${id}`) || textLower.endsWith(`/${id}`))) {
+                (id && (textLower.includes(`/maping/${id}`) || textLower.includes(`/maping/public_show/${id}`) || textLower.endsWith(`/${id}`))) ||
+                (pjmKode && textLower.includes(pjmKode)) ||
+                (pjmId && (textLower.includes(`/peminjaman/${pjmId}`) || textLower.endsWith(`/${pjmId}`)))) {
                 matchedCard = card;
             }
         });
 
         if (matchedCard) {
-            // Scroll ke kartu
-            matchedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            matchedCard.classList.add('pulse-highlight');
-            setTimeout(() => {
-                matchedCard.classList.remove('pulse-highlight');
-            }, 4500);
-
-            const kodeAset = matchedCard.dataset.kode || 'Perangkat Terpilih';
-            const deviceId = matchedCard.dataset.deviceId;
-
-            Swal.fire({
-                title: 'Perangkat Ditemukan!',
-                html: `QR Code cocok dengan perangkat <strong>${kodeAset}</strong> di ruangan ini.<br>Pilih tindakan pengecekan:`,
-                icon: 'success',
-                showCancelButton: true,
-                showDenyButton: true,
-                confirmButtonColor: '#198754',
-                denyButtonColor: '#0d6efd',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: '<i class="bx bx-check me-1"></i> Langsung Tandai Normal',
-                denyButtonText: '<i class="bx bx-list-check me-1"></i> Buka Detail Checklist',
-                cancelButtonText: 'Selesai'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    const formMark = document.getElementById(`formMarkDevice${deviceId}`);
-                    if (formMark) {
-                        executeMarkDeviceOk(formMark.action, deviceId, formMark);
-                    }
-                } else if (result.isDenied) {
-                    const collapseEl = document.getElementById(`collapseDetail${deviceId}`);
-                    if (collapseEl && typeof bootstrap !== 'undefined') {
-                        const bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: true });
-                        bsCollapse.show();
-                    }
-                }
-            });
+            handleMatchedCard(matchedCard);
         } else {
-            Swal.fire({
-                icon: 'warning',
-                title: 'Tidak Ditemukan',
-                html: `Hasil scan: <code>${decodedText}</code><br><br>Perangkat ini tidak terdaftar pada sesi checklist ruangan ini.`
-            });
+            // 2. Jika tidak cocok di kartu DOM lokal, lakukan pencarian cerdas ke server
+            handleServerLookup(textClean);
         }
+    }
+
+    function handleMatchedCard(matchedCard) {
+        matchedCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        matchedCard.classList.add('pulse-highlight');
+        setTimeout(() => {
+            matchedCard.classList.remove('pulse-highlight');
+        }, 4500);
+
+        const kodeAset = matchedCard.dataset.kode || 'Perangkat Terpilih';
+        const deviceId = matchedCard.dataset.deviceId;
+        const btnBuktiQr = document.getElementById(`btnBuktiQr${deviceId}`);
+        const qrUrl = btnBuktiQr ? (btnBuktiQr.dataset.qrUrl || '') : '';
+        const linkLabel = btnBuktiQr ? (btnBuktiQr.dataset.linkLabel || 'Buka Hasil Scan / Mapping') : 'Buka Hasil Scan / Mapping';
+
+        let linkMappingHtml = '';
+        if (qrUrl && qrUrl !== '#') {
+            linkMappingHtml = `
+                <div class="mt-3 pt-2 border-top text-center">
+                    <a href="${qrUrl}" class="btn btn-xs btn-outline-primary d-inline-flex align-items-center">
+                        <i class="bx bx-show me-1"></i> ${linkLabel}
+                    </a>
+                </div>
+            `;
+        }
+
+        Swal.fire({
+            title: 'Perangkat Ditemukan!',
+            html: `QR Code cocok dengan perangkat <strong>${kodeAset}</strong> di ruangan ini.<br>Pilih tindakan pengecekan:${linkMappingHtml}`,
+            icon: 'success',
+            showCancelButton: true,
+            showDenyButton: true,
+            confirmButtonColor: '#198754',
+            denyButtonColor: '#0d6efd',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="bx bx-check me-1"></i> Langsung Tandai Normal',
+            denyButtonText: '<i class="bx bx-list-check me-1"></i> Buka Detail Checklist',
+            cancelButtonText: 'Selesai'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const formMark = document.getElementById(`formMarkDevice${deviceId}`);
+                if (formMark) {
+                    executeMarkDeviceOk(formMark.action, deviceId, formMark);
+                }
+            } else if (result.isDenied) {
+                const collapseEl = document.getElementById(`collapseDetail${deviceId}`);
+                if (collapseEl && typeof bootstrap !== 'undefined') {
+                    const bsCollapse = new bootstrap.Collapse(collapseEl, { toggle: true });
+                    bsCollapse.show();
+                }
+            }
+        });
+    }
+
+    function handleServerLookup(textClean) {
+        Swal.fire({
+            title: 'Memeriksa Sistem Aset...',
+            html: `Mencari data untuk barcode: <code>${textClean}</code>`,
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        fetch('{{ route('checklist.pemeriksaan.scan-lookup', $ruangan->id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ code: textClean })
+        })
+        .then(res => res.json().then(data => ({ status: res.status, data })))
+        .then(({ status, data }) => {
+            if (data.already_in_room && data.device_id) {
+                const existingCard = document.getElementById(`cardDevice${data.device_id}`);
+                if (existingCard) {
+                    handleMatchedCard(existingCard);
+                    return;
+                }
+            }
+
+            if (data.success && data.can_add && data.device_info) {
+                const info = data.device_info;
+                Swal.fire({
+                    title: 'Perangkat Ditemukan!',
+                    html: `
+                        <div class="text-start p-3 bg-light rounded border mb-2" style="font-size: 13px;">
+                            <div class="mb-1"><strong>Kode Aset:</strong> <span class="font-monospace text-primary">${info.kode_aset || '-'}</span> ${info.no_inventaris ? '(' + info.no_inventaris + ')' : ''}</div>
+                            <div class="mb-1"><strong>Perangkat:</strong> ${info.nama_barang || '-'} ${info.merek_type ? '(' + info.merek_type + ')' : ''}</div>
+                            <div class="mb-1"><strong>Status:</strong> <span class="badge ${info.is_loan ? 'bg-info' : 'bg-secondary'}">${info.status_teks}</span></div>
+                        </div>
+                        <p class="mb-0 text-muted" style="font-size: 12.5px;">Perangkat ini berada di lokasi ini tetapi belum masuk ke dalam jadwal checklist sesi ruangan ini.<br><br>Apakah Anda ingin <strong>menambahkan perangkat ini ke sesi checklist ruangan ini sekarang</strong>?</p>
+                    `,
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#198754',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bx bx-plus-circle me-1"></i> Tambahkan ke Ruangan & Periksa',
+                    cancelButtonText: 'Batal'
+                }).then((resConfirm) => {
+                    if (resConfirm.isConfirmed) {
+                        addScannedDeviceToRoom(info);
+                    }
+                });
+            } else {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Tidak Ditemukan',
+                    html: `Hasil scan: <code>${textClean}</code><br><br>${data.message || 'Perangkat tidak terdaftar pada sesi checklist ruangan ini dan tidak ditemukan di inventaris.'}`
+                });
+            }
+        })
+        .catch(err => {
+            console.error('Scan lookup error:', err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Gagal Memeriksa Barcode',
+                text: 'Terjadi kesalahan saat memeriksa data barcode ke server.'
+            });
+        });
+    }
+
+    function addScannedDeviceToRoom(info) {
+        Swal.fire({
+            title: 'Menambahkan Perangkat...',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+        fetch('{{ route('checklist.pemeriksaan.add-scanned-device', $ruangan->id) }}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+                inventaris_id: info.inventaris_id,
+                peminjaman_id: info.peminjaman_id || null,
+                maping_id: info.maping_id || null
+            })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Berhasil Ditambahkan!',
+                    text: 'Perangkat berhasil ditambahkan ke sesi ruangan ini. Memuat ulang tampilan...',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    window.location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Gagal Menambahkan',
+                    text: data.message || 'Terjadi kesalahan saat menambahkan perangkat.'
+                });
+            }
+        })
+        .catch(err => {
+            console.error('Add scanned device error:', err);
+            Swal.fire({
+                icon: 'error',
+                title: 'Kesalahan Sistem',
+                text: 'Gagal menghubungi server untuk menambahkan perangkat.'
+            });
+        });
     }
 
     // =========================================================================

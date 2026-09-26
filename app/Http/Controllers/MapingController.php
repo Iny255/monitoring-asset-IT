@@ -16,6 +16,7 @@ use App\Models\ChecklistDevice;
 use App\Models\ChecklistDeviceItem;
 use App\Models\ChecklistItem;
 use App\Models\ChecklistJadwalRutin;
+use App\Models\Peminjaman;
 use Illuminate\Support\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -764,6 +765,7 @@ class MapingController extends Controller
       'perusahaan',
       'karyawan',
       'keluar.inventaris.dataAset.kategori',
+      'keluar.inventaris.masuk',
       'mapingAccesses.access',
     ]);
 
@@ -809,12 +811,26 @@ class MapingController extends Controller
       ->orderBy('urutan')
       ->get();
 
+    // Ruangan checklist terkait untuk tombol navigasi kembali
+    $ruanganId = request('ruangan_id');
+    $checklistRuangan = null;
+    if ($ruanganId) {
+      $checklistRuangan = ChecklistRuangan::withoutGlobalScopes()->with('lokasi')->find($ruanganId);
+    }
+    if (!$checklistRuangan && $todayChecklist) {
+      $checklistRuangan = $todayChecklist->checklistRuangan;
+    }
+    if (!$checklistRuangan && $latestChecklist) {
+      $checklistRuangan = $latestChecklist->checklistRuangan;
+    }
+
     return view('content.dashboard.maping.show', compact(
       'maping',
       'latestChecklist',
       'todayChecklist',
       'checklistHistory',
-      'masterItems'
+      'masterItems',
+      'checklistRuangan'
     ));
   }
 
@@ -1273,16 +1289,65 @@ class MapingController extends Controller
       'lokasi',
       'karyawan',
       'keluar.inventaris.dataAset.kategori',
+      'keluar.inventaris.masuk',
     ]);
 
     if (Str::isUuid($identifier)) {
-      $maping = $query->where('uuid', $identifier)->firstOrFail();
+      $maping = $query->where('uuid', $identifier)->first();
     } else {
-      $maping = $query->where('id', $identifier)->firstOrFail();
+      $maping = $query->where('id', $identifier)->first();
+    }
+
+    if (!$maping) {
+      $maping = $query->whereHas('keluar.inventaris', function ($q) use ($identifier) {
+        $q->where('kode_aset', $identifier)
+          ->orWhere('no_inventaris', $identifier);
+      })->first();
+    }
+
+    if (!$maping) {
+      $loan = Peminjaman::with(['karyawan', 'karyawanTujuan', 'perusahaanTujuan', 'inventaris.dataAset.kategori'])
+        ->where('id', $identifier)
+        ->orWhere('kode_peminjaman', $identifier)
+        ->orWhereHas('inventaris', function ($q) use ($identifier) {
+          $q->where('kode_aset', $identifier)
+            ->orWhere('no_inventaris', $identifier);
+        })
+        ->first();
+
+      if ($loan) {
+        $loanMaping = Maping::withoutGlobalScopes()->with([
+          'keluar.inventaris.dataAset.kategori',
+          'lokasi',
+          'perusahaan',
+          'karyawan',
+          'divisi',
+        ])->whereHas('keluar', function ($q) use ($loan) {
+          $q->where('inventaris_id', $loan->inventaris_id);
+        })->latest('id')->first();
+
+        if ($loanMaping) {
+          $maping = $loanMaping;
+          $activeLoan = $loan;
+        } else {
+          return redirect()->route('peminjaman.show', $loan->id);
+        }
+      } else {
+        abort(404, 'Data aset atau mapping tidak ditemukan.');
+      }
+    }
+
+    // Ambil peminjaman aktif jika belum di-set dari proses resolusi loan di atas
+    $inventarisId = $maping->keluar?->inventaris_id;
+    if (!isset($activeLoan) && $inventarisId) {
+      $activeLoan = Peminjaman::with(['karyawan', 'karyawanTujuan', 'perusahaanTujuan'])
+        ->where('inventaris_id', $inventarisId)
+        ->whereIn('status', ['dipinjam', 'Dipinjam', 'menunggu_pengembalian'])
+        ->latest('id')
+        ->first();
     }
 
     // 1. Ambil checklist device terakhir yang sudah dicek (atau entri terbaru)
-    $inventarisId = $maping->keluar?->inventaris_id;
     $deviceQuery = ChecklistDevice::where(function ($q) use ($maping, $inventarisId) {
       $q->where('maping_id', $maping->id);
       if ($inventarisId) {
@@ -1328,12 +1393,45 @@ class MapingController extends Controller
       ->orderBy('urutan')
       ->get();
 
+    // 5. Cari ruangan pelaksanaan checklist terkait untuk navigasi tombol kembali
+    $ruanganId = request('ruangan_id');
+    $checklistRuangan = null;
+    if ($ruanganId) {
+      $checklistRuangan = ChecklistRuangan::withoutGlobalScopes()->with('lokasi')->find($ruanganId);
+    }
+    if (!$checklistRuangan && $todayChecklist) {
+      $checklistRuangan = $todayChecklist->checklistRuangan;
+    }
+    if (!$checklistRuangan) {
+      // Cari sesi checklist ruangan aktif hari ini atau yang sedang berlangsung yang memiliki device ini
+      $checklistRuangan = ChecklistRuangan::withoutGlobalScopes()
+        ->with('lokasi')
+        ->whereHas('checklistDevices', function ($q) use ($maping, $inventarisId) {
+          $q->where('maping_id', $maping->id);
+          if ($inventarisId) {
+            $q->orWhere('inventaris_id', $inventarisId);
+          }
+        })
+        ->where(function ($q) use ($today) {
+          $q->whereDate('tanggal_pemeriksaan', $today)
+            ->orWhereDate('tanggal_cek', $today)
+            ->orWhere('status', '!=', 'selesai');
+        })
+        ->latest('id')
+        ->first();
+    }
+    if (!$checklistRuangan && $latestChecklist) {
+      $checklistRuangan = $latestChecklist->checklistRuangan;
+    }
+
     return view('content.dashboard.maping.public_show', compact(
       'maping',
       'latestChecklist',
       'todayChecklist',
       'checklistHistory',
-      'masterItems'
+      'masterItems',
+      'activeLoan',
+      'checklistRuangan'
     ));
   }
 
@@ -1355,9 +1453,40 @@ class MapingController extends Controller
 
     $query = Maping::withoutGlobalScopes()->with(['keluar.inventaris.dataAset']);
     if (Str::isUuid($identifier)) {
-      $maping = $query->where('uuid', $identifier)->firstOrFail();
+      $maping = $query->where('uuid', $identifier)->first();
     } else {
-      $maping = $query->where('id', $identifier)->firstOrFail();
+      $maping = $query->where('id', $identifier)->first();
+    }
+
+    if (!$maping) {
+      $maping = $query->whereHas('keluar.inventaris', function ($q) use ($identifier) {
+        $q->where('kode_aset', $identifier)
+          ->orWhere('no_inventaris', $identifier);
+      })->first();
+    }
+
+    if (!$maping) {
+      $loan = Peminjaman::where('id', $identifier)
+        ->orWhere('kode_peminjaman', $identifier)
+        ->orWhereHas('inventaris', function ($q) use ($identifier) {
+          $q->where('kode_aset', $identifier)
+            ->orWhere('no_inventaris', $identifier);
+        })
+        ->first();
+
+      if ($loan) {
+        $maping = Maping::withoutGlobalScopes()->with(['keluar.inventaris.dataAset'])
+          ->whereHas('keluar', fn($q) => $q->where('inventaris_id', $loan->inventaris_id))
+          ->latest('id')
+          ->first();
+      }
+    }
+
+    if (!$maping) {
+      if ($request->ajax() || $request->wantsJson()) {
+        return response()->json(['success' => false, 'message' => 'Mapping atau aset tidak ditemukan.'], 404);
+      }
+      abort(404, 'Mapping atau aset tidak ditemukan.');
     }
 
     $request->validate([

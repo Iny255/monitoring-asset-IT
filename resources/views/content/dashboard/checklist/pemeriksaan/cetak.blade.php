@@ -156,8 +156,16 @@
                     $dAset = $inv?->dataAset;
                     $jenisAset = $dAset?->kategori?->nama_barang ?? ($dAset?->kategori?->nama_kategori ?? 'Perangkat IT');
                     $spekAset = trim(($dAset?->merek ?? '') . ' ' . ($dAset?->type ?? '') . ' ' . ($dAset?->warna ?? ''));
-                    $mapping = $dev->maping;
-                    $qrUrl = $mapping ? route('maping.public_show', $mapping->uuid ?? $mapping->id) : null;
+                    $mapping = $dev->maping ?? $dev->resolved_maping;
+                    if ($mapping) {
+                        $qrUrl = route('maping.public_show', $mapping->uuid ?? $mapping->id);
+                    } elseif ($dev->peminjaman_id) {
+                        $qrUrl = route('peminjaman.show', $dev->peminjaman_id);
+                    } elseif ($inv) {
+                        $qrUrl = route('history.perjalanan.dokumen_perawatan.cetak', ['id' => $inv->id, 'tahun' => date('Y')]);
+                    } else {
+                        $qrUrl = null;
+                    }
                 @endphp
                 <tr>
                     <td class="text-center">{{ $idx + 1 }}</td>

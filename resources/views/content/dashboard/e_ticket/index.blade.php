@@ -34,9 +34,12 @@
                         <small class="text-muted">Kelola pengajuan tiket kendala IT, penanganan, dan penyelesaian masalah</small>
                     </div>
                 </div>
-                <div class="d-flex align-items-center gap-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
                     <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalFilter">
                         <i class="bx bx-filter-alt me-1"></i> Filter
+                    </button>
+                    <button type="button" class="btn btn-outline-success" data-bs-toggle="modal" data-bs-target="#modalExportReport">
+                        <i class="bx bx-printer me-1"></i> Cetak / Export Laporan
                     </button>
                     @if (in_array(Auth::user()->role, ['petugas', 'super_admin']))
                         <a href="{{ route('ticket-categories.index') }}" class="btn btn-outline-secondary">
@@ -120,7 +123,7 @@
     @endif
 
     {{-- TABLE CARD --}}
-    <div class="card border-0 shadow-sm">
+    <div class="card border-0 shadow-sm" id="ticketListContainer">
 
         {{-- DESKTOP TABLE TIKET --}}
         <div class="table-responsive d-none d-md-block">
@@ -564,7 +567,135 @@
     </div>
 </div>
 
+{{-- MODAL EXPORT & CETAK LAPORAN TROUBLESHOOTING --}}
+<div class="modal fade" id="modalExportReport" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-light border-bottom py-3">
+                <h5 class="modal-title fw-bold text-dark mb-0">
+                    <i class="bx bx-printer text-success me-2"></i> Cetak &amp; Export Laporan Troubleshooting IT
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formExportTroubleshoot" method="GET" action="{{ route('e-ticket.cetak') }}">
+                <div class="modal-body p-4">
+                    <div class="alert alert-info py-2 px-3 small mb-3 border-0">
+                        <i class="bx bx-info-circle me-1"></i> Format cetak dan file download mengikuti template <strong>Checklist Temuan &amp; Tindakan Troubleshoot</strong>.
+                    </div>
+
+                    <div class="row g-3">
+                        {{-- BULAN & TAHUN --}}
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold small">Bulan Periode</label>
+                            <select name="bulan" id="exportBulan" class="form-select">
+                                @php
+                                    $bulanList = [
+                                        1 => 'Januari', 2 => 'Februari', 3 => 'Maret', 4 => 'April',
+                                        5 => 'Mei', 6 => 'Juni', 7 => 'Juli', 8 => 'Agustus',
+                                        9 => 'September', 10 => 'Oktober', 11 => 'November', 12 => 'Desember'
+                                    ];
+                                    $curMonth = (int) (request('bulan') ?: date('n'));
+                                @endphp
+                                @foreach ($bulanList as $num => $nama)
+                                    <option value="{{ $num }}" {{ $curMonth == $num ? 'selected' : '' }}>
+                                        {{ $nama }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold small">Tahun</label>
+                            <select name="tahun" id="exportTahun" class="form-select">
+                                @php
+                                    $curYear = (int) (request('tahun') ?: date('Y'));
+                                @endphp
+                                @for ($y = date('Y') + 1; $y >= 2023; $y--)
+                                    <option value="{{ $y }}" {{ $curYear == $y ? 'selected' : '' }}>
+                                        {{ $y }}
+                                    </option>
+                                @endfor
+                            </select>
+                        </div>
+
+                        {{-- PERUSAHAAN (JIKA ROLE ADMIN) --}}
+                        @if (in_array(Auth::user()->role, ['super_admin']) || (isset($perusahaans) && count($perusahaans) > 1))
+                            <div class="col-12">
+                                <label class="form-label fw-semibold small">Perusahaan</label>
+                                <select name="perusahaan_id" id="exportPerusahaan" class="form-select">
+                                    <option value="">-- Semua Perusahaan --</option>
+                                    @foreach ($perusahaans as $p)
+                                        <option value="{{ $p->id }}" {{ request('perusahaan_id') == $p->id ? 'selected' : '' }}>
+                                            {{ $p->nama_perusahaan }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @elseif (request('perusahaan_id'))
+                            <input type="hidden" name="perusahaan_id" value="{{ request('perusahaan_id') }}">
+                        @endif
+
+                        {{-- STATUS TIKET --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Filter Status Tiket</label>
+                            <select name="status" id="exportStatus" class="form-select">
+                                <option value="">Semua Status</option>
+                                <option value="ok" selected>Status OK (Resolved / Closed)</option>
+                                <option value="ng">Status NG (Open / Pending / In Progress)</option>
+                            </select>
+                        </div>
+
+                        {{-- KATEGORI --}}
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Kategori Tiket</label>
+                            <select name="category_id" id="exportCategory" class="form-select">
+                                <option value="">-- Semua Kategori --</option>
+                                @foreach ($categories as $cat)
+                                    <option value="{{ $cat->id }}" {{ request('category_id') == $cat->id ? 'selected' : '' }}>
+                                        {{ $cat->nama_kategori }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light d-flex justify-content-between flex-wrap gap-2">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Batal</button>
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <button type="button" onclick="submitExportForm('cetak')" class="btn btn-primary btn-sm px-3 shadow-xs">
+                            <i class="bx bx-printer me-1"></i> Preview &amp; Cetak Web
+                        </button>
+                        <button type="button" onclick="submitExportForm('excel')" class="btn btn-success btn-sm px-3 shadow-xs">
+                            <i class="bx bx-spreadsheet me-1"></i> Download Excel
+                        </button>
+                        <button type="button" onclick="submitExportForm('pdf')" class="btn btn-danger btn-sm px-3 shadow-xs">
+                            <i class="bx bx-download me-1"></i> Download PDF
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <script>
+function submitExportForm(type) {
+    const form = document.getElementById('formExportTroubleshoot');
+    if (!form) return;
+
+    if (type === 'cetak') {
+        form.action = "{{ route('e-ticket.cetak') }}";
+        form.target = "_blank";
+    } else if (type === 'excel') {
+        form.action = "{{ route('e-ticket.export-excel') }}";
+        form.target = "_self";
+    } else if (type === 'pdf') {
+        form.action = "{{ route('e-ticket.export-pdf') }}";
+        form.target = "_self";
+    }
+
+    form.submit();
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const searchInput = document.getElementById('karyawan_search_input');
     const hiddenInput = document.getElementById('karyawan_id_hidden');

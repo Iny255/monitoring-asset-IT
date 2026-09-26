@@ -145,9 +145,38 @@ class AppServiceProvider extends ServiceProvider
           };
 
           $menuData->menu = $filterMenu($menuData->menu);
+
+          // Hitung awal open ticket untuk notifikasi badge menu E-Ticket IT
+          $initialOpenTicketCount = 0;
+          try {
+            $tktQuery = \App\Models\Ticket::where('status', 'open');
+            if (!$isSuperAdmin) {
+              if (in_array($userRole, ['user', 'karyawan']) || in_array($rawRole, ['user', 'karyawan'])) {
+                $tktQuery->where(function ($q) use ($user) {
+                  $q->where('user_id', $user->id);
+                  if ($user->karyawan_id) {
+                    $q->orWhere('karyawan_id', $user->karyawan_id);
+                  }
+                });
+              } else {
+                $compIds = $user->getAccessibleCompanyIds();
+                if ($compIds) {
+                  $tktQuery->whereIn('id_perusahaan', $compIds);
+                } elseif ($user->id_perusahaan) {
+                  $tktQuery->where('id_perusahaan', $user->id_perusahaan);
+                }
+              }
+            }
+            $initialOpenTicketCount = $tktQuery->count();
+          } catch (\Throwable $e) {
+            $initialOpenTicketCount = 0;
+          }
+          $view->with('initialOpenTicketCount', $initialOpenTicketCount);
         } catch (\Throwable $e) {
           // Fallback tanpa crash jika database belum siap
         }
+      } else {
+        $view->with('initialOpenTicketCount', 0);
       }
 
       $view->with('menuData', $menuData);

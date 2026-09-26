@@ -12,9 +12,13 @@ use App\Models\Perusahaan;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Maintenance;
+use App\Exports\TicketTroubleshootExport;
+use Maatwebsite\Excel\Facades\Excel;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Carbon\Carbon;
 
 class TicketController extends Controller
@@ -279,12 +283,27 @@ class TicketController extends Controller
         $request->validate([
             'status' => 'required|in:open,in_progress,pending,resolved,closed,rejected',
             'assigned_to' => 'nullable|exists:users,id',
+            'tindakan_perbaikan' => 'nullable|string',
+            'tindakan_pencegahan' => 'nullable|string',
+            'verifikasi' => 'nullable|string',
         ]);
 
         $updateData = [
             'status' => $request->status,
             'assigned_to' => $request->assigned_to,
         ];
+
+        if ($request->has('tindakan_perbaikan')) {
+            $updateData['tindakan_perbaikan'] = $request->tindakan_perbaikan;
+        }
+
+        if ($request->has('tindakan_pencegahan')) {
+            $updateData['tindakan_pencegahan'] = $request->tindakan_pencegahan;
+        }
+
+        if ($request->has('verifikasi')) {
+            $updateData['verifikasi'] = $request->verifikasi;
+        }
 
         if ($request->status === 'in_progress' && !$ticket->responded_at) {
             $updateData['responded_at'] = Carbon::now();
@@ -300,7 +319,7 @@ class TicketController extends Controller
 
         $ticket->update($updateData);
 
-        return redirect()->route('e-ticket.show', $ticket->id)->with('success', 'Status tiket berhasil diperbarui.');
+        return redirect()->route('e-ticket.index')->with('success', 'Perubahan tiket #' . $ticket->nomor_tiket . ' berhasil disimpan.');
     }
 
     public function convertToMaintenance(Request $request, $id)
@@ -345,5 +364,238 @@ class TicketController extends Controller
         ]);
 
         return redirect()->route('e-ticket.show', $ticket->id)->with('success', "Berhasil mengkonversi ke Service & Maintenance (#{$kodeService}).");
+    }
+
+    /**
+     * Endpoint API JSON untuk pengecekan notifikasi tiket baru (Polling realtime).
+     */
+    public function checkNewTickets(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['success' => false], 401);
+        }
+
+        $query = Ticket::query()->where('status', 'open');
+
+        // Scope company access & role filtering
+        if ($user->role === 'super_admin') {
+            if ($request->filled('perusahaan_id')) {
+                $query->where('id_perusahaan', $request->perusahaan_id);
+            }
+        } elseif (in_array($user->role, ['user', 'karyawan'])) {
+            $query->where(function ($q) use ($user) {
+                $q->where('user_id', $user->id);
+                if ($user->karyawan_id) {
+                    $q->orWhere('karyawan_id', $user->karyawan_id);
+                }
+            });
+        } else {
+            $accessibleCompanyIds = $user->getAccessibleCompanyIds();
+            if ($accessibleCompanyIds) {
+                $query->whereIn('id_perusahaan', $accessibleCompanyIds);
+            } elseif ($user->id_perusahaan) {
+                $query->where('id_perusahaan', $user->id_perusahaan);
+            }
+        }
+
+        $openCount = (clone $query)->count();
+        $latestTicket = (clone $query)->latest('id')->first();
+        $recentTickets = (clone $query)->latest('id')->take(6)->get();
+
+        $lastSeenId = (int) $request->input('last_seen_id', 0);
+        $hasNew = false;
+        $newTicketData = null;
+
+        // Hanya trigger alert tiket baru jika ID tiket lebih besar dari ID terakhir yang dilihat
+        if ($latestTicket && $lastSeenId > 0 && $latestTicket->id > $lastSeenId) {
+            $hasNew = true;
+            $newTicketData = [
+                'id' => $latestTicket->id,
+                'nomor_tiket' => $latestTicket->nomor_tiket,
+                'judul' => Str::limit($latestTicket->judul, 45),
+                'nama_pelapor' => $latestTicket->pelapor_name,
+                'prioritas' => $latestTicket->prioritas,
+                'time_ago' => $latestTicket->created_at ? $latestTicket->created_at->diffForHumans() : 'baru saja',
+                'url' => route('e-ticket.show', $latestTicket->id),
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'open_count' => $openCount,
+            'latest_id' => $latestTicket ? $latestTicket->id : 0,
+            'has_new' => $hasNew,
+            'new_ticket' => $newTicketData,
+            'recent' => $recentTickets->map(function ($t) {
+                return [
+                    'id' => $t->id,
+                    'nomor_tiket' => $t->nomor_tiket,
+                    'judul' => Str::limit($t->judul, 35),
+                    'nama_pelapor' => $t->pelapor_name,
+                    'prioritas' => $t->prioritas,
+                    'time_ago' => $t->created_at ? $t->created_at->diffForHumans() : '',
+                    'url' => route('e-ticket.show', $t->id),
+                ];
+            }),
+        ]);
+    }
+
+    /**
+     * Mempersiapkan data koleksi tiket untuk laporan Troubleshoot IT
+     */
+    public function buildTroubleshootReportData(Request $request): array
+    {
+        $user = Auth::user();
+        $query = Ticket::with([
+            'user',
+            'karyawan',
+            'perusahaan',
+            'lokasi',
+            'inventaris.dataAset.kategori',
+            'category',
+            'assignee',
+            'replies.user',
+            'maintenance',
+        ]);
+
+        // 1. Role & Company Scoping
+        if ($user) {
+            if ($user->role === 'super_admin') {
+                if ($request->filled('perusahaan_id')) {
+                    $query->where('id_perusahaan', $request->perusahaan_id);
+                }
+            } elseif (in_array($user->role, ['user', 'karyawan'])) {
+                $query->where(function ($q) use ($user) {
+                    $q->where('user_id', $user->id);
+                    if ($user->karyawan_id) {
+                        $q->orWhere('karyawan_id', $user->karyawan_id);
+                    }
+                });
+            } else {
+                $accessibleCompanyIds = $user->getAccessibleCompanyIds();
+                if ($accessibleCompanyIds) {
+                    if ($request->filled('perusahaan_id') && $accessibleCompanyIds->contains($request->perusahaan_id)) {
+                        $query->where('id_perusahaan', $request->perusahaan_id);
+                    } else {
+                        $query->whereIn('id_perusahaan', $accessibleCompanyIds);
+                    }
+                } elseif ($user->id_perusahaan) {
+                    $query->where('id_perusahaan', $user->id_perusahaan);
+                }
+            }
+        } elseif ($request->filled('perusahaan_id')) {
+            $query->where('id_perusahaan', $request->perusahaan_id);
+        }
+
+        // 2. Filter Periode (Bulan & Tahun atau rentang tanggal)
+        $bulan = $request->input('bulan'); // 1 - 12
+        $tahun = $request->input('tahun', date('Y'));
+
+        if ($request->filled('bulan') && $request->filled('tahun')) {
+            $query->whereYear('created_at', $tahun)
+                  ->whereMonth('created_at', $bulan);
+            $namaBulan = Carbon::createFromDate($tahun, $bulan, 1)->translatedFormat('F');
+            $periodText = "{$namaBulan} {$tahun}";
+        } elseif ($request->filled('tahun') && !$request->filled('bulan')) {
+            $query->whereYear('created_at', $tahun);
+            $periodText = "Tahun {$tahun}";
+        } elseif ($request->filled('tanggal_awal') && $request->filled('tanggal_akhir')) {
+            $query->whereDate('created_at', '>=', $request->tanggal_awal)
+                  ->whereDate('created_at', '<=', $request->tanggal_akhir);
+            $periodText = Carbon::parse($request->tanggal_awal)->format('d/m/Y') . ' s/d ' . Carbon::parse($request->tanggal_akhir)->format('d/m/Y');
+        } else {
+            // Default: Bulan berjalan
+            $currentMonth = date('n');
+            $currentYear = date('Y');
+            $query->whereYear('created_at', $currentYear)
+                  ->whereMonth('created_at', $currentMonth);
+            $namaBulan = Carbon::createFromDate($currentYear, $currentMonth, 1)->translatedFormat('F');
+            $periodText = "{$namaBulan} {$currentYear}";
+        }
+
+        // 3. Filter Status
+        if ($request->filled('status')) {
+            if ($request->status === 'ok') {
+                $query->whereIn('status', ['resolved', 'closed']);
+            } elseif ($request->status === 'ng') {
+                $query->whereNotIn('status', ['resolved', 'closed']);
+            } else {
+                $query->where('status', $request->status);
+            }
+        }
+
+        // 4. Filter Kategori
+        if ($request->filled('category_id')) {
+            $query->where('ticket_category_id', $request->category_id);
+        }
+
+        // 5. Nama Perusahaan & Divisi
+        $companyName = 'PT. SEMBILAN MATAHARI SAKTI';
+        if ($request->filled('perusahaan_id')) {
+            $p = Perusahaan::find($request->perusahaan_id);
+            if ($p) $companyName = $p->nama_perusahaan;
+        } elseif ($user && $user->perusahaan) {
+            $companyName = $user->perusahaan->nama_perusahaan;
+        }
+
+        $divisionName = 'IT Sembilan';
+
+        $tickets = $query->orderBy('created_at', 'asc')->get();
+
+        return [
+            'tickets' => $tickets,
+            'companyName' => $companyName,
+            'divisionName' => $divisionName,
+            'periodText' => $periodText,
+            'title' => 'Checklist Temuan & Tindakan Troubleshoot',
+        ];
+    }
+
+    /**
+     * Preview Cetak / Print Web (A4 Landscape)
+     */
+    public function cetak(Request $request)
+    {
+        $data = $this->buildTroubleshootReportData($request);
+        return view('content.dashboard.e_ticket.cetak', $data);
+    }
+
+    /**
+     * Download Excel Laporan Troubleshoot (.xlsx)
+     */
+    public function exportExcel(Request $request)
+    {
+        $data = $this->buildTroubleshootReportData($request);
+
+        $cleanPeriod = str_replace([' ', '/', '\\'], '_', $data['periodText']);
+        $filename = "Laporan_Troubleshoot_IT_{$cleanPeriod}.xlsx";
+
+        return Excel::download(
+            new TicketTroubleshootExport(
+                $data['tickets'],
+                $data['companyName'],
+                $data['divisionName'],
+                $data['periodText'],
+                $data['title']
+            ),
+            $filename
+        );
+    }
+
+    /**
+     * Download PDF Laporan Troubleshoot (.pdf)
+     */
+    public function exportPdf(Request $request)
+    {
+        $data = $this->buildTroubleshootReportData($request);
+
+        $cleanPeriod = str_replace([' ', '/', '\\'], '_', $data['periodText']);
+        $filename = "Laporan_Troubleshoot_IT_{$cleanPeriod}.pdf";
+
+        $pdf = Pdf::loadView('content.dashboard.e_ticket.pdf', $data)
+                  ->setPaper('a4', 'landscape');
+
+        return $pdf->download($filename);
     }
 }

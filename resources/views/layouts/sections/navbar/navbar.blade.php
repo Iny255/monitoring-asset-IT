@@ -79,8 +79,9 @@
     }
 
     /* =====================================
-       DARK MODE BUTTON
+       NAVBAR ICON BUTTON & DARK TOGGLE
     ===================================== */
+    .nav-icon-btn,
     .dark-toggle-btn {
         border: none;
         background: rgba(255, 255, 255, 0.15);
@@ -96,12 +97,14 @@
         user-select: none;
     }
 
+    .nav-icon-btn:hover,
     .dark-toggle-btn:hover {
         background: rgba(255, 255, 255, 0.25);
         color: #ffffff !important;
         transform: scale(1.05);
     }
 
+    .nav-icon-btn i,
     .dark-toggle-btn i {
         color: #ffffff !important;
     }
@@ -165,6 +168,7 @@
         color: #cbd5e1 !important;
     }
 
+    .dark-style .nav-icon-btn,
     .dark-style .dark-toggle-btn {
         background: rgba(255, 255, 255, 0.1) !important;
         color: #cbd5e1 !important;
@@ -286,6 +290,45 @@
     ===================================== --}}
     <ul class="navbar-nav flex-row align-items-center ms-auto">
 
+
+        {{-- NOTIFIKASI TIKET IT --}}
+        <li class="nav-item navbar-dropdown dropdown-notifications dropdown me-3" id="navTicketNotificationItem">
+            <a class="nav-link dropdown-toggle hide-arrow position-relative p-0" href="javascript:void(0);" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false" title="Notifikasi Tiket Masuk">
+                <div class="nav-icon-btn position-relative" style="width: 40px; height: 40px;">
+                    <i class="bx bx-bell fs-5"></i>
+                    <span id="navTicketBadge"
+                          class="badge bg-danger rounded-pill badge-notifications position-absolute {{ ($initialOpenTicketCount ?? 0) > 0 ? '' : 'd-none' }}"
+                          style="top: -3px; right: -3px; font-size: 0.65rem; padding: 2px 6px; min-width: 18px;">
+                        {{ $initialOpenTicketCount ?? 0 }}
+                    </span>
+                </div>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end py-0 shadow-lg border-0" style="width: 340px; max-width: 90vw; border-radius: 14px; overflow: hidden; margin-top: 10px;">
+                <li class="dropdown-menu-header border-bottom bg-light p-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-dark fs-6">
+                            <i class="bx bx-support me-1 text-primary"></i> Tiket IT Masuk
+                        </span>
+                        <span id="navTicketHeaderCount" class="badge bg-danger rounded-pill">
+                            {{ $initialOpenTicketCount ?? 0 }} Open
+                        </span>
+                    </div>
+                </li>
+                <li class="dropdown-notifications-list" style="max-height: 280px; overflow-y: auto;">
+                    <ul class="list-group list-group-flush" id="navTicketList">
+                        <li class="list-group-item text-center text-muted py-4" id="navTicketEmpty" style="{{ ($initialOpenTicketCount ?? 0) > 0 ? 'display: none;' : '' }}">
+                            <i class="bx bx-check-circle fs-3 text-success d-block mb-1"></i>
+                            <span class="small">Tidak ada tiket open baru</span>
+                        </li>
+                    </ul>
+                </li>
+                <li class="dropdown-menu-footer border-top p-2 bg-light text-center">
+                    <a href="{{ route('e-ticket.index') }}" class="btn btn-primary btn-sm w-100 py-1">
+                        <i class="bx bx-list-ul me-1"></i> Buka Menu Helpdesk E-Ticket
+                    </a>
+                </li>
+            </ul>
+        </li>
 
         {{-- DARK MODE --}}
         <li class="nav-item me-3">

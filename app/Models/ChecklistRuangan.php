@@ -162,7 +162,7 @@ class ChecklistRuangan extends Model
             ->get();
 
         // 1b. Ambil seluruh peminjaman aset yang aktif di lokasi ruangan ini
-        $activeLoans = Peminjaman::where('status', 'Dipinjam')
+        $activeLoans = Peminjaman::whereIn('status', ['dipinjam', 'Dipinjam'])
             ->where('id_lokasi', $this->id_lokasi)
             ->whereHas('inventaris', function ($iq) {
                 $iq->where('is_transfer', false)
@@ -183,8 +183,8 @@ class ChecklistRuangan extends Model
             if ($device->is_pinjaman) {
                 $loan = $device->peminjaman;
                 $isInvalidLoan = !$loan
-                    || strtolower($loan->status) !== 'dipinjam'
-                    || $loan->id_lokasi != $this->id_lokasi
+                    || !in_array(strtolower($loan->status), ['dipinjam', 'menunggu_pengembalian'])
+                    || ($loan->id_lokasi && $loan->id_lokasi != $this->id_lokasi)
                     || ($inv && $inv->is_transfer);
 
                 if ($isInvalidLoan) {

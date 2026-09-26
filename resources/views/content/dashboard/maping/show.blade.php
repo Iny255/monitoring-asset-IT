@@ -41,14 +41,15 @@
 
                     </div>
 
-                    <div>
-
+                    <div class="d-flex align-items-center gap-2">
+                        @if (isset($checklistRuangan) && $checklistRuangan)
+                            <a href="{{ route('checklist.pemeriksaan.show', $checklistRuangan->id) }}" class="btn btn-sm btn-warning text-dark fw-bold shadow-xs">
+                                <i class="bx bx-arrow-back me-1"></i> Kembali ke Checklist ({{ $checklistRuangan->lokasi->nama_lokasi ?? 'Ruangan' }})
+                            </a>
+                        @endif
                         <span class="badge bg-label-primary px-3 py-2">
-
                             {{ strtoupper($maping->perusahaan->nama_perusahaan ?? '-') }}
-
                         </span>
-
                     </div>
 
                 </div>
@@ -353,6 +354,16 @@
                                 <tr>
                                     <th>Lokasi</th>
                                     <td>{{ $maping->lokasi->nama_lokasi ?? '-' }}</td>
+                                </tr>
+
+                                <tr>
+                                    <th>Tanggal Pembelian</th>
+                                    <td>
+                                        @php
+                                            $tglPembelianShow = $maping->keluar?->inventaris?->masuk?->tanggal_pembelian;
+                                        @endphp
+                                        <strong>{{ $tglPembelianShow ? \Carbon\Carbon::parse($tglPembelianShow)->format('d-m-Y') : '-' }}</strong>
+                                    </td>
                                 </tr>
 
                                 <tr>

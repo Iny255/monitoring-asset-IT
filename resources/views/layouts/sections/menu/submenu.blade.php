@@ -58,11 +58,18 @@
                         <div>{{ isset($submenu->name) ? __($submenu->name) : '' }}</div>
 
                         {{-- BADGE --}}
-                        @isset($submenu->badge)
+                        @if (isset($submenu->url) && trim($submenu->url, '/') === 'dashboard/e-ticket')
+                            <span id="eTicketSubmenuBadge"
+                                  class="badge bg-danger rounded-pill ms-auto {{ ($initialOpenTicketCount ?? 0) > 0 ? '' : 'd-none' }}"
+                                  style="font-size: 0.68rem; padding: 2px 6px;"
+                                  title="{{ $initialOpenTicketCount ?? 0 }} Tiket Open Baru">
+                                {{ $initialOpenTicketCount ?? 0 }}
+                            </span>
+                        @elseif (isset($submenu->badge))
                             <div class="badge bg-{{ $submenu->badge[0] }} rounded-pill ms-auto">
                                 {{ $submenu->badge[1] }}
                             </div>
-                        @endisset
+                        @endif
                     </a>
 
                     {{-- RECURSIVE SUBMENU IF ANY --}}

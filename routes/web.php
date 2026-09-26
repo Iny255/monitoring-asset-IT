@@ -355,6 +355,10 @@ Route::middleware(['auth'])->group(function () {
   */
   Route::prefix('dashboard/e-ticket')->name('e-ticket.')->middleware(['role:user,karyawan,petugas,teknisi,super_admin'])->group(function () {
     Route::get('/', [TicketController::class, 'index'])->name('index');
+    Route::get('/notifications/check', [TicketController::class, 'checkNewTickets'])->name('check-notifications');
+    Route::get('/cetak', [TicketController::class, 'cetak'])->name('cetak');
+    Route::get('/export/excel', [TicketController::class, 'exportExcel'])->name('export-excel');
+    Route::get('/export/pdf', [TicketController::class, 'exportPdf'])->name('export-pdf');
     Route::get('/create', [TicketController::class, 'create'])->name('create');
     Route::post('/', [TicketController::class, 'store'])->name('store');
     Route::get('/{id}', [TicketController::class, 'show'])->name('show');
@@ -388,6 +392,8 @@ Route::middleware(['auth'])->group(function () {
     Route::post('pemeriksaan/{ruanganId}/device/{deviceId}/update', [ChecklistPemeriksaanController::class, 'updateDevice'])->name('pemeriksaan.device.update');
     Route::get('pemeriksaan/{id}/sync-status', [ChecklistPemeriksaanController::class, 'syncStatus'])->name('pemeriksaan.sync-status');
     Route::get('pemeriksaan/{id}/cetak', [ChecklistPemeriksaanController::class, 'cetak'])->name('pemeriksaan.cetak');
+    Route::post('pemeriksaan/{id}/scan-lookup', [ChecklistPemeriksaanController::class, 'scanLookup'])->name('pemeriksaan.scan-lookup');
+    Route::post('pemeriksaan/{id}/add-scanned-device', [ChecklistPemeriksaanController::class, 'addScannedDevice'])->name('pemeriksaan.add-scanned-device');
 
     // Master Item Pemeriksaan
     Route::resource('item', ChecklistItemController::class)->except(['create', 'show', 'edit']);

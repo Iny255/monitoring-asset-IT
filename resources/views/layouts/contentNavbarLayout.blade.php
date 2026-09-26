@@ -331,5 +331,8 @@
 
     </div>
 
+    {{-- NOTIFIKASI REAL-TIME E-TICKET IT --}}
+    @include('layouts.sections.menu.ticket-notifier')
+
     @stack('scripts')
 @endsection
